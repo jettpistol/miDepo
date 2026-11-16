@@ -135,6 +135,11 @@ body {
   outline: 2px solid var(--acento-texto);
   outline-offset: 2px;
 }
+/* Sobre el azul, el anillo de foco va en el color del texto de la franja. */
+.bg-acento:focus-visible,
+.bg-acento :focus-visible {
+  outline-color: var(--sobre-acento);
+}
 h1,
 h2,
 h3 {
