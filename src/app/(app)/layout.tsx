@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BarraInferior, Lateral } from "@/components/Navegacion";
+import { BarraInferior, Secciones } from "@/components/Navegacion";
 import { Avatar } from "@/components/Avatar";
 import { Cuentas, ROL } from "@/components/Cuentas";
 import { Desplegable } from "@/components/Desplegable";
@@ -11,43 +11,50 @@ import { puede, requerir } from "@/lib/sesion";
 
 export default async function Aplicacion({ children }: { children: ReactNode }) {
   const { usuario, empresa } = await requerir();
-  const grupos = MENU.map((g) => ({ ...g, items: g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario")) })).filter((g) => g.items.length > 0);
+  // El manual vive en la barra azul; el resto, en la franja de secciones.
+  const grupos = MENU.filter((g) => g.grupo !== "Ayuda")
+    .map((g) => ({ ...g, items: g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario")) }))
+    .filter((g) => g.items.length > 0);
 
   return (
-    <div className="lg:flex">
-      <aside className="no-imprimir sticky top-0 hidden h-dvh w-60 shrink-0 flex-col bg-acento text-sobre-acento lg:flex">
-        <Link href="/" className="px-6 pt-6 pb-2">
-          <Marca />
-          <span className="mt-0.5 block text-sm opacity-70">{empresa.nombre}</span>
-        </Link>
-        <Lateral grupos={grupos} />
-        <Desplegable key={usuario.id} className="group relative border-t border-sobre-acento/15">
-          <summary className="flex cursor-pointer list-none items-center gap-3 p-4 hover:bg-sobre-acento/10 [&::-webkit-details-marker]:hidden">
-            <Avatar persona={usuario} clase="size-9 text-sm ring-2 ring-sobre-acento/40" />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold">{usuario.nombre}</span>
-              <span className="block text-xs opacity-70">{ROL[usuario.rol]}</span>
-            </span>
-            <Icono nombre="flecha" className="size-4 -rotate-90 opacity-70 transition group-open:rotate-90" />
-          </summary>
-          <div className="tarjeta absolute inset-x-2 bottom-full mb-1 p-1.5 text-texto shadow-xl">
-            <Cuentas />
+    <>
+      <div className="no-imprimir sticky top-0 z-30">
+        <header className="bg-acento text-sobre-acento">
+          <div className="mx-auto flex h-13 max-w-[1360px] items-center gap-4 px-4 sm:px-6 xl:px-10">
+            <Link href="/" className="-ml-1 rounded-control px-1 py-1">
+              <Marca />
+            </Link>
+            <span className="min-w-0 flex-1 truncate border-l border-sobre-acento/25 pl-4 text-sm font-medium opacity-85">{empresa.nombre}</span>
+
+            <Link href="/ayuda" className="hidden items-center gap-1.5 rounded-control px-2.5 py-1.5 text-sm font-medium opacity-85 transition-opacity duration-150 hover:opacity-100 lg:flex">
+              <Icono nombre="ayuda" className="size-4.5" />
+              Manual
+            </Link>
+
+            <Desplegable key={usuario.id} className="group relative hidden lg:block">
+              <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-control py-1 pr-1.5 pl-1 transition-colors duration-150 hover:bg-sobre-acento/12 [&::-webkit-details-marker]:hidden">
+                <Avatar persona={usuario} clase="size-8 text-xs ring-1 ring-sobre-acento/50" />
+                <span className="text-left leading-tight">
+                  <span className="block max-w-44 truncate text-sm font-semibold">{usuario.nombre}</span>
+                  <span className="block text-xs opacity-75">{ROL[usuario.rol]}</span>
+                </span>
+                <Icono nombre="flecha" className="size-4 rotate-90 opacity-75 transition-transform duration-150 group-open:-rotate-90" />
+              </summary>
+              <div className="absolute top-full right-0 mt-2 w-72 rounded-control border border-borde bg-superficie p-1.5 text-texto shadow-flotante">
+                <Cuentas />
+              </div>
+            </Desplegable>
+
+            <Link href="/mas" className="flex items-center lg:hidden" aria-label={`Menú y cuentas. En uso: ${usuario.nombre}`}>
+              <Avatar persona={usuario} clase="size-8 text-xs ring-1 ring-sobre-acento/50" />
+            </Link>
           </div>
-        </Desplegable>
-      </aside>
+        </header>
+        <Secciones grupos={grupos} />
+      </div>
 
-      <header className="no-imprimir sticky top-0 z-30 flex items-center justify-between bg-acento px-4 py-3 text-sobre-acento lg:hidden">
-        <Link href="/">
-          <Marca />
-        </Link>
-        <Link href="/mas" className="flex min-w-0 items-center gap-2.5" aria-label={`Menú y cuentas. En uso: ${usuario.nombre}`}>
-          <span className="truncate text-sm opacity-80">{empresa.nombre}</span>
-          <Avatar persona={usuario} clase="size-8 text-xs ring-2 ring-sobre-acento/40" />
-        </Link>
-      </header>
-
-      <main className="mx-auto w-full max-w-5xl min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-10 lg:pt-9 lg:pb-12">{children}</main>
+      <main className="mx-auto w-full max-w-[1360px] min-w-0 px-4 pt-6 pb-28 sm:px-6 lg:pt-8 lg:pb-16 xl:px-10">{children}</main>
       <BarraInferior />
-    </div>
+    </>
   );
 }

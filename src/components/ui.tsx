@@ -1,19 +1,19 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Icono, type NombreIcono } from "./Icono";
+import { Icono } from "./Icono";
 
 export function Encabezado({ titulo, bajada, volver, children }: { titulo: string; bajada?: ReactNode; volver?: { href: string; texto: string }; children?: ReactNode }) {
   return (
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0">
         {volver && (
-          <Link href={volver.href} className="mb-1 inline-flex items-center gap-1 text-sm font-semibold text-suave hover:text-texto">
+          <Link href={volver.href} className="mb-1.5 inline-flex items-center gap-1 text-sm font-semibold text-suave transition-colors duration-150 hover:text-acento-texto">
             <Icono nombre="flecha" className="size-4 rotate-180" />
             {volver.texto}
           </Link>
         )}
-        <h1 className="text-2xl font-bold tracking-tight text-balance">{titulo}</h1>
-        {bajada && <p className="mt-1 text-[15px] text-suave">{bajada}</p>}
+        <h1 className="text-[26px] leading-tight font-bold tracking-[-0.02em] lg:text-[28px]">{titulo}</h1>
+        {bajada && <p className="mt-1 max-w-[70ch] text-[15px] text-suave">{bajada}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
@@ -21,32 +21,30 @@ export function Encabezado({ titulo, bajada, volver, children }: { titulo: strin
 }
 
 const TONOS = {
-  neutro: "bg-hundido text-suave",
-  acento: "bg-acento-suave text-acento-texto",
-  ok: "bg-ok-suave text-ok",
-  alerta: "bg-alerta-suave text-alerta",
-  peligro: "bg-peligro-suave text-peligro",
+  neutro: "border-borde bg-hundido text-suave",
+  acento: "border-acento-texto/30 bg-acento-suave text-acento-texto",
+  ok: "border-ok/30 bg-ok-suave text-ok",
+  alerta: "border-alerta/30 bg-alerta-suave text-alerta",
+  peligro: "border-peligro/30 bg-peligro-suave text-peligro",
 } as const;
 export type Tono = keyof typeof TONOS;
 
 export function Insignia({ tono = "neutro", children }: { tono?: Tono; children: ReactNode }) {
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${TONOS[tono]}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-rotulo border px-1.5 py-0.5 text-xs leading-tight font-semibold whitespace-nowrap ${TONOS[tono]}`}>{children}</span>;
 }
 
-export function Vacio({ icono = "ok", titulo, children }: { icono?: NombreIcono; titulo: string; children?: ReactNode }) {
+/** Estado vacío: dice qué falta y cómo aparece, sin adornos. */
+export function Vacio({ titulo, children }: { icono?: unknown; titulo: string; children?: ReactNode }) {
   return (
-    <div className="tarjeta flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <span className="grid size-11 place-items-center rounded-full bg-acento-suave text-acento-texto">
-        <Icono nombre={icono} />
-      </span>
-      <p className="font-semibold">{titulo}</p>
-      {children && <div className="max-w-md text-sm text-suave">{children}</div>}
+    <div className="border-y border-borde px-2 py-8 lg:px-3">
+      <p className="font-bold">{titulo}</p>
+      {children && <div className="mt-1 max-w-[60ch] text-sm text-suave">{children}</div>}
     </div>
   );
 }
 
 export function Aviso({ tono = "acento", children }: { tono?: Tono; children: ReactNode }) {
-  return <div className={`rounded-xl px-4 py-3 text-sm font-medium ${TONOS[tono]}`}>{children}</div>;
+  return <div className={`rounded-control border px-4 py-3 text-sm font-medium ${TONOS[tono]}`}>{children}</div>;
 }
 
 /** Barra de avance con el número al lado: "12 de 40". */
@@ -54,8 +52,8 @@ export function Avance({ hecho, total, unidad = "" }: { hecho: number; total: nu
   const pct = total === 0 ? 0 : Math.min(100, Math.round((hecho / total) * 100));
   return (
     <div className="flex items-center gap-3">
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-hundido">
-        <div className="h-full rounded-full bg-acento transition-[width]" style={{ width: `${pct}%` }} />
+      <div className="h-1.5 min-w-12 flex-1 overflow-hidden rounded-full bg-borde" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={hecho}>
+        <div className={`h-full transition-[width] duration-200 ${pct === 100 ? "bg-ok" : "bg-acento-texto"}`} style={{ width: `${pct}%` }} />
       </div>
       <span className="text-sm font-semibold whitespace-nowrap tabular-nums">
         {hecho} de {total}
@@ -65,8 +63,33 @@ export function Avance({ hecho, total, unidad = "" }: { hecho: number; total: nu
   );
 }
 
+const ZONAS: Record<string, string> = { RECEPCION: "recepcion", DEVOLUCIONES: "devoluciones", DANADOS: "danados", SALDOS: "saldos", PREPARACION: "preparacion" };
+const NOMBRE_ZONA: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
+
+/**
+ * El tejuelo: el código de un estante escrito como la etiqueta del lomo de un libro, con cada
+ * tramo (pasillo, estante, nivel) en su casilla. Las zonas llevan una banda de color.
+ */
+export function Tejuelo({ codigo, tam = "sm", sobreAcento = false, className = "" }: { codigo: string | null | undefined; tam?: "sm" | "md" | "xl"; sobreAcento?: boolean; className?: string }) {
+  if (!codigo) return <span className="text-suave">—</span>;
+  const zona = ZONAS[codigo];
+  const tramos = zona ? [NOMBRE_ZONA[codigo]] : codigo.split(/[^0-9A-Za-zÑñ]+/).filter(Boolean);
+  const clases = ["tejuelo", tam === "md" && "tejuelo-md", tam === "xl" && "tejuelo-xl", sobreAcento && "tejuelo-sobre-acento", className].filter(Boolean).join(" ");
+  return (
+    <span className={clases} data-zona={zona} aria-label={`Ubicación ${codigo}`} title={codigo}>
+      {zona && <span className="tejuelo-banda" aria-hidden="true" />}
+      {tramos.map((t, i) => (
+        <span key={i} aria-hidden="true">
+          {t}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Un código que no es un estante: ISBN, código interno. */
 export function Codigo({ children }: { children: ReactNode }) {
-  return <span className="rounded-md bg-hundido px-1.5 py-0.5 font-mono text-[13px] font-semibold">{children}</span>;
+  return <span className="codigo">{children}</span>;
 }
 
 export const fechaCorta = (d: Date) => new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }).format(d);

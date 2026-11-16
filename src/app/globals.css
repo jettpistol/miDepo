@@ -7,7 +7,9 @@
   --color-texto: var(--texto);
   --color-suave: var(--suave);
   --color-borde: var(--borde);
+  --color-borde-fuerte: var(--borde-fuerte);
   --color-acento: var(--acento);
+  --color-acento-vivo: var(--acento-vivo);
   --color-sobre-acento: var(--sobre-acento);
   --color-acento-texto: var(--acento-texto);
   --color-acento-suave: var(--acento-suave);
@@ -17,68 +19,97 @@
   --color-alerta-suave: var(--alerta-suave);
   --color-peligro: var(--peligro);
   --color-peligro-suave: var(--peligro-suave);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, monospace;
+  --font-sans: var(--fuente-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--fuente-codigo), ui-monospace, "Courier New", Courier, monospace;
+  --radius-rotulo: 3px;
+  --radius-control: 6px;
+  --shadow-flotante: 0 12px 32px -8px rgb(4 12 48 / 0.28), 0 2px 6px -2px rgb(4 12 48 / 0.16);
 }
 
-/* El acento lo define cada usuario; estos valores son los de fábrica (azul Klein). */
+/*
+ * Tejuelo: papel de etiqueta blanco, tinta azul Klein. El acento lo puede cambiar cada usuario;
+ * estos valores son los de fábrica.
+ */
 :root {
   --acento: #002fa7;
   --sobre-acento: #ffffff;
   --acento-texto-claro: #002fa7;
-  --acento-texto-oscuro: #8fa6f0;
+  --acento-texto-oscuro: #9db1f5;
 
-  --fondo: #f4f5fa;
+  --fondo: #ffffff;
   --superficie: #ffffff;
-  --hundido: #eceef6;
-  --texto: #0b0e1a;
-  --suave: #59607a;
-  --borde: #d9dceb;
+  --hundido: #eef1f8;
+  --texto: #0a0f24;
+  --suave: #4d5674;
+  --borde: #d3d9e8;
+  --borde-fuerte: #8e99b8;
   --acento-texto: var(--acento-texto-claro);
-  --acento-suave: color-mix(in oklab, var(--acento) 9%, var(--superficie));
-  --ok: #0f7a43;
-  --ok-suave: #e3f5ea;
-  --alerta: #8a5a00;
-  --alerta-suave: #fdf1d3;
-  --peligro: #b3261e;
-  --peligro-suave: #fbe6e4;
+  --acento-suave: color-mix(in oklab, var(--acento) 8%, var(--superficie));
+  --acento-vivo: color-mix(in oklab, var(--acento) 86%, #000);
+  --ok: #0b6b3a;
+  --ok-suave: #e2f3e9;
+  --alerta: #7d5200;
+  --alerta-suave: #fbefd0;
+  --peligro: #a8231c;
+  --peligro-suave: #fae5e3;
+
+  /* Banda de color de cada zona, como el punto de color en el lomo. */
+  --zona-recepcion: #b26a00;
+  --zona-devoluciones: #6b3fc4;
+  --zona-danados: #b3261e;
+  --zona-saldos: #0c7a70;
+  --zona-preparacion: #1a7f43;
   color-scheme: light;
 }
 
 :root[data-tema="oscuro"] {
-  --fondo: #0b0e1a;
-  --superficie: #141829;
-  --hundido: #0f1322;
-  --texto: #eef0fa;
-  --suave: #9ba3c2;
-  --borde: #2a3050;
+  --fondo: #090c1a;
+  --superficie: #121731;
+  --hundido: #161c3a;
+  --texto: #eceffa;
+  --suave: #a3abc9;
+  --borde: #2a3259;
+  --borde-fuerte: #56608d;
   --acento-texto: var(--acento-texto-oscuro);
-  --acento-suave: color-mix(in oklab, var(--acento) 26%, var(--superficie));
-  --ok: #5fd08f;
-  --ok-suave: #12301f;
-  --alerta: #f0c060;
+  --acento-suave: color-mix(in oklab, var(--acento) 30%, var(--superficie));
+  --acento-vivo: color-mix(in oklab, var(--acento) 84%, #fff);
+  --ok: #62d394;
+  --ok-suave: #10301f;
+  --alerta: #f1c366;
   --alerta-suave: #33280d;
-  --peligro: #ff8a80;
-  --peligro-suave: #3a1614;
+  --peligro: #ff8f85;
+  --peligro-suave: #3b1614;
+  --zona-recepcion: #f0b352;
+  --zona-devoluciones: #b79bf5;
+  --zona-danados: #ff8f85;
+  --zona-saldos: #56cfc3;
+  --zona-preparacion: #62d394;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-tema="sistema"] {
-    --fondo: #0b0e1a;
-    --superficie: #141829;
-    --hundido: #0f1322;
-    --texto: #eef0fa;
-    --suave: #9ba3c2;
-    --borde: #2a3050;
+    --fondo: #090c1a;
+    --superficie: #121731;
+    --hundido: #161c3a;
+    --texto: #eceffa;
+    --suave: #a3abc9;
+    --borde: #2a3259;
+    --borde-fuerte: #56608d;
     --acento-texto: var(--acento-texto-oscuro);
-    --acento-suave: color-mix(in oklab, var(--acento) 26%, var(--superficie));
-    --ok: #5fd08f;
-    --ok-suave: #12301f;
-    --alerta: #f0c060;
+    --acento-suave: color-mix(in oklab, var(--acento) 30%, var(--superficie));
+    --acento-vivo: color-mix(in oklab, var(--acento) 84%, #fff);
+    --ok: #62d394;
+    --ok-suave: #10301f;
+    --alerta: #f1c366;
     --alerta-suave: #33280d;
-    --peligro: #ff8a80;
-    --peligro-suave: #3a1614;
+    --peligro: #ff8f85;
+    --peligro-suave: #3b1614;
+    --zona-recepcion: #f0b352;
+    --zona-devoluciones: #b79bf5;
+    --zona-danados: #ff8f85;
+    --zona-saldos: #56cfc3;
+    --zona-preparacion: #62d394;
     color-scheme: dark;
   }
 }
@@ -87,52 +118,184 @@ html {
   background: var(--fondo);
   color: var(--texto);
   -webkit-text-size-adjust: 100%;
+  accent-color: var(--acento-texto);
+  caret-color: var(--acento-texto);
+  scrollbar-color: var(--borde-fuerte) transparent;
 }
 body {
   min-height: 100dvh;
   font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+}
+::selection {
+  background: var(--acento);
+  color: var(--sobre-acento);
 }
 :focus-visible {
-  outline: 3px solid color-mix(in oklab, var(--acento-texto) 70%, transparent);
+  outline: 2px solid var(--acento-texto);
   outline-offset: 2px;
 }
-table {
-  font-variant-numeric: tabular-nums;
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 @layer components {
+  /* Controles */
   .campo {
-    @apply w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-base text-texto placeholder:text-suave/70;
+    @apply min-h-11 w-full rounded-control border border-borde-fuerte bg-superficie px-3 py-2 text-base text-texto transition-colors duration-150 placeholder:text-suave hover:border-texto/60 focus:border-acento-texto disabled:cursor-not-allowed disabled:bg-hundido disabled:text-suave lg:min-h-10 lg:text-[15px];
+  }
+  .boton,
+  .boton-suave,
+  .boton-peligro {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-control px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-10 lg:text-sm;
   }
   .boton {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-acento px-4 py-2.5 text-[15px] font-semibold text-sobre-acento transition hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply bg-acento text-sobre-acento hover:bg-acento-vivo active:bg-acento;
   }
   .boton-suave {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-borde bg-superficie px-4 py-2.5 text-[15px] font-semibold text-texto transition hover:bg-hundido disabled:cursor-not-allowed disabled:opacity-50;
+    @apply border border-borde-fuerte bg-superficie text-texto hover:border-texto/60 hover:bg-hundido active:bg-superficie;
   }
   .boton-peligro {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-peligro/40 bg-peligro-suave px-4 py-2.5 text-[15px] font-semibold text-peligro transition hover:brightness-95 disabled:opacity-50;
-  }
-  .tarjeta {
-    @apply rounded-2xl border border-borde bg-superficie;
+    @apply border border-peligro/50 bg-superficie text-peligro hover:bg-peligro-suave;
   }
   .etiqueta {
     @apply mb-1.5 block text-sm font-semibold text-texto;
   }
   .enlace {
-    @apply font-semibold text-acento-texto underline-offset-2 hover:underline;
+    @apply font-semibold text-acento-texto underline decoration-acento-texto/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-acento-texto;
   }
+
+  /* Contenedores: un panel con filete, sin sombra. */
+  .tarjeta {
+    @apply rounded-control border border-borde bg-superficie;
+  }
+  .titulo-seccion {
+    @apply mb-2 flex items-baseline gap-2 text-[15px] font-bold text-texto;
+  }
+  .titulo-seccion small {
+    @apply text-sm font-medium text-suave;
+  }
+
+  /* Lista reglada: filas con filete fino; reemplaza a las pilas de tarjetas. */
+  .lista {
+    @apply border-y border-borde;
+  }
+  .lista > li + li {
+    @apply border-t border-borde;
+  }
+  .fila {
+    @apply flex items-center gap-x-4 gap-y-1.5 px-2 py-2.5 text-[15px] lg:px-3;
+  }
+  a.fila,
+  button.fila,
+  .fila-activa {
+    @apply cursor-pointer transition-colors duration-150 hover:bg-hundido;
+  }
+
+  /* Tablas */
   .tabla {
     @apply w-full text-left text-sm;
   }
   .tabla th {
-    @apply border-b border-borde px-3 py-2.5 text-xs font-semibold tracking-wide text-suave uppercase;
+    @apply border-b border-borde-fuerte px-2 py-2 text-[13px] sm:px-3 font-semibold whitespace-nowrap text-suave;
   }
   .tabla td {
-    @apply border-b border-borde/70 px-3 py-2.5 align-middle;
+    @apply border-b border-borde px-2 py-2.5 align-middle sm:px-3;
+  }
+  .tabla tbody tr {
+    @apply transition-colors duration-150 hover:bg-hundido/60;
   }
   .tabla tr:last-child td {
     @apply border-b-0;
+  }
+
+  /* El tejuelo: la dirección de un estante, escrita como en el lomo de un libro. */
+  .tejuelo {
+    @apply inline-flex items-stretch overflow-hidden rounded-rotulo bg-superficie align-middle font-mono text-[13px] leading-none font-bold whitespace-nowrap text-acento-texto;
+    border: 1.5px solid var(--acento-texto);
+  }
+  .tejuelo > span {
+    padding: 0.34em 0.5em 0.26em;
+  }
+  .tejuelo > span + span {
+    border-left: 1px solid color-mix(in oklab, var(--acento-texto) 40%, transparent);
+  }
+  .tejuelo > .tejuelo-banda {
+    width: 0.55em;
+    padding: 0;
+    background: var(--zona);
+  }
+  .tejuelo > .tejuelo-banda + span {
+    border-left: 0;
+  }
+  .tejuelo[data-zona] {
+    border-color: var(--zona);
+    color: var(--texto);
+  }
+  .tejuelo[data-zona="recepcion"] {
+    --zona: var(--zona-recepcion);
+  }
+  .tejuelo[data-zona="devoluciones"] {
+    --zona: var(--zona-devoluciones);
+  }
+  .tejuelo[data-zona="danados"] {
+    --zona: var(--zona-danados);
+  }
+  .tejuelo[data-zona="saldos"] {
+    --zona: var(--zona-saldos);
+  }
+  .tejuelo[data-zona="preparacion"] {
+    --zona: var(--zona-preparacion);
+  }
+  .tejuelo-md {
+    @apply text-base;
+  }
+  .tejuelo-xl {
+    max-width: 100%;
+    font-size: 2.75rem;
+    border-width: 3px;
+    border-radius: 6px;
+  }
+  .tejuelo-xl > span {
+    padding: 0.24em 0.3em 0.14em;
+  }
+  .tejuelo-xl > span + span {
+    border-left-width: 2px;
+  }
+  /* Sobre la franja azul: etiqueta blanca pegada en el lomo. */
+  .tejuelo-sobre-acento {
+    border-color: var(--sobre-acento);
+    background: var(--sobre-acento);
+    color: var(--acento);
+  }
+  .tejuelo-sobre-acento > span + span {
+    border-left-color: color-mix(in oklab, var(--acento) 40%, transparent);
+  }
+  /* Código que no es un estante (ISBN, número de documento): misma letra, sin recuadro azul. */
+  .codigo {
+    @apply inline-block rounded-rotulo border border-borde bg-hundido px-1.5 pt-[0.2em] pb-[0.12em] align-middle font-mono text-[13px] leading-tight font-bold whitespace-nowrap text-texto;
+  }
+  .numero {
+    @apply font-mono text-[1.08em] font-bold whitespace-nowrap;
+  }
+  /* Botón para la última celda de una fila de tabla. */
+  .boton-chico {
+    @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-control border border-borde-fuerte bg-superficie px-3 py-1 text-sm font-semibold whitespace-nowrap text-texto transition-colors duration-150 hover:border-acento-texto hover:bg-acento-suave hover:text-acento-texto disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-8 lg:text-[13px];
+  }
+}
+
+/* La respuesta de un escaneo aparece, no salta. */
+@media (prefers-reduced-motion: no-preference) {
+  .aparece {
+    transition:
+      opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      translate 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    @starting-style {
+      opacity: 0;
+      translate: 0 -4px;
+    }
   }
 }
 
@@ -147,18 +310,19 @@ table {
   }
 }
 
-/* Manual (wiki) dentro de la app */
+/* Manual (wiki) */
 .manual {
   line-height: 1.65;
+  max-width: 72ch;
 }
 .manual h1 {
-  @apply mb-3 text-2xl font-bold tracking-tight text-balance;
+  @apply mb-4 text-3xl font-bold tracking-[-0.02em];
 }
 .manual h2 {
-  @apply mt-8 mb-2 border-b border-borde pb-1.5 text-xl font-bold;
+  @apply mt-10 mb-2 border-b border-borde pb-1.5 text-xl font-bold;
 }
 .manual h3 {
-  @apply mt-6 mb-1.5 text-base font-bold;
+  @apply mt-7 mb-1.5 text-base font-bold;
 }
 .manual p,
 .manual ul,
@@ -177,13 +341,13 @@ table {
   @apply mb-1;
 }
 .manual a {
-  @apply font-semibold text-acento-texto underline underline-offset-2;
+  @apply font-semibold text-acento-texto underline decoration-acento-texto/35 underline-offset-[3px] hover:decoration-acento-texto;
 }
 .manual code {
-  @apply rounded-md bg-hundido px-1.5 py-0.5 font-mono text-[0.88em] font-semibold;
+  @apply rounded-rotulo border border-borde bg-hundido px-1.5 py-0.5 font-mono text-[0.9em] font-bold;
 }
 .manual blockquote {
-  @apply rounded-xl bg-acento-suave px-4 py-3 text-[15px];
+  @apply rounded-control border border-acento-texto/25 bg-acento-suave px-4 py-3 text-[15px];
 }
 .manual blockquote p:last-child {
   @apply mb-0;
@@ -192,20 +356,20 @@ table {
   @apply block w-full overflow-x-auto text-sm;
 }
 .manual th {
-  @apply border-b-2 border-borde px-3 py-2 text-left font-semibold;
+  @apply border-b border-borde-fuerte px-3 py-2 text-left font-semibold;
 }
 .manual td {
-  @apply border-b border-borde/70 px-3 py-2 align-top;
+  @apply border-b border-borde px-3 py-2 align-top;
 }
 .manual hr {
-  @apply my-6 border-borde;
+  @apply my-8 border-borde;
 }
 .manual-indice h3 {
-  @apply mt-4 mb-1 text-xs tracking-widest text-suave uppercase first:mt-0;
+  @apply mt-5 mb-1 text-[13px] font-bold text-suave first:mt-0;
 }
 .manual-indice ul {
   @apply mb-0 list-none pl-0;
 }
 .manual-indice a {
-  @apply font-medium no-underline hover:underline;
+  @apply block rounded-control px-2 py-1 font-medium no-underline hover:bg-hundido;
 }

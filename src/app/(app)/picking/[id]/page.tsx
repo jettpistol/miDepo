@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { BotonAccion, Escaneo } from "@/components/Escaneo";
-import { Avance, Aviso, Codigo, Encabezado, Insignia } from "@/components/ui";
+import { Icono } from "@/components/Icono";
+import { Avance, Aviso, Encabezado, Insignia, Tejuelo } from "@/components/ui";
 import { clientes, pedidoLineas, pedidos, productos, tareasPicking, ubicaciones } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import { confirmar, faltante, tomar } from "../acciones";
@@ -36,7 +37,7 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
       </Encabezado>
 
       {p.estado === "pendiente" ? (
-        <div className="tarjeta max-w-md space-y-3 p-5">
+        <div className="max-w-md space-y-4 border-y border-borde py-5">
           <p>
             Este pedido tiene <strong>{total} unidades</strong> de {lineas.length} títulos y todavía no lo tomó nadie.
           </p>
@@ -45,19 +46,17 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
           </BotonAccion>
         </div>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
-          <div className="space-y-3 lg:sticky lg:top-6">
-            <div className="tarjeta p-4">
-              <Avance hecho={pickeado} total={total} unidad="unidades" />
-            </div>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start lg:gap-10">
+          <div className="space-y-3 lg:sticky lg:top-30">
+            <Avance hecho={pickeado} total={total} unidad="unidades" />
 
             {proxima ? (
               <>
-                <div className="rounded-2xl bg-acento p-5 text-sobre-acento">
-                  <p className="text-sm font-semibold opacity-80">Próxima parada · quedan {pendientes.length}</p>
-                  <p className="mt-1 font-mono text-5xl leading-none font-bold tracking-tight">{proxima.ubicacion}</p>
+                <div className="rounded-control bg-acento p-5 text-sobre-acento">
+                  <p className="mb-2.5 text-sm font-semibold opacity-85">Próxima parada · quedan {pendientes.length}</p>
+                  <Tejuelo codigo={proxima.ubicacion} tam="xl" sobreAcento />
                   <p className="mt-4 text-lg leading-snug font-semibold">{proxima.titulo}</p>
-                  <p className="font-mono text-sm opacity-80">{proxima.codigo}</p>
+                  <p className="font-mono text-sm font-bold opacity-85">{proxima.codigo}</p>
                   <p className="mt-3 text-base">
                     Tomá <span className="text-3xl font-bold">{proxima.t.cantidad - proxima.t.pickeado}</span>
                   </p>
@@ -66,8 +65,8 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
                   accion={confirmar}
                   ocultos={{ tareaId: proxima.t.id }}
                   campos={[
-                    { nombre: "ubicacion", etiqueta: "Estante", ayuda: "Escaneá el cartel" },
-                    { nombre: "producto", etiqueta: "Libro" },
+                    { nombre: "ubicacion", etiqueta: "Estante", ayuda: "Escaneá el cartel", espera: proxima.ubicacion },
+                    { nombre: "producto", etiqueta: "Libro", espera: proxima.codigo },
                   ]}
                   cantidad={proxima.t.cantidad - proxima.t.pickeado}
                   boton="Confirmar"
@@ -88,16 +87,16 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
             )}
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-8">
             {faltantes.length > 0 && (
               <section>
-                <h2 className="mb-2 text-sm font-semibold text-peligro">Faltantes</h2>
-                <ul className="tarjeta divide-y divide-borde/70">
+                <h2 className="titulo-seccion text-peligro">Faltantes</h2>
+                <ul className="lista">
                   {faltantes.map(({ t, titulo, ubicacion }) => (
-                    <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                    <li key={t.id} className="fila justify-between">
                       <span>
                         <span className="block font-medium">{titulo}</span>
-                        <span className="text-suave">{ubicacion ? `No estaba en ${ubicacion}` : "Sin stock en estanterías"}</span>
+                        <span className="block text-sm text-suave">{ubicacion ? `No estaba en ${ubicacion}` : "Sin stock en estanterías"}</span>
                       </span>
                       <Insignia tono="peligro">Faltan {t.cantidad - t.pickeado}</Insignia>
                     </li>
@@ -107,11 +106,11 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
             )}
             {pendientes.length > 1 && (
               <section>
-                <h2 className="mb-2 text-sm font-semibold text-suave">Después</h2>
-                <ul className="tarjeta divide-y divide-borde/70">
+                <h2 className="titulo-seccion">Después</h2>
+                <ul className="lista">
                   {pendientes.slice(1).map(({ t, titulo, ubicacion }) => (
-                    <li key={t.id} className="flex items-center gap-3 px-4 py-3 text-sm">
-                      <Codigo>{ubicacion}</Codigo>
+                    <li key={t.id} className="fila">
+                      <Tejuelo codigo={ubicacion} />
                       <span className="min-w-0 flex-1 truncate">{titulo}</span>
                       <span className="font-semibold">× {t.cantidad - t.pickeado}</span>
                     </li>
@@ -121,13 +120,15 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
             )}
             {hechas.length > 0 && (
               <section>
-                <h2 className="mb-2 text-sm font-semibold text-suave">Ya tomado</h2>
-                <ul className="tarjeta divide-y divide-borde/70">
+                <h2 className="titulo-seccion">Ya tomado</h2>
+                <ul className="lista">
                   {hechas.map(({ t, titulo, ubicacion }) => (
-                    <li key={t.id} className="flex items-center gap-3 px-4 py-3 text-sm text-suave">
-                      <Codigo>{ubicacion}</Codigo>
+                    <li key={t.id} className="fila text-suave">
+                      <Tejuelo codigo={ubicacion} />
                       <span className="min-w-0 flex-1 truncate">{titulo}</span>
-                      <span className="font-semibold text-ok">✓ {t.pickeado}</span>
+                      <span className="flex items-center gap-1 font-semibold text-ok">
+                        <Icono nombre="ok" className="size-4" /> {t.pickeado}
+                      </span>
                     </li>
                   ))}
                 </ul>

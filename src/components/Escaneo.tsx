@@ -30,14 +30,15 @@ export function Mensaje({ estado }: { estado: Resultado }) {
   if (!estado.ok && !estado.error) return null;
   const mal = Boolean(estado.error);
   return (
-    <p role="status" aria-live="polite" className={`flex items-start gap-2 rounded-xl px-3.5 py-3 text-[15px] font-semibold ${mal ? "bg-peligro-suave text-peligro" : "bg-ok-suave text-ok"}`}>
+    <p role="status" aria-live="polite" className={`aparece flex items-start gap-2 rounded-control border px-3 py-2.5 text-[15px] font-semibold ${mal ? "border-peligro/30 bg-peligro-suave text-peligro" : "border-ok/30 bg-ok-suave text-ok"}`}>
       <Icono nombre={mal ? "alerta" : "ok"} className="mt-0.5 size-5" />
       <span>{estado.error ?? estado.ok}</span>
     </p>
   );
 }
 
-type Campo = { nombre: string; etiqueta: string; ayuda?: string; valor?: string };
+/** `espera`: el código que debería leerse en ese campo; cuando coincide, el campo lo marca. */
+type Campo = { nombre: string; etiqueta: string; ayuda?: string; valor?: string; espera?: string | null };
 
 /**
  * Formulario de escaneo. Funciona igual con lector USB (escribe y manda Enter), con la cámara
@@ -62,6 +63,11 @@ export function Escaneo({
   const [estado, enviar, enviando] = useActionState(accion, {});
   const form = useRef<HTMLFormElement>(null);
   const [camaraEn, setCamaraEn] = useState<string | null>(null);
+  const [coincide, setCoincide] = useState<Record<string, boolean>>({});
+  const revisar = useCallback(() => {
+    const dato = form.current ? new FormData(form.current) : null;
+    setCoincide(Object.fromEntries(campos.map((c) => [c.nombre, Boolean(c.espera) && String(dato?.get(c.nombre) ?? "").trim().toUpperCase() === c.espera!.toUpperCase()])));
+  }, [campos]);
 
   const entradas = useCallback(() => campos.map((c) => form.current?.elements.namedItem(c.nombre) as HTMLInputElement | null), [campos]);
 
@@ -79,6 +85,7 @@ export function Escaneo({
       const cant = form.current?.elements.namedItem("cantidad") as HTMLInputElement | null;
       if (cant && cantidad != null) cant.value = String(cantidad);
       enfocarPrimeroVacio();
+      revisar();
     } else {
       const primero = es.find((e) => e && !campos[es.indexOf(e)].valor) ?? es[0];
       primero?.focus();
@@ -105,17 +112,19 @@ export function Escaneo({
       setCamaraEn(null);
       if (!e) return;
       e.value = codigo;
+      revisar();
       avanzar(i);
     },
-    [avanzar, camaraEn, campos, entradas],
+    [avanzar, camaraEn, campos, entradas, revisar],
   );
   const cerrarCamara = useCallback(() => setCamaraEn(null), []);
 
   return (
     <form
       ref={form}
-      className="tarjeta space-y-3.5 p-4"
+      className="space-y-3.5 rounded-control border border-borde-fuerte bg-superficie p-4"
       autoComplete="off"
+      onInput={revisar}
       onSubmit={(e) => {
         // Se envía a mano para que, si hay un error, lo ya escaneado no se borre.
         e.preventDefault();
@@ -128,15 +137,20 @@ export function Escaneo({
       ))}
       {campos.map((c, i) => (
         <div key={c.nombre}>
-          <label htmlFor={`esc-${c.nombre}`} className="etiqueta">
+          <label htmlFor={`esc-${c.nombre}`} className="etiqueta flex items-center justify-between gap-2">
             {c.etiqueta}
+            {coincide[c.nombre] && (
+              <span className="aparece flex items-center gap-1 text-[13px] text-ok">
+                <Icono nombre="ok" className="size-4" /> Coincide
+              </span>
+            )}
           </label>
           <div className="flex gap-2">
             <input
               id={`esc-${c.nombre}`}
               name={c.nombre}
               defaultValue={c.valor ?? ""}
-              className="campo font-mono"
+              className={`campo font-mono font-bold placeholder:font-sans placeholder:font-normal ${coincide[c.nombre] ? "border-ok" : ""}`}
               placeholder={c.ayuda ?? "Escaneá o escribí"}
               autoCapitalize="characters"
               autoCorrect="off"
@@ -162,7 +176,7 @@ export function Escaneo({
             <label htmlFor="esc-cantidad" className="etiqueta">
               Cantidad
             </label>
-            <input id="esc-cantidad" name="cantidad" type="number" min={1} step={1} inputMode="numeric" defaultValue={cantidad} key={cantidad} className="campo text-center font-semibold" required />
+            <input id="esc-cantidad" name="cantidad" type="number" min={1} step={1} inputMode="numeric" defaultValue={cantidad} key={cantidad} className="campo text-center font-bold" required />
           </div>
         )}
         <button className="boton flex-1" disabled={enviando}>

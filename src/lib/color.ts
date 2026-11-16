@@ -34,8 +34,8 @@ const contraste = (a: RGB, b: RGB) => {
 };
 
 const BLANCO: RGB = [255, 255, 255];
-const NEGRO: RGB = [11, 14, 26];
-const SUPERFICIE_OSCURA: RGB = [20, 24, 41];
+const NEGRO: RGB = [10, 15, 36];
+const SUPERFICIE_OSCURA: RGB = [22, 28, 58];
 
 /** Acerca el color al blanco o al negro hasta que se lea bien sobre el fondo dado. */
 function legible(color: RGB, fondo: RGB, hacia: RGB) {
