@@ -23,16 +23,16 @@ export default async function Fierro() {
       </Encabezado>
 
       {simulado && (
-        <div className="mb-5">
+        <div className="mb-6">
           <Aviso tono="alerta">
             <strong>Modo de prueba:</strong> este depósito está conectado a un Fierro simulado con datos inventados. Nada de lo que hagas acá llega a un Fierro real.
           </Aviso>
         </div>
       )}
 
-      <section className="tarjeta mb-5 p-5">
-        <h2 className="font-semibold">Traer novedades de Fierro</h2>
-        <p className="mb-3 text-sm text-suave">Última sincronización: {empresa.ultimaSync ? fechaCorta(empresa.ultimaSync) : "nunca"}. Trae títulos nuevos, clientes, pedidos pendientes e ingresos avisados.</p>
+      <section className="mb-9">
+        <h2 className="titulo-seccion">Traer novedades de Fierro</h2>
+        <p className="mb-3 max-w-[70ch] text-sm text-suave">Última sincronización: {empresa.ultimaSync ? fechaCorta(empresa.ultimaSync) : "nunca"}. Trae títulos nuevos, clientes, pedidos pendientes e ingresos avisados.</p>
         <div className="flex flex-wrap gap-2">
           <BotonAccion accion={sincronizarAhora}>
             <Icono nombre="fierro" /> Sincronizar ahora
@@ -50,30 +50,55 @@ export default async function Fierro() {
         </div>
       </section>
 
-      <h2 className="mb-1 font-semibold">Para cargar en Fierro ({pendientes.length})</h2>
-      <p className="mb-3 text-sm text-suave">Descargá el archivo, cargalo en Fierro y después marcalo como cargado. Un pedido sale del stock del depósito recién en ese momento.</p>
-      {pendientes.length === 0 ? (
-        <Vacio titulo="Fierro está al día">No hay documentos del depósito sin informar.</Vacio>
-      ) : (
-        <ul className="space-y-2">
-          {pendientes.map((p) => (
-            <li key={`${p.tipo}-${p.id}`} className="tarjeta flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
-              <span className="min-w-0 flex-1 basis-56">
-                <span className="flex flex-wrap items-center gap-2 font-semibold">
-                  <Insignia tono="acento">{NOMBRE_ENVIO[p.tipo]}</Insignia> {p.numero}
-                </span>
-                <span className="block truncate text-sm text-suave">{p.detalle}</span>
-              </span>
-              <a href={`/api/exportar/${p.tipo}/${p.id}`} className="boton-suave" download>
-                <Icono nombre="descargar" /> CSV
-              </a>
-              <BotonAccion accion={enviar} ocultos={{ tipo: p.tipo, id: p.id }} confirmar={`¿Ya cargaste ${p.numero} en Fierro?`}>
-                Marcar como cargado
-              </BotonAccion>
-            </li>
-          ))}
-        </ul>
-      )}
+      <section>
+        <h2 className="titulo-seccion">
+          Para cargar en Fierro <small>{pendientes.length}</small>
+        </h2>
+        <p className="mb-3 max-w-[70ch] text-sm text-suave">Descargá el archivo, cargalo en Fierro y después marcalo como cargado. Un pedido sale del stock del depósito recién en ese momento.</p>
+        {pendientes.length === 0 ? (
+          <Vacio titulo="Fierro está al día">No hay documentos del depósito sin informar.</Vacio>
+        ) : (
+          <div className="overflow-x-auto border-y border-borde">
+            <table className="tabla">
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th className="hidden sm:table-cell">Tipo</th>
+                  <th className="hidden md:table-cell">Detalle</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {pendientes.map((p) => (
+                  <tr key={`${p.tipo}-${p.id}`}>
+                    <td>
+                      <span className="numero">{p.numero}</span>
+                      <span className="mt-1 block sm:hidden">
+                        <Insignia tono="acento">{NOMBRE_ENVIO[p.tipo]}</Insignia>
+                      </span>
+                      <span className="block max-w-44 truncate text-suave sm:max-w-64 md:hidden">{p.detalle}</span>
+                    </td>
+                    <td className="hidden sm:table-cell">
+                      <Insignia tono="acento">{NOMBRE_ENVIO[p.tipo]}</Insignia>
+                    </td>
+                    <td className="hidden text-suave md:table-cell">{p.detalle}</td>
+                    <td className="w-px">
+                      <span className="flex flex-col items-stretch gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                        <a href={`/api/exportar/${p.tipo}/${p.id}`} className="boton-chico" download>
+                          <Icono nombre="descargar" className="size-4" /> CSV
+                        </a>
+                        <BotonAccion accion={enviar} ocultos={{ tipo: p.tipo, id: p.id }} clase="boton-chico" confirmar={`¿Ya cargaste ${p.numero} en Fierro?`}>
+                          Marcar como cargado
+                        </BotonAccion>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   );
 }

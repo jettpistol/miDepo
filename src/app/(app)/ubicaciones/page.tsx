@@ -2,7 +2,7 @@ import Link from "next/link";
 import { and, asc, count, eq, like, sql } from "drizzle-orm";
 import { Formulario } from "@/components/Escaneo";
 import { Icono } from "@/components/Icono";
-import { Encabezado, Insignia } from "@/components/ui";
+import { Encabezado, Insignia, Tejuelo } from "@/components/ui";
 import { stock, ubicaciones } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import type { Esquema } from "@/lib/ubicaciones";
@@ -35,36 +35,52 @@ export default async function Ubicaciones({ searchParams }: { searchParams: Prom
         </Link>
       </Encabezado>
 
-      <form className="mb-3 flex max-w-md gap-2">
+      <form className="mb-4 flex max-w-md gap-2">
         <input name="prefijo" defaultValue={prefijo} className="campo font-mono" placeholder="Ver las que empiezan con… (A-01)" aria-label="Filtrar por comienzo del código" autoCapitalize="characters" />
         <button className="boton-suave">Filtrar</button>
       </form>
       {lista.length > 0 ? (
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {lista.map(({ u, titulos, unidades }) => (
-            <li key={u.id}>
-              <Link href={`/ubicaciones/${u.id}`} className={`tarjeta block p-3 hover:border-acento-texto/50 ${u.activa ? "" : "opacity-50"}`}>
-                <span className="block font-mono text-base font-bold">{u.codigo}</span>
-                <span className="block text-xs text-suave">{!u.activa ? "Dada de baja" : titulos === 0 ? "Vacía" : `${titulos} tít. · ${unidades} u.`}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="max-w-3xl overflow-x-auto border-y border-borde">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Ubicación</th>
+                <th className="text-right">Títulos</th>
+                <th className="text-right">Unidades</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map(({ u, titulos, unidades }) => (
+                <tr key={u.id}>
+                  <td>
+                    <Link href={`/ubicaciones/${u.id}`}>
+                      <Tejuelo codigo={u.codigo} tam="md" />
+                    </Link>
+                  </td>
+                  <td className={`text-right ${titulos === 0 ? "text-suave" : ""}`}>{titulos}</td>
+                  <td className={`text-right ${unidades === 0 ? "text-suave" : "font-semibold"}`}>{unidades}</td>
+                  <td>{!u.activa ? <Insignia tono="alerta">Dada de baja</Insignia> : titulos === 0 ? <span className="text-suave">Vacía</span> : null}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        <p className="tarjeta p-5 text-sm text-suave">{total === 0 ? "Todavía no hay estantes. Crealos con el generador de abajo." : `Ninguna ubicación empieza con "${prefijo}".`}</p>
+        <p className="max-w-3xl border-y border-borde px-2 py-6 text-sm text-suave lg:px-3">{total === 0 ? "Todavía no hay estantes. Crealos con el generador de abajo." : `Ninguna ubicación empieza con "${prefijo}".`}</p>
       )}
-      {lista.length === 120 && <p className="mt-2 text-sm text-suave">Se muestran las primeras 120. Usá el filtro para ver otro tramo.</p>}
+      {lista.length === 120 && <p className="mt-3 text-sm text-suave">Se muestran las primeras 120. Usá el filtro para ver otro tramo.</p>}
 
-      <section className="tarjeta mt-8 p-5">
-        <h2 className="text-lg font-bold">Generador de ubicaciones</h2>
-        <p className="mb-4 text-sm text-suave">
+      <section className="mt-12 max-w-5xl">
+        <h2 className="titulo-seccion">Generador de ubicaciones</h2>
+        <p className="mb-5 max-w-[70ch] text-sm text-suave">
           Si los estantes todavía no tienen nombre, elegí un modelo y adaptalo. Se puede volver a usar más adelante para sumar un pasillo o un nivel. {empresa.esquemaUbicaciones ? <Insignia tono="acento">Mostrando el esquema que usa {empresa.nombre}</Insignia> : null}
         </p>
         <Generador accion={generar} inicial={(empresa.esquemaUbicaciones as Esquema | null) ?? null} />
       </section>
 
-      <section className="tarjeta mt-4 p-5">
-        <h2 className="font-semibold">Agregar una ubicación suelta</h2>
+      <section className="mt-12">
+        <h2 className="titulo-seccion">Agregar una ubicación suelta</h2>
         <p className="mb-3 text-sm text-suave">Para lugares que no siguen el esquema: una mesa, un pallet, una vitrina.</p>
         <Formulario accion={crearSuelta} boton="Agregar" clase="flex flex-wrap items-start gap-3">
           <input name="codigo" className="campo max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" required />

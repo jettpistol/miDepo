@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { Avatar } from "@/components/Avatar";
 import { BotonAccion, Formulario } from "@/components/Escaneo";
-import { Aviso, Encabezado, Insignia } from "@/components/ui";
+import { Aviso, Codigo, Encabezado, Insignia } from "@/components/ui";
 import { usuarios } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import { alternarActivo, cambiarRol, crear, fijarAcceso, quitarFotoDe } from "./acciones";
@@ -21,18 +21,18 @@ export default async function Usuarios() {
   return (
     <>
       <Encabezado titulo="Usuarios" bajada={`${lista.filter((u) => u.activo).length} personas pueden entrar a miDepo de ${empresa.nombre}.`} />
-      <div className="mb-5">
+      <div className="mb-6">
         <Aviso>
-          Para entrar con PIN desde el teléfono, cada persona escribe una sola vez el código de empresa: <strong className="font-mono">{empresa.slug}</strong>
+          Para entrar con PIN desde el teléfono, cada persona escribe una sola vez el código de empresa: <Codigo>{empresa.slug}</Codigo>
         </Aviso>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="lista">
         {lista.map((u) => (
-          <li key={u.id} className={`tarjeta p-4 ${u.activo ? "" : "opacity-60"}`}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <li key={u.id} className="px-2 py-3 lg:px-3">
+            <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${u.activo ? "" : "text-suave"}`}>
               <span className="flex min-w-0 items-center gap-3">
-                <Avatar persona={u} clase="size-10 text-sm" />
+                <Avatar persona={u} clase="size-9 text-sm" />
                 <span className="min-w-0">
                   <span className="block font-semibold">
                     {u.nombre} {u.id === usuario.id && <span className="font-normal text-suave">(vos)</span>}
@@ -48,9 +48,9 @@ export default async function Usuarios() {
               </span>
             </div>
             {u.id !== usuario.id && (
-              <details className="mt-3 border-t border-borde/70 pt-3">
-                <summary className="cursor-pointer text-sm font-semibold text-acento-texto">Cambiar rol, acceso o dar de baja</summary>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <details className="mt-2 sm:pl-12">
+                <summary className="enlace inline-block cursor-pointer text-sm">Cambiar rol, acceso o dar de baja</summary>
+                <div className="mt-3 mb-2 grid max-w-3xl gap-x-6 gap-y-5 sm:grid-cols-2">
                   <Formulario accion={cambiarRol} boton="Guardar rol" clase="space-y-2" reiniciar={false}>
                     <input type="hidden" name="id" value={u.id} />
                     <label className="etiqueta" htmlFor={`rol-${u.id}`}>
@@ -89,8 +89,8 @@ export default async function Usuarios() {
         ))}
       </ul>
 
-      <section className="tarjeta mt-6 p-5">
-        <h2 className="mb-3 text-lg font-bold">Sumar a alguien</h2>
+      <section className="tarjeta mt-12 max-w-3xl p-5">
+        <h2 className="titulo-seccion mb-3">Sumar a alguien</h2>
         <Formulario accion={crear} boton="Crear usuario" clase="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="nombre" className="etiqueta">

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Formulario, type Accion } from "@/components/Escaneo";
+import { Tejuelo } from "@/components/ui";
 import { generarCodigos, MODELOS, totalUbicaciones, validarEsquema, type Esquema, type Tramo } from "@/lib/ubicaciones";
 
 const copiar = (e: Esquema): Esquema => ({ ...e, tramos: e.tramos.map((t) => ({ ...t })) });
@@ -17,15 +18,15 @@ export function Generador({ accion, inicial }: { accion: Accion; inicial: Esquem
   const cambiar = (i: number, cambio: Partial<Tramo>) => setEsquema((e) => ({ ...e, id: "propio", tramos: e.tramos.map((t, j) => (j === i ? { ...t, ...cambio } : t)) }));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <fieldset>
         <legend className="etiqueta">1. Elegí el modelo que más se parece a tu depósito</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {MODELOS.map((m) => (
-            <button key={m.id} type="button" onClick={() => setEsquema(copiar(m.esquema))} aria-pressed={esquema.id === m.id} className={`cursor-pointer rounded-xl border p-3.5 text-left transition ${esquema.id === m.id ? "border-acento-texto bg-acento-suave" : "border-borde hover:bg-hundido"}`}>
-              <span className="flex items-baseline justify-between gap-2">
+            <button key={m.id} type="button" onClick={() => setEsquema(copiar(m.esquema))} aria-pressed={esquema.id === m.id} className={`cursor-pointer rounded-control border p-3.5 text-left transition-colors duration-150 ${esquema.id === m.id ? "border-acento-texto bg-acento-suave" : "border-borde hover:border-borde-fuerte hover:bg-hundido"}`}>
+              <span className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold">{m.nombre}</span>
-                <span className="font-mono text-sm font-bold text-acento-texto">{generarCodigos(m.esquema, 1)[0]}</span>
+                <Tejuelo codigo={generarCodigos(m.esquema, 1)[0]} />
               </span>
               <span className="mt-1 block text-sm text-suave">{m.descripcion}</span>
               <span className="mt-1 block text-sm">{m.paraQuien}</span>
@@ -36,45 +37,45 @@ export function Generador({ accion, inicial }: { accion: Accion; inicial: Esquem
 
       <fieldset>
         <legend className="etiqueta">2. Ajustalo a tus medidas</legend>
-        <div className="space-y-2">
+        <div className="border-y border-borde">
           {esquema.tramos.map((t, i) => (
-            <div key={i} className="grid grid-cols-2 gap-2 rounded-xl border border-borde p-3 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.8fr_auto] sm:items-end">
-              <label className="text-xs font-semibold text-suave">
+            <div key={i} className={`grid grid-cols-2 gap-2 py-3 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.8fr_auto] sm:items-end ${i > 0 ? "border-t border-borde" : ""}`}>
+              <label className="text-[13px] font-semibold text-suave">
                 Qué es
-                <input value={t.nombre} onChange={(e) => cambiar(i, { nombre: e.target.value })} className="campo mt-1 py-2" />
+                <input value={t.nombre} onChange={(e) => cambiar(i, { nombre: e.target.value })} className="campo mt-1" />
               </label>
-              <label className="text-xs font-semibold text-suave">
+              <label className="text-[13px] font-semibold text-suave">
                 Se nombra con
-                <select value={t.tipo} onChange={(e) => cambiar(i, { tipo: e.target.value as Tramo["tipo"] })} className="campo mt-1 py-2">
+                <select value={t.tipo} onChange={(e) => cambiar(i, { tipo: e.target.value as Tramo["tipo"] })} className="campo mt-1">
                   <option value="letras">Letras (A, B, C…)</option>
                   <option value="numeros">Números (1, 2, 3…)</option>
                 </select>
               </label>
-              <label className="text-xs font-semibold text-suave">
+              <label className="text-[13px] font-semibold text-suave">
                 Cuántos hay
-                <input type="number" min={1} max={999} value={t.cantidad} onChange={(e) => cambiar(i, { cantidad: Number(e.target.value) })} className="campo mt-1 py-2" />
+                <input type="number" min={1} max={999} value={t.cantidad} onChange={(e) => cambiar(i, { cantidad: Number(e.target.value) })} className="campo mt-1" />
               </label>
-              <label className="text-xs font-semibold text-suave">
+              <label className="text-[13px] font-semibold text-suave">
                 Dígitos
-                <input type="number" min={1} max={4} disabled={t.tipo === "letras"} value={t.tipo === "letras" ? "" : (t.digitos ?? 1)} onChange={(e) => cambiar(i, { digitos: Number(e.target.value) })} className="campo mt-1 py-2 disabled:opacity-40" />
+                <input type="number" min={1} max={4} disabled={t.tipo === "letras"} value={t.tipo === "letras" ? "" : (t.digitos ?? 1)} onChange={(e) => cambiar(i, { digitos: Number(e.target.value) })} className="campo mt-1" />
               </label>
-              <label className="text-xs font-semibold text-suave">
+              <label className="text-[13px] font-semibold text-suave">
                 Prefijo
-                <input value={t.prefijo ?? ""} maxLength={4} onChange={(e) => cambiar(i, { prefijo: e.target.value.toUpperCase() })} className="campo mt-1 py-2 font-mono" placeholder="—" />
+                <input value={t.prefijo ?? ""} maxLength={4} onChange={(e) => cambiar(i, { prefijo: e.target.value.toUpperCase() })} className="campo mt-1 font-mono" placeholder="—" />
               </label>
-              <button type="button" disabled={esquema.tramos.length === 1} onClick={() => setEsquema((e) => ({ ...e, id: "propio", tramos: e.tramos.filter((_, j) => j !== i) }))} className="boton-suave col-span-2 min-h-10 px-3 py-2 text-sm sm:col-span-1">
+              <button type="button" disabled={esquema.tramos.length === 1} onClick={() => setEsquema((e) => ({ ...e, id: "propio", tramos: e.tramos.filter((_, j) => j !== i) }))} className="boton-suave">
                 Quitar
               </button>
             </div>
           ))}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <button type="button" disabled={esquema.tramos.length >= 5} onClick={() => setEsquema((e) => ({ ...e, id: "propio", tramos: [...e.tramos, { nombre: "Posición", tipo: "numeros", cantidad: 4, digitos: 1 }] }))} className="boton-suave min-h-10 py-2 text-sm">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <button type="button" disabled={esquema.tramos.length >= 5} onClick={() => setEsquema((e) => ({ ...e, id: "propio", tramos: [...e.tramos, { nombre: "Posición", tipo: "numeros", cantidad: 4, digitos: 1 }] }))} className="boton-suave">
             Agregar un tramo
           </button>
           <label className="flex items-center gap-2 text-sm font-semibold">
             Separador
-            <select value={esquema.separador} onChange={(e) => setEsquema((x) => ({ ...x, id: "propio", separador: e.target.value }))} className="campo w-auto py-2 font-mono">
+            <select value={esquema.separador} onChange={(e) => setEsquema((x) => ({ ...x, id: "propio", separador: e.target.value }))} className="campo w-auto font-mono">
               <option value="-">Guion ( - )</option>
               <option value=".">Punto ( . )</option>
               <option value="/">Barra ( / )</option>
@@ -84,22 +85,20 @@ export function Generador({ accion, inicial }: { accion: Accion; inicial: Esquem
         </div>
       </fieldset>
 
-      <div className="rounded-xl bg-hundido p-4">
+      <div>
         <p className="etiqueta">3. Así van a quedar</p>
         {problema ? (
           <p className="text-sm font-semibold text-peligro">{problema}</p>
         ) : (
           <>
-            <p className="flex flex-wrap items-center gap-2 font-mono text-sm font-bold">
+            <p className="flex flex-wrap items-center gap-2">
               {muestra.map((c) => (
-                <span key={c} className="rounded-md bg-superficie px-2 py-1">
-                  {c}
-                </span>
+                <Tejuelo key={c} codigo={c} tam="md" />
               ))}
-              <span className="text-suave">…</span>
-              <span className="rounded-md bg-superficie px-2 py-1">{ultimo}</span>
+              <span className="font-bold text-suave">…</span>
+              <Tejuelo codigo={ultimo} tam="md" />
             </p>
-            <p className="mt-2 text-sm text-suave">
+            <p className="mt-3 text-sm text-suave">
               Son <strong className="text-texto">{total.toLocaleString("es-AR")} ubicaciones</strong> ({esquema.tramos.map((t) => `${t.cantidad} × ${t.nombre.toLowerCase()}`).join(", ")}). Las que ya existan no se tocan.
             </p>
           </>
