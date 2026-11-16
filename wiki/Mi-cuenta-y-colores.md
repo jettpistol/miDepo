@@ -1,6 +1,13 @@
 # Mi cuenta y colores
 
-En **Mi cuenta** cambiás cómo ves miDepo y cómo entrás. En el teléfono está en **Más → Mi cuenta**.
+En **Mi cuenta** cambiás tu foto, cómo ves miDepo y cómo entrás.
+
+## Cómo llegar
+
+**Mi cuenta** se abre desde tu nombre y tu foto:
+
+- **En la computadora:** tocá tu nombre, abajo a la izquierda, y después **Mi cuenta**.
+- **En el teléfono:** tocá tu foto, arriba a la derecha, y después tu nombre.
 
 ## Foto de perfil
 

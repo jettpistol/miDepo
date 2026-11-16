@@ -27,10 +27,8 @@ export const MENU: { grupo: string; items: ItemMenu[] }[] = [
     ],
   },
   {
-    grupo: "Vos",
-    items: [
-      { href: "/ayuda", nombre: "Ayuda", icono: "ayuda", ayuda: "Manual paso a paso" },
-      { href: "/cuenta", nombre: "Mi cuenta", icono: "cuenta", ayuda: "Colores, clave y huella" },
-    ],
+    grupo: "Ayuda",
+    // "Mi cuenta" no está acá: se abre tocando el nombre y la foto de la persona.
+    items: [{ href: "/ayuda", nombre: "Manual", icono: "ayuda", ayuda: "Paso a paso, con buscador" }],
   },
 ];

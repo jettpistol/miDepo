@@ -11,7 +11,13 @@ export default async function Mas() {
   const { usuario, empresa } = await requerir();
   return (
     <>
-      <Encabezado titulo="Menú" bajada={`${usuario.nombre} · ${empresa.nombre}`} />
+      <Encabezado titulo="Menú" bajada={empresa.nombre} />
+      <section className="mb-6">
+        <h2 className="mb-2 text-xs font-semibold tracking-widest text-suave uppercase">Tu cuenta</h2>
+        <div className="tarjeta p-1.5">
+          <Cuentas mostrarActual />
+        </div>
+      </section>
       {MENU.map((g) => {
         const items = g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario"));
         if (items.length === 0) return null;
@@ -37,12 +43,6 @@ export default async function Mas() {
           </section>
         );
       })}
-      <section>
-        <h2 className="mb-2 text-xs font-semibold tracking-widest text-suave uppercase">Cuentas en este dispositivo</h2>
-        <div className="tarjeta p-1.5">
-          <Cuentas mostrarActual />
-        </div>
-      </section>
     </>
   );
 }

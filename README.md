@@ -68,7 +68,7 @@ npm run db:reset
 | Appearance | Klein blue by default. **Each user picks their own accent colour** and light/dark theme; it follows them to every device. |
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
-| Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also shown inside the app under **Ayuda**. |
+| Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (black header, search bar, readable without logging in). |
 
 ## How it fits with Fierro
 

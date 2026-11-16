@@ -18,16 +18,22 @@ export async function Cuentas({ mostrarActual = false }: { mostrarActual?: boole
 
   return (
     <div className="space-y-1">
-      {mostrarActual && actual && (
-        <div className="flex items-center gap-3 px-2.5 py-2">
-          <Avatar persona={actual.usuario} clase="size-10 text-sm" />
-          <span className="min-w-0">
-            <span className="block truncate font-semibold">{actual.usuario.nombre}</span>
-            <span className="block truncate text-xs text-suave">
-              {ROL[actual.usuario.rol]} · {actual.empresa.nombre} · en uso
+      {actual && (
+        <Link href="/cuenta" className={`${fila} ${mostrarActual ? "py-2.5" : ""}`}>
+          {mostrarActual ? (
+            <Avatar persona={actual.usuario} clase="size-11 text-base" />
+          ) : (
+            <span className="grid size-8 place-items-center">
+              <Icono nombre="cuenta" />
             </span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-semibold">{mostrarActual ? actual.usuario.nombre : "Mi cuenta"}</span>
+            <span className="block truncate text-xs text-suave">{mostrarActual ? `${ROL[actual.usuario.rol]} · ${actual.empresa.nombre} · en uso` : "Foto, colores y acceso"}</span>
           </span>
-        </div>
+          {mostrarActual && <span className="text-sm font-semibold whitespace-nowrap text-acento-texto">Mi cuenta</span>}
+          <Icono nombre="flecha" className="size-4 text-suave" />
+        </Link>
       )}
       {otras.length > 0 && <p className="px-2.5 pt-1 text-[11px] font-semibold tracking-widest text-suave uppercase">Cambiar a</p>}
       {otras.map((c) => (

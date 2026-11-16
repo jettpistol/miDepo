@@ -25,7 +25,7 @@ Con PIN la sesión dura un turno. Al día siguiente hay que volver a entrar.
 La más rápida, una vez configurada.
 
 1. Entrá una vez con contraseña o PIN.
-2. Andá a **Mi cuenta** y tocá **Registrar este dispositivo**.
+2. Tocá tu nombre, después **Mi cuenta**, y ahí **Registrar este dispositivo**.
 3. El teléfono o la computadora te pide la huella, el rostro o su PIN.
 4. Desde entonces, en la pantalla de ingreso tocá **Entrar con huella, rostro o llave**.
 
@@ -37,7 +37,7 @@ Un teléfono o una computadora puede tener hasta **5 cuentas abiertas a la vez**
 
 ### Sumar una cuenta
 
-1. En la computadora, tocá tu nombre, abajo a la izquierda. En el teléfono, tocá **Más** y bajá hasta **Cuentas en este dispositivo**.
+1. En la computadora, tocá tu nombre, abajo a la izquierda. En el teléfono, tocá tu foto, arriba a la derecha.
 2. Tocá **Agregar otra cuenta**.
 3. Ingresá con la otra cuenta, de cualquiera de las tres formas.
 
