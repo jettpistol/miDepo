@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Formulario, type Accion } from "@/components/Escaneo";
+import { Codigo } from "@/components/ui";
 import { PALETA, variablesDeAcento } from "@/lib/color";
 
 const TEMAS = [
@@ -36,12 +37,12 @@ export function Apariencia({ accion, acento: inicial, tema: temaInicial }: { acc
   );
 
   return (
-    <Formulario accion={accion} boton="Guardar apariencia" reiniciar={false}>
+    <Formulario accion={accion} boton="Guardar apariencia" reiniciar={false} clase="space-y-6">
       <input type="hidden" name="acento" value={acento} />
       <input type="hidden" name="tema" value={tema} />
       <fieldset>
         <legend className="etiqueta">Color</legend>
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-3">
           {PALETA.map((c) => (
             <button
               key={c.hex}
@@ -50,25 +51,25 @@ export function Apariencia({ accion, acento: inicial, tema: temaInicial }: { acc
               aria-label={c.nombre}
               aria-pressed={acento === c.hex}
               onClick={() => setAcento(c.hex)}
-              style={{ background: c.hex }}
-              className={`size-10 cursor-pointer rounded-full transition ${acento === c.hex ? "ring-3 ring-texto ring-offset-2 ring-offset-superficie" : "hover:scale-110"}`}
+              style={{ background: c.hex, ...(acento === c.hex ? { outline: "2px solid var(--texto)", outlineOffset: 2 } : {}) }}
+              className="size-10 cursor-pointer rounded-control border border-texto/15 hover:border-texto/60"
             />
           ))}
-          <label className="ml-1 flex cursor-pointer items-center gap-2 rounded-full border border-borde py-1.5 pr-4 pl-1.5 text-sm font-semibold">
-            <input type="color" value={acento} onChange={(e) => setAcento(e.target.value.toUpperCase())} className="size-8 cursor-pointer rounded-full border-0 bg-transparent p-0" aria-label="Elegir otro color" />
+          <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-control border border-borde-fuerte py-1 pr-3 pl-1 text-sm font-semibold transition-colors duration-150 hover:border-texto/60 hover:bg-hundido">
+            <input type="color" value={acento} onChange={(e) => setAcento(e.target.value.toUpperCase())} className="size-8 cursor-pointer rounded-rotulo border-0 bg-transparent p-0" aria-label="Elegir otro color" />
             Otro color
           </label>
         </div>
-        <p className="mt-2 text-sm text-suave">
-          Usás <span className="font-mono font-semibold text-texto">{acento}</span>
+        <p className="mt-3 max-w-[60ch] text-sm text-suave">
+          Usás <Codigo>{acento}</Codigo>
           {PALETA.find((c) => c.hex === acento) ? ` (${PALETA.find((c) => c.hex === acento)!.nombre})` : ""}. Cualquier color sirve: miDepo ajusta los textos para que siempre se lean.
         </p>
       </fieldset>
       <fieldset>
         <legend className="etiqueta">Tema</legend>
-        <div className="grid max-w-md grid-cols-3 gap-1 rounded-xl bg-hundido p-1">
+        <div className="flex max-w-md gap-5 border-b border-borde">
           {TEMAS.map((t) => (
-            <button key={t.id} type="button" aria-pressed={tema === t.id} onClick={() => setTema(t.id)} className={`cursor-pointer rounded-lg px-2 py-2 text-sm font-semibold ${tema === t.id ? "bg-superficie shadow-sm" : "text-suave"}`}>
+            <button key={t.id} type="button" aria-pressed={tema === t.id} onClick={() => setTema(t.id)} className={`-mb-px cursor-pointer border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${tema === t.id ? "border-acento-texto font-bold text-acento-texto" : "border-transparent font-medium text-suave hover:text-texto"}`}>
               {t.nombre}
             </button>
           ))}

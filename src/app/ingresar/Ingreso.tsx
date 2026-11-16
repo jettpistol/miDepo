@@ -41,9 +41,9 @@ export function Ingreso() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-1 rounded-xl bg-hundido p-1" role="tablist">
+      <div className="flex gap-5 border-b border-borde" role="tablist">
         {(["clave", "pin"] as const).map((m) => (
-          <button key={m} type="button" role="tab" aria-selected={modo === m} onClick={() => setModo(m)} className={`cursor-pointer rounded-lg py-2 text-sm font-semibold transition ${modo === m ? "bg-superficie shadow-sm" : "text-suave"}`}>
+          <button key={m} type="button" role="tab" aria-selected={modo === m} onClick={() => setModo(m)} className={`-mb-px cursor-pointer border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${modo === m ? "border-acento-texto font-bold text-acento-texto" : "border-transparent font-medium text-suave hover:text-texto"}`}>
             {m === "clave" ? "Email y contraseña" : "PIN del depósito"}
           </button>
         ))}
@@ -77,7 +77,7 @@ export function Ingreso() {
         </form>
       )}
 
-      <div className="flex items-center gap-3 text-xs font-semibold text-suave uppercase">
+      <div className="flex items-center gap-3 text-sm text-suave">
         <span className="h-px flex-1 bg-borde" /> o <span className="h-px flex-1 bg-borde" />
       </div>
       <button type="button" onClick={conLlave} className="boton-suave w-full">Entrar con huella, rostro o llave</button>

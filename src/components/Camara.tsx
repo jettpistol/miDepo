@@ -59,11 +59,11 @@ export function Camara({ alLeer, alCerrar }: { alLeer: (codigo: string) => void;
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90 p-4" role="dialog" aria-label="Lector con cámara">
       <div className="relative mx-auto flex w-full max-w-lg flex-1 items-center">
         {error ? (
-          <p className="w-full rounded-xl bg-white p-4 text-center text-sm font-medium text-black">{error}</p>
+          <p className="w-full rounded-control bg-superficie p-4 text-center text-sm font-medium text-texto">{error}</p>
         ) : (
           <>
-            <video ref={video} playsInline muted className="max-h-[70dvh] w-full rounded-2xl object-cover" />
-            <div className="pointer-events-none absolute inset-x-8 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 border-white/90" />
+            <video ref={video} playsInline muted className="max-h-[70dvh] w-full rounded-control object-cover" />
+            <div className="pointer-events-none absolute inset-x-8 top-1/2 h-24 -translate-y-1/2 rounded-control border-2 border-white/90" />
           </>
         )}
       </div>

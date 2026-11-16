@@ -12,9 +12,9 @@ export default async function Mas() {
   return (
     <>
       <Encabezado titulo="Menú" bajada={empresa.nombre} />
-      <section className="mb-6">
-        <h2 className="mb-2 text-xs font-semibold tracking-widest text-suave uppercase">Tu cuenta</h2>
-        <div className="tarjeta p-1.5">
+      <section className="mb-9">
+        <h2 className="titulo-seccion">Tu cuenta</h2>
+        <div className="border-y border-borde py-1.5">
           <Cuentas mostrarActual />
         </div>
       </section>
@@ -22,16 +22,14 @@ export default async function Mas() {
         const items = g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario"));
         if (items.length === 0) return null;
         return (
-          <section key={g.grupo} className="mb-6">
-            <h2 className="mb-2 text-xs font-semibold tracking-widest text-suave uppercase">{g.grupo}</h2>
-            <ul className="tarjeta divide-y divide-borde/70">
+          <section key={g.grupo} className="mb-9">
+            <h2 className="titulo-seccion">{g.grupo}</h2>
+            <ul className="lista">
               {items.map((i) => (
                 <li key={i.href}>
-                  <Link href={i.href} className="flex items-center gap-3 px-4 py-3">
-                    <span className="grid size-9 place-items-center rounded-lg bg-acento-suave text-acento-texto">
-                      <Icono nombre={i.icono} />
-                    </span>
-                    <span className="flex-1">
+                  <Link href={i.href} className="fila py-3">
+                    <Icono nombre={i.icono} className="size-6 text-acento-texto" />
+                    <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{i.nombre}</span>
                       <span className="block text-sm text-suave">{i.ayuda}</span>
                     </span>

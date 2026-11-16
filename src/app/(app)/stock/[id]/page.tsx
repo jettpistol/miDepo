@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { Codigo, Encabezado, fechaCorta, Insignia } from "@/components/ui";
+import { Icono } from "@/components/Icono";
+import { Codigo, Encabezado, fechaCorta, Insignia, Tejuelo } from "@/components/ui";
 import { fierroStock, movimientos, productos, stock, ubicaciones, usuarios } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import { nombreUbicacion } from "@/lib/stock";
@@ -34,19 +35,19 @@ export default async function Producto({ params }: { params: Promise<{ id: strin
   return (
     <>
       <Encabezado titulo={p.titulo} volver={{ href: "/stock", texto: "Stock" }} bajada={[p.autor, p.sello].filter(Boolean).join(" · ")} />
-      <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="mb-9 flex flex-wrap items-end gap-x-10 gap-y-3 border-y border-borde px-2 py-3 lg:px-3">
         {[
           ["En el depósito", total],
           ["Según Fierro", fierro?.cantidad ?? 0],
         ].map(([k, v]) => (
-          <div key={k} className="tarjeta p-4">
+          <div key={k}>
             <dt className="text-sm text-suave">{k}</dt>
-            <dd className="text-3xl font-bold tabular-nums">{v}</dd>
+            <dd className="text-xl font-bold tabular-nums">{v}</dd>
           </div>
         ))}
-        <div className="tarjeta col-span-2 p-4 text-sm">
-          <dt className="text-suave">Códigos</dt>
-          <dd className="mt-1 flex flex-wrap gap-2">
+        <div>
+          <dt className="text-sm text-suave">Códigos</dt>
+          <dd className="flex min-h-7 flex-wrap items-center gap-2">
             <Codigo>{p.codigoBarras}</Codigo>
             {p.isbn && p.codigoInterno !== p.codigoBarras && <Codigo>{p.codigoInterno}</Codigo>}
             {!p.isbn && <Insignia tono="alerta">Sin ISBN</Insignia>}
@@ -54,56 +55,69 @@ export default async function Producto({ params }: { params: Promise<{ id: strin
         </div>
       </dl>
 
-      <h2 className="mb-2 text-sm font-semibold text-suave">Dónde está</h2>
-      {donde.length === 0 ? (
-        <p className="tarjeta p-5 text-sm text-suave">No hay unidades en el depósito.</p>
-      ) : (
-        <ul className="tarjeta divide-y divide-borde/70">
-          {donde.map(({ s, u }) => (
-            <li key={u.id}>
-              <Link href={`/ubicaciones/${u.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-hundido">
-                <span className="font-mono text-lg font-bold">{u.tipo === "estanteria" ? u.codigo : nombreUbicacion(u)}</span>
-                <span className="text-xl font-bold tabular-nums">{s.cantidad}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="grid gap-x-12 gap-y-9 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+        <section>
+          <h2 className="titulo-seccion">
+            Dónde está {donde.length > 0 && <small>{donde.length}</small>}
+          </h2>
+          {donde.length === 0 ? (
+            <p className="border-y border-borde px-2 py-6 text-sm text-suave lg:px-3">No hay unidades en el depósito.</p>
+          ) : (
+            <ul className="lista">
+              {donde.map(({ s, u }) => (
+                <li key={u.id}>
+                  <Link href={`/ubicaciones/${u.id}`} className="fila">
+                    <Tejuelo codigo={u.codigo} tam="md" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-suave">{u.tipo === "estanteria" ? "" : nombreUbicacion(u)}</span>
+                    <span className="text-xl font-bold tabular-nums">{s.cantidad}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      {movs.length > 0 && (
-        <>
-          <h2 className="mt-6 mb-2 text-sm font-semibold text-suave">Últimos movimientos</h2>
-          <div className="tarjeta overflow-x-auto">
-            <table className="tabla">
-              <thead>
-                <tr>
-                  <th>Cuándo</th>
-                  <th>Qué</th>
-                  <th>Desde → Hacia</th>
-                  <th className="text-right">Cantidad</th>
-                  <th>Quién</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movs.map(({ m, desde, hacia, quien }) => (
-                  <tr key={m.id}>
-                    <td className="whitespace-nowrap text-suave">{fechaCorta(m.creado)}</td>
-                    <td>
-                      {MOTIVO[m.motivo]}
-                      {m.referencia && <span className="text-suave"> · {m.referencia}</span>}
-                    </td>
-                    <td className="font-mono text-[13px] whitespace-nowrap">
-                      {desde ?? "afuera"} → {hacia ?? "afuera"}
-                    </td>
-                    <td className="text-right font-semibold">{m.cantidad}</td>
-                    <td className="text-suave">{quien ?? "—"}</td>
+        {movs.length > 0 && (
+          <section className="min-w-0">
+            <h2 className="titulo-seccion">Últimos movimientos</h2>
+            <div className="overflow-x-auto border-y border-borde">
+              <table className="tabla">
+                <thead>
+                  <tr>
+                    <th className="hidden sm:table-cell">Cuándo</th>
+                    <th>Qué</th>
+                    <th>Desde → Hacia</th>
+                    <th className="text-right">Cantidad</th>
+                    <th className="hidden md:table-cell">Quién</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                </thead>
+                <tbody>
+                  {movs.map(({ m, desde, hacia, quien }) => (
+                    <tr key={m.id}>
+                      <td className="hidden whitespace-nowrap text-suave sm:table-cell">{fechaCorta(m.creado)}</td>
+                      <td>
+                        {MOTIVO[m.motivo]}
+                        {m.referencia && <span className="text-suave"> · {m.referencia}</span>}
+                        <span className="block text-suave sm:hidden">{fechaCorta(m.creado)}</span>
+                        <span className="hidden text-suave sm:block md:hidden">{quien ?? "—"}</span>
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5">
+                          {desde ? <Tejuelo codigo={desde} /> : <span className="text-suave">afuera</span>}
+                          <Icono nombre="flecha" className="size-4 text-suave" />
+                          {hacia ? <Tejuelo codigo={hacia} /> : <span className="text-suave">afuera</span>}
+                        </span>
+                      </td>
+                      <td className="text-right font-semibold">{m.cantidad}</td>
+                      <td className="hidden text-suave md:table-cell">{quien ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+      </div>
     </>
   );
 }

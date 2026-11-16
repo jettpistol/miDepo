@@ -43,7 +43,7 @@ export function AgregarLlave() {
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={agregar} disabled={ocupado} className="boton">
+      <button type="button" onClick={agregar} disabled={ocupado} className="boton-suave">
         {ocupado ? "Esperando al dispositivo…" : "Registrar este dispositivo"}
       </button>
       <Mensaje estado={estado} />

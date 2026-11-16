@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { BotonAccion } from "@/components/Escaneo";
-import { Avance, Aviso, Codigo, Encabezado, Insignia } from "@/components/ui";
+import { Avance, Aviso, Encabezado, Insignia, Tejuelo } from "@/components/ui";
 import { conteoUbicaciones, conteos, ubicaciones, usuarios } from "@/db/schema";
 import { diferencias } from "@/lib/flujos/conteos";
 import { puede, requerir } from "@/lib/sesion";
@@ -28,36 +28,43 @@ export default async function Conteo({ params }: { params: Promise<{ id: string 
   return (
     <>
       <Encabezado titulo={k.nombre} volver={{ href: "/conteos", texto: "Conteos" }} bajada={abierto ? "Elegí una ubicación, contá todo lo que hay y dala por terminada." : "Conteo cerrado: el stock ya quedó ajustado."} />
-      <div className="tarjeta mb-5 p-4">
+      <div className="mb-9 max-w-xl">
         <Avance hecho={contadas} total={us.length} unidad="ubicaciones" />
       </div>
 
       {esSupervisor && abierto && contadas > 0 && (
-        <section className="mb-6 space-y-3">
-          <h2 className="font-semibold">Revisión del supervisor</h2>
+        <section className="mb-9">
+          <h2 className="titulo-seccion">
+            Revisión del supervisor {difs.length > 0 && <small>{difs.length}</small>}
+          </h2>
           {difs.length === 0 ? (
             <Aviso tono="ok">Lo contado hasta ahora coincide con el sistema.</Aviso>
           ) : (
-            <div className="tarjeta overflow-x-auto">
+            <div className="overflow-x-auto border-y border-borde">
               <table className="tabla">
                 <thead>
                   <tr>
                     <th>Ubicación</th>
                     <th>Título</th>
-                    <th className="text-right">Sistema</th>
-                    <th className="text-right">Contado</th>
+                    <th className="hidden text-right sm:table-cell">Sistema</th>
+                    <th className="hidden text-right sm:table-cell">Contado</th>
                     <th className="text-right">Diferencia</th>
                   </tr>
                 </thead>
                 <tbody>
                   {difs.map((d) => (
                     <tr key={`${d.ubicacionId}-${d.productoId}`}>
-                      <td>
-                        <Codigo>{d.ubicacion}</Codigo>
+                      <td className="w-px">
+                        <Tejuelo codigo={d.ubicacion} />
                       </td>
-                      <td className="font-medium">{d.titulo}</td>
-                      <td className="text-right">{d.sistema}</td>
-                      <td className="text-right font-semibold">{d.contado}</td>
+                      <td>
+                        <span className="font-medium">{d.titulo}</span>
+                        <span className="block text-suave sm:hidden">
+                          Sistema {d.sistema} · Contado {d.contado}
+                        </span>
+                      </td>
+                      <td className="hidden text-right sm:table-cell">{d.sistema}</td>
+                      <td className="hidden text-right font-semibold sm:table-cell">{d.contado}</td>
                       <td className={`text-right font-semibold ${d.contado < d.sistema ? "text-peligro" : "text-ok"}`}>{d.contado > d.sistema ? "+" : ""}{d.contado - d.sistema}</td>
                     </tr>
                   ))}
@@ -65,39 +72,69 @@ export default async function Conteo({ params }: { params: Promise<{ id: string 
               </table>
             </div>
           )}
-          <BotonAccion accion={aprobar} ocultos={{ id }} confirmar={`Se va a ajustar el stock de ${contadas} ubicaciones contadas${difs.length ? ` (${difs.length} diferencias)` : ""}.${contadas < us.length ? ` Las ${us.length - contadas} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}>
-            Aprobar y ajustar stock
-          </BotonAccion>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <BotonAccion accion={aprobar} ocultos={{ id }} confirmar={`Se va a ajustar el stock de ${contadas} ubicaciones contadas${difs.length ? ` (${difs.length} diferencias)` : ""}.${contadas < us.length ? ` Las ${us.length - contadas} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}>
+              Aprobar y ajustar stock
+            </BotonAccion>
+          </div>
         </section>
       )}
 
-      <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {us.map(({ u, codigo, quien }) => (
-          <li key={u.ubicacionId} className="tarjeta flex items-center justify-between gap-2 p-3">
-            {abierto && u.estado === "pendiente" ? (
-              <Link href={`/conteos/${id}/${u.ubicacionId}`} className="flex flex-1 items-center justify-between gap-2">
-                <span className="font-mono text-lg font-bold">{codigo}</span>
-                <span className="boton-suave min-h-9 px-3 py-1.5 text-sm">Contar</span>
-              </Link>
-            ) : (
-              <>
-                <span>
-                  <span className="block font-mono text-lg font-bold">{codigo}</span>
-                  {quien && <span className="block text-xs text-suave">Contó {quien}</span>}
-                </span>
-                <span className="flex items-center gap-2">
-                  <Insignia tono="ok">Contada</Insignia>
-                  {abierto && esSupervisor && (
-                    <BotonAccion accion={reabrir} ocultos={{ id, ubicacionId: u.ubicacionId }} clase="cursor-pointer text-xs font-semibold text-suave underline" mostrarOk={false}>
-                      Reabrir
-                    </BotonAccion>
-                  )}
-                </span>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+      <section>
+        <h2 className="titulo-seccion">
+          Ubicaciones <small>{us.length}</small>
+        </h2>
+        <div className="max-w-3xl overflow-x-auto border-y border-borde">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th className="hidden sm:table-cell">Quién contó</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {us.map(({ u, codigo, quien }) =>
+                abierto && u.estado === "pendiente" ? (
+                  <tr key={u.ubicacionId}>
+                    <td>
+                      <Link href={`/conteos/${id}/${u.ubicacionId}`}>
+                        <Tejuelo codigo={codigo} tam="md" />
+                      </Link>
+                    </td>
+                    <td />
+                    <td className="hidden sm:table-cell" />
+                    <td className="w-px text-right">
+                      <Link href={`/conteos/${id}/${u.ubicacionId}`} className="boton-chico">
+                        Contar
+                      </Link>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={u.ubicacionId}>
+                    <td>
+                      <Tejuelo codigo={codigo} tam="md" />
+                    </td>
+                    <td>
+                      <Insignia tono="ok">Contada</Insignia>
+                      {quien && <span className="mt-1 block text-xs text-suave sm:hidden">Contó {quien}</span>}
+                    </td>
+                    <td className="hidden text-suave sm:table-cell">{quien ?? "—"}</td>
+                    <td className="w-px text-right">
+                      {abierto && esSupervisor && (
+                        <BotonAccion accion={reabrir} ocultos={{ id, ubicacionId: u.ubicacionId }} clase="boton-chico" mostrarOk={false}>
+                          Reabrir
+                        </BotonAccion>
+                      )}
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </>
   );
 }

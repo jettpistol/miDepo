@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { Icono } from "@/components/Icono";
-import { Codigo, Encabezado, Insignia, Vacio } from "@/components/ui";
+import { Codigo, Encabezado, Insignia, Tejuelo, Vacio } from "@/components/ui";
 import { productos, stock, ubicaciones } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 
@@ -32,7 +32,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
   return (
     <>
       <Encabezado titulo="Stock" bajada="Buscá un título para saber dónde está, o escaneá un estante para ver qué tiene." />
-      <form className="mb-5 flex max-w-xl gap-2" role="search">
+      <form className="mb-6 flex max-w-xl gap-2" role="search">
         <input name="q" defaultValue={q} className="campo" placeholder="Título, autor, ISBN, código o ubicación" aria-label="Buscar" autoFocus />
         <button className="boton px-4" aria-label="Buscar">
           <Icono nombre="stock" />
@@ -40,35 +40,60 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
       </form>
 
       {ubicacion && (
-        <Link href={`/ubicaciones/${ubicacion.id}`} className="tarjeta mb-4 flex items-center justify-between gap-3 border-acento-texto/40 bg-acento-suave p-4">
-          <span>
-            <span className="block text-sm text-suave">Es una ubicación</span>
-            <span className="font-mono text-xl font-bold">{ubicacion.codigo}</span>
+        <Link href={`/ubicaciones/${ubicacion.id}`} className="group mb-6 flex max-w-xl items-center gap-4 rounded-control border border-acento-texto/30 bg-acento-suave px-3 py-3 transition-colors duration-150 hover:border-acento-texto">
+          <Tejuelo codigo={ubicacion.codigo} tam="md" />
+          <span className="min-w-0 flex-1 text-sm text-suave">Es una ubicación</span>
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-acento-texto">
+            Ver qué hay <Icono nombre="flecha" className="size-4" />
           </span>
-          <span className="enlace">Ver qué hay</span>
         </Link>
       )}
 
       {q && encontrados.length === 0 && !ubicacion && <Vacio icono="stock" titulo={`Nada coincide con "${q}"`}>Probá con menos palabras o con el código de barras completo.</Vacio>}
 
       {encontrados.length > 0 && (
-        <ul className="tarjeta divide-y divide-borde/70">
-          {encontrados.map((p) => (
-            <li key={p.id}>
-              <Link href={`/stock/${p.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-hundido">
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{p.titulo}</span>
-                  <span className="flex flex-wrap items-center gap-2 text-sm text-suave">
-                    <Codigo>{p.codigoBarras}</Codigo> {p.autor} {p.tipo !== "libro" && <Insignia>{TIPO[p.tipo]}</Insignia>}
-                  </span>
-                </span>
-                <span className={`text-xl font-bold tabular-nums ${totales.get(p.id) ? "" : "text-suave/50"}`}>{totales.get(p.id) ?? 0}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto border-y border-borde">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th className="hidden md:table-cell">Autor</th>
+                <th className="hidden sm:table-cell">Código</th>
+                <th className="text-right">Unidades</th>
+              </tr>
+            </thead>
+            <tbody>
+              {encontrados.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <Link href={`/stock/${p.id}`} className="enlace">
+                      {p.titulo}
+                    </Link>
+                    {p.tipo !== "libro" && (
+                      <>
+                        {" "}
+                        <Insignia>{TIPO[p.tipo]}</Insignia>
+                      </>
+                    )}
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-suave md:hidden">
+                      <span className="sm:hidden">
+                        <Codigo>{p.codigoBarras}</Codigo>
+                      </span>
+                      {p.autor}
+                    </span>
+                  </td>
+                  <td className="hidden text-suave md:table-cell">{p.autor}</td>
+                  <td className="hidden sm:table-cell">
+                    <Codigo>{p.codigoBarras}</Codigo>
+                  </td>
+                  <td className={`text-right text-base font-bold tabular-nums ${totales.get(p.id) ? "" : "text-suave/60"}`}>{totales.get(p.id) ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      {encontrados.length === 50 && <p className="mt-2 text-sm text-suave">Se muestran los primeros 50. Afiná la búsqueda para ver menos.</p>}
+      {encontrados.length === 50 && <p className="mt-3 text-sm text-suave">Se muestran los primeros 50. Afiná la búsqueda para ver menos.</p>}
     </>
   );
 }

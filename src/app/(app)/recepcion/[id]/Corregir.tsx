@@ -29,7 +29,7 @@ export function Corregir({ accion, ocultos, campo, valor }: { accion: Accion; oc
         onBlur={guardar}
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         aria-label="Corregir cantidad"
-        className="w-20 rounded-lg border border-borde bg-superficie px-2 py-1.5 text-right font-semibold"
+        className="campo min-h-10 w-20 px-2 py-1 text-right font-bold lg:min-h-9"
       />
       {estado.error && <span className="mt-1 text-xs text-peligro">{estado.error}</span>}
     </span>

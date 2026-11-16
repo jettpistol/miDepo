@@ -40,7 +40,7 @@ export function Foto({ accion, tiene }: { accion: Accion; tiene: boolean }) {
   return (
     <div className="space-y-2">
       <input ref={entrada} type="file" accept="image/*" className="sr-only" id="foto-archivo" onChange={(e) => elegir(e.target.files?.[0])} />
-      <label htmlFor="foto-archivo" className={`boton ${enviando ? "pointer-events-none opacity-50" : ""}`}>
+      <label htmlFor="foto-archivo" className={`boton-suave ${enviando ? "pointer-events-none opacity-55" : ""}`}>
         {enviando ? "Guardando…" : tiene ? "Cambiar foto" : "Subir una foto"}
       </label>
       <Mensaje estado={error ? { error } : estado} />

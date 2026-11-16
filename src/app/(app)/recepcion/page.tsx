@@ -32,44 +32,65 @@ export default async function Recepciones() {
       {abiertas.length === 0 ? (
         <Vacio titulo="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</Vacio>
       ) : (
-        <ul className="space-y-2">
-          {abiertas.map(({ r, titulos, esperado, recibido }) => (
-            <li key={r.id}>
-              <Link href={`/recepcion/${r.id}`} className="tarjeta flex flex-wrap items-center justify-between gap-x-4 gap-y-1 p-4 hover:border-acento-texto/50">
-                <span className="min-w-0">
-                  <span className="block font-semibold">
-                    {r.numero} · {r.proveedor}
-                  </span>
-                  <span className="block text-sm text-suave">
-                    {plural(titulos, "título", "títulos")} · {r.fierroId ? `${esperado} unidades esperadas` : "sin aviso de Fierro"} · {fechaCorta(r.fecha)}
-                  </span>
-                </span>
-                {r.estado === "en_curso" ? <Insignia tono="acento">En curso · {recibido} contadas</Insignia> : <Insignia>Sin empezar</Insignia>}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto border-y border-borde">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Recepción</th>
+                <th>Origen</th>
+                <th className="hidden text-right sm:table-cell">Títulos</th>
+                <th className="hidden text-right sm:table-cell">Esperadas</th>
+                <th className="hidden md:table-cell">Fecha</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {abiertas.map(({ r, titulos, esperado, recibido }) => (
+                <tr key={r.id}>
+                  <td>
+                    <Link href={`/recepcion/${r.id}`} className="enlace numero">
+                      {r.numero}
+                    </Link>
+                  </td>
+                  <td>
+                    <span className="font-medium">{r.proveedor}</span>
+                    <span className="block text-suave md:hidden">
+                      <span className="sm:hidden">
+                        {plural(titulos, "título", "títulos")} · {r.fierroId ? `${esperado} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
+                      </span>
+                      {fechaCorta(r.fecha)}
+                    </span>
+                  </td>
+                  <td className="hidden text-right sm:table-cell">{titulos}</td>
+                  <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{esperado}</span> : <span className="text-suave">sin aviso de Fierro</span>}</td>
+                  <td className="hidden whitespace-nowrap text-suave md:table-cell">{fechaCorta(r.fecha)}</td>
+                  <td>{r.estado === "en_curso" ? <Insignia tono="acento">En curso · {recibido} contadas</Insignia> : <Insignia>Sin empezar</Insignia>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <section className="tarjeta mt-6 p-4">
-        <h2 className="font-semibold">Llegó algo sin aviso</h2>
-        <p className="mb-3 text-sm text-suave">Creá una recepción vacía y escaneá lo que haya en las cajas.</p>
+      <section className="mt-9">
+        <h2 className="titulo-seccion mb-1">Llegó algo sin aviso</h2>
+        <p className="mb-3 max-w-[60ch] text-sm text-suave">Creá una recepción vacía y escaneá lo que haya en las cajas.</p>
         <Formulario accion={crear} boton="Crear recepción" clase="flex flex-wrap items-start gap-3">
-          <input name="proveedor" className="campo max-w-sm flex-1" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
+          <input name="proveedor" className="campo max-w-sm flex-1 basis-64" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
         </Formulario>
       </section>
 
       {cerradas.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-2 text-sm font-semibold text-suave">Últimas cerradas</h2>
-          <ul className="tarjeta divide-y divide-borde/70 text-sm">
+        <section className="mt-9">
+          <h2 className="titulo-seccion">Últimas cerradas</h2>
+          <ul className="lista">
             {cerradas.map(({ r, recibido }) => (
               <li key={r.id}>
-                <Link href={`/recepcion/${r.id}`} className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-hundido">
-                  <span>
-                    {r.numero} · {r.proveedor}
+                <Link href={`/recepcion/${r.id}`} className="fila justify-between">
+                  <span className="min-w-0">
+                    <span className="numero">{r.numero}</span> · {r.proveedor}
                   </span>
-                  <span className="text-suave">{recibido} unidades</span>
+                  <span className="text-sm whitespace-nowrap text-suave">{recibido} unidades</span>
                 </Link>
               </li>
             ))}

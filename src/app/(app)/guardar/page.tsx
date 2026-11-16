@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { Escaneo } from "@/components/Escaneo";
-import { Codigo, Encabezado, Vacio } from "@/components/ui";
+import { Codigo, Encabezado, Tejuelo, Vacio } from "@/components/ui";
 import { productos, stock, ubicaciones } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import { moverAccion } from "../mover/acciones";
@@ -40,9 +40,9 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
   return (
     <>
       <Encabezado titulo="Guardar" bajada="Llevá cada título a su estante: escaneá el libro, después el cartel del estante." />
-      <div className="mb-4 grid max-w-md grid-cols-2 gap-1 rounded-xl bg-hundido p-1">
+      <div className="mb-6 flex gap-5 border-b border-borde">
         {(["recepcion", "devoluciones"] as const).map((z) => (
-          <Link key={z} href={z === "recepcion" ? "/guardar" : "/guardar?zona=devoluciones"} className={`rounded-lg py-2 text-center text-sm font-semibold ${zona === z ? "bg-superficie shadow-sm" : "text-suave"}`}>
+          <Link key={z} href={z === "recepcion" ? "/guardar" : "/guardar?zona=devoluciones"} aria-current={zona === z ? "page" : undefined} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zona === z ? "border-acento-texto font-bold text-acento-texto" : "border-transparent font-medium text-suave hover:text-texto"}`}>
             {z === "recepcion" ? "Desde Recepción" : "Desde Devoluciones"}
           </Link>
         ))}
@@ -51,8 +51,8 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
       {pendientes.length === 0 ? (
         <Vacio titulo="No queda nada por guardar acá">Lo que cierres en {zona === "recepcion" ? "una recepción" : "una devolución (los libros vendibles)"} va a aparecer en esta lista.</Vacio>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
-          <div className="lg:sticky lg:top-6">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10">
+          <div className="lg:sticky lg:top-30">
             <Escaneo
               accion={moverAccion}
               ocultos={{ origen: actual!.codigo }}
@@ -64,11 +64,14 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
               boton="Guardar"
             />
           </div>
-          <div>
-            <p className="mb-2 text-sm text-suave">
-              Quedan <strong className="text-texto">{unidades} unidades</strong> de {pendientes.length} títulos.
+          <div className="min-w-0">
+            <p className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-sm text-suave">
+              <span>
+                Quedan <strong className="text-texto">{unidades} unidades</strong> de {pendientes.length} títulos.
+              </span>
+              <Tejuelo codigo={actual!.codigo} />
             </p>
-            <div className="tarjeta overflow-x-auto">
+            <div className="overflow-x-auto border-y border-borde">
               <table className="tabla">
                 <thead>
                   <tr>
@@ -84,8 +87,8 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
                         <span className="block font-medium">{p.titulo}</span>
                         <Codigo>{p.codigo}</Codigo>
                       </td>
-                      <td className="text-right text-base font-semibold">{p.cantidad}</td>
-                      <td>{sugerencias.has(p.productoId) ? <Codigo>{sugerencias.get(p.productoId)}</Codigo> : <span className="text-suave">Título nuevo: elegí un estante libre</span>}</td>
+                      <td className="text-right text-base font-bold">{p.cantidad}</td>
+                      <td>{sugerencias.has(p.productoId) ? <Tejuelo codigo={sugerencias.get(p.productoId)} tam="md" /> : <span className="text-suave">Título nuevo: elegí un estante libre</span>}</td>
                     </tr>
                   ))}
                 </tbody>
