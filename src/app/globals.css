@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-hundido: var(--hundido);
+  --color-texto: var(--texto);
+  --color-suave: var(--suave);
+  --color-borde: var(--borde);
+  --color-acento: var(--acento);
+  --color-sobre-acento: var(--sobre-acento);
+  --color-acento-texto: var(--acento-texto);
+  --color-acento-suave: var(--acento-suave);
+  --color-ok: var(--ok);
+  --color-ok-suave: var(--ok-suave);
+  --color-alerta: var(--alerta);
+  --color-alerta-suave: var(--alerta-suave);
+  --color-peligro: var(--peligro);
+  --color-peligro-suave: var(--peligro-suave);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, monospace;
+}
+
+/* El acento lo define cada usuario; estos valores son los de fábrica (azul Klein). */
+:root {
+  --acento: #002fa7;
+  --sobre-acento: #ffffff;
+  --acento-texto-claro: #002fa7;
+  --acento-texto-oscuro: #8fa6f0;
+
+  --fondo: #f4f5fa;
+  --superficie: #ffffff;
+  --hundido: #eceef6;
+  --texto: #0b0e1a;
+  --suave: #59607a;
+  --borde: #d9dceb;
+  --acento-texto: var(--acento-texto-claro);
+  --acento-suave: color-mix(in oklab, var(--acento) 9%, var(--superficie));
+  --ok: #0f7a43;
+  --ok-suave: #e3f5ea;
+  --alerta: #8a5a00;
+  --alerta-suave: #fdf1d3;
+  --peligro: #b3261e;
+  --peligro-suave: #fbe6e4;
+  color-scheme: light;
+}
+
+:root[data-tema="oscuro"] {
+  --fondo: #0b0e1a;
+  --superficie: #141829;
+  --hundido: #0f1322;
+  --texto: #eef0fa;
+  --suave: #9ba3c2;
+  --borde: #2a3050;
+  --acento-texto: var(--acento-texto-oscuro);
+  --acento-suave: color-mix(in oklab, var(--acento) 26%, var(--superficie));
+  --ok: #5fd08f;
+  --ok-suave: #12301f;
+  --alerta: #f0c060;
+  --alerta-suave: #33280d;
+  --peligro: #ff8a80;
+  --peligro-suave: #3a1614;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-tema="sistema"] {
+    --fondo: #0b0e1a;
+    --superficie: #141829;
+    --hundido: #0f1322;
+    --texto: #eef0fa;
+    --suave: #9ba3c2;
+    --borde: #2a3050;
+    --acento-texto: var(--acento-texto-oscuro);
+    --acento-suave: color-mix(in oklab, var(--acento) 26%, var(--superficie));
+    --ok: #5fd08f;
+    --ok-suave: #12301f;
+    --alerta: #f0c060;
+    --alerta-suave: #33280d;
+    --peligro: #ff8a80;
+    --peligro-suave: #3a1614;
+    color-scheme: dark;
+  }
+}
+
+html {
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+}
+:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--acento-texto) 70%, transparent);
+  outline-offset: 2px;
+}
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  .campo {
+    @apply w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-base text-texto placeholder:text-suave/70;
+  }
+  .boton {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-acento px-4 py-2.5 text-[15px] font-semibold text-sobre-acento transition hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .boton-suave {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-borde bg-superficie px-4 py-2.5 text-[15px] font-semibold text-texto transition hover:bg-hundido disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .boton-peligro {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-peligro/40 bg-peligro-suave px-4 py-2.5 text-[15px] font-semibold text-peligro transition hover:brightness-95 disabled:opacity-50;
+  }
+  .tarjeta {
+    @apply rounded-2xl border border-borde bg-superficie;
+  }
+  .etiqueta {
+    @apply mb-1.5 block text-sm font-semibold text-texto;
+  }
+  .enlace {
+    @apply font-semibold text-acento-texto underline-offset-2 hover:underline;
+  }
+  .tabla {
+    @apply w-full text-left text-sm;
+  }
+  .tabla th {
+    @apply border-b border-borde px-3 py-2.5 text-xs font-semibold tracking-wide text-suave uppercase;
+  }
+  .tabla td {
+    @apply border-b border-borde/70 px-3 py-2.5 align-middle;
+  }
+  .tabla tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-imprimir {
+    display: none !important;
+  }
+}
+
+/* Manual (wiki) dentro de la app */
+.manual {
+  line-height: 1.65;
+}
+.manual h1 {
+  @apply mb-3 text-2xl font-bold tracking-tight text-balance;
+}
+.manual h2 {
+  @apply mt-8 mb-2 border-b border-borde pb-1.5 text-xl font-bold;
+}
+.manual h3 {
+  @apply mt-6 mb-1.5 text-base font-bold;
+}
+.manual p,
+.manual ul,
+.manual ol,
+.manual table,
+.manual blockquote {
+  @apply mb-3.5;
+}
+.manual ul {
+  @apply list-disc pl-5;
+}
+.manual ol {
+  @apply list-decimal pl-5;
+}
+.manual li {
+  @apply mb-1;
+}
+.manual a {
+  @apply font-semibold text-acento-texto underline underline-offset-2;
+}
+.manual code {
+  @apply rounded-md bg-hundido px-1.5 py-0.5 font-mono text-[0.88em] font-semibold;
+}
+.manual blockquote {
+  @apply rounded-xl bg-acento-suave px-4 py-3 text-[15px];
+}
+.manual blockquote p:last-child {
+  @apply mb-0;
+}
+.manual table {
+  @apply block w-full overflow-x-auto text-sm;
+}
+.manual th {
+  @apply border-b-2 border-borde px-3 py-2 text-left font-semibold;
+}
+.manual td {
+  @apply border-b border-borde/70 px-3 py-2 align-top;
+}
+.manual hr {
+  @apply my-6 border-borde;
+}
+.manual-indice h3 {
+  @apply mt-4 mb-1 text-xs tracking-widest text-suave uppercase first:mt-0;
+}
+.manual-indice ul {
+  @apply mb-0 list-none pl-0;
+}
+.manual-indice a {
+  @apply font-medium no-underline hover:underline;
+}
