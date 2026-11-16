@@ -3,7 +3,9 @@ import { BotonAccion, Formulario } from "@/components/Escaneo";
 import { Encabezado, fechaCorta } from "@/components/ui";
 import { passkeys } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
-import { cambiarClave, cambiarPin, guardarApariencia, quitarLlave } from "./acciones";
+import { Avatar } from "@/components/Avatar";
+import { cambiarClave, cambiarPin, guardarApariencia, guardarFoto, quitarFoto, quitarLlave } from "./acciones";
+import { Foto } from "./Foto";
 import { Apariencia } from "./Apariencia";
 import { AgregarLlave } from "./Llaves";
 
@@ -17,6 +19,22 @@ export default async function Cuenta() {
     <>
       <Encabezado titulo="Mi cuenta" bajada={`${usuario.nombre} · ${usuario.email}`} />
       <div className="space-y-4">
+        <section className="tarjeta p-5">
+          <h2 className="text-lg font-bold">Foto de perfil</h2>
+          <p className="mb-4 text-sm text-suave">La ven tus compañeros en la lista de usuarios y al cambiar de cuenta. Sin foto, se muestran tus iniciales.</p>
+          <div className="flex flex-wrap items-center gap-5">
+            <Avatar persona={usuario} clase="size-20 text-2xl" />
+            <div className="flex flex-wrap items-start gap-2">
+              <Foto accion={guardarFoto} tiene={Boolean(usuario.fotoVersion)} />
+              {usuario.fotoVersion && (
+                <BotonAccion accion={quitarFoto} clase="boton-suave" mostrarOk={false}>
+                  Quitar foto
+                </BotonAccion>
+              )}
+            </div>
+          </div>
+        </section>
+
         <section className="tarjeta p-5">
           <h2 className="text-lg font-bold">Apariencia</h2>
           <p className="mb-4 text-sm text-suave">El color es tuyo: cambia todo miDepo solo para vos, en cualquier dispositivo donde entres.</p>

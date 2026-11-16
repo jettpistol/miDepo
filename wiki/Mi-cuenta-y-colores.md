@@ -2,6 +2,18 @@
 
 En **Mi cuenta** cambiás cómo ves miDepo y cómo entrás. En el teléfono está en **Más → Mi cuenta**.
 
+## Foto de perfil
+
+1. En **Foto de perfil**, tocá **Subir una foto**.
+2. Elegí una imagen. En el teléfono también podés sacarla con la cámara en el momento.
+3. miDepo la recorta en cuadrado, tomando el centro, y la guarda.
+
+Tu foto aparece en el menú, en la lista de usuarios y cuando alguien cambia de cuenta en un equipo compartido. Ayuda a ver de un vistazo **quién está en uso**.
+
+Para cambiarla, tocá **Cambiar foto**. Para volver a las iniciales, tocá **Quitar foto**. Sin foto, se muestran tus iniciales sobre tu color.
+
+Usá una foto donde se te reconozca. Un administrador puede quitar una foto que no corresponda.
+
 ## Elegir tu color
 
 miDepo viene en **azul Klein**, pero el color es tuyo.

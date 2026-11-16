@@ -1,9 +1,10 @@
 import { asc, eq } from "drizzle-orm";
+import { Avatar } from "@/components/Avatar";
 import { BotonAccion, Formulario } from "@/components/Escaneo";
 import { Aviso, Encabezado, Insignia } from "@/components/ui";
 import { usuarios } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
-import { alternarActivo, cambiarRol, crear, fijarAcceso } from "./acciones";
+import { alternarActivo, cambiarRol, crear, fijarAcceso, quitarFotoDe } from "./acciones";
 
 export const metadata = { title: "Usuarios" };
 
@@ -30,11 +31,14 @@ export default async function Usuarios() {
         {lista.map((u) => (
           <li key={u.id} className={`tarjeta p-4 ${u.activo ? "" : "opacity-60"}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="min-w-0">
-                <span className="block font-semibold">
-                  {u.nombre} {u.id === usuario.id && <span className="font-normal text-suave">(vos)</span>}
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar persona={u} clase="size-10 text-sm" />
+                <span className="min-w-0">
+                  <span className="block font-semibold">
+                    {u.nombre} {u.id === usuario.id && <span className="font-normal text-suave">(vos)</span>}
+                  </span>
+                  <span className="block truncate text-sm text-suave">{u.email}</span>
                 </span>
-                <span className="block truncate text-sm text-suave">{u.email}</span>
               </span>
               <span className="flex flex-wrap items-center gap-1.5">
                 <Insignia tono="acento">{ROLES.find((r) => r.id === u.rol)?.nombre}</Insignia>
@@ -68,7 +72,12 @@ export default async function Usuarios() {
                     <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} className="campo font-mono" placeholder="PIN de 6 números" autoComplete="off" />
                     <input name="clave" type="password" className="campo" placeholder="Contraseña (8 o más)" aria-label="Contraseña nueva" autoComplete="new-password" />
                   </Formulario>
-                  <div>
+                  <div className="flex flex-wrap items-start gap-2">
+                    {u.fotoVersion && (
+                      <BotonAccion accion={quitarFotoDe} ocultos={{ id: u.id }} clase="boton-suave" confirmar={`¿Quitar la foto de ${u.nombre}?`}>
+                        Quitar foto
+                      </BotonAccion>
+                    )}
                     <BotonAccion accion={alternarActivo} ocultos={{ id: u.id }} clase={u.activo ? "boton-peligro" : "boton-suave"} confirmar={u.activo ? `¿Dar de baja a ${u.nombre}? No va a poder entrar más.` : undefined}>
                       {u.activo ? "Dar de baja" : "Volver a habilitar"}
                     </BotonAccion>

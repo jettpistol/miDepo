@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { Cuentas } from "@/components/Cuentas";
 import { Icono } from "@/components/Icono";
 import { Encabezado } from "@/components/ui";
 import { MENU } from "@/lib/menu";
 import { puede, requerir } from "@/lib/sesion";
-import { salir } from "../../ingresar/acciones";
 
 export const metadata = { title: "Menú" };
 
@@ -37,11 +37,12 @@ export default async function Mas() {
           </section>
         );
       })}
-      <form action={salir}>
-        <button className="boton-suave w-full">
-          <Icono nombre="salir" /> Salir
-        </button>
-      </form>
+      <section>
+        <h2 className="mb-2 text-xs font-semibold tracking-widest text-suave uppercase">Cuentas en este dispositivo</h2>
+        <div className="tarjeta p-1.5">
+          <Cuentas mostrarActual />
+        </div>
+      </section>
     </>
   );
 }

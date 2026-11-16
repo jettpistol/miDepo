@@ -49,10 +49,19 @@ export const usuarios = pgTable(
     acento: text("acento").notNull().default("#002FA7"),
     tema: text("tema").$type<"claro" | "oscuro" | "sistema">().notNull().default("sistema"),
     activo: boolean("activo").notNull().default(true),
+    /** null = sin foto. Cambia con cada foto nueva, para que el navegador no muestre la vieja. */
+    fotoVersion: integer("foto_version"),
     creado: creado(),
   },
   (t) => [uniqueIndex("usuarios_pin").on(t.empresaId, t.pinHmac)],
 );
+
+/** La foto va en tabla aparte para no cargarla en cada consulta de usuario. */
+export const usuarioFotos = pgTable("usuario_fotos", {
+  usuarioId: integer("usuario_id").primaryKey().references(() => usuarios.id, { onDelete: "cascade" }),
+  /** JPEG cuadrado de 256 px, en base64. */
+  datos: text("datos").notNull(),
+});
 
 export const sesiones = pgTable("sesiones", {
   tokenHash: text("token_hash").primaryKey(),

@@ -2,7 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { accion, num, txt, type CtxAccion } from "@/lib/accion";
-import { sesiones, usuarios, type Rol } from "@/db/schema";
+import { sesiones, usuarioFotos, usuarios, type Rol } from "@/db/schema";
 import { crearUsuario } from "@/db/seed";
 import { hashPassword, PIN_VALIDO, pinHmac } from "@/lib/claves";
 import { ErrorUsuario } from "@/lib/errores";
@@ -73,4 +73,14 @@ export const fijarAcceso = accion("admin", async (c, f) => {
     .where(eq(usuarios.id, u.id))
     .catch((e) => unico(e, "Ese PIN ya lo usa otra persona. Elegí otro."));
   return `Acceso de ${u.nombre} actualizado.`;
+});
+
+/** Para cuando alguien sube una foto que no corresponde. */
+export const quitarFotoDe = accion("admin", async (c, f) => {
+  const u = await deLaEmpresa(c, num(f, "id"));
+  await c.db.transaction(async (tx) => {
+    await tx.delete(usuarioFotos).where(eq(usuarioFotos.usuarioId, u.id));
+    await tx.update(usuarios).set({ fotoVersion: null }).where(eq(usuarios.id, u.id));
+  });
+  return `Foto de ${u.nombre} quitada.`;
 });

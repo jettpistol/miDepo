@@ -31,6 +31,34 @@ La más rápida, una vez configurada.
 
 Cada dispositivo se registra por separado. Si cambiás de teléfono, registrá el nuevo.
 
+## Varias cuentas en el mismo dispositivo
+
+Un teléfono o una computadora puede tener hasta **5 cuentas abiertas a la vez**. Sirve cuando dos o tres personas comparten un equipo, o cuando alguien usa una cuenta de operario y otra de supervisor.
+
+### Sumar una cuenta
+
+1. En la computadora, tocá tu nombre, abajo a la izquierda. En el teléfono, tocá **Más** y bajá hasta **Cuentas en este dispositivo**.
+2. Tocá **Agregar otra cuenta**.
+3. Ingresá con la otra cuenta, de cualquiera de las tres formas.
+
+La cuenta anterior **no se cierra**: queda abierta en la lista.
+
+### Cambiar de cuenta
+
+1. Abrí el mismo menú.
+2. Bajo **Cambiar a**, tocá el nombre.
+
+El cambio es inmediato y no pide contraseña ni PIN. miDepo pasa a mostrarse con el color de esa persona, y todo lo que se haga queda a su nombre.
+
+> **Fijate siempre quién está en uso antes de escanear.** Arriba a la derecha en el teléfono, y abajo a la izquierda en la computadora, se ve la foto o las iniciales de la cuenta activa. Lo que escanees queda registrado a nombre de esa cuenta.
+
+### Salir
+
+- **Salir de (tu nombre):** cierra solo tu cuenta. El equipo sigue con la siguiente de la lista.
+- **Salir de todas las cuentas:** cierra todo. Usalo al terminar el día en un equipo compartido.
+
+Las cuentas que entraron con PIN se cierran solas al terminar el turno.
+
 ## Si no podés entrar
 
 | Qué pasa | Qué hacer |
@@ -40,6 +68,3 @@ Cada dispositivo se registra por separado. Si cambiás de teléfono, registrá e
 | Olvidaste la contraseña o el PIN | Pedile a un administrador que te ponga uno nuevo desde **Usuarios**. |
 | "Esta llave no está registrada" | Entrá con contraseña o PIN y registrá el dispositivo de nuevo en **Mi cuenta**. |
 
-## Salir
-
-En la computadora, **Salir** está abajo a la izquierda. En el teléfono, tocá **Más** y después **Salir**. Si compartís el dispositivo, salí siempre al terminar.

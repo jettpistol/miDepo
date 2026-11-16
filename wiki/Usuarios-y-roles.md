@@ -31,6 +31,14 @@ En la lista, tocá **Cambiar rol, acceso o dar de baja** debajo de la persona.
 - **Rol:** elegí el nuevo y tocá **Guardar rol**.
 - **Acceso:** escribí un PIN nuevo, una contraseña nueva o las dos, y tocá **Guardar acceso**. Sirve cuando alguien se olvidó la clave.
 
+## Quitar una foto de perfil
+
+Cada persona sube su propia foto desde **Mi cuenta**. Si alguien sube una que no corresponde, abrí **Cambiar rol, acceso o dar de baja** debajo de esa persona y tocá **Quitar foto**.
+
+## Equipos compartidos
+
+Un mismo teléfono o computadora admite varias cuentas abiertas, y pasar de una a otra no pide contraseña ni PIN. Es cómodo, pero quien tenga el equipo en la mano puede usar cualquiera de las cuentas abiertas. Pedile al equipo que use **Salir de todas las cuentas** al terminar el día. Ver [Ingresar](Ingresar).
+
 ## Dar de baja
 
 Tocá **Dar de baja**. La persona deja de poder entrar al instante, aunque tuviera la sesión abierta. Su historial queda: los movimientos que hizo siguen a su nombre. Se puede **volver a habilitar**.

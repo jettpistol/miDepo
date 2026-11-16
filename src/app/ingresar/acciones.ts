@@ -7,7 +7,7 @@ import { getDb } from "@/db";
 import { empresas, intentosLogin, usuarios } from "@/db/schema";
 import { PIN_VALIDO, pinHmac, verificarPassword } from "@/lib/claves";
 import { ErrorUsuario, intentar, type Resultado } from "@/lib/errores";
-import { cerrarSesion, iniciarSesion } from "@/lib/sesion";
+import { cambiarDeCuenta, cerrarSesion, iniciarSesion } from "@/lib/sesion";
 
 const MAXIMO = 6;
 const BLOQUEO_MIN = 5;
@@ -63,7 +63,16 @@ export async function ingresarConPin(_: Resultado, f: FormData): Promise<Resulta
   });
 }
 
+/** Cierra la cuenta en uso. Si hay otra abierta en el dispositivo, sigue con esa. */
 export async function salir() {
-  await cerrarSesion();
+  redirect((await cerrarSesion()) ? "/" : "/ingresar");
+}
+
+export async function salirDeTodas() {
+  await cerrarSesion(true);
   redirect("/ingresar");
+}
+
+export async function cambiarCuenta(f: FormData) {
+  redirect((await cambiarDeCuenta(Number(f.get("usuarioId")))) ? "/" : "/ingresar");
 }
