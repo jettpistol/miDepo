@@ -63,10 +63,11 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
                 </div>
                 <Escaneo
                   accion={confirmar}
+                  contexto="picking"
                   ocultos={{ tareaId: proxima.t.id }}
                   campos={[
-                    { nombre: "ubicacion", etiqueta: "Estante", ayuda: "Escaneá el cartel", espera: proxima.ubicacion },
-                    { nombre: "producto", etiqueta: "Libro", espera: proxima.codigo },
+                    { nombre: "ubicacion", etiqueta: "Estante", ayuda: "Escaneá el cartel" },
+                    { nombre: "producto", etiqueta: "Libro" },
                   ]}
                   cantidad={proxima.t.cantidad - proxima.t.pickeado}
                   boton="Confirmar"

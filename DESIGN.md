@@ -153,7 +153,9 @@ Rectangular. Labels and chips use 3px corners (`rounded-rotulo`); buttons, input
 - **Codigo** (`<Codigo>`): a neutral chip for ISBNs and internal codes. Document numbers in lists use the `numero` class.
 - **Ruled list** (`ul.lista` with `.fila` rows) and **table** (`table.tabla` inside `div.overflow-x-auto.border-y.border-borde`). Use a table when rows share three or more comparable fields.
 - **Buttons**: `boton` (one primary per view), `boton-suave`, `boton-peligro`, and `boton-chico` inside table rows.
-- **Fields**: `campo` with an `etiqueta` label. Scan fields show "Coincide" and a green border when the scanned code matches the expected one.
+- **Fields**: `campo` with an `etiqueta` label.
+- **Scan form** (`<Escaneo contexto>`): every keystroke is rehearsed against the server (`/api/consulta`, logic in `src/lib/consulta.ts`) with the same rules as the real action. Under each field a one-line note says what was recognised (the book's title, how much a shelf holds) or why it will not work, in `ok`, `alerta` or `peligro`. A field in `peligro` blocks the submit. Suggestions open under the field as you type (a listbox; shelves as Tejuelos). One-tap fixes sit under the field as `boton-chico` chips ("Está en", "Ya hay en", "Todas: 60"). Picking and packing validate but never suggest, because the scan there proves which book is in hand.
+- **Disabled with a reason**: an action that cannot work yet is disabled and says why in one muted line (`<BotonAccion motivo>`).
 - **Insignia**: a small rectangular state badge in five tones. **Aviso**: a bordered, tinted notice. **Vacio**: an empty state between two hairlines that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
 - **`tarjeta`**: a plain 6px bordered panel, used only around a form or a settings group. Never nested.
@@ -170,3 +172,5 @@ Rectangular. Labels and chips use 3px corners (`rounded-rotulo`); buttons, input
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.
 - Don't use unicode glyphs as icons; use `Icono`.
+- Do say a problem before the click: validate while typing, suggest valid values, and disable what cannot work with the reason beside it.
+- Don't explain what a screen is for under its title, or how an ordinary control works. Keep text that states a fact (a count, a state) or a consequence the user could not guess.

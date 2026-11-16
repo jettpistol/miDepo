@@ -9,14 +9,15 @@ export default async function Mover() {
   await requerir();
   return (
     <>
-      <Encabezado titulo="Mover" bajada="Para cambiar libros de un estante a otro: reordenar, juntar un título o liberar un lugar." />
+      <Encabezado titulo="Mover" />
       <div className="max-w-md">
         <Escaneo
           accion={moverAccion}
+          contexto="mover"
           campos={[
-            { nombre: "origen", etiqueta: "Desde", ayuda: "Ubicación de donde sacás" },
-            { nombre: "producto", etiqueta: "Libro" },
-            { nombre: "destino", etiqueta: "Hacia", ayuda: "Ubicación donde lo dejás" },
+            { nombre: "origen", etiqueta: "Desde", ayuda: "Estante o zona" },
+            { nombre: "producto", etiqueta: "Libro", ayuda: "Código, título o autor" },
+            { nombre: "destino", etiqueta: "Hacia", ayuda: "Estante o zona" },
           ]}
           cantidad={1}
           boton="Mover"

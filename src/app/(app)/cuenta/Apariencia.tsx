@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Formulario, type Accion } from "@/components/Escaneo";
-import { Codigo } from "@/components/ui";
 import { PALETA, variablesDeAcento } from "@/lib/color";
 
 const TEMAS = [
@@ -60,10 +59,6 @@ export function Apariencia({ accion, acento: inicial, tema: temaInicial }: { acc
             Otro color
           </label>
         </div>
-        <p className="mt-3 max-w-[60ch] text-sm text-suave">
-          Usás <Codigo>{acento}</Codigo>
-          {PALETA.find((c) => c.hex === acento) ? ` (${PALETA.find((c) => c.hex === acento)!.nombre})` : ""}. Cualquier color sirve: miDepo ajusta los textos para que siempre se lean.
-        </p>
       </fieldset>
       <fieldset>
         <legend className="etiqueta">Tema</legend>

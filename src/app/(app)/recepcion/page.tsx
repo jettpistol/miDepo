@@ -28,7 +28,7 @@ export default async function Recepciones() {
 
   return (
     <>
-      <Encabezado titulo="Recepción" bajada="Contá lo que llega. Lo que cierres queda esperando en la zona de Recepción para guardar." />
+      <Encabezado titulo="Recepción" />
       {abiertas.length === 0 ? (
         <Vacio titulo="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</Vacio>
       ) : (
@@ -73,8 +73,7 @@ export default async function Recepciones() {
       )}
 
       <section className="mt-9">
-        <h2 className="titulo-seccion mb-1">Llegó algo sin aviso</h2>
-        <p className="mb-3 max-w-[60ch] text-sm text-suave">Creá una recepción vacía y escaneá lo que haya en las cajas.</p>
+        <h2 className="titulo-seccion">Llegó algo sin aviso</h2>
         <Formulario accion={crear} boton="Crear recepción" clase="flex flex-wrap items-start gap-3">
           <input name="proveedor" className="campo max-w-sm flex-1 basis-64" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
         </Formulario>

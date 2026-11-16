@@ -16,17 +16,13 @@ export default async function Cuenta() {
   const llaves = await db.select().from(passkeys).where(eq(passkeys.usuarioId, usuario.id)).orderBy(asc(passkeys.creado));
 
   const seccion = "grid gap-x-10 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
-  const bajada = "max-w-[60ch] text-sm text-suave";
 
   return (
     <>
       <Encabezado titulo="Mi cuenta" bajada={`${usuario.nombre} · ${usuario.email}`} />
       <div className="max-w-4xl divide-y divide-borde border-y border-borde">
         <section className={seccion}>
-          <div>
-            <h2 className="titulo-seccion">Foto de perfil</h2>
-            <p className={bajada}>La ven tus compañeros en la lista de usuarios y al cambiar de cuenta. Sin foto, se muestran tus iniciales.</p>
-          </div>
+          <h2 className="titulo-seccion">Foto de perfil</h2>
           <div className="flex flex-wrap items-center gap-5">
             <Avatar persona={usuario} clase="size-20 text-2xl" />
             <div className="flex flex-wrap items-start gap-2">
@@ -41,20 +37,14 @@ export default async function Cuenta() {
         </section>
 
         <section className={seccion}>
-          <div>
-            <h2 className="titulo-seccion">Apariencia</h2>
-            <p className={bajada}>El color es tuyo: cambia todo miDepo solo para vos, en cualquier dispositivo donde entres.</p>
-          </div>
+          <h2 className="titulo-seccion">Apariencia</h2>
           <Apariencia accion={guardarApariencia} acento={usuario.acento} tema={usuario.tema} />
         </section>
 
         <section className={seccion}>
-          <div>
-            <h2 className="titulo-seccion">
-              Huella, rostro o llave {llaves.length > 0 && <small>{llaves.length}</small>}
-            </h2>
-            <p className={bajada}>Registrá este teléfono o esta computadora y entrá sin escribir nada: con tu huella, tu rostro o el PIN del equipo.</p>
-          </div>
+          <h2 className="titulo-seccion">
+            Huella, rostro o llave {llaves.length > 0 && <small>{llaves.length}</small>}
+          </h2>
           <div className="max-w-xl">
             {llaves.length > 0 && (
               <ul className="lista mb-4">
@@ -99,15 +89,15 @@ export default async function Cuenta() {
         <section className={seccion}>
           <div>
             <h2 className="titulo-seccion">PIN del depósito</h2>
-            <p className={bajada}>
-              {usuario.pinHmac ? "Ya tenés un PIN." : "Todavía no tenés PIN."} Para entrar con PIN se pide el código de empresa: <Codigo>{empresa.slug}</Codigo>
+            <p className="text-sm text-suave">
+              Código de empresa: <Codigo>{empresa.slug}</Codigo>
             </p>
           </div>
           <div className="max-w-sm">
             <Formulario accion={cambiarPin} boton="Guardar PIN">
               <div>
                 <label htmlFor="pin" className="etiqueta">
-                  PIN nuevo
+                  {usuario.pinHmac ? "PIN nuevo" : "PIN"}
                 </label>
                 <input id="pin" name="pin" type="password" inputMode="numeric" maxLength={6} pattern="\d{6}" autoComplete="off" className="campo max-w-48 text-center font-mono text-xl tracking-[0.4em]" placeholder="••••••" required />
               </div>

@@ -10,7 +10,7 @@ export default async function Picking() {
 
   return (
     <>
-      <Encabezado titulo="Picking" bajada="Tomá un pedido y miDepo te lleva estante por estante. Primero los más viejos." />
+      <Encabezado titulo="Picking" />
 
       {enCurso.length > 0 && (
         <section className="mb-9">

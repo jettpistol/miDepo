@@ -29,10 +29,7 @@ export default async function Mas() {
                 <li key={i.href}>
                   <Link href={i.href} className="fila py-3">
                     <Icono nombre={i.icono} className="size-6 text-acento-texto" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-semibold">{i.nombre}</span>
-                      <span className="block text-sm text-suave">{i.ayuda}</span>
-                    </span>
+                    <span className="min-w-0 flex-1 font-semibold">{i.nombre}</span>
                     <Icono nombre="flecha" className="size-4 text-suave" />
                   </Link>
                 </li>

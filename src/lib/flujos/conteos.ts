@@ -5,7 +5,7 @@ import { ErrorUsuario } from "../errores";
 import { buscarProducto, moverStock } from "../stock";
 import { cantidadValida, type Ctx } from "./comun";
 
-const MAXIMO = 300;
+export const MAXIMO_CONTEO = 300;
 
 /** Crea un conteo para todas las estanterías cuyo código empieza con el prefijo dado. */
 export async function crearConteo(c: Ctx, nombre: string, prefijo: string) {
@@ -17,9 +17,9 @@ export async function crearConteo(c: Ctx, nombre: string, prefijo: string) {
     .from(ubicaciones)
     .where(and(eq(ubicaciones.empresaId, c.empresaId), eq(ubicaciones.tipo, "estanteria"), eq(ubicaciones.activa, true), like(ubicaciones.codigo, `${pre.replace(/[%_]/g, "")}%`)))
     .orderBy(asc(ubicaciones.codigo))
-    .limit(MAXIMO + 1);
+    .limit(MAXIMO_CONTEO + 1);
   if (us.length === 0) throw new ErrorUsuario(`No hay ubicaciones que empiecen con "${pre}".`);
-  if (us.length > MAXIMO) throw new ErrorUsuario(`Son más de ${MAXIMO} ubicaciones. Partí el conteo en tramos más chicos.`);
+  if (us.length > MAXIMO_CONTEO) throw new ErrorUsuario(`Son más de ${MAXIMO_CONTEO} ubicaciones. Partí el conteo en tramos más chicos.`);
   return c.db.transaction(async (tx) => {
     const [conteo] = await tx.insert(conteos).values({ empresaId: c.empresaId, nombre: nombre.trim() }).returning();
     await tx.insert(conteoUbicaciones).values(us.map((u) => ({ conteoId: conteo.id, ubicacionId: u.id })));

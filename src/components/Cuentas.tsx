@@ -29,7 +29,7 @@ export async function Cuentas({ mostrarActual = false }: { mostrarActual?: boole
           )}
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold">{mostrarActual ? actual.usuario.nombre : "Mi cuenta"}</span>
-            <span className="block truncate text-xs text-suave">{mostrarActual ? `${ROL[actual.usuario.rol]} · ${actual.empresa.nombre} · en uso` : "Foto, colores y acceso"}</span>
+            {mostrarActual && <span className="block truncate text-xs text-suave">{`${ROL[actual.usuario.rol]} · ${actual.empresa.nombre} · en uso`}</span>}
           </span>
           {mostrarActual && <span className="text-sm font-semibold whitespace-nowrap text-acento-texto">Mi cuenta</span>}
           <Icono nombre="flecha" className="size-4 text-suave" />

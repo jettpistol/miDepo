@@ -5,6 +5,7 @@ import { Encabezado, fechaCorta, Insignia, plural } from "@/components/ui";
 import { clientes, devolucionLineas, devoluciones } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import { crear } from "./acciones";
+import { ElegirCliente } from "./ElegirCliente";
 
 export const metadata = { title: "Devoluciones" };
 
@@ -25,20 +26,11 @@ export default async function Devoluciones() {
 
   return (
     <>
-      <Encabezado titulo="Devoluciones" bajada="Revisá cada libro que vuelve y decidí si se puede vender, si va a saldo o si está dañado." />
+      <Encabezado titulo="Devoluciones" />
       <section className="mb-9">
         <h2 className="titulo-seccion">Llegó una devolución</h2>
         <Formulario accion={crear} boton="Empezar a revisar" clase="flex flex-wrap items-start gap-3">
-          <select name="clienteId" className="campo max-w-md flex-1 basis-64" aria-label="Cliente que devuelve" required defaultValue="">
-            <option value="" disabled>
-              ¿Quién devuelve?
-            </option>
-            {lista.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
+          <ElegirCliente clientes={lista} />
         </Formulario>
       </section>
 

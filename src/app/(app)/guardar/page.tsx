@@ -39,7 +39,7 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <Encabezado titulo="Guardar" bajada="Llevá cada título a su estante: escaneá el libro, después el cartel del estante." />
+      <Encabezado titulo="Guardar" />
       <div className="mb-6 flex gap-5 border-b border-borde">
         {(["recepcion", "devoluciones"] as const).map((z) => (
           <Link key={z} href={z === "recepcion" ? "/guardar" : "/guardar?zona=devoluciones"} aria-current={zona === z ? "page" : undefined} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zona === z ? "border-acento-texto font-bold text-acento-texto" : "border-transparent font-medium text-suave hover:text-texto"}`}>
@@ -55,10 +55,11 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
           <div className="lg:sticky lg:top-30">
             <Escaneo
               accion={moverAccion}
+              contexto="guardar"
               ocultos={{ origen: actual!.codigo }}
               campos={[
                 { nombre: "producto", etiqueta: "Libro" },
-                { nombre: "destino", etiqueta: "Estante", ayuda: "Escaneá el cartel del estante" },
+                { nombre: "destino", etiqueta: "Estante", ayuda: "Escaneá el cartel" },
               ]}
               cantidad={1}
               boton="Guardar"

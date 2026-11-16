@@ -37,7 +37,7 @@ export default async function Devolucion({ params }: { params: Promise<{ id: str
       <div className={`grid gap-5 lg:items-start lg:gap-10 ${abierta ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
         {abierta && (
           <div className="space-y-3 lg:sticky lg:top-30">
-            <Escaneo accion={escanear} ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: "Libro" }]} cantidad={1} boton="Sumar">
+            <Escaneo accion={escanear} contexto="devolucion" ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: "Libro", ayuda: "Código, título o autor" }]} cantidad={1} boton="Sumar">
               <fieldset>
                 <legend className="etiqueta">¿En qué estado está?</legend>
                 <div className="space-y-2">
@@ -53,7 +53,7 @@ export default async function Devolucion({ params }: { params: Promise<{ id: str
                 </div>
               </fieldset>
             </Escaneo>
-            <BotonAccion accion={cerrar} ocultos={{ id }} clase="boton w-full" confirmar="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
+            <BotonAccion accion={cerrar} ocultos={{ id }} clase="boton w-full" motivo={lineas.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirmar="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
               Cerrar devolución
             </BotonAccion>
           </div>

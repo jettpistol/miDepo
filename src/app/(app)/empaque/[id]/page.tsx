@@ -56,8 +56,8 @@ export default async function EmpaquePedido({ params }: { params: Promise<{ id: 
         {editable && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <Avance hecho={empacado} total={pickeado} unidad="en cajas" />
-            {empacado < pickeado && <Escaneo accion={escanear} ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: abierta ? `Libro para la caja ${abierta.numero}` : "Libro (abre una caja nueva)" }]} cantidad={1} boton="Poner en la caja" />}
-            {abierta && (
+            {empacado < pickeado && <Escaneo accion={escanear} contexto="empaque" ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: abierta ? `Libro para la caja ${abierta.numero}` : "Libro (abre una caja nueva)" }]} cantidad={1} boton="Poner en la caja" />}
+            {abierta && items.some((x) => x.i.cajaId === abierta.id) && (
               <div className="tarjeta p-4">
                 <h2 className="titulo-seccion mb-3">Cerrar la caja {abierta.numero}</h2>
                 <Formulario accion={cerrar} boton="Cerrar caja" clase="space-y-3">

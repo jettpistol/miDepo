@@ -29,7 +29,7 @@ export default async function Ubicacion({ params }: { params: Promise<{ id: stri
           </Link>
         )}
         {esEstante && supervisor && (
-          <BotonAccion accion={alternar} ocultos={{ id }} clase="boton-suave">
+          <BotonAccion accion={alternar} ocultos={{ id }} clase="boton-suave" motivo={u.activa && contenido.length > 0 ? "Para darla de baja, primero mové los libros." : undefined}>
             {u.activa ? "Dar de baja" : "Reactivar"}
           </BotonAccion>
         )}

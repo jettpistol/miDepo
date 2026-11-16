@@ -27,7 +27,7 @@ export default async function Conteo({ params }: { params: Promise<{ id: string 
 
   return (
     <>
-      <Encabezado titulo={k.nombre} volver={{ href: "/conteos", texto: "Conteos" }} bajada={abierto ? "Elegí una ubicación, contá todo lo que hay y dala por terminada." : "Conteo cerrado: el stock ya quedó ajustado."} />
+      <Encabezado titulo={k.nombre} volver={{ href: "/conteos", texto: "Conteos" }} bajada={abierto ? undefined : "Conteo cerrado: el stock ya quedó ajustado."} />
       <div className="mb-9 max-w-xl">
         <Avance hecho={contadas} total={us.length} unidad="ubicaciones" />
       </div>

@@ -31,10 +31,10 @@ export default async function Recepcion({ params }: { params: Promise<{ id: stri
       {abierta ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10">
           <div className="space-y-3 lg:sticky lg:top-30">
-            <Escaneo accion={escanear} ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: "Libro" }]} cantidad={1} boton="Sumar" />
+            <Escaneo accion={escanear} contexto="recepcion" ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: "Libro", ayuda: "Código, título o autor" }]} cantidad={1} boton="Sumar" />
             {esperado > 0 && <Avance hecho={recibido} total={esperado} unidad="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <BotonAccion accion={cerrar} ocultos={{ id }} clase="boton w-full" confirmar={conDiferencia > 0 ? `Hay ${conDiferencia} títulos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
+              <BotonAccion accion={cerrar} ocultos={{ id }} clase="boton w-full" motivo={recibido === 0 ? "Todavía no escaneaste nada." : undefined} confirmar={conDiferencia > 0 ? `Hay ${conDiferencia} títulos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
                 Cerrar recepción
               </BotonAccion>
             </div>

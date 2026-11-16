@@ -29,11 +29,11 @@ export default async function ContarUbicacion({ params }: { params: Promise<{ id
           <span className="flex flex-wrap items-center gap-3">
             Contar <Tejuelo codigo={fila.codigo} tam="md" className="text-[26px]" />
           </span>
-        } volver={{ href: `/conteos/${id}`, texto: fila.k.nombre }} bajada="Escaneá todo lo que haya en este lugar. Si un título está muchas veces, escribí la cantidad." />
+        } volver={{ href: `/conteos/${id}`, texto: fila.k.nombre }} />
       <div className={abierta ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10" : "max-w-3xl"}>
         {abierta && (
           <div className="space-y-3 lg:sticky lg:top-30">
-            <Escaneo accion={escanear} ocultos={{ id, ubicacionId }} campos={[{ nombre: "producto", etiqueta: "Libro" }]} cantidad={1} boton="Sumar" />
+            <Escaneo accion={escanear} contexto="conteo" ocultos={{ id, ubicacionId }} campos={[{ nombre: "producto", etiqueta: "Libro", ayuda: "Código, título o autor" }]} cantidad={1} boton="Sumar" />
             <BotonAccion accion={terminar} ocultos={{ id, ubicacionId }} clase="boton-suave w-full" confirmar={lineas.length === 0 ? `¿Confirmás que ${fila.codigo} está vacía?` : `¿Ya contaste todo lo que hay en ${fila.codigo}?`} mostrarOk={false}>
               {lineas.length === 0 ? "Está vacía" : "Terminé esta ubicación"}
             </BotonAccion>

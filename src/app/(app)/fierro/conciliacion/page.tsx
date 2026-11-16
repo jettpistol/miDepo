@@ -24,7 +24,7 @@ export default async function Conciliacion() {
 
   return (
     <>
-      <Encabezado titulo="Conciliación con Fierro" volver={{ href: "/fierro", texto: "Fierro" }} bajada="Títulos donde lo que hay en el depósito no coincide con lo que dice Fierro." />
+      <Encabezado titulo="Conciliación con Fierro" volver={{ href: "/fierro", texto: "Fierro" }} />
       {sinEnviar > 0 && (
         <div className="mb-6">
           <Aviso tono="alerta">
@@ -40,7 +40,7 @@ export default async function Conciliacion() {
       ) : (
         <>
           <p className="mb-3 max-w-[70ch] text-sm text-suave">
-            {filas.length === 300 ? "Las 300 diferencias más grandes" : `${filas.length} títulos con diferencia`}. Para resolver una: contá el título en el depósito y, si el depósito tiene razón, corregí el stock en Fierro.
+            {filas.length === 300 ? "Las 300 diferencias más grandes" : `${filas.length} títulos con diferencia`}
           </p>
           <div className="overflow-x-auto border-y border-borde">
             <table className="tabla">

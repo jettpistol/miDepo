@@ -26,7 +26,7 @@ export default async function Ubicaciones({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <Encabezado titulo="Ubicaciones" bajada={`${total.toLocaleString("es-AR")} estantes cargados. Cada uno lleva una etiqueta con su código de barras.`}>
+      <Encabezado titulo="Ubicaciones" bajada={`${total.toLocaleString("es-AR")} estantes`}>
         <Link href={`/imprimir/ubicaciones?prefijo=${encodeURIComponent(prefijo)}`} target="_blank" className="boton-suave">
           <Icono nombre="imprimir" /> Imprimir etiquetas{prefijo && ` de ${prefijo}…`}
         </Link>
@@ -69,21 +69,22 @@ export default async function Ubicaciones({ searchParams }: { searchParams: Prom
       ) : (
         <p className="max-w-3xl border-y border-borde px-2 py-6 text-sm text-suave lg:px-3">{total === 0 ? "Todavía no hay estantes. Crealos con el generador de abajo." : `Ninguna ubicación empieza con "${prefijo}".`}</p>
       )}
-      {lista.length === 120 && <p className="mt-3 text-sm text-suave">Se muestran las primeras 120. Usá el filtro para ver otro tramo.</p>}
+      {lista.length === 120 && <p className="mt-3 text-sm text-suave">Se muestran las primeras 120.</p>}
 
       <section className="mt-12 max-w-5xl">
         <h2 className="titulo-seccion">Generador de ubicaciones</h2>
-        <p className="mb-5 max-w-[70ch] text-sm text-suave">
-          Si los estantes todavía no tienen nombre, elegí un modelo y adaptalo. Se puede volver a usar más adelante para sumar un pasillo o un nivel. {empresa.esquemaUbicaciones ? <Insignia tono="acento">Mostrando el esquema que usa {empresa.nombre}</Insignia> : null}
-        </p>
+        {empresa.esquemaUbicaciones ? (
+          <p className="mb-5">
+            <Insignia tono="acento">Mostrando el esquema que usa {empresa.nombre}</Insignia>
+          </p>
+        ) : null}
         <Generador accion={generar} inicial={(empresa.esquemaUbicaciones as Esquema | null) ?? null} />
       </section>
 
       <section className="mt-12">
         <h2 className="titulo-seccion">Agregar una ubicación suelta</h2>
-        <p className="mb-3 text-sm text-suave">Para lugares que no siguen el esquema: una mesa, un pallet, una vitrina.</p>
         <Formulario accion={crearSuelta} boton="Agregar" clase="flex flex-wrap items-start gap-3">
-          <input name="codigo" className="campo max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" required />
+          <input name="codigo" className="campo max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />
         </Formulario>
       </section>
     </>

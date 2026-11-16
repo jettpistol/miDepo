@@ -5,6 +5,7 @@ import { Avance, Encabezado, fechaCorta, Insignia, Vacio } from "@/components/ui
 import { conteoUbicaciones, conteos } from "@/db/schema";
 import { puede, requerir } from "@/lib/sesion";
 import { crear } from "./acciones";
+import { Prefijo } from "./Prefijo";
 
 export const metadata = { title: "Conteos" };
 
@@ -25,23 +26,18 @@ export default async function Conteos() {
 
   return (
     <>
-      <Encabezado titulo="Conteos" bajada="Contar un tramo por vez, sin cerrar el depósito. Se cuenta a ciegas: el sistema no dice cuánto debería haber." />
+      <Encabezado titulo="Conteos" />
       {puede(usuario.rol, "supervisor") && (
         <section className="tarjeta mb-9 max-w-3xl p-4">
           <h2 className="titulo-seccion">Nuevo conteo</h2>
-          <Formulario accion={crear} boton="Crear conteo" clase="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <Formulario accion={crear} boton="Crear conteo" clase="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
             <div>
               <label htmlFor="nombre" className="etiqueta">
                 Nombre
               </label>
               <input id="nombre" name="nombre" className="campo" placeholder="Pasillo A, noviembre" required />
             </div>
-            <div>
-              <label htmlFor="prefijo" className="etiqueta">
-                Ubicaciones que empiezan con
-              </label>
-              <input id="prefijo" name="prefijo" className="campo font-mono" placeholder="A-01" autoCapitalize="characters" required />
-            </div>
+            <Prefijo />
           </Formulario>
         </section>
       )}

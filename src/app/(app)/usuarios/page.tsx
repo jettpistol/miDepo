@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { Avatar } from "@/components/Avatar";
 import { BotonAccion, Formulario } from "@/components/Escaneo";
-import { Aviso, Codigo, Encabezado, Insignia } from "@/components/ui";
+import { Codigo, Encabezado, Insignia } from "@/components/ui";
 import { usuarios } from "@/db/schema";
 import { requerir } from "@/lib/sesion";
 import { alternarActivo, cambiarRol, crear, fijarAcceso, quitarFotoDe } from "./acciones";
@@ -20,12 +20,12 @@ export default async function Usuarios() {
 
   return (
     <>
-      <Encabezado titulo="Usuarios" bajada={`${lista.filter((u) => u.activo).length} personas pueden entrar a miDepo de ${empresa.nombre}.`} />
-      <div className="mb-6">
-        <Aviso>
-          Para entrar con PIN desde el teléfono, cada persona escribe una sola vez el código de empresa: <Codigo>{empresa.slug}</Codigo>
-        </Aviso>
-      </div>
+      <Encabezado titulo="Usuarios" bajada={
+          <>
+            {lista.filter((u) => u.activo).length} personas · código de empresa para entrar con PIN: <Codigo>{empresa.slug}</Codigo>
+          </>
+        }
+      />
 
       <ul className="lista">
         {lista.map((u) => (
@@ -64,13 +64,13 @@ export default async function Usuarios() {
                       ))}
                     </select>
                   </Formulario>
-                  <Formulario accion={fijarAcceso} boton="Guardar acceso" clase="space-y-2">
+                  <Formulario accion={fijarAcceso} boton="Guardar acceso" clase="space-y-2" algunoDe={{ campos: ["pin", "clave"], mensaje: "Escribí un PIN nuevo, una contraseña nueva o las dos cosas." }}>
                     <input type="hidden" name="id" value={u.id} />
                     <label className="etiqueta" htmlFor={`pin-${u.id}`}>
                       PIN nuevo y/o contraseña nueva
                     </label>
-                    <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} className="campo font-mono" placeholder="PIN de 6 números" autoComplete="off" />
-                    <input name="clave" type="password" className="campo" placeholder="Contraseña (8 o más)" aria-label="Contraseña nueva" autoComplete="new-password" />
+                    <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 números" className="campo font-mono" placeholder="PIN de 6 números" autoComplete="off" />
+                    <input name="clave" type="password" minLength={8} className="campo" placeholder="Contraseña (8 o más)" aria-label="Contraseña nueva" autoComplete="new-password" />
                   </Formulario>
                   <div className="flex flex-wrap items-start gap-2">
                     {u.fotoVersion && (
@@ -91,7 +91,7 @@ export default async function Usuarios() {
 
       <section className="tarjeta mt-12 max-w-3xl p-5">
         <h2 className="titulo-seccion mb-3">Sumar a alguien</h2>
-        <Formulario accion={crear} boton="Crear usuario" clase="grid gap-3 sm:grid-cols-2">
+        <Formulario accion={crear} boton="Crear usuario" clase="grid gap-3 sm:grid-cols-2" algunoDe={{ campos: ["pin", "clave"], mensaje: "Dale un PIN, una contraseña o las dos cosas para que pueda entrar." }}>
           <div>
             <label htmlFor="nombre" className="etiqueta">
               Nombre y apellido
@@ -118,15 +118,15 @@ export default async function Usuarios() {
           </div>
           <div>
             <label htmlFor="pin" className="etiqueta">
-              PIN <span className="font-normal text-suave">(para el teléfono)</span>
+              PIN
             </label>
-            <input id="pin" name="pin" inputMode="numeric" maxLength={6} className="campo font-mono" placeholder="6 números" autoComplete="off" />
+            <input id="pin" name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 números" className="campo font-mono" placeholder="6 números" autoComplete="off" />
           </div>
           <div>
             <label htmlFor="clave" className="etiqueta">
-              Contraseña <span className="font-normal text-suave">(para la computadora)</span>
+              Contraseña
             </label>
-            <input id="clave" name="clave" type="password" className="campo" placeholder="8 caracteres o más" autoComplete="new-password" />
+            <input id="clave" name="clave" type="password" minLength={8} className="campo" placeholder="8 caracteres o más" autoComplete="new-password" />
           </div>
         </Formulario>
       </section>

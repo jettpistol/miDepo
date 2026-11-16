@@ -8,15 +8,12 @@ import { puede, requerir } from "@/lib/sesion";
 import { EnPreparacion, pedidosAbiertos, Pendientes } from "./picking/Tablas";
 
 /** Una cola de trabajo: qué es, cuánto hay, y a dónde ir. */
-function Cola({ href, numero, titulo, detalle }: { href: string; numero: number; titulo: string; detalle: string }) {
+function Cola({ href, numero, titulo }: { href: string; numero: number; titulo: string }) {
   return (
     <li>
       <Link href={href} className="fila group">
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">{titulo}</span>
-          <span className="block text-sm text-suave">{detalle}</span>
-        </span>
-        <span className={`text-2xl font-bold tabular-nums ${numero > 0 ? "" : "text-suave/60"}`}>{numero}</span>
+        <span className="min-w-0 flex-1 font-semibold">{titulo}</span>
+        <span className={`text-xl font-bold tabular-nums ${numero > 0 ? "" : "text-suave/60"}`}>{numero}</span>
         <Icono nombre="flecha" className="size-4 text-suave transition-transform duration-150 group-hover:translate-x-0.5" />
       </Link>
     </li>
@@ -43,7 +40,7 @@ export default async function Inicio() {
 
   return (
     <>
-      <Encabezado titulo={`Hola, ${usuario.nombre.split(" ")[0]}`} bajada="Esto es lo que hay para hacer en el depósito ahora." />
+      <Encabezado titulo={`Hola, ${usuario.nombre.split(" ")[0]}`} />
 
       {mios.map(({ p, proximo }) => (
         <Link key={p.id} href={`/picking/${p.id}`} className="mb-6 flex items-center gap-4 rounded-control bg-acento px-4 py-3.5 text-sobre-acento transition-colors duration-150 hover:bg-acento-vivo">
@@ -92,12 +89,12 @@ export default async function Inicio() {
         <section>
           <h2 className="titulo-seccion">El resto del depósito</h2>
           <ul className="lista">
-            <Cola href="/empaque" numero={paraEmpacar[0].n} titulo="Pedidos para empacar" detalle="Ya preparados, falta armar las cajas" />
-            <Cola href="/recepcion" numero={recs[0].n} titulo="Recepciones abiertas" detalle="Mercadería por contar" />
-            <Cola href="/guardar" numero={porGuardar[0].n ?? 0} titulo="Unidades por guardar" detalle="Esperan en Recepción o Devoluciones" />
-            <Cola href="/devoluciones" numero={devs[0].n} titulo="Devoluciones en curso" detalle="Libros que volvieron y hay que revisar" />
-            <Cola href="/conteos" numero={conts[0].n} titulo="Conteos abiertos" detalle="Ubicaciones por contar" />
-            {puede(usuario.rol, "supervisor") && <Cola href="/fierro" numero={envios.length} titulo="Para cargar en Fierro" detalle="Documentos terminados que Fierro todavía no tiene" />}
+            <Cola href="/empaque" numero={paraEmpacar[0].n} titulo="Pedidos para empacar" />
+            <Cola href="/recepcion" numero={recs[0].n} titulo="Recepciones abiertas" />
+            <Cola href="/guardar" numero={porGuardar[0].n ?? 0} titulo="Unidades por guardar" />
+            <Cola href="/devoluciones" numero={devs[0].n} titulo="Devoluciones en curso" />
+            <Cola href="/conteos" numero={conts[0].n} titulo="Conteos abiertos" />
+            {puede(usuario.rol, "supervisor") && <Cola href="/fierro" numero={envios.length} titulo="Para cargar en Fierro" />}
           </ul>
         </section>
       </div>

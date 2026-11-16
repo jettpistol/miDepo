@@ -25,7 +25,7 @@ export default async function Empaque() {
 
   return (
     <>
-      <Encabezado titulo="Empaque" bajada="Armá las cajas de los pedidos ya preparados. Cada libro se escanea al entrar a la caja." />
+      <Encabezado titulo="Empaque" />
       {filas.length === 0 ? (
         <Vacio icono="empaque" titulo="No hay pedidos esperando empaque">
           Cuando alguien termine un picking, el pedido aparece acá.

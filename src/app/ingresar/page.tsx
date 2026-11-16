@@ -57,7 +57,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
             </div>
           )}
           <h2 className="mb-1 text-xl font-bold tracking-[-0.02em]">{cuentas.length > 0 ? "Agregar otra cuenta" : "Ingresar"}</h2>
-          {cuentas.length > 0 && <p className="mb-4 text-sm text-suave">{llena ? `Este dispositivo ya tiene ${MAXIMO_CUENTAS} cuentas abiertas. Si entrás con otra, se cierra la que hace más tiempo no se usa.` : "Las cuentas de arriba quedan abiertas: después podés pasar de una a otra sin volver a ingresar."}</p>}
+          {llena && <p className="mb-4 text-sm text-suave">{`Este dispositivo ya tiene ${MAXIMO_CUENTAS} cuentas abiertas. Si entrás con otra, se cierra la que hace más tiempo no se usa.`}</p>}
           <div className={cuentas.length > 0 ? "" : "mt-4"}>
             <Ingreso />
           </div>

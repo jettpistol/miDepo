@@ -16,7 +16,7 @@ export default async function Fierro() {
 
   return (
     <>
-      <Encabezado titulo="Fierro" bajada="Fierro manda en catálogo, clientes y pedidos. miDepo le devuelve lo que pasó en el depósito.">
+      <Encabezado titulo="Fierro">
         <Link href="/fierro/conciliacion" className="boton-suave">
           Conciliar stock
         </Link>
@@ -32,7 +32,7 @@ export default async function Fierro() {
 
       <section className="mb-9">
         <h2 className="titulo-seccion">Traer novedades de Fierro</h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-suave">Última sincronización: {empresa.ultimaSync ? fechaCorta(empresa.ultimaSync) : "nunca"}. Trae títulos nuevos, clientes, pedidos pendientes e ingresos avisados.</p>
+        <p className="mb-3 max-w-[70ch] text-sm text-suave">Última sincronización: {empresa.ultimaSync ? fechaCorta(empresa.ultimaSync) : "nunca"}</p>
         <div className="flex flex-wrap gap-2">
           <BotonAccion accion={sincronizarAhora}>
             <Icono nombre="fierro" /> Sincronizar ahora
@@ -54,7 +54,7 @@ export default async function Fierro() {
         <h2 className="titulo-seccion">
           Para cargar en Fierro <small>{pendientes.length}</small>
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-suave">Descargá el archivo, cargalo en Fierro y después marcalo como cargado. Un pedido sale del stock del depósito recién en ese momento.</p>
+        <p className="mb-3 max-w-[70ch] text-sm text-suave">Un pedido sale del stock recién cuando lo marcás como cargado.</p>
         {pendientes.length === 0 ? (
           <Vacio titulo="Fierro está al día">No hay documentos del depósito sin informar.</Vacio>
         ) : (
