@@ -65,10 +65,10 @@ npm run db:reset
 | Locations | Four naming templates plus a custom builder; printable Code 128 shelf labels (24 per A4 sheet). |
 | Fierro | Sync, CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
 | Accounts | Three roles; login by password, 6-digit PIN, or passkey (fingerprint, face, device PIN). Up to five accounts stay logged in per device, with one-tap switching. Profile photos, with initials as the fallback. |
-| Appearance | Klein blue by default. **Each user picks their own accent colour** and light/dark theme; it follows them to every device. |
+| Appearance | The Tejuelo design system (see `DESIGN.md`): Klein blue by default, shelf codes shown as spine labels. **Each user picks their own accent colour** and light/dark theme; it follows them to every device. |
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
-| Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (black header, search bar, readable without logging in). |
+| Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (blue header, search bar, readable without logging in). |
 
 ## How it fits with Fierro
 

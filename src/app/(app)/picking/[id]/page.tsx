@@ -46,8 +46,8 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
           </BotonAccion>
         </div>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start lg:gap-10">
-          <div className="space-y-3 lg:sticky lg:top-30">
+        <div className="grid gap-5 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-10">
+          <div className="min-w-0 space-y-3 lg:sticky lg:top-30">
             <Avance hecho={pickeado} total={total} unidad="unidades" />
 
             {proxima ? (
@@ -87,7 +87,7 @@ export default async function PickingPedido({ params }: { params: Promise<{ id: 
             )}
           </div>
 
-          <div className="space-y-8">
+          <div className="min-w-0 space-y-8">
             {faltantes.length > 0 && (
               <section>
                 <h2 className="titulo-seccion text-peligro">Faltantes</h2>

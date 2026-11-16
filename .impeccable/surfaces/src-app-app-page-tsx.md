@@ -25,6 +25,6 @@ STORY: The supervisor sees what is waiting, who has what, and where; opens a doc
 
 FIRST VIEWPORT: Inicio at 1440. Blue bar: mark, company, manual, user. Tab strip: all sections. Left two thirds: "Pedidos en preparación" table (next shelf label, number, customer, who, progress) then the oldest pending orders. Right third: ruled list of the day's queues with right-aligned counts. Primary action: "Preparar" on the first pending order.
 
-FORM: Tejuelo, position 1 on the ordered list (chosen by the owner as the pick card). seed:89cabb9159db412f. Signature interaction: the segmented label; on picking, the label at sign size confirms segment by segment as shelf and book are scanned. Motion grammar: 150 ms state changes only.
+FORM: Tejuelo, position 1 on the ordered list (chosen by the owner as the pick card). seed:89cabb9159db412f. Signature interaction: the segmented label; on picking, the label at sign size on the picking stop, and scan fields that mark "Coincide" when the shelf and book match. Motion grammar: 150 ms state changes only.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

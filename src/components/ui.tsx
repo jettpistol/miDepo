@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icono } from "./Icono";
 
-export function Encabezado({ titulo, bajada, volver, children }: { titulo: string; bajada?: ReactNode; volver?: { href: string; texto: string }; children?: ReactNode }) {
+export function Encabezado({ titulo, bajada, volver, children }: { titulo: ReactNode; bajada?: ReactNode; volver?: { href: string; texto: string }; children?: ReactNode }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0">

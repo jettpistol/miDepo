@@ -24,9 +24,12 @@ export default async function ContarUbicacion({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Encabezado titulo={`Contar ${fila.codigo}`} volver={{ href: `/conteos/${id}`, texto: fila.k.nombre }} bajada="Escaneá todo lo que haya en este lugar. Si un título está muchas veces, escribí la cantidad.">
-        <Tejuelo codigo={fila.codigo} tam="md" />
-      </Encabezado>
+      <Encabezado
+        titulo={
+          <span className="flex flex-wrap items-center gap-3">
+            Contar <Tejuelo codigo={fila.codigo} tam="md" className="text-[26px]" />
+          </span>
+        } volver={{ href: `/conteos/${id}`, texto: fila.k.nombre }} bajada="Escaneá todo lo que haya en este lugar. Si un título está muchas veces, escribí la cantidad." />
       <div className={abierta ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10" : "max-w-3xl"}>
         {abierta && (
           <div className="space-y-3 lg:sticky lg:top-30">

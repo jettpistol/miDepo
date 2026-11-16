@@ -2,7 +2,7 @@
 
 miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la preparación de los pedidos y deja registro de todo lo que entra y sale. La oficina sigue trabajando en **Fierro**: miDepo toma de ahí los pedidos y le devuelve lo que pasó en el depósito.
 
-> Este manual tiene **buscador**: está arriba, en la barra negra.
+> Este manual tiene **buscador**: está arriba, en la barra azul.
 
 > **¿Primer día?** Leé [Primeros pasos](Primeros-pasos) y [Cómo escanear](Como-escanear). Con eso ya podés trabajar.
 

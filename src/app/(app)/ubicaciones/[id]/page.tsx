@@ -20,8 +20,8 @@ export default async function Ubicacion({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <Encabezado titulo={esEstante ? u.codigo : nombreUbicacion(u)} volver={supervisor && esEstante ? { href: "/ubicaciones", texto: "Ubicaciones" } : { href: "/stock", texto: "Stock" }} bajada={`${contenido.length} títulos · ${contenido.reduce((s, c) => s + c.s.cantidad, 0)} unidades`}>
-        <Tejuelo codigo={u.codigo} tam="md" />
+      <Encabezado titulo={esEstante ? <Tejuelo codigo={u.codigo} tam="md" className="text-[26px]" /> : nombreUbicacion(u)} volver={supervisor && esEstante ? { href: "/ubicaciones", texto: "Ubicaciones" } : { href: "/stock", texto: "Stock" }} bajada={`${contenido.length} títulos · ${contenido.reduce((s, c) => s + c.s.cantidad, 0)} unidades`}>
+        {!esEstante && <Tejuelo codigo={u.codigo} tam="md" />}
         {!u.activa && <Insignia tono="alerta">Dada de baja</Insignia>}
         {esEstante && (
           <Link href={`/imprimir/ubicaciones?prefijo=${encodeURIComponent(u.codigo)}&exacta=1`} target="_blank" className="boton-suave">
