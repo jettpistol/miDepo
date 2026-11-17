@@ -20,7 +20,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <PageHeader title={isShelf ? <ShelfMark code={u.code} size="md" className="text-[26px]" /> : locationName(u)} back={supervisor && isShelf ? { href: "/ubicaciones", text: "Ubicaciones" } : { href: "/stock", text: "Stock" }} subtitle={`${contents.length} títulos · ${contents.reduce((s, c) => s + c.s.quantity, 0)} unidades`}>
+      <PageHeader title={isShelf ? <ShelfMark code={u.code} size="md" className="text-[22px] lg:text-2xl" /> : locationName(u)} back={supervisor && isShelf ? { href: "/ubicaciones", text: "Ubicaciones" } : { href: "/stock", text: "Stock" }} subtitle={`${contents.length} títulos · ${contents.reduce((s, c) => s + c.s.quantity, 0)} unidades`}>
         {!isShelf && <ShelfMark code={u.code} size="md" />}
         {!u.active && <Badge tone="warn">Dada de baja</Badge>}
         {isShelf && (
@@ -37,7 +37,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
       {contents.length === 0 ? (
         <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Este lugar está vacío.</p>
       ) : (
-        <div className="max-w-4xl overflow-x-auto border-y border-line">
+        <div className="max-w-4xl table-wrap">
           <table className="data-table">
             <thead>
               <tr>

@@ -34,7 +34,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
           </Notice>
         </div>
       )}
-      <div className={`grid gap-5 lg:items-start lg:gap-10 ${open ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
+      <div className={`grid gap-5 lg:items-start lg:gap-8 ${open ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar">
@@ -69,7 +69,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
           {lines.length === 0 ? (
             <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay libros. Escaneá el primero.</p>
           ) : (
-            <ul className="ruled-list">
+            <ul className="ruled-list framed">
               {lines.map(({ l, title, code }) => (
                 <li key={`${l.productId}-${l.bookCondition}`} className="row flex-wrap">
                   <span className="min-w-0 flex-1 basis-48">

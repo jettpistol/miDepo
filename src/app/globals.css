@@ -127,6 +127,13 @@ body {
   font-family: var(--font-sans);
   font-feature-settings: "tnum" 1;
 }
+/* Desktop runs at the density of a work tool (14px); phones keep touch sizes. */
+@media (min-width: 64rem) {
+  body {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
 ::selection {
   background: var(--accent);
   color: var(--on-accent);
@@ -149,12 +156,12 @@ h3 {
 @layer components {
   /* Controls */
   .field {
-    @apply min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-ink transition-colors duration-150 placeholder:text-muted hover:border-ink/60 focus:border-accent-text disabled:cursor-not-allowed disabled:bg-sunken disabled:text-muted lg:min-h-10 lg:text-[15px];
+    @apply min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-ink transition-colors duration-150 placeholder:text-muted hover:border-ink/60 focus:border-accent-text disabled:cursor-not-allowed disabled:bg-sunken disabled:text-muted lg:min-h-8 lg:px-2.5 lg:py-1 lg:text-sm;
   }
   .btn,
   .btn-soft,
   .btn-danger {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-control px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-10 lg:text-sm;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-control px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-8 lg:gap-1.5 lg:px-3 lg:py-1 lg:text-sm lg:font-medium;
   }
   .btn {
     @apply bg-accent text-on-accent hover:bg-accent-hover active:bg-accent;
@@ -166,7 +173,7 @@ h3 {
     @apply border border-danger/50 bg-surface text-danger hover:bg-danger-soft;
   }
   .field-label {
-    @apply mb-1.5 block text-sm font-semibold text-ink;
+    @apply mb-1.5 block text-sm font-semibold text-ink lg:mb-1 lg:text-xs lg:text-muted;
   }
   .link {
     @apply font-semibold text-accent-text underline decoration-accent-text/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-accent-text;
@@ -177,21 +184,24 @@ h3 {
     @apply rounded-control border border-line bg-surface;
   }
   .section-title {
-    @apply mb-2 flex items-baseline gap-2 text-[15px] font-bold text-ink;
+    @apply mb-2 flex items-baseline gap-2 text-[15px] font-bold text-ink lg:text-sm lg:font-semibold;
   }
   .section-title small {
-    @apply text-sm font-medium text-muted;
+    @apply text-sm font-medium text-muted lg:text-xs;
   }
 
   /* Ruled list: rows with a thin hairline; replaces stacks of cards. */
   .ruled-list {
     @apply border-y border-line;
   }
+  .ruled-list.framed {
+    @apply lg:rounded-control lg:border;
+  }
   .ruled-list > li + li {
     @apply border-t border-line;
   }
   .row {
-    @apply flex items-center gap-x-4 gap-y-1.5 px-2 py-2.5 text-[15px] lg:px-3;
+    @apply flex items-center gap-x-4 gap-y-1.5 px-2 py-2.5 text-[15px] lg:gap-x-3 lg:px-3 lg:py-2 lg:text-sm;
   }
   a.row,
   button.row,
@@ -200,14 +210,17 @@ h3 {
   }
 
   /* Tables */
+  .table-wrap {
+    @apply min-w-0 overflow-x-auto border-y border-line lg:rounded-control lg:border;
+  }
   .data-table {
     @apply w-full text-left text-sm;
   }
   .data-table th {
-    @apply border-b border-line-strong px-2 py-2 text-[13px] sm:px-3 font-semibold whitespace-nowrap text-muted;
+    @apply border-b border-line-strong px-2 py-2 text-[13px] font-semibold whitespace-nowrap text-muted sm:px-3 lg:py-1.5 lg:text-xs;
   }
   .data-table td {
-    @apply border-b border-line px-2 py-2.5 align-middle sm:px-3;
+    @apply border-b border-line px-2 py-2.5 align-middle sm:px-3 lg:py-2;
   }
   .data-table tbody tr {
     @apply transition-colors duration-150 hover:bg-sunken/60;
@@ -255,12 +268,15 @@ h3 {
     --zone: var(--zone-staging);
   }
   .shelfmark-md {
-    @apply text-base;
+    @apply text-base lg:text-sm;
   }
   .shelfmark-xl {
     max-width: 100%;
     font-size: 2.75rem;
     border-width: 3px;
+    @media (min-width: 64rem) {
+      font-size: 2.25rem;
+    }
     border-radius: 6px;
   }
   .shelfmark-xl > span {
@@ -287,7 +303,7 @@ h3 {
   }
   /* Button for the last cell of a table row. */
   .btn-sm {
-    @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1 text-sm font-semibold whitespace-nowrap text-ink transition-colors duration-150 hover:border-accent-text hover:bg-accent-soft hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-8 lg:text-[13px];
+    @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1 text-sm font-semibold whitespace-nowrap text-ink transition-colors duration-150 hover:border-accent-text hover:bg-accent-soft hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-7 lg:px-2.5 lg:py-0.5 lg:text-[13px] lg:font-medium;
   }
 }
 

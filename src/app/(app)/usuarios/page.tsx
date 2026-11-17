@@ -27,9 +27,9 @@ export default async function Users() {
         }
       />
 
-      <ul className="ruled-list">
+      <ul className="ruled-list framed">
         {list.map((u) => (
-          <li key={u.id} className="px-2 py-3 lg:px-3">
+          <li key={u.id} className="px-2 py-3 lg:py-2 lg:px-3">
             <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${u.active ? "" : "text-muted"}`}>
               <span className="flex min-w-0 items-center gap-3">
                 <Avatar person={u} className="size-9 text-sm" />
@@ -89,7 +89,7 @@ export default async function Users() {
         ))}
       </ul>
 
-      <section className="panel mt-12 max-w-3xl p-5">
+      <section className="panel mt-10 lg:mt-8 max-w-3xl p-5 lg:p-4">
         <h2 className="section-title mb-3">Sumar a alguien</h2>
         <ActionForm action={create} button="Crear usuario" className="grid gap-3 sm:grid-cols-2" anyOf={{ fields: ["pin", "password"], message: "Dale un PIN, una contraseña o las dos cosas para que pueda entrar." }}>
           <div>

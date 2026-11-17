@@ -31,7 +31,7 @@ export default async function Packing() {
           Cuando alguien termine un picking, el pedido aparece acá.
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto border-y border-line">
+        <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>

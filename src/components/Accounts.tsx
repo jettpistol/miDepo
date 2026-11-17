@@ -21,7 +21,7 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
       {current && (
         <Link href="/cuenta" className={`${row} ${showCurrent ? "py-2.5" : ""}`}>
           {showCurrent ? (
-            <Avatar person={current.user} className="size-11 text-base" />
+            <Avatar person={current.user} className="size-11 lg:size-9 text-base" />
           ) : (
             <span className="grid size-8 place-items-center">
               <Icon name="account" />

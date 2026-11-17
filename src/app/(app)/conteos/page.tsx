@@ -28,7 +28,7 @@ export default async function Counts() {
     <>
       <PageHeader title="Conteos" />
       {can(user.role, "supervisor") && (
-        <section className="panel mb-9 max-w-3xl p-4">
+        <section className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
           <h2 className="section-title">Nuevo conteo</h2>
           <ActionForm action={create} button="Crear conteo" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
             <div>
@@ -46,7 +46,7 @@ export default async function Counts() {
           {can(user.role, "supervisor") ? "Creá el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto border-y border-line">
+        <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>

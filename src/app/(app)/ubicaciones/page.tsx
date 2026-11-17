@@ -40,7 +40,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         <button className="btn-soft">Filtrar</button>
       </form>
       {list.length > 0 ? (
-        <div className="max-w-3xl overflow-x-auto border-y border-line">
+        <div className="max-w-3xl table-wrap">
           <table className="data-table">
             <thead>
               <tr>
@@ -67,11 +67,11 @@ export default async function Locations({ searchParams }: { searchParams: Promis
           </table>
         </div>
       ) : (
-        <p className="max-w-3xl border-y border-line px-2 py-6 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay estantes. Crealos con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
+        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay estantes. Crealos con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
       )}
       {list.length === 120 && <p className="mt-3 text-sm text-muted">Se muestran las primeras 120.</p>}
 
-      <section className="mt-12 max-w-5xl">
+      <section className="mt-10 lg:mt-8 max-w-5xl">
         <h2 className="section-title">Generador de ubicaciones</h2>
         {company.locationScheme ? (
           <p className="mb-5">
@@ -81,7 +81,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         <Generator action={generate} initial={(company.locationScheme as Scheme | null) ?? null} />
       </section>
 
-      <section className="mt-12">
+      <section className="mt-10 lg:mt-8">
         <h2 className="section-title">Agregar una ubicación suelta</h2>
         <ActionForm action={createStandalone} button="Agregar" className="flex flex-wrap items-start gap-3">
           <input name="code" className="field max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />

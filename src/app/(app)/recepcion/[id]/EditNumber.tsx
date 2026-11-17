@@ -29,7 +29,7 @@ export function EditNumber({ action, hiddenFields, field, value }: { action: Act
         onBlur={save}
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         aria-label="Corregir cantidad"
-        className="field min-h-10 w-20 px-2 py-1 text-right font-bold lg:min-h-9"
+        className="field min-h-10 w-20 px-2 py-1 text-right font-bold lg:min-h-7 lg:w-16 lg:py-0.5"
       />
       {status.error && <span className="mt-1 text-xs text-danger">{status.error}</span>}
     </span>

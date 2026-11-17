@@ -32,28 +32,49 @@ colors:
 typography:
   title:
     fontFamily: "Libre Franklin, system-ui, sans-serif"
-    fontSize: "1.75rem"
+    fontSize: "1.5rem"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "-0.01em"
+  title-phone:
+    fontFamily: "Libre Franklin, system-ui, sans-serif"
+    fontSize: "1.375rem"
     fontWeight: 700
     lineHeight: 1.25
-    letterSpacing: "-0.02em"
+    letterSpacing: "-0.01em"
   section:
     fontFamily: "Libre Franklin, system-ui, sans-serif"
-    fontSize: "0.9375rem"
-    fontWeight: 700
+    fontSize: "0.875rem"
+    fontWeight: 600
     lineHeight: 1.4
   body:
+    fontFamily: "Libre Franklin, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.43
+  body-phone:
     fontFamily: "Libre Franklin, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.5
-  table:
+  table-header:
     fontFamily: "Libre Franklin, system-ui, sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 400
-    lineHeight: 1.45
+    fontSize: "0.75rem"
+    fontWeight: 600
+    lineHeight: 1.33
   code:
     fontFamily: "Courier Prime, Courier New, monospace"
     fontSize: "0.8125rem"
+    fontWeight: 700
+    lineHeight: 1
+  scan-target:
+    fontFamily: "Courier Prime, Courier New, monospace"
+    fontSize: "2.75rem"
+    fontWeight: 700
+    lineHeight: 1
+  scan-target-desktop:
+    fontFamily: "Courier Prime, Courier New, monospace"
+    fontSize: "2.25rem"
     fontWeight: 700
     lineHeight: 1
 rounded:
@@ -69,26 +90,26 @@ components:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.on-accent}"
     rounded: "{rounded.control}"
-    padding: "8px 16px"
-    height: "40px"
+    padding: "4px 12px"
+    height: "32px"
   btn-soft:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
-    padding: "8px 16px"
-    height: "40px"
-  btn-sm:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
     padding: "4px 12px"
     height: "32px"
+  btn-sm:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "2px 10px"
+    height: "28px"
   field:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
-    padding: "8px 12px"
-    height: "40px"
+    padding: "4px 10px"
+    height: "32px"
   shelfmark:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.accent}"
@@ -100,9 +121,9 @@ components:
     typography: "{typography.code}"
     rounded: "{rounded.label}"
   bar:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.on-accent}"
-    height: "52px"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    height: "48px"
 ---
 
 # miDepo design system: Tejuelo
@@ -117,26 +138,30 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 
 ## Colors
 
-- **Klein blue `#002FA7` (`accent`)** is the brand colour and the default. It fills the header bar, primary buttons and the picking-stop block, and it inks shelf labels and links. Users can still choose another accent; every accent use goes through the tokens, never a literal hex.
+- **Klein blue `#002FA7` (`accent`)** is the brand colour and the default. It fills primary buttons and the picking-stop block and the active sidebar item, and it inks shelf labels and links. Users can still choose another accent; every accent use goes through the tokens, never a literal hex.
 - `accent-text` is the accent as text. It is computed per theme so it always reads (light: the accent itself; dark: `#9DB1F5` for Klein blue).
-- Neutrals are tinted toward blue. `page` and `surface` are white; `sunken` is the second layer (tab strip, hovered rows, code chips).
+- Neutrals are tinted toward blue. `page` and `surface` are white; `sunken` is the second layer (hovered rows, sidebar hover, code chips).
 - `ok`, `warn` and `danger` each have a `-soft` tint and appear only where they carry state.
 - Zone colours mark the five non-shelf zones on their labels (recepción amber, devoluciones violet, dañados red, saldos teal, preparación green).
-- Light and dark themes both ship. The dark theme uses a deep blue-black ground (`#090C1A`) and keeps the Klein-blue bar.
+- Light and dark themes both ship. The dark theme uses a deep blue-black ground (`#090C1A`); Klein blue stays on primary buttons, the active sidebar item and shelf marks.
 
 ## Typography
 
-- **Libre Franklin** for all interface text. One family; weight and size carry hierarchy. Page titles 26–28px bold at -0.02em; section headings 15px bold; body 15px; tables 14px. Fixed rem sizes, no fluid type.
+- **Libre Franklin** for all interface text. One family; weight and size carry hierarchy. Desktop: page titles 24px semibold, section headings 14px semibold, body and tables 14px, table headers and field labels 12px. Phones: titles 22px bold, body 15px. Fixed rem sizes, no fluid type.
 - **Courier Prime bold**, as typed on a label, only for codes: shelf labels, ISBNs, internal codes and document numbers. Never for prose or headings.
 - Numerals are tabular everywhere.
 - Prose (the manual) is capped at 72ch.
 
 ## Layout
 
-- Desktop: a 52px Klein-blue bar (mark, company, manual, user menu) over a pale tab strip with every section. Both stick to the top. Content is centred at max 1360px.
-- Phone (below `lg`): the blue bar, and a five-item bar fixed at the bottom. The rest of the menu is at `/mas`.
+- **Density follows Jira on desktop** (from `lg`, 1024px): 14px body text with 20px line height, 32px buttons and inputs (`btn`, `field`), 28px row buttons (`btn-sm`), 12px table headers and field labels, 24px semibold page titles. Free space is left free: a screen that is not full has room for the next feature.
+- **Phones keep touch sizes** (below `lg`): 44px controls and 15–16px text, because operators scan on the floor with one hand.
+- Desktop shell: a 48px white top bar (brand, stock search, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
+- Phone shell: a 52px white top bar and a five-item bar fixed at the bottom. The rest of the menu is at `/mas`.
+- Page header: a breadcrumb (parent / ) above the title, actions on the right.
 - Work screens use two columns from `lg`: a sticky 22–24rem scan column (`lg:top-30`) and the list beside it.
-- Rhythm: 36px between sections, tight inside a group, more space above a heading than below it.
+- Tables sit in a framed box on desktop (`table-wrap`), hairlines only on phones. Ruled lists can take the same frame (`ruled-list framed`).
+- Rhythm: 24px between sections on desktop, 32px on phones; tight inside a group, more space above a heading than below it.
 - Tables hide secondary columns on narrow screens and repeat the essential value as a muted sub-line. No screen scrolls sideways at 390px.
 
 ## Elevation & Depth

@@ -32,7 +32,7 @@ export default async function Receivings() {
       {openList.length === 0 ? (
         <EmptyState title="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</EmptyState>
       ) : (
-        <div className="overflow-x-auto border-y border-line">
+        <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
@@ -72,7 +72,7 @@ export default async function Receivings() {
         </div>
       )}
 
-      <section className="mt-9">
+      <section className="mt-8 lg:mt-6">
         <h2 className="section-title">Llegó algo sin aviso</h2>
         <ActionForm action={create} button="Crear recepción" className="flex flex-wrap items-start gap-3">
           <input name="supplier" className="field max-w-sm flex-1 basis-64" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
@@ -80,9 +80,9 @@ export default async function Receivings() {
       </section>
 
       {closedList.length > 0 && (
-        <section className="mt-9">
+        <section className="mt-8 lg:mt-6">
           <h2 className="section-title">Últimas cerradas</h2>
-          <ul className="ruled-list">
+          <ul className="ruled-list framed">
             {closedList.map(({ r, received }) => (
               <li key={r.id}>
                 <Link href={`/recepcion/${r.id}`} className="row justify-between">

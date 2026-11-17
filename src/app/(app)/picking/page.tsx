@@ -13,7 +13,7 @@ export default async function Picking() {
       <PageHeader title="Picking" />
 
       {inProgress.length > 0 && (
-        <section className="mb-9">
+        <section className="mb-8 lg:mb-6">
           <h2 className="section-title">
             En preparación <small>{inProgress.length}</small>
           </h2>

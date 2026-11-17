@@ -37,7 +37,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
       </PageHeader>
 
       {p.status === "pending" ? (
-        <div className="max-w-md space-y-4 border-y border-line py-5">
+        <div className="max-w-md space-y-4 border-y border-line py-5 lg:py-4">
           <p>
             Este pedido tiene <strong>{total} unidades</strong> de {lines.length} títulos y todavía no lo tomó nadie.
           </p>
@@ -46,19 +46,19 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
           </ActionButton>
         </div>
       ) : (
-        <div className="grid gap-5 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-10">
+        <div className="grid gap-5 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
           <div className="min-w-0 space-y-3 lg:sticky lg:top-30">
             <Progress done={picked} total={total} unit="unidades" />
 
             {nextStop ? (
               <>
-                <div className="rounded-control bg-accent p-5 text-on-accent">
+                <div className="rounded-control bg-accent p-5 lg:p-4 text-on-accent">
                   <p className="mb-2.5 text-sm font-semibold opacity-85">Próxima parada · quedan {pending.length}</p>
                   <ShelfMark code={nextStop.location} size="xl" onAccent />
-                  <p className="mt-4 text-lg leading-snug font-semibold">{nextStop.title}</p>
+                  <p className="mt-4 text-lg lg:text-base leading-snug font-semibold">{nextStop.title}</p>
                   <p className="font-mono text-sm font-bold opacity-85">{nextStop.code}</p>
                   <p className="mt-3 text-base">
-                    Tomá <span className="text-3xl font-bold">{nextStop.t.quantity - nextStop.t.picked}</span>
+                    Tomá <span className="text-3xl lg:text-2xl font-bold">{nextStop.t.quantity - nextStop.t.picked}</span>
                   </p>
                 </div>
                 <ScanForm
@@ -88,11 +88,11 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             )}
           </div>
 
-          <div className="min-w-0 space-y-8">
+          <div className="min-w-0 space-y-7 lg:space-y-5">
             {shortages.length > 0 && (
               <section>
                 <h2 className="section-title text-danger">Faltantes</h2>
-                <ul className="ruled-list">
+                <ul className="ruled-list framed">
                   {shortages.map(({ t, title, location }) => (
                     <li key={t.id} className="row justify-between">
                       <span>
@@ -108,7 +108,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             {pending.length > 1 && (
               <section>
                 <h2 className="section-title">Después</h2>
-                <ul className="ruled-list">
+                <ul className="ruled-list framed">
                   {pending.slice(1).map(({ t, title, location }) => (
                     <li key={t.id} className="row">
                       <ShelfMark code={location} />
@@ -122,7 +122,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             {doneTasks.length > 0 && (
               <section>
                 <h2 className="section-title">Ya tomado</h2>
-                <ul className="ruled-list">
+                <ul className="ruled-list framed">
                   {doneTasks.map(({ t, title, location }) => (
                     <li key={t.id} className="row text-muted">
                       <ShelfMark code={location} />

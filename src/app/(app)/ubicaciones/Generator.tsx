@@ -18,7 +18,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
   const change = (i: number, patch: Partial<Segment>) => setScheme((e) => ({ ...e, id: "custom", segments: e.segments.map((t, j) => (j === i ? { ...t, ...patch } : t)) }));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7 lg:space-y-5">
       <fieldset>
         <legend className="field-label">1. Elegí el modelo que más se parece a tu depósito</legend>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -39,7 +39,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
         <legend className="field-label">2. Ajustalo a tus medidas</legend>
         <div className="border-y border-line">
           {scheme.segments.map((t, i) => (
-            <div key={i} className={`grid grid-cols-2 gap-2 py-3 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.8fr_auto] sm:items-end ${i > 0 ? "border-t border-line" : ""}`}>
+            <div key={i} className={`grid grid-cols-2 gap-2 py-3 lg:py-2 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.8fr_auto] sm:items-end ${i > 0 ? "border-t border-line" : ""}`}>
               <label className="text-[13px] font-semibold text-muted">
                 Qué es
                 <input value={t.name} onChange={(e) => change(i, { name: e.target.value })} className="field mt-1" />

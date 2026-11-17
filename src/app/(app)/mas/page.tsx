@@ -12,7 +12,7 @@ export default async function More() {
   return (
     <>
       <PageHeader title="Menú" subtitle={company.name} />
-      <section className="mb-9">
+      <section className="mb-8 lg:mb-6">
         <h2 className="section-title">Tu cuenta</h2>
         <div className="border-y border-line py-1.5">
           <Accounts showCurrent />
@@ -22,12 +22,12 @@ export default async function More() {
         const items = g.items.filter((i) => can(user.role, i.minRole ?? "operator"));
         if (items.length === 0) return null;
         return (
-          <section key={g.group} className="mb-9">
+          <section key={g.group} className="mb-8 lg:mb-6">
             <h2 className="section-title">{g.group}</h2>
             <ul className="ruled-list">
               {items.map((i) => (
                 <li key={i.href}>
-                  <Link href={i.href} className="row py-3">
+                  <Link href={i.href} className="row py-3 lg:py-2">
                     <Icon name={i.icon} className="size-6 text-accent-text" />
                     <span className="min-w-0 flex-1 font-semibold">{i.name}</span>
                     <Icon name="arrow" className="size-4 text-muted" />

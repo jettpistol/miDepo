@@ -202,7 +202,7 @@ export function ScanForm({
   return (
     <form
       ref={form}
-      className="space-y-3.5 rounded-control border border-line-strong bg-surface p-4"
+      className="space-y-3.5 rounded-control border border-line-strong bg-surface p-4 lg:p-3"
       autoComplete="off"
       onInput={(e) => {
         const name = (e.target as HTMLInputElement).name;

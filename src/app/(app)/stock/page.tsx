@@ -36,7 +36,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
       <StockSearch initial={q} />
 
       {location && (
-        <Link href={`/ubicaciones/${location.id}`} className="group mb-6 flex max-w-xl items-center gap-4 rounded-control border border-accent-text/30 bg-accent-soft px-3 py-3 transition-colors duration-150 hover:border-accent-text">
+        <Link href={`/ubicaciones/${location.id}`} className="group mb-6 flex max-w-xl items-center gap-4 rounded-control border border-accent-text/30 bg-accent-soft px-3 py-3 lg:py-2 transition-colors duration-150 hover:border-accent-text">
           <ShelfMark code={location.code} size="md" />
           <span className="min-w-0 flex-1 text-sm text-muted">Es una ubicación</span>
           <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent-text">
@@ -48,7 +48,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
       {q && found.length === 0 && !location && <EmptyState icon="stock" title={`Nada coincide con "${q}"`}>Probá con menos palabras o con el código de barras completo.</EmptyState>}
 
       {found.length > 0 && (
-        <div className="overflow-x-auto border-y border-line">
+        <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>

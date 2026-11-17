@@ -16,7 +16,7 @@ export default async function Help({ params, searchParams }: Props) {
     const hits = search(q);
     return (
       <div className="max-w-[72ch] text-base">
-        <h1 className="text-[26px] leading-tight font-bold tracking-[-0.02em]">Resultados para “{q}”</h1>
+        <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] lg:text-2xl lg:font-semibold">Resultados para “{q}”</h1>
         <p className="mt-1 mb-6 text-muted">{hits.length === 0 ? "No encontré nada con esas palabras." : hits.length === 1 ? "1 página del manual." : `${hits.length} páginas del manual.`}</p>
         {hits.length === 0 ? (
           <div className="border-y border-line py-5 leading-relaxed">

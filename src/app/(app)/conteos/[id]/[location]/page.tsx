@@ -27,10 +27,10 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
-            Contar <ShelfMark code={row.code} size="md" className="text-[26px]" />
+            Contar <ShelfMark code={row.code} size="md" className="text-[22px] lg:text-2xl" />
           </span>
         } back={{ href: `/conteos/${id}`, text: row.k.name }} />
-      <div className={open ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10" : "max-w-3xl"}>
+      <div className={open ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8" : "max-w-3xl"}>
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <ScanForm action={scan} context="count" hiddenFields={{ id, locationId }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar" />
@@ -42,7 +42,7 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
         {lines.length === 0 ? (
           <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no contaste nada acá.</p>
         ) : (
-          <ul className="ruled-list">
+          <ul className="ruled-list framed">
             {lines.map(({ l, title, code }) => (
               <li key={l.productId} className="row justify-between">
                 <span className="min-w-0">

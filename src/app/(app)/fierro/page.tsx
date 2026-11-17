@@ -30,7 +30,7 @@ export default async function Fierro() {
         </div>
       )}
 
-      <section className="mb-9">
+      <section className="mb-8 lg:mb-6">
         <h2 className="section-title">Traer novedades de Fierro</h2>
         <p className="mb-3 max-w-[70ch] text-sm text-muted">Última sincronización: {company.lastSync ? shortDate(company.lastSync) : "nunca"}</p>
         <div className="flex flex-wrap gap-2">
@@ -58,7 +58,7 @@ export default async function Fierro() {
         {pending.length === 0 ? (
           <EmptyState title="Fierro está al día">No hay documentos del depósito sin informar.</EmptyState>
         ) : (
-          <div className="overflow-x-auto border-y border-line">
+          <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>

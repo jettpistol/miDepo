@@ -15,7 +15,7 @@ export default async function Account() {
   const { db, user, company } = await requireSession();
   const keys = await db.select().from(passkeys).where(eq(passkeys.userId, user.id)).orderBy(asc(passkeys.createdAt));
 
-  const section = "grid gap-x-10 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
+  const section = "grid gap-x-10 lg:gap-x-8 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
 
   return (
     <>
@@ -24,7 +24,7 @@ export default async function Account() {
         <section className={section}>
           <h2 className="section-title">Foto de perfil</h2>
           <div className="flex flex-wrap items-center gap-5">
-            <Avatar person={user} className="size-20 text-2xl" />
+            <Avatar person={user} className="size-20 lg:size-14 text-2xl" />
             <div className="flex flex-wrap items-start gap-2">
               <Photo action={savePhoto} has={Boolean(user.photoVersion)} />
               {user.photoVersion && (
@@ -47,7 +47,7 @@ export default async function Account() {
           </h2>
           <div className="max-w-xl">
             {keys.length > 0 && (
-              <ul className="ruled-list mb-4">
+              <ul className="ruled-list framed mb-4">
                 {keys.map((l) => (
                   <li key={l.id} className="row flex-wrap justify-between">
                     <span>
@@ -99,7 +99,7 @@ export default async function Account() {
                 <label htmlFor="pin" className="field-label">
                   {user.pinHmac ? "PIN nuevo" : "PIN"}
                 </label>
-                <input id="pin" name="pin" type="password" inputMode="numeric" maxLength={6} pattern="\d{6}" autoComplete="off" className="field max-w-48 text-center font-mono text-xl tracking-[0.4em]" placeholder="••••••" required />
+                <input id="pin" name="pin" type="password" inputMode="numeric" maxLength={6} pattern="\d{6}" autoComplete="off" className="field max-w-48 text-center font-mono text-xl lg:text-base tracking-[0.4em]" placeholder="••••••" required />
               </div>
             </ActionForm>
           </div>

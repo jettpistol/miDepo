@@ -4,16 +4,18 @@ import { Icon } from "./Icon";
 
 export function PageHeader({ title, subtitle, back, children }: { title: ReactNode; subtitle?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+    <header className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mb-5">
       <div className="min-w-0">
         {back && (
-          <Link href={back.href} className="mb-1.5 inline-flex items-center gap-1 text-sm font-semibold text-muted transition-colors duration-150 hover:text-accent-text">
-            <Icon name="arrow" className="size-4 rotate-180" />
-            {back.text}
-          </Link>
+          <nav aria-label="Ruta" className="mb-1 flex items-center gap-1.5 text-sm text-muted">
+            <Link href={back.href} className="transition-colors duration-150 hover:text-accent-text hover:underline">
+              {back.text}
+            </Link>
+            <span aria-hidden="true">/</span>
+          </nav>
         )}
-        <h1 className="text-[26px] leading-tight font-bold tracking-[-0.02em] lg:text-[28px]">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-[70ch] text-[15px] text-muted">{subtitle}</p>}
+        <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] lg:text-2xl lg:font-semibold">{title}</h1>
+        {subtitle && <p className="mt-1 max-w-[70ch] text-[15px] text-muted lg:text-sm">{subtitle}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
@@ -36,7 +38,7 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
 /** Empty state: says what is missing and how it will appear, without decoration. */
 export function EmptyState({ title, children }: { icon?: unknown; title: string; children?: ReactNode }) {
   return (
-    <div className="border-y border-line px-2 py-8 lg:px-3">
+    <div className="border-y border-line px-2 py-8 lg:rounded-control lg:border lg:px-4 lg:py-6">
       <p className="font-bold">{title}</p>
       {children && <div className="mt-1 max-w-[60ch] text-sm text-muted">{children}</div>}
     </div>

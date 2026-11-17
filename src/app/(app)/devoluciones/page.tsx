@@ -27,7 +27,7 @@ export default async function Returns() {
   return (
     <>
       <PageHeader title="Devoluciones" />
-      <section className="mb-9">
+      <section className="mb-8 lg:mb-6">
         <h2 className="section-title">Llegó una devolución</h2>
         <ActionForm action={create} button="Empezar a revisar" className="flex flex-wrap items-start gap-3">
           <CustomerPicker customers={list} />
@@ -39,7 +39,7 @@ export default async function Returns() {
           <h2 className="section-title">
             Últimas devoluciones <small>{rows.length}</small>
           </h2>
-          <div className="overflow-x-auto border-y border-line">
+          <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>

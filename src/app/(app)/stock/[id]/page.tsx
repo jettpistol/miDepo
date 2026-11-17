@@ -35,14 +35,14 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   return (
     <>
       <PageHeader title={p.title} back={{ href: "/stock", text: "Stock" }} subtitle={[p.author, p.imprint].filter(Boolean).join(" · ")} />
-      <dl className="mb-9 flex flex-wrap items-end gap-x-10 gap-y-3 border-y border-line px-2 py-3 lg:px-3">
+      <dl className="mb-8 lg:mb-6 flex flex-wrap items-end gap-x-10 lg:gap-x-8 gap-y-3 border-y border-line px-2 py-3 lg:py-2 lg:px-3">
         {[
           ["En el depósito", total],
           ["Según Fierro", fierro?.quantity ?? 0],
         ].map(([k, v]) => (
           <div key={k}>
             <dt className="text-sm text-muted">{k}</dt>
-            <dd className="text-xl font-bold tabular-nums">{v}</dd>
+            <dd className="text-xl lg:text-base font-bold tabular-nums">{v}</dd>
           </div>
         ))}
         <div>
@@ -55,21 +55,21 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         </div>
       </dl>
 
-      <div className="grid gap-x-12 gap-y-9 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+      <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
         <section>
           <h2 className="section-title">
             Dónde está {whereabouts.length > 0 && <small>{whereabouts.length}</small>}
           </h2>
           {whereabouts.length === 0 ? (
-            <p className="border-y border-line px-2 py-6 text-sm text-muted lg:px-3">No hay unidades en el depósito.</p>
+            <p className="border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">No hay unidades en el depósito.</p>
           ) : (
-            <ul className="ruled-list">
+            <ul className="ruled-list framed">
               {whereabouts.map(({ s, u }) => (
                 <li key={u.id}>
                   <Link href={`/ubicaciones/${u.id}`} className="row">
                     <ShelfMark code={u.code} size="md" />
                     <span className="min-w-0 flex-1 truncate text-sm text-muted">{u.type === "shelf" ? "" : locationName(u)}</span>
-                    <span className="text-xl font-bold tabular-nums">{s.quantity}</span>
+                    <span className="text-xl lg:text-base font-bold tabular-nums">{s.quantity}</span>
                   </Link>
                 </li>
               ))}
@@ -80,7 +80,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         {moves.length > 0 && (
           <section className="min-w-0">
             <h2 className="section-title">Últimos movimientos</h2>
-            <div className="overflow-x-auto border-y border-line">
+            <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>

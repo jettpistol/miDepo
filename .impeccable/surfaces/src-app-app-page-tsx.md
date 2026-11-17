@@ -19,7 +19,7 @@ Unresolved: none.
 
 THESIS: Every copy has an address, and the address is the interface. Lists lead with the shelf label the way spines lead on a shelf. Refused: the grid of same-size icon cards with a number in each.
 
-OWN-WORLD: White label stock on a white page, Klein-blue ink. A Klein-blue header bar over a pale blue-grey tab strip. Ruled lists and tables with hairlines, no card stacks. Rectangular labels with 3–6px corners. Libre Franklin for interface text; Courier Prime bold, as typed on a label, only for codes. Zone labels carry a colour band (recepción amber, devoluciones violet, dañados red, saldos teal, preparación green).
+OWN-WORLD: White label stock on a white page, Klein-blue ink. A white 48px top bar and a 240px left sidebar with queue counts, Jira-style density on desktop. Ruled lists and tables with hairlines, no card stacks. Rectangular labels with 3–6px corners. Libre Franklin for interface text; Courier Prime bold, as typed on a label, only for codes. Zone labels carry a colour band (recepción amber, devoluciones violet, dañados red, saldos teal, preparación green).
 
 STORY: The supervisor sees what is waiting, who has what, and where; opens a document; sends it to Fierro. The operator sees one label and scans it.
 

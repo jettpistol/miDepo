@@ -42,7 +42,7 @@ export default async function Reconciliation() {
           <p className="mb-3 max-w-[70ch] text-sm text-muted">
             {rows.length === 300 ? "Las 300 diferencias más grandes" : `${rows.length} títulos con diferencia`}
           </p>
-          <div className="overflow-x-auto border-y border-line">
+          <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>

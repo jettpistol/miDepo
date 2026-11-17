@@ -13,7 +13,7 @@ function Queue({ href, number, title }: { href: string; number: number; title: s
     <li>
       <Link href={href} className="row group">
         <span className="min-w-0 flex-1 font-semibold">{title}</span>
-        <span className={`text-xl font-bold tabular-nums ${number > 0 ? "" : "text-muted/60"}`}>{number}</span>
+        <span className={`text-xl lg:text-base font-bold tabular-nums ${number > 0 ? "" : "text-muted/60"}`}>{number}</span>
         <Icon name="arrow" className="size-4 text-muted transition-transform duration-150 group-hover:translate-x-0.5" />
       </Link>
     </li>
@@ -47,14 +47,14 @@ export default async function Home() {
           {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
           <span className="min-w-0 flex-1">
             <span className="block text-sm opacity-85">Tenés un pedido a medio preparar</span>
-            <span className="block text-lg leading-tight font-bold">Seguir con {p.number}</span>
+            <span className="block text-lg lg:text-base leading-tight font-bold">Seguir con {p.number}</span>
           </span>
           <Icon name="arrow" className="size-6" />
         </Link>
       ))}
 
-      <div className="grid gap-x-12 gap-y-9 lg:grid-cols-[minmax(0,1fr)_23rem]">
-        <div className="min-w-0 space-y-9">
+      <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="min-w-0 space-y-8 lg:space-y-6">
           {inProgress.length > 0 && (
             <section>
               <h2 className="section-title">
@@ -88,7 +88,7 @@ export default async function Home() {
 
         <section>
           <h2 className="section-title">El resto del depósito</h2>
-          <ul className="ruled-list">
+          <ul className="ruled-list framed">
             <Queue href="/empaque" number={toPack[0].n} title="Pedidos para empacar" />
             <Queue href="/recepcion" number={openReceivings[0].n} title="Recepciones abiertas" />
             <Queue href="/guardar" number={toPutAway[0].n ?? 0} title="Unidades por guardar" />

@@ -51,7 +51,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
       {pending.length === 0 ? (
         <EmptyState title="No queda nada por guardar acá">Lo que cierres en {zone === "receiving" ? "una recepción" : "una devolución (los libros vendibles)"} va a aparecer en esta lista.</EmptyState>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">
           <div className="lg:sticky lg:top-30">
             <ScanForm
               action={moveAction}
@@ -72,7 +72,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
               </span>
               <ShelfMark code={current!.code} />
             </p>
-            <div className="overflow-x-auto border-y border-line">
+            <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>

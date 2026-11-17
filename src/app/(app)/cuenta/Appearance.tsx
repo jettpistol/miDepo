@@ -51,7 +51,7 @@ export function Appearance({ action, accent: initial, theme: initialTheme }: { a
               aria-pressed={accent === c.hex}
               onClick={() => setAccent(c.hex)}
               style={{ background: c.hex, ...(accent === c.hex ? { outline: "2px solid var(--ink)", outlineOffset: 2 } : {}) }}
-              className="size-10 cursor-pointer rounded-control border border-ink/15 hover:border-ink/60"
+              className="size-10 lg:size-8 cursor-pointer rounded-control border border-ink/15 hover:border-ink/60"
             />
           ))}
           <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-control border border-line-strong py-1 pr-3 pl-1 text-sm font-semibold transition-colors duration-150 hover:border-ink/60 hover:bg-sunken">

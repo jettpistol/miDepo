@@ -52,13 +52,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
       )}
       {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está documentado en Fierro y salió del depósito." : "Imprimí las etiquetas y la lista de empaque; la oficina lo documenta en Fierro."}</Notice>}
 
-      <div className={`grid gap-5 lg:items-start lg:gap-10 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
+      <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
         {editable && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <Progress done={packed} total={picked} unit="en cajas" />
             {packed < picked && <ScanForm action={scan} context="packing" hiddenFields={{ id }} fields={[{ name: "product", label: open ? `Libro para la caja ${open.number}` : "Libro (abre una caja nueva)" }]} quantity={1} button="Poner en la caja" />}
             {open && items.some((x) => x.i.boxId === open.id) && (
-              <div className="panel p-4">
+              <div className="panel p-4 lg:p-3">
                 <h2 className="section-title mb-3">Cerrar la caja {open.number}</h2>
                 <ActionForm action={close} button="Cerrar caja" className="space-y-3">
                   <input type="hidden" name="boxId" value={open.id} />
@@ -79,7 +79,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        <div className="min-w-0 space-y-8">
+        <div className="min-w-0 space-y-7 lg:space-y-5">
           {ofOrder.map((k) => {
             const own = items.filter((x) => x.i.boxId === k.id);
             return (
@@ -95,7 +95,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                     )}
                   </span>
                 </div>
-                <ul className="ruled-list">
+                <ul className="ruled-list framed">
                   {own.map((x) => (
                     <li key={x.i.productId} className="row justify-between">
                       <span className="min-w-0">{x.title}</span>
@@ -112,7 +112,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
             <h2 className="section-title">
               Títulos del pedido <small>{lines.length}</small>
             </h2>
-            <div className="overflow-x-auto border-y border-line">
+            <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>

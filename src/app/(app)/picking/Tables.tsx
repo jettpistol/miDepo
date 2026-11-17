@@ -49,7 +49,7 @@ type OpenOrders = Awaited<ReturnType<typeof loadOpenOrders>>;
 /** Each order in progress leads with the shelf mark of the shelf it goes to next. */
 export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress"]; userId: number }) {
   return (
-    <div className="overflow-x-auto border-y border-line">
+    <div className="table-wrap">
       <table className="data-table">
         <thead>
           <tr>
@@ -86,7 +86,7 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
 
 export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
   return (
-    <div className="overflow-x-auto border-y border-line">
+    <div className="table-wrap">
       <table className="data-table">
         <thead>
           <tr>

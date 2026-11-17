@@ -29,7 +29,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
       <PageHeader title={`${r.number} · ${r.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
 
       {open ? (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">
           <div className="space-y-3 lg:sticky lg:top-30">
             <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar" />
             {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
@@ -59,7 +59,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLines.$inferSelect; title: string; code: string }[]; id: number; editable?: boolean }) {
   if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay títulos. Escaneá el primero.</p>;
   return (
-    <div className="min-w-0 overflow-x-auto border-y border-line">
+    <div className="table-wrap">
       <table className="data-table">
         <thead>
           <tr>

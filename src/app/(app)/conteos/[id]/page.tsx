@@ -28,19 +28,19 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
   return (
     <>
       <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Conteo cerrado: el stock ya quedó ajustado."} />
-      <div className="mb-9 max-w-xl">
+      <div className="mb-8 lg:mb-6 max-w-xl">
         <Progress done={countedCount} total={us.length} unit="ubicaciones" />
       </div>
 
       {isSupervisor && isOpen && countedCount > 0 && (
-        <section className="mb-9">
+        <section className="mb-8 lg:mb-6">
           <h2 className="section-title">
             Revisión del supervisor {diffs.length > 0 && <small>{diffs.length}</small>}
           </h2>
           {diffs.length === 0 ? (
             <Notice tone="ok">Lo contado hasta ahora coincide con el sistema.</Notice>
           ) : (
-            <div className="overflow-x-auto border-y border-line">
+            <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -84,7 +84,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
         <h2 className="section-title">
           Ubicaciones <small>{us.length}</small>
         </h2>
-        <div className="max-w-3xl overflow-x-auto border-y border-line">
+        <div className="max-w-3xl table-wrap">
           <table className="data-table">
             <thead>
               <tr>

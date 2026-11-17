@@ -7,32 +7,36 @@ import { Icon } from "./Icon";
 
 const active = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/"));
 
-/** Section tabs under the blue bar (desktop). */
-export function SectionTabs({ groups }: { groups: { group: string; items: MenuItem[] }[] }) {
+/** Left sidebar (desktop): grouped sections, with how many items wait in each queue. */
+export function Sidebar({ groups, counts }: { groups: { group: string; items: MenuItem[] }[]; counts: Record<string, number> }) {
   const pathname = usePathname();
   return (
-    <nav className="no-print hidden border-b border-line bg-sunken lg:block" aria-label="Menú principal">
-      <div className="mx-auto flex max-w-[1360px] items-stretch overflow-x-auto px-6 xl:px-10">
-        {groups.map((g, n) => (
-          <ul key={g.group} aria-label={g.group} className={`flex items-stretch ${n > 0 ? "ml-3 border-l border-line pl-3" : "-ml-3"}`}>
+    <nav className="space-y-4 px-3 py-3" aria-label="Menú principal">
+      {groups.map((g) => (
+        <div key={g.group}>
+          <p className="mb-1 px-2 text-xs font-semibold text-muted">{g.group}</p>
+          <ul className="space-y-px">
             {g.items.map((i) => {
               const on = active(pathname, i.href);
+              const n = counts[i.href] ?? 0;
               return (
-                <li key={i.href} className="flex">
+                <li key={i.href}>
                   <Link
                     href={i.href}
                     aria-current={on ? "page" : undefined}
                     title={i.help}
-                    className={`relative flex items-center px-3 py-3 text-sm whitespace-nowrap transition-colors duration-150 ${on ? "font-bold text-accent-text after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-accent-text" : "font-medium text-muted hover:text-ink"}`}
+                    className={`relative flex h-8 items-center gap-2.5 rounded-control px-2 text-sm transition-colors duration-150 ${on ? "bg-accent-soft font-semibold text-accent-text before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-accent-text" : "font-medium text-ink hover:bg-sunken"}`}
                   >
-                    {i.name}
+                    <Icon name={i.icon} className={`size-4 ${on ? "" : "text-muted"}`} />
+                    <span className="min-w-0 flex-1 truncate">{i.name}</span>
+                    {n > 0 && <span className={`min-w-5 rounded-full px-1.5 text-center text-xs leading-5 font-semibold tabular-nums ${on ? "bg-surface text-accent-text" : "bg-sunken text-muted"}`}>{n > 99 ? "99+" : n}</span>}
                   </Link>
                 </li>
               );
             })}
           </ul>
-        ))}
-      </div>
+        </div>
+      ))}
     </nav>
   );
 }
