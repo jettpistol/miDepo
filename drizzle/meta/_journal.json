@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1794864066066,
-      "tag": "0000_lazy_terror",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1794866862907,
-      "tag": "0001_groovy_nighthawk",
+      "when": 1794887741386,
+      "tag": "0000_initial",
       "breakpoints": true
     }
   ]

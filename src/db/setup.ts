@@ -1,32 +1,32 @@
 /**
- * Prepara la base: crea o actualiza las tablas y, si está vacía, carga los datos de demostración.
- * Uso: npm run db:setup   |   npm run db:reset (borra todo y vuelve a empezar)
+ * Prepares the database: creates or updates the tables and, if it is empty, loads the demo data.
+ * Usage: npm run db:setup   |   npm run db:reset (deletes everything and starts again)
  */
 import { rmSync } from "node:fs";
 import { sql } from "drizzle-orm";
-import { conexion, migrar } from "./index";
-import { empresas } from "./schema";
-import { sembrar } from "./seed";
+import { connect, runMigrations } from "./index";
+import { companies } from "./schema";
+import { seed } from "./seed";
 
 async function main() {
   const reset = process.argv.includes("--reset");
-  if (process.env.DATABASE_URL && !process.env.SECRETO) {
-    throw new Error("Falta la variable SECRETO. Es obligatoria cuando hay DATABASE_URL. Generá una con: openssl rand -hex 32");
+  if (process.env.DATABASE_URL && !process.env.SECRET) {
+    throw new Error("The SECRET variable is missing. It is required when DATABASE_URL is set. Generate one with: openssl rand -hex 32");
   }
   if (reset && !process.env.DATABASE_URL) rmSync(process.env.PGLITE_DIR ?? ".data/pglite", { recursive: true, force: true });
-  const { db, cerrar, embebida } = await conexion();
-  if (reset && !embebida) {
+  const { db, close, embedded } = await connect();
+  if (reset && !embedded) {
     await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; DROP SCHEMA IF EXISTS drizzle CASCADE;`);
   }
-  await migrar();
-  const [hay] = await db.select({ id: empresas.id }).from(empresas).limit(1);
-  if (!hay && (process.env.DATOS_DEMO ?? "si") !== "no") {
-    const inicio = Date.now();
-    await sembrar(db, (m) => console.log("  " + m));
-    console.log(`Datos de demostración cargados en ${((Date.now() - inicio) / 1000).toFixed(1)} s.`);
+  await runMigrations();
+  const [present] = await db.select({ id: companies.id }).from(companies).limit(1);
+  if (!present && (process.env.DEMO_DATA ?? "yes") !== "no") {
+    const startedAt = Date.now();
+    await seed(db, (m) => console.log("  " + m));
+    console.log(`Demo data loaded in ${((Date.now() - startedAt) / 1000).toFixed(1)} s.`);
   }
-  console.log(`Base lista (${embebida ? "embebida en ./.data" : "Postgres"}).`);
-  await cerrar();
+  console.log(`Database ready (${embedded ? "embedded in ./.data" : "Postgres"}).`);
+  await close();
 }
 
 main().catch((e) => {

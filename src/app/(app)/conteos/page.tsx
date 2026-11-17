@@ -1,53 +1,53 @@
 import Link from "next/link";
 import { desc, eq, sql } from "drizzle-orm";
-import { Formulario } from "@/components/Escaneo";
-import { Avance, Encabezado, fechaCorta, Insignia, Vacio } from "@/components/ui";
-import { conteoUbicaciones, conteos } from "@/db/schema";
-import { puede, requerir } from "@/lib/sesion";
-import { crear } from "./acciones";
-import { Prefijo } from "./Prefijo";
+import { ActionForm } from "@/components/ScanForm";
+import { Progress, PageHeader, shortDate, Badge, EmptyState } from "@/components/ui";
+import { countLocations, counts } from "@/db/schema";
+import { can, requireSession } from "@/lib/session";
+import { create } from "./actions";
+import { PrefixField } from "./PrefixField";
 
 export const metadata = { title: "Conteos" };
 
-export default async function Conteos() {
-  const { db, empresa, usuario } = await requerir();
-  const filas = await db
+export default async function Counts() {
+  const { db, company, user } = await requireSession();
+  const rows = await db
     .select({
-      k: conteos,
-      total: sql<number>`count(${conteoUbicaciones.ubicacionId})`.mapWith(Number),
-      contadas: sql<number>`count(*) filter (where ${conteoUbicaciones.estado} = 'contada')`.mapWith(Number),
+      k: counts,
+      total: sql<number>`count(${countLocations.locationId})`.mapWith(Number),
+      countedCount: sql<number>`count(*) filter (where ${countLocations.status} = 'counted')`.mapWith(Number),
     })
-    .from(conteos)
-    .leftJoin(conteoUbicaciones, eq(conteoUbicaciones.conteoId, conteos.id))
-    .where(eq(conteos.empresaId, empresa.id))
-    .groupBy(conteos.id)
-    .orderBy(desc(conteos.fecha))
+    .from(counts)
+    .leftJoin(countLocations, eq(countLocations.countId, counts.id))
+    .where(eq(counts.companyId, company.id))
+    .groupBy(counts.id)
+    .orderBy(desc(counts.date))
     .limit(40);
 
   return (
     <>
-      <Encabezado titulo="Conteos" />
-      {puede(usuario.rol, "supervisor") && (
-        <section className="tarjeta mb-9 max-w-3xl p-4">
-          <h2 className="titulo-seccion">Nuevo conteo</h2>
-          <Formulario accion={crear} boton="Crear conteo" clase="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
+      <PageHeader title="Conteos" />
+      {can(user.role, "supervisor") && (
+        <section className="panel mb-9 max-w-3xl p-4">
+          <h2 className="section-title">Nuevo conteo</h2>
+          <ActionForm action={create} button="Crear conteo" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
             <div>
-              <label htmlFor="nombre" className="etiqueta">
+              <label htmlFor="name" className="field-label">
                 Nombre
               </label>
-              <input id="nombre" name="nombre" className="campo" placeholder="Pasillo A, noviembre" required />
+              <input id="name" name="name" className="field" placeholder="Pasillo A, noviembre" required />
             </div>
-            <Prefijo />
-          </Formulario>
+            <PrefixField />
+          </ActionForm>
         </section>
       )}
-      {filas.length === 0 ? (
-        <Vacio icono="conteo" titulo="No hay conteos">
-          {puede(usuario.rol, "supervisor") ? "Creá el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
-        </Vacio>
+      {rows.length === 0 ? (
+        <EmptyState icon="count" title="No hay conteos">
+          {can(user.role, "supervisor") ? "Creá el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
+        </EmptyState>
       ) : (
-        <div className="overflow-x-auto border-y border-borde">
-          <table className="tabla">
+        <div className="overflow-x-auto border-y border-line">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Conteo</th>
@@ -57,24 +57,24 @@ export default async function Conteos() {
               </tr>
             </thead>
             <tbody>
-              {filas.map(({ k, total, contadas }) => (
+              {rows.map(({ k, total, countedCount }) => (
                 <tr key={k.id}>
                   <td>
-                    <Link href={`/conteos/${k.id}`} className="enlace">
-                      {k.nombre}
+                    <Link href={`/conteos/${k.id}`} className="link">
+                      {k.name}
                     </Link>
-                    <span className="block text-suave md:hidden">
+                    <span className="block text-muted md:hidden">
                       <span className="sm:hidden">
-                        {contadas} de {total} ubicaciones ·{" "}
+                        {countedCount} de {total} ubicaciones ·{" "}
                       </span>
-                      {fechaCorta(k.fecha)}
+                      {shortDate(k.date)}
                     </span>
                   </td>
                   <td className="hidden sm:table-cell">
-                    <Avance hecho={contadas} total={total} />
+                    <Progress done={countedCount} total={total} />
                   </td>
-                  <td className="hidden whitespace-nowrap text-suave md:table-cell">{fechaCorta(k.fecha)}</td>
-                  <td className="w-px">{k.estado === "cerrado" ? <Insignia tono="ok">Cerrado</Insignia> : contadas === total ? <Insignia tono="alerta">Para revisar</Insignia> : <Insignia tono="acento">Abierto</Insignia>}</td>
+                  <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(k.date)}</td>
+                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">Para revisar</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  // PGlite (la base embebida para pruebas locales) trae archivos WASM que no deben empaquetarse.
+  // PGlite (the embedded database for local testing) ships WASM files that must not be bundled.
   serverExternalPackages: ["@electric-sql/pglite", "pg", "bwip-js"],
-  // El manual se lee de la carpeta /wiki al mostrar /ayuda: tiene que viajar con el despliegue.
+  // The manual is read from the /wiki folder when /ayuda is rendered, so it has to travel with the deployment.
   outputFileTracingIncludes: { "/*": ["./wiki/**/*"] },
 };
 

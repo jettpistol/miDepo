@@ -4,28 +4,28 @@
   "title": "Design System: miDepo",
   "extensions": {
     "colorMeta": {
-      "acento": {
+      "accent": {
         "role": "primary",
         "displayName": "Azul Klein",
         "canonical": "#002fa7"
       },
-      "hundido": {
+      "sunken": {
         "role": "neutral",
         "displayName": "Franja",
         "canonical": "#eef1f8"
       },
-      "texto": {
+      "ink": {
         "role": "neutral",
         "displayName": "Tinta",
         "canonical": "#0a0f24"
       }
     },
     "typographyMeta": {
-      "titulo": {
+      "title": {
         "displayName": "Título",
         "purpose": "Page titles."
       },
-      "codigo": {
+      "code": {
         "displayName": "Código",
         "purpose": "Shelf labels, ISBNs, document numbers only."
       }
@@ -70,25 +70,25 @@
   },
   "components": [
     {
-      "name": "Tejuelo",
+      "name": "ShelfMark",
       "kind": "custom",
-      "refersTo": "tejuelo",
+      "refersTo": "shelfmark",
       "description": "Shelf address as a segmented spine label; leads rows.",
       "html": "<span class=\"ds-tej\"><span>A</span><span>01</span><span>1</span></span>",
       "css": ".ds-tej{display:inline-flex;border:1.5px solid #002fa7;border-radius:3px;background:#fff;color:#002fa7;font:700 13px/1 'Courier Prime','Courier New',monospace}.ds-tej span{padding:.34em .5em .26em}.ds-tej span+span{border-left:1px solid rgb(0 47 167 / .4)}"
     },
     {
-      "name": "Botón primario",
+      "name": "Primary button",
       "kind": "button",
-      "refersTo": "boton",
+      "refersTo": "btn",
       "description": "One per view.",
       "html": "<button class=\"ds-btn\">Confirmar</button>",
       "css": ".ds-btn{background:#002fa7;color:#fff;border:0;border-radius:6px;padding:8px 16px;min-height:40px;font:600 14px 'Libre Franklin',system-ui,sans-serif}"
     },
     {
-      "name": "Código",
+      "name": "Code chip",
       "kind": "chip",
-      "refersTo": "codigo",
+      "refersTo": "code-chip",
       "description": "ISBN or internal code.",
       "html": "<span class=\"ds-cod\">9789877006674</span>",
       "css": ".ds-cod{border:1px solid #d3d9e8;background:#eef1f8;color:#0a0f24;border-radius:3px;padding:.2em .4em .12em;font:700 13px/1.2 'Courier Prime','Courier New',monospace}"

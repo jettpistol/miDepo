@@ -2,7 +2,7 @@
 
 A warehouse tool for small book warehouses, built to sit **on top of [Fierro](https://www.fierro.com.ar)** rather than replace it. Fierro keeps the catalogue, customers, orders, remitos and invoices; miDepo owns what Fierro does not track: which shelf every copy is on, and the scan-by-scan work of the warehouse floor.
 
-The interface is entirely in Spanish (Argentina). Code comments and domain names are in Spanish too, because they match Fierro's vocabulary (`pedido`, `remito`, `ubicación`).
+The interface is entirely in Spanish (Argentina). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/guardar`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
 
 > **Status: MVP for testing.** It runs against a **simulated Fierro** with invented data. No real Fierro connection exists yet. See [What is not done](#what-is-not-done).
 
@@ -77,7 +77,7 @@ Fierro ──(catalogue, customers, orders, expected receipts, its stock)──�
 Fierro ◀──(packed orders, receipts, returns, count adjustments)──────── miDepo
 ```
 
-Everything that touches Fierro goes through one interface, `ConectorFierro` in [`src/lib/fierro/tipos.ts`](src/lib/fierro/tipos.ts). Today the only implementation is `FierroSimulado`. A real connector implements the same six methods and nothing else in the app changes.
+Everything that touches Fierro goes through one interface, `FierroConnector` in [`src/lib/fierro/types.ts`](src/lib/fierro/types.ts). Today the only implementation is `SimulatedFierro`. A real connector implements the same six methods and nothing else in the app changes.
 
 What Fierro publicly documents, and how a real connector could use it:
 
@@ -99,7 +99,7 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 - **Spanish only.** Text lives in the pages, not in a translation file.
 - **No password reset by email.** An administrator sets a new password or PIN.
 - **Camera scanning and app installation were not tested on physical phones**, only in an emulated mobile browser. Passkeys were tested with a virtual authenticator.
-- **The demo data ships with known passwords.** Do not load it on a public site that holds real data: set `DATOS_DEMO=no`.
+- **The demo data ships with known passwords.** Do not load it on a public site that holds real data: set `DEMO_DATA=no`.
 
 ## Commands
 
@@ -112,19 +112,20 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 | `npm run db:reset` | Deletes everything and starts again. |
 | `npm run db:generate` | After editing `src/db/schema.ts`, writes the migration into `drizzle/`. |
 | `npm run build:prod` | What the host runs: `db:setup`, then the production build. |
-| `npm run empresa:crear -- "Name" code admin@mail.com "password"` | Creates a company and its administrator. |
+| `npm run company:create -- "Name" code admin@mail.com "password"` | Creates a company and its administrator. |
 
 ## Where things are
 
 ```
 src/db/schema.ts        Every table, with comments
-src/lib/flujos/         The warehouse rules: receiving, picking, packing, returns, counts
+src/lib/flows/          The warehouse rules: receiving, picking, packing, returns, counts
 src/lib/stock.ts        The only place stock quantities change
 src/lib/fierro/         The Fierro boundary and the simulator
-src/lib/ubicaciones.ts  Location naming templates
+src/lib/locations.ts    Location naming templates
+src/lib/lookup.ts       Checks a scan form as you type (behind /api/lookup)
 src/lib/color.ts        Accent colour and contrast handling
 src/app/(app)/          One folder per screen
-src/app/(imprimir)/     A4 print layouts
+src/app/(print)/        A4 print layouts
 src/components/         Scan form, camera reader, navigation
 wiki/                   User manual (GitHub wiki format)
 tests/                  Workflow tests

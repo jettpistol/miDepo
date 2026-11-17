@@ -1,34 +1,34 @@
-import type { Rol } from "@/db/schema";
-import type { NombreIcono } from "@/components/Icono";
+import type { Role } from "@/db/schema";
+import type { IconName } from "@/components/Icon";
 
-export type ItemMenu = { href: string; nombre: string; icono: NombreIcono; ayuda: string; minimo?: Rol };
+export type MenuItem = { href: string; name: string; icon: IconName; help: string; minRole?: Role };
 
-export const MENU: { grupo: string; items: ItemMenu[] }[] = [
+export const MENU: { group: string; items: MenuItem[] }[] = [
   {
-    grupo: "Trabajo del día",
+    group: "Trabajo del día",
     items: [
-      { href: "/", nombre: "Inicio", icono: "inicio", ayuda: "Qué hay para hacer ahora" },
-      { href: "/recepcion", nombre: "Recepción", icono: "recepcion", ayuda: "Contar lo que llega" },
-      { href: "/guardar", nombre: "Guardar", icono: "guardar", ayuda: "Llevar lo recibido a su estante" },
-      { href: "/picking", nombre: "Picking", icono: "picking", ayuda: "Preparar pedidos" },
-      { href: "/empaque", nombre: "Empaque", icono: "empaque", ayuda: "Armar las cajas" },
-      { href: "/devoluciones", nombre: "Devoluciones", icono: "devolucion", ayuda: "Revisar libros que vuelven" },
-      { href: "/conteos", nombre: "Conteos", icono: "conteo", ayuda: "Contar ubicaciones" },
-      { href: "/mover", nombre: "Mover", icono: "mover", ayuda: "Cambiar libros de lugar" },
-      { href: "/stock", nombre: "Stock", icono: "stock", ayuda: "Buscar un título o una ubicación" },
+      { href: "/", name: "Inicio", icon: "home", help: "Qué hay para hacer ahora" },
+      { href: "/recepcion", name: "Recepción", icon: "receiving", help: "Contar lo que llega" },
+      { href: "/guardar", name: "Guardar", icon: "putaway", help: "Llevar lo recibido a su estante" },
+      { href: "/picking", name: "Picking", icon: "picking", help: "Preparar pedidos" },
+      { href: "/empaque", name: "Empaque", icon: "packing", help: "Armar las cajas" },
+      { href: "/devoluciones", name: "Devoluciones", icon: "return", help: "Revisar libros que vuelven" },
+      { href: "/conteos", name: "Conteos", icon: "count", help: "Contar ubicaciones" },
+      { href: "/mover", name: "Mover", icon: "move", help: "Cambiar libros de lugar" },
+      { href: "/stock", name: "Stock", icon: "stock", help: "Buscar un título o una ubicación" },
     ],
   },
   {
-    grupo: "Gestión",
+    group: "Gestión",
     items: [
-      { href: "/ubicaciones", nombre: "Ubicaciones", icono: "ubicaciones", ayuda: "Nombres y etiquetas de estantes", minimo: "supervisor" },
-      { href: "/fierro", nombre: "Fierro", icono: "fierro", ayuda: "Sincronizar y enviar documentos", minimo: "supervisor" },
-      { href: "/usuarios", nombre: "Usuarios", icono: "usuarios", ayuda: "Altas, roles y PIN", minimo: "admin" },
+      { href: "/ubicaciones", name: "Ubicaciones", icon: "locations", help: "Nombres y etiquetas de estantes", minRole: "supervisor" },
+      { href: "/fierro", name: "Fierro", icon: "fierro", help: "Sincronizar y enviar documentos", minRole: "supervisor" },
+      { href: "/usuarios", name: "Usuarios", icon: "users", help: "Altas, roles y PIN", minRole: "admin" },
     ],
   },
   {
-    grupo: "Ayuda",
-    // "Mi cuenta" no está acá: se abre tocando el nombre y la foto de la persona.
-    items: [{ href: "/ayuda", nombre: "Manual", icono: "ayuda", ayuda: "Paso a paso, con buscador" }],
+    group: "Ayuda",
+    // "Mi cuenta" is not here: it opens by tapping the person's name and photo.
+    items: [{ href: "/ayuda", name: "Manual", icon: "help", help: "Paso a paso, con buscador" }],
   },
 ];

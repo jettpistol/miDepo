@@ -1,66 +1,66 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
-import { BotonAccion, Escaneo } from "@/components/Escaneo";
-import { Avance, Aviso, Codigo, Encabezado, Insignia } from "@/components/ui";
-import { productos, recepcionLineas, recepciones } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
-import { cerrar, corregir, escanear } from "../acciones";
-import { Corregir } from "./Corregir";
+import { ActionButton, ScanForm } from "@/components/ScanForm";
+import { Progress, Notice, Code, PageHeader, Badge } from "@/components/ui";
+import { products, receivingLines, receivings } from "@/db/schema";
+import { requireSession } from "@/lib/session";
+import { close, correct, scan } from "../actions";
+import { EditNumber } from "./EditNumber";
 
-export default async function Recepcion({ params }: { params: Promise<{ id: string }> }) {
+export default async function ReceivingDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa } = await requerir();
-  const [r] = await db.select().from(recepciones).where(and(eq(recepciones.id, id), eq(recepciones.empresaId, empresa.id)));
+  const { db, company } = await requireSession();
+  const [r] = await db.select().from(receivings).where(and(eq(receivings.id, id), eq(receivings.companyId, company.id)));
   if (!r) notFound();
-  const lineas = await db
-    .select({ l: recepcionLineas, titulo: productos.titulo, codigo: productos.codigoBarras })
-    .from(recepcionLineas)
-    .innerJoin(productos, eq(productos.id, recepcionLineas.productoId))
-    .where(eq(recepcionLineas.recepcionId, id))
-    .orderBy(asc(productos.titulo));
-  const esperado = lineas.reduce((s, x) => s + x.l.esperado, 0);
-  const recibido = lineas.reduce((s, x) => s + x.l.recibido, 0);
-  const conDiferencia = lineas.filter((x) => x.l.recibido !== x.l.esperado).length;
-  const abierta = r.estado !== "cerrada";
+  const lines = await db
+    .select({ l: receivingLines, title: products.title, code: products.barcode })
+    .from(receivingLines)
+    .innerJoin(products, eq(products.id, receivingLines.productId))
+    .where(eq(receivingLines.receivingId, id))
+    .orderBy(asc(products.title));
+  const expected = lines.reduce((s, x) => s + x.l.expected, 0);
+  const received = lines.reduce((s, x) => s + x.l.received, 0);
+  const withDifference = lines.filter((x) => x.l.received !== x.l.expected).length;
+  const open = r.status !== "closed";
 
   return (
     <>
-      <Encabezado titulo={`${r.numero} · ${r.proveedor}`} volver={{ href: "/recepcion", texto: "Recepciones" }} bajada={r.fierroId ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
+      <PageHeader title={`${r.number} · ${r.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
 
-      {abierta ? (
+      {open ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10">
           <div className="space-y-3 lg:sticky lg:top-30">
-            <Escaneo accion={escanear} contexto="recepcion" ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: "Libro", ayuda: "Código, título o autor" }]} cantidad={1} boton="Sumar" />
-            {esperado > 0 && <Avance hecho={recibido} total={esperado} unidad="unidades" />}
+            <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar" />
+            {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <BotonAccion accion={cerrar} ocultos={{ id }} clase="boton w-full" motivo={recibido === 0 ? "Todavía no escaneaste nada." : undefined} confirmar={conDiferencia > 0 ? `Hay ${conDiferencia} títulos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
+              <ActionButton action={close} hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} títulos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
                 Cerrar recepción
-              </BotonAccion>
+              </ActionButton>
             </div>
           </div>
-          <Lineas lineas={lineas} id={id} editable />
+          <Lines lines={lines} id={id} editable />
         </div>
       ) : (
         <div className="space-y-6">
-          <Aviso tono="ok">
-            Recepción cerrada con {recibido} unidades. {r.enviadoAFierro ? "Ya está cargada en Fierro." : "Falta cargarla en Fierro."}{" "}
+          <Notice tone="ok">
+            Recepción cerrada con {received} unidades. {r.sentToFierro ? "Ya está cargada en Fierro." : "Falta cargarla en Fierro."}{" "}
             <Link href="/guardar" className="font-semibold underline underline-offset-[3px]">
               Ir a guardar
             </Link>
-          </Aviso>
-          <Lineas lineas={lineas} id={id} />
+          </Notice>
+          <Lines lines={lines} id={id} />
         </div>
       )}
     </>
   );
 }
 
-function Lineas({ lineas, id, editable = false }: { lineas: { l: typeof recepcionLineas.$inferSelect; titulo: string; codigo: string }[]; id: number; editable?: boolean }) {
-  if (lineas.length === 0) return <p className="border-y border-borde px-2 py-8 text-sm text-suave lg:px-3">Todavía no hay títulos. Escaneá el primero.</p>;
+function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLines.$inferSelect; title: string; code: string }[]; id: number; editable?: boolean }) {
+  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay títulos. Escaneá el primero.</p>;
   return (
-    <div className="min-w-0 overflow-x-auto border-y border-borde">
-      <table className="tabla">
+    <div className="min-w-0 overflow-x-auto border-y border-line">
+      <table className="data-table">
         <thead>
           <tr>
             <th>Título</th>
@@ -70,17 +70,17 @@ function Lineas({ lineas, id, editable = false }: { lineas: { l: typeof recepcio
           </tr>
         </thead>
         <tbody>
-          {lineas.map(({ l, titulo, codigo }) => (
+          {lines.map(({ l, title, code }) => (
             <tr key={l.id}>
               <td>
-                <span className="block font-medium">{titulo}</span>
-                <Codigo>{codigo}</Codigo>
-                {l.esperado > 0 && <span className="mt-0.5 block text-suave sm:hidden">Esperado: {l.esperado}</span>}
+                <span className="block font-medium">{title}</span>
+                <Code>{code}</Code>
+                {l.expected > 0 && <span className="mt-0.5 block text-muted sm:hidden">Esperado: {l.expected}</span>}
               </td>
-              <td className="hidden text-right sm:table-cell">{l.esperado || "—"}</td>
-              <td className="text-right font-bold">{editable ? <Corregir accion={corregir} ocultos={{ id, productoId: l.productoId }} campo="recibido" valor={l.recibido} /> : l.recibido}</td>
+              <td className="hidden text-right sm:table-cell">{l.expected || "—"}</td>
+              <td className="text-right font-bold">{editable ? <EditNumber action={correct} hiddenFields={{ id, productId: l.productId }} field="received" value={l.received} /> : l.received}</td>
               <td className="w-px text-right">
-                {l.esperado === 0 ? <Insignia tono="alerta">No avisado</Insignia> : l.recibido === l.esperado ? <Insignia tono="ok">Completo</Insignia> : l.recibido > l.esperado ? <Insignia tono="alerta">+{l.recibido - l.esperado}</Insignia> : l.recibido > 0 ? <Insignia tono="acento">Faltan {l.esperado - l.recibido}</Insignia> : <Insignia>Pendiente</Insignia>}
+                {l.expected === 0 ? <Badge tone="warn">No avisado</Badge> : l.received === l.expected ? <Badge tone="ok">Completo</Badge> : l.received > l.expected ? <Badge tone="warn">+{l.received - l.expected}</Badge> : l.received > 0 ? <Badge tone="accent">Faltan {l.expected - l.received}</Badge> : <Badge>Pendiente</Badge>}
               </td>
             </tr>
           ))}

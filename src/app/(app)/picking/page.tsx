@@ -1,31 +1,31 @@
-import { Encabezado, Vacio } from "@/components/ui";
-import { requerir } from "@/lib/sesion";
-import { EnPreparacion, pedidosAbiertos, Pendientes } from "./Tablas";
+import { PageHeader, EmptyState } from "@/components/ui";
+import { requireSession } from "@/lib/session";
+import { InProgressTable, loadOpenOrders, PendingTable } from "./Tables";
 
 export const metadata = { title: "Picking" };
 
 export default async function Picking() {
-  const { db, empresa, usuario } = await requerir();
-  const { enCurso, pendientes } = await pedidosAbiertos(db, empresa.id);
+  const { db, company, user } = await requireSession();
+  const { inProgress, pending } = await loadOpenOrders(db, company.id);
 
   return (
     <>
-      <Encabezado titulo="Picking" />
+      <PageHeader title="Picking" />
 
-      {enCurso.length > 0 && (
+      {inProgress.length > 0 && (
         <section className="mb-9">
-          <h2 className="titulo-seccion">
-            En preparación <small>{enCurso.length}</small>
+          <h2 className="section-title">
+            En preparación <small>{inProgress.length}</small>
           </h2>
-          <EnPreparacion filas={enCurso} usuarioId={usuario.id} />
+          <InProgressTable rows={inProgress} userId={user.id} />
         </section>
       )}
 
       <section>
-        <h2 className="titulo-seccion">
-          Pendientes <small>{pendientes.length}</small>
+        <h2 className="section-title">
+          Pendientes <small>{pending.length}</small>
         </h2>
-        {pendientes.length === 0 ? <Vacio titulo="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</Vacio> : <Pendientes filas={pendientes} />}
+        {pending.length === 0 ? <EmptyState title="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</EmptyState> : <PendingTable rows={pending} />}
       </section>
     </>
   );

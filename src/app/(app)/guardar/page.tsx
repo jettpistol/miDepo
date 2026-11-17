@@ -1,79 +1,79 @@
 import Link from "next/link";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { Escaneo } from "@/components/Escaneo";
-import { Codigo, Encabezado, Tejuelo, Vacio } from "@/components/ui";
-import { productos, stock, ubicaciones } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
-import { moverAccion } from "../mover/acciones";
+import { ScanForm } from "@/components/ScanForm";
+import { Code, PageHeader, ShelfMark, EmptyState } from "@/components/ui";
+import { products, stock, locations } from "@/db/schema";
+import { requireSession } from "@/lib/session";
+import { moveAction } from "../mover/actions";
 
 export const metadata = { title: "Guardar" };
 
-export default async function Guardar({ searchParams }: { searchParams: Promise<{ zona?: string }> }) {
-  const { db, empresa } = await requerir();
-  const zona = (await searchParams).zona === "devoluciones" ? "devoluciones" : "recepcion";
-  const zonas = await db.select().from(ubicaciones).where(and(eq(ubicaciones.empresaId, empresa.id), inArray(ubicaciones.tipo, ["recepcion", "devoluciones"])));
-  const actual = zonas.find((z) => z.tipo === zona);
+export default async function PutAway({ searchParams }: { searchParams: Promise<{ zona?: string }> }) {
+  const { db, company } = await requireSession();
+  const zone = (await searchParams).zona === "devoluciones" ? "returns" : "receiving";
+  const zones = await db.select().from(locations).where(and(eq(locations.companyId, company.id), inArray(locations.type, ["receiving", "returns"])));
+  const current = zones.find((z) => z.type === zone);
 
-  const pendientes = actual
+  const pending = current
     ? await db
-        .select({ productoId: stock.productoId, cantidad: stock.cantidad, titulo: productos.titulo, codigo: productos.codigoBarras })
+        .select({ productId: stock.productId, quantity: stock.quantity, title: products.title, code: products.barcode })
         .from(stock)
-        .innerJoin(productos, eq(productos.id, stock.productoId))
-        .where(eq(stock.ubicacionId, actual.id))
-        .orderBy(asc(productos.titulo))
+        .innerJoin(products, eq(products.id, stock.productId))
+        .where(eq(stock.locationId, current.id))
+        .orderBy(asc(products.title))
         .limit(300)
     : [];
 
-  // Sugerencia: el estante donde ese título ya tiene más unidades, para no desparramarlo.
-  const sugerencias = new Map<number, string>();
-  if (pendientes.length > 0) {
-    const donde = await db
-      .select({ productoId: stock.productoId, codigo: ubicaciones.codigo })
+  // Suggestion: the shelf where that title already has the most units, so it does not get scattered.
+  const suggestions = new Map<number, string>();
+  if (pending.length > 0) {
+    const whereabouts = await db
+      .select({ productId: stock.productId, code: locations.code })
       .from(stock)
-      .innerJoin(ubicaciones, eq(ubicaciones.id, stock.ubicacionId))
-      .where(and(eq(stock.empresaId, empresa.id), eq(ubicaciones.tipo, "estanteria"), inArray(stock.productoId, pendientes.map((p) => p.productoId))))
-      .orderBy(desc(stock.cantidad));
-    for (const d of donde) if (!sugerencias.has(d.productoId)) sugerencias.set(d.productoId, d.codigo);
+      .innerJoin(locations, eq(locations.id, stock.locationId))
+      .where(and(eq(stock.companyId, company.id), eq(locations.type, "shelf"), inArray(stock.productId, pending.map((p) => p.productId))))
+      .orderBy(desc(stock.quantity));
+    for (const d of whereabouts) if (!suggestions.has(d.productId)) suggestions.set(d.productId, d.code);
   }
-  const unidades = pendientes.reduce((s, p) => s + p.cantidad, 0);
+  const units = pending.reduce((s, p) => s + p.quantity, 0);
 
   return (
     <>
-      <Encabezado titulo="Guardar" />
-      <div className="mb-6 flex gap-5 border-b border-borde">
-        {(["recepcion", "devoluciones"] as const).map((z) => (
-          <Link key={z} href={z === "recepcion" ? "/guardar" : "/guardar?zona=devoluciones"} aria-current={zona === z ? "page" : undefined} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zona === z ? "border-acento-texto font-bold text-acento-texto" : "border-transparent font-medium text-suave hover:text-texto"}`}>
-            {z === "recepcion" ? "Desde Recepción" : "Desde Devoluciones"}
+      <PageHeader title="Guardar" />
+      <div className="mb-6 flex gap-5 border-b border-line">
+        {(["receiving", "returns"] as const).map((z) => (
+          <Link key={z} href={z === "receiving" ? "/guardar" : "/guardar?zona=devoluciones"} aria-current={zone === z ? "page" : undefined} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zone === z ? "border-accent-text font-bold text-accent-text" : "border-transparent font-medium text-muted hover:text-ink"}`}>
+            {z === "receiving" ? "Desde Recepción" : "Desde Devoluciones"}
           </Link>
         ))}
       </div>
 
-      {pendientes.length === 0 ? (
-        <Vacio titulo="No queda nada por guardar acá">Lo que cierres en {zona === "recepcion" ? "una recepción" : "una devolución (los libros vendibles)"} va a aparecer en esta lista.</Vacio>
+      {pending.length === 0 ? (
+        <EmptyState title="No queda nada por guardar acá">Lo que cierres en {zone === "receiving" ? "una recepción" : "una devolución (los libros vendibles)"} va a aparecer en esta lista.</EmptyState>
       ) : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-10">
           <div className="lg:sticky lg:top-30">
-            <Escaneo
-              accion={moverAccion}
-              contexto="guardar"
-              ocultos={{ origen: actual!.codigo }}
-              campos={[
-                { nombre: "producto", etiqueta: "Libro" },
-                { nombre: "destino", etiqueta: "Estante", ayuda: "Escaneá el cartel" },
+            <ScanForm
+              action={moveAction}
+              context="putaway"
+              hiddenFields={{ source: current!.code }}
+              fields={[
+                { name: "product", label: "Libro" },
+                { name: "destination", label: "Estante", help: "Escaneá el cartel" },
               ]}
-              cantidad={1}
-              boton="Guardar"
+              quantity={1}
+              button="Guardar"
             />
           </div>
           <div className="min-w-0">
-            <p className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-sm text-suave">
+            <p className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-sm text-muted">
               <span>
-                Quedan <strong className="text-texto">{unidades} unidades</strong> de {pendientes.length} títulos.
+                Quedan <strong className="text-ink">{units} unidades</strong> de {pending.length} títulos.
               </span>
-              <Tejuelo codigo={actual!.codigo} />
+              <ShelfMark code={current!.code} />
             </p>
-            <div className="overflow-x-auto border-y border-borde">
-              <table className="tabla">
+            <div className="overflow-x-auto border-y border-line">
+              <table className="data-table">
                 <thead>
                   <tr>
                     <th>Título</th>
@@ -82,14 +82,14 @@ export default async function Guardar({ searchParams }: { searchParams: Promise<
                   </tr>
                 </thead>
                 <tbody>
-                  {pendientes.map((p) => (
-                    <tr key={p.productoId}>
+                  {pending.map((p) => (
+                    <tr key={p.productId}>
                       <td>
-                        <span className="block font-medium">{p.titulo}</span>
-                        <Codigo>{p.codigo}</Codigo>
+                        <span className="block font-medium">{p.title}</span>
+                        <Code>{p.code}</Code>
                       </td>
-                      <td className="text-right text-base font-bold">{p.cantidad}</td>
-                      <td>{sugerencias.has(p.productoId) ? <Tejuelo codigo={sugerencias.get(p.productoId)} tam="md" /> : <span className="text-suave">Título nuevo: elegí un estante libre</span>}</td>
+                      <td className="text-right text-base font-bold">{p.quantity}</td>
+                      <td>{suggestions.has(p.productId) ? <ShelfMark code={suggestions.get(p.productId)} size="md" /> : <span className="text-muted">Título nuevo: elegí un estante libre</span>}</td>
                     </tr>
                   ))}
                 </tbody>

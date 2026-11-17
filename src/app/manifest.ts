@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-/** Permite instalar miDepo en el teléfono como una app ("Agregar a pantalla de inicio"). */
+/** Lets miDepo be installed on the phone as an app ("Add to Home Screen"). */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "miDepo",
@@ -12,9 +12,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#002FA7",
     theme_color: "#002FA7",
     icons: [
-      { src: "/icono-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icono-512.png", sizes: "512x512", type: "image/png" },
-      { src: "/icono-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

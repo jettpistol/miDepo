@@ -1,55 +1,55 @@
 import Link from "next/link";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
-import { Icono } from "@/components/Icono";
-import { Codigo, Encabezado, Insignia, Tejuelo, Vacio } from "@/components/ui";
-import { productos, stock, ubicaciones } from "@/db/schema";
-import { contiene } from "@/lib/consulta";
-import { requerir } from "@/lib/sesion";
-import { Busqueda } from "./Busqueda";
+import { Icon } from "@/components/Icon";
+import { Code, PageHeader, Badge, ShelfMark, EmptyState } from "@/components/ui";
+import { products, stock, locations } from "@/db/schema";
+import { containsText } from "@/lib/lookup";
+import { requireSession } from "@/lib/session";
+import { StockSearch } from "./StockSearch";
 
 export const metadata = { title: "Stock" };
 
-const TIPO = { libro: "Libro", grapa: "Grapa", variante: "Variante", pack: "Pack" } as const;
+const TYPE_LABEL = { book: "Libro", floppy: "Grapa", variant: "Variante", pack: "Pack" } as const;
 
 export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { db, empresa } = await requerir();
+  const { db, company } = await requireSession();
   const q = ((await searchParams).q ?? "").trim();
 
-  const [ubicacion] = q ? await db.select().from(ubicaciones).where(and(eq(ubicaciones.empresaId, empresa.id), eq(ubicaciones.codigo, q.toUpperCase()))) : [];
-  const encontrados = q
+  const [location] = q ? await db.select().from(locations).where(and(eq(locations.companyId, company.id), eq(locations.code, q.toUpperCase()))) : [];
+  const found = q
     ? await db
         .select()
-        .from(productos)
-        .where(and(eq(productos.empresaId, empresa.id), or(eq(productos.codigoBarras, q), eq(productos.isbn, q), eq(productos.codigoInterno, q.toUpperCase()), contiene(productos.titulo, q), contiene(productos.autor, q))))
-        .orderBy(asc(productos.titulo))
+        .from(products)
+        .where(and(eq(products.companyId, company.id), or(eq(products.barcode, q), eq(products.isbn, q), eq(products.internalCode, q.toUpperCase()), containsText(products.title, q), containsText(products.author, q))))
+        .orderBy(asc(products.title))
         .limit(50)
     : [];
-  const totales = new Map<number, number>();
-  if (encontrados.length > 0) {
-    const sumas = await db.select({ productoId: stock.productoId, n: sql<number>`sum(${stock.cantidad})`.mapWith(Number) }).from(stock).where(inArray(stock.productoId, encontrados.map((p) => p.id))).groupBy(stock.productoId);
-    for (const s of sumas) totales.set(s.productoId, s.n);
+  const totals = new Map<number, number>();
+  if (found.length > 0) {
+    const sums = await db.select({ productId: stock.productId, n: sql<number>`sum(${stock.quantity})`.mapWith(Number) }).from(stock).where(inArray(stock.productId, found.map((p) => p.id))).groupBy(stock.productId);
+    for (const s of sums) totals.set(s.productId, s.n);
   }
 
   return (
     <>
-      <Encabezado titulo="Stock" />
-      <Busqueda inicial={q} />
+      <PageHeader title="Stock" />
+      <StockSearch initial={q} />
 
-      {ubicacion && (
-        <Link href={`/ubicaciones/${ubicacion.id}`} className="group mb-6 flex max-w-xl items-center gap-4 rounded-control border border-acento-texto/30 bg-acento-suave px-3 py-3 transition-colors duration-150 hover:border-acento-texto">
-          <Tejuelo codigo={ubicacion.codigo} tam="md" />
-          <span className="min-w-0 flex-1 text-sm text-suave">Es una ubicación</span>
-          <span className="inline-flex items-center gap-1 text-sm font-semibold text-acento-texto">
-            Ver qué hay <Icono nombre="flecha" className="size-4" />
+      {location && (
+        <Link href={`/ubicaciones/${location.id}`} className="group mb-6 flex max-w-xl items-center gap-4 rounded-control border border-accent-text/30 bg-accent-soft px-3 py-3 transition-colors duration-150 hover:border-accent-text">
+          <ShelfMark code={location.code} size="md" />
+          <span className="min-w-0 flex-1 text-sm text-muted">Es una ubicación</span>
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent-text">
+            Ver qué hay <Icon name="arrow" className="size-4" />
           </span>
         </Link>
       )}
 
-      {q && encontrados.length === 0 && !ubicacion && <Vacio icono="stock" titulo={`Nada coincide con "${q}"`}>Probá con menos palabras o con el código de barras completo.</Vacio>}
+      {q && found.length === 0 && !location && <EmptyState icon="stock" title={`Nada coincide con "${q}"`}>Probá con menos palabras o con el código de barras completo.</EmptyState>}
 
-      {encontrados.length > 0 && (
-        <div className="overflow-x-auto border-y border-borde">
-          <table className="tabla">
+      {found.length > 0 && (
+        <div className="overflow-x-auto border-y border-line">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Título</th>
@@ -59,37 +59,37 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
               </tr>
             </thead>
             <tbody>
-              {encontrados.map((p) => (
+              {found.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/stock/${p.id}`} className="enlace">
-                      {p.titulo}
+                    <Link href={`/stock/${p.id}`} className="link">
+                      {p.title}
                     </Link>
-                    {p.tipo !== "libro" && (
+                    {p.type !== "book" && (
                       <>
                         {" "}
-                        <Insignia>{TIPO[p.tipo]}</Insignia>
+                        <Badge>{TYPE_LABEL[p.type]}</Badge>
                       </>
                     )}
-                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-suave md:hidden">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted md:hidden">
                       <span className="sm:hidden">
-                        <Codigo>{p.codigoBarras}</Codigo>
+                        <Code>{p.barcode}</Code>
                       </span>
-                      {p.autor}
+                      {p.author}
                     </span>
                   </td>
-                  <td className="hidden text-suave md:table-cell">{p.autor}</td>
+                  <td className="hidden text-muted md:table-cell">{p.author}</td>
                   <td className="hidden sm:table-cell">
-                    <Codigo>{p.codigoBarras}</Codigo>
+                    <Code>{p.barcode}</Code>
                   </td>
-                  <td className={`text-right text-base font-bold tabular-nums ${totales.get(p.id) ? "" : "text-suave/60"}`}>{totales.get(p.id) ?? 0}</td>
+                  <td className={`text-right text-base font-bold tabular-nums ${totals.get(p.id) ? "" : "text-muted/60"}`}>{totals.get(p.id) ?? 0}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-      {encontrados.length === 50 && <p className="mt-3 text-sm text-suave">Se muestran los primeros 50.</p>}
+      {found.length === 50 && <p className="mt-3 text-sm text-muted">Se muestran los primeros 50.</p>}
     </>
   );
 }

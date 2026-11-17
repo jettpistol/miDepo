@@ -1,39 +1,39 @@
 import Link from "next/link";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { Formulario } from "@/components/Escaneo";
-import { Encabezado, fechaCorta, Insignia, plural, Vacio } from "@/components/ui";
-import { recepcionLineas, recepciones } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
-import { crear } from "./acciones";
+import { ActionForm } from "@/components/ScanForm";
+import { PageHeader, shortDate, Badge, plural, EmptyState } from "@/components/ui";
+import { receivingLines, receivings } from "@/db/schema";
+import { requireSession } from "@/lib/session";
+import { create } from "./actions";
 
 export const metadata = { title: "Recepción" };
 
-export default async function Recepciones() {
-  const { db, empresa } = await requerir();
-  const filas = await db
+export default async function Receivings() {
+  const { db, company } = await requireSession();
+  const rows = await db
     .select({
-      r: recepciones,
-      titulos: sql<number>`count(${recepcionLineas.id})`.mapWith(Number),
-      esperado: sql<number>`coalesce(sum(${recepcionLineas.esperado}), 0)`.mapWith(Number),
-      recibido: sql<number>`coalesce(sum(${recepcionLineas.recibido}), 0)`.mapWith(Number),
+      r: receivings,
+      titles: sql<number>`count(${receivingLines.id})`.mapWith(Number),
+      expected: sql<number>`coalesce(sum(${receivingLines.expected}), 0)`.mapWith(Number),
+      received: sql<number>`coalesce(sum(${receivingLines.received}), 0)`.mapWith(Number),
     })
-    .from(recepciones)
-    .leftJoin(recepcionLineas, eq(recepcionLineas.recepcionId, recepciones.id))
-    .where(and(eq(recepciones.empresaId, empresa.id)))
-    .groupBy(recepciones.id)
-    .orderBy(desc(recepciones.fecha))
+    .from(receivings)
+    .leftJoin(receivingLines, eq(receivingLines.receivingId, receivings.id))
+    .where(and(eq(receivings.companyId, company.id)))
+    .groupBy(receivings.id)
+    .orderBy(desc(receivings.date))
     .limit(60);
-  const abiertas = filas.filter((f) => f.r.estado !== "cerrada").reverse();
-  const cerradas = filas.filter((f) => f.r.estado === "cerrada").slice(0, 8);
+  const openList = rows.filter((f) => f.r.status !== "closed").reverse();
+  const closedList = rows.filter((f) => f.r.status === "closed").slice(0, 8);
 
   return (
     <>
-      <Encabezado titulo="Recepción" />
-      {abiertas.length === 0 ? (
-        <Vacio titulo="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</Vacio>
+      <PageHeader title="Recepción" />
+      {openList.length === 0 ? (
+        <EmptyState title="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</EmptyState>
       ) : (
-        <div className="overflow-x-auto border-y border-borde">
-          <table className="tabla">
+        <div className="overflow-x-auto border-y border-line">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Recepción</th>
@@ -45,26 +45,26 @@ export default async function Recepciones() {
               </tr>
             </thead>
             <tbody>
-              {abiertas.map(({ r, titulos, esperado, recibido }) => (
+              {openList.map(({ r, titles, expected, received }) => (
                 <tr key={r.id}>
                   <td>
-                    <Link href={`/recepcion/${r.id}`} className="enlace numero">
-                      {r.numero}
+                    <Link href={`/recepcion/${r.id}`} className="link doc-number">
+                      {r.number}
                     </Link>
                   </td>
                   <td>
-                    <span className="font-medium">{r.proveedor}</span>
-                    <span className="block text-suave md:hidden">
+                    <span className="font-medium">{r.supplier}</span>
+                    <span className="block text-muted md:hidden">
                       <span className="sm:hidden">
-                        {plural(titulos, "título", "títulos")} · {r.fierroId ? `${esperado} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
+                        {plural(titles, "título", "títulos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
                       </span>
-                      {fechaCorta(r.fecha)}
+                      {shortDate(r.date)}
                     </span>
                   </td>
-                  <td className="hidden text-right sm:table-cell">{titulos}</td>
-                  <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{esperado}</span> : <span className="text-suave">sin aviso de Fierro</span>}</td>
-                  <td className="hidden whitespace-nowrap text-suave md:table-cell">{fechaCorta(r.fecha)}</td>
-                  <td>{r.estado === "en_curso" ? <Insignia tono="acento">En curso · {recibido} contadas</Insignia> : <Insignia>Sin empezar</Insignia>}</td>
+                  <td className="hidden text-right sm:table-cell">{titles}</td>
+                  <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{expected}</span> : <span className="text-muted">sin aviso de Fierro</span>}</td>
+                  <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(r.date)}</td>
+                  <td>{r.status === "in_progress" ? <Badge tone="accent">En curso · {received} contadas</Badge> : <Badge>Sin empezar</Badge>}</td>
                 </tr>
               ))}
             </tbody>
@@ -73,23 +73,23 @@ export default async function Recepciones() {
       )}
 
       <section className="mt-9">
-        <h2 className="titulo-seccion">Llegó algo sin aviso</h2>
-        <Formulario accion={crear} boton="Crear recepción" clase="flex flex-wrap items-start gap-3">
-          <input name="proveedor" className="campo max-w-sm flex-1 basis-64" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
-        </Formulario>
+        <h2 className="section-title">Llegó algo sin aviso</h2>
+        <ActionForm action={create} button="Crear recepción" className="flex flex-wrap items-start gap-3">
+          <input name="supplier" className="field max-w-sm flex-1 basis-64" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
+        </ActionForm>
       </section>
 
-      {cerradas.length > 0 && (
+      {closedList.length > 0 && (
         <section className="mt-9">
-          <h2 className="titulo-seccion">Últimas cerradas</h2>
-          <ul className="lista">
-            {cerradas.map(({ r, recibido }) => (
+          <h2 className="section-title">Últimas cerradas</h2>
+          <ul className="ruled-list">
+            {closedList.map(({ r, received }) => (
               <li key={r.id}>
-                <Link href={`/recepcion/${r.id}`} className="fila justify-between">
+                <Link href={`/recepcion/${r.id}`} className="row justify-between">
                   <span className="min-w-0">
-                    <span className="numero">{r.numero}</span> · {r.proveedor}
+                    <span className="doc-number">{r.number}</span> · {r.supplier}
                   </span>
-                  <span className="text-sm whitespace-nowrap text-suave">{recibido} unidades</span>
+                  <span className="text-sm whitespace-nowrap text-muted">{received} unidades</span>
                 </Link>
               </li>
             ))}

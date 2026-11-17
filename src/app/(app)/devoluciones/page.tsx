@@ -1,46 +1,46 @@
 import Link from "next/link";
 import { asc, desc, eq, sql } from "drizzle-orm";
-import { Formulario } from "@/components/Escaneo";
-import { Encabezado, fechaCorta, Insignia, plural } from "@/components/ui";
-import { clientes, devolucionLineas, devoluciones } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
-import { crear } from "./acciones";
-import { ElegirCliente } from "./ElegirCliente";
+import { ActionForm } from "@/components/ScanForm";
+import { PageHeader, shortDate, Badge, plural } from "@/components/ui";
+import { customers, returnLines, returns } from "@/db/schema";
+import { requireSession } from "@/lib/session";
+import { create } from "./actions";
+import { CustomerPicker } from "./CustomerPicker";
 
 export const metadata = { title: "Devoluciones" };
 
-export default async function Devoluciones() {
-  const { db, empresa } = await requerir();
-  const [lista, filas] = await Promise.all([
-    db.select({ id: clientes.id, nombre: clientes.nombre }).from(clientes).where(eq(clientes.empresaId, empresa.id)).orderBy(asc(clientes.nombre)),
+export default async function Returns() {
+  const { db, company } = await requireSession();
+  const [list, rows] = await Promise.all([
+    db.select({ id: customers.id, name: customers.name }).from(customers).where(eq(customers.companyId, company.id)).orderBy(asc(customers.name)),
     db
-      .select({ d: devoluciones, cliente: clientes.nombre, unidades: sql<number>`coalesce(sum(${devolucionLineas.cantidad}), 0)`.mapWith(Number) })
-      .from(devoluciones)
-      .innerJoin(clientes, eq(clientes.id, devoluciones.clienteId))
-      .leftJoin(devolucionLineas, eq(devolucionLineas.devolucionId, devoluciones.id))
-      .where(eq(devoluciones.empresaId, empresa.id))
-      .groupBy(devoluciones.id, clientes.nombre)
-      .orderBy(desc(devoluciones.fecha))
+      .select({ d: returns, customer: customers.name, units: sql<number>`coalesce(sum(${returnLines.quantity}), 0)`.mapWith(Number) })
+      .from(returns)
+      .innerJoin(customers, eq(customers.id, returns.customerId))
+      .leftJoin(returnLines, eq(returnLines.returnId, returns.id))
+      .where(eq(returns.companyId, company.id))
+      .groupBy(returns.id, customers.name)
+      .orderBy(desc(returns.date))
       .limit(40),
   ]);
 
   return (
     <>
-      <Encabezado titulo="Devoluciones" />
+      <PageHeader title="Devoluciones" />
       <section className="mb-9">
-        <h2 className="titulo-seccion">Llegó una devolución</h2>
-        <Formulario accion={crear} boton="Empezar a revisar" clase="flex flex-wrap items-start gap-3">
-          <ElegirCliente clientes={lista} />
-        </Formulario>
+        <h2 className="section-title">Llegó una devolución</h2>
+        <ActionForm action={create} button="Empezar a revisar" className="flex flex-wrap items-start gap-3">
+          <CustomerPicker customers={list} />
+        </ActionForm>
       </section>
 
-      {filas.length > 0 && (
+      {rows.length > 0 && (
         <section>
-          <h2 className="titulo-seccion">
-            Últimas devoluciones <small>{filas.length}</small>
+          <h2 className="section-title">
+            Últimas devoluciones <small>{rows.length}</small>
           </h2>
-          <div className="overflow-x-auto border-y border-borde">
-            <table className="tabla">
+          <div className="overflow-x-auto border-y border-line">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Devolución</th>
@@ -51,22 +51,22 @@ export default async function Devoluciones() {
                 </tr>
               </thead>
               <tbody>
-                {filas.map(({ d, cliente, unidades }) => (
+                {rows.map(({ d, customer, units }) => (
                   <tr key={d.id}>
                     <td>
-                      <Link href={`/devoluciones/${d.id}`} className="enlace numero">
-                        {d.numero}
+                      <Link href={`/devoluciones/${d.id}`} className="link doc-number">
+                        {d.number}
                       </Link>
                     </td>
                     <td>
-                      <span className="font-medium">{cliente}</span>
-                      <span className="block text-suave sm:hidden">
-                        {plural(unidades, "unidad", "unidades")} · {fechaCorta(d.fecha)}
+                      <span className="font-medium">{customer}</span>
+                      <span className="block text-muted sm:hidden">
+                        {plural(units, "unidad", "unidades")} · {shortDate(d.date)}
                       </span>
                     </td>
-                    <td className="hidden text-right font-semibold sm:table-cell">{unidades}</td>
-                    <td className="hidden whitespace-nowrap text-suave sm:table-cell">{fechaCorta(d.fecha)}</td>
-                    <td>{d.estado === "en_curso" ? <Insignia tono="acento">En curso</Insignia> : <Insignia tono="ok">Cerrada</Insignia>}</td>
+                    <td className="hidden text-right font-semibold sm:table-cell">{units}</td>
+                    <td className="hidden whitespace-nowrap text-muted sm:table-cell">{shortDate(d.date)}</td>
+                    <td>{d.status === "in_progress" ? <Badge tone="accent">En curso</Badge> : <Badge tone="ok">Cerrada</Badge>}</td>
                   </tr>
                 ))}
               </tbody>

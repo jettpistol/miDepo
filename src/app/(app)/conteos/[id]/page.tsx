@@ -1,47 +1,47 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
-import { BotonAccion } from "@/components/Escaneo";
-import { Avance, Aviso, Encabezado, Insignia, Tejuelo } from "@/components/ui";
-import { conteoUbicaciones, conteos, ubicaciones, usuarios } from "@/db/schema";
-import { diferencias } from "@/lib/flujos/conteos";
-import { puede, requerir } from "@/lib/sesion";
-import { aprobar, reabrir } from "../acciones";
+import { ActionButton } from "@/components/ScanForm";
+import { Progress, Notice, PageHeader, Badge, ShelfMark } from "@/components/ui";
+import { countLocations, counts, locations, users } from "@/db/schema";
+import { differences } from "@/lib/flows/counts";
+import { can, requireSession } from "@/lib/session";
+import { approve, reopen } from "../actions";
 
-export default async function Conteo({ params }: { params: Promise<{ id: string }> }) {
+export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa, usuario } = await requerir();
-  const [k] = await db.select().from(conteos).where(and(eq(conteos.id, id), eq(conteos.empresaId, empresa.id)));
+  const { db, company, user } = await requireSession();
+  const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, company.id)));
   if (!k) notFound();
   const us = await db
-    .select({ u: conteoUbicaciones, codigo: ubicaciones.codigo, quien: usuarios.nombre })
-    .from(conteoUbicaciones)
-    .innerJoin(ubicaciones, eq(ubicaciones.id, conteoUbicaciones.ubicacionId))
-    .leftJoin(usuarios, eq(usuarios.id, conteoUbicaciones.contadoPor))
-    .where(eq(conteoUbicaciones.conteoId, id))
-    .orderBy(asc(ubicaciones.codigo));
-  const contadas = us.filter((x) => x.u.estado === "contada").length;
-  const esSupervisor = puede(usuario.rol, "supervisor");
-  const abierto = k.estado === "abierto";
-  const difs = esSupervisor && abierto ? (await diferencias(db, id)).filter((d) => d.sistema !== d.contado) : [];
+    .select({ u: countLocations, code: locations.code, who: users.name })
+    .from(countLocations)
+    .innerJoin(locations, eq(locations.id, countLocations.locationId))
+    .leftJoin(users, eq(users.id, countLocations.countedBy))
+    .where(eq(countLocations.countId, id))
+    .orderBy(asc(locations.code));
+  const countedCount = us.filter((x) => x.u.status === "counted").length;
+  const isSupervisor = can(user.role, "supervisor");
+  const isOpen = k.status === "open";
+  const diffs = isSupervisor && isOpen ? (await differences(db, id)).filter((d) => d.system !== d.countedQty) : [];
 
   return (
     <>
-      <Encabezado titulo={k.nombre} volver={{ href: "/conteos", texto: "Conteos" }} bajada={abierto ? undefined : "Conteo cerrado: el stock ya quedó ajustado."} />
+      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Conteo cerrado: el stock ya quedó ajustado."} />
       <div className="mb-9 max-w-xl">
-        <Avance hecho={contadas} total={us.length} unidad="ubicaciones" />
+        <Progress done={countedCount} total={us.length} unit="ubicaciones" />
       </div>
 
-      {esSupervisor && abierto && contadas > 0 && (
+      {isSupervisor && isOpen && countedCount > 0 && (
         <section className="mb-9">
-          <h2 className="titulo-seccion">
-            Revisión del supervisor {difs.length > 0 && <small>{difs.length}</small>}
+          <h2 className="section-title">
+            Revisión del supervisor {diffs.length > 0 && <small>{diffs.length}</small>}
           </h2>
-          {difs.length === 0 ? (
-            <Aviso tono="ok">Lo contado hasta ahora coincide con el sistema.</Aviso>
+          {diffs.length === 0 ? (
+            <Notice tone="ok">Lo contado hasta ahora coincide con el sistema.</Notice>
           ) : (
-            <div className="overflow-x-auto border-y border-borde">
-              <table className="tabla">
+            <div className="overflow-x-auto border-y border-line">
+              <table className="data-table">
                 <thead>
                   <tr>
                     <th>Ubicación</th>
@@ -52,20 +52,20 @@ export default async function Conteo({ params }: { params: Promise<{ id: string 
                   </tr>
                 </thead>
                 <tbody>
-                  {difs.map((d) => (
-                    <tr key={`${d.ubicacionId}-${d.productoId}`}>
+                  {diffs.map((d) => (
+                    <tr key={`${d.locationId}-${d.productId}`}>
                       <td className="w-px">
-                        <Tejuelo codigo={d.ubicacion} />
+                        <ShelfMark code={d.location} />
                       </td>
                       <td>
-                        <span className="font-medium">{d.titulo}</span>
-                        <span className="block text-suave sm:hidden">
-                          Sistema {d.sistema} · Contado {d.contado}
+                        <span className="font-medium">{d.title}</span>
+                        <span className="block text-muted sm:hidden">
+                          Sistema {d.system} · Contado {d.countedQty}
                         </span>
                       </td>
-                      <td className="hidden text-right sm:table-cell">{d.sistema}</td>
-                      <td className="hidden text-right font-semibold sm:table-cell">{d.contado}</td>
-                      <td className={`text-right font-semibold ${d.contado < d.sistema ? "text-peligro" : "text-ok"}`}>{d.contado > d.sistema ? "+" : ""}{d.contado - d.sistema}</td>
+                      <td className="hidden text-right sm:table-cell">{d.system}</td>
+                      <td className="hidden text-right font-semibold sm:table-cell">{d.countedQty}</td>
+                      <td className={`text-right font-semibold ${d.countedQty < d.system ? "text-danger" : "text-ok"}`}>{d.countedQty > d.system ? "+" : ""}{d.countedQty - d.system}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -73,19 +73,19 @@ export default async function Conteo({ params }: { params: Promise<{ id: string 
             </div>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <BotonAccion accion={aprobar} ocultos={{ id }} confirmar={`Se va a ajustar el stock de ${contadas} ubicaciones contadas${difs.length ? ` (${difs.length} diferencias)` : ""}.${contadas < us.length ? ` Las ${us.length - contadas} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}>
+            <ActionButton action={approve} hiddenFields={{ id }} confirm={`Se va a ajustar el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}>
               Aprobar y ajustar stock
-            </BotonAccion>
+            </ActionButton>
           </div>
         </section>
       )}
 
       <section>
-        <h2 className="titulo-seccion">
+        <h2 className="section-title">
           Ubicaciones <small>{us.length}</small>
         </h2>
-        <div className="max-w-3xl overflow-x-auto border-y border-borde">
-          <table className="tabla">
+        <div className="max-w-3xl overflow-x-auto border-y border-line">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Ubicación</th>
@@ -95,37 +95,37 @@ export default async function Conteo({ params }: { params: Promise<{ id: string 
               </tr>
             </thead>
             <tbody>
-              {us.map(({ u, codigo, quien }) =>
-                abierto && u.estado === "pendiente" ? (
-                  <tr key={u.ubicacionId}>
+              {us.map(({ u, code, who }) =>
+                isOpen && u.status === "pending" ? (
+                  <tr key={u.locationId}>
                     <td>
-                      <Link href={`/conteos/${id}/${u.ubicacionId}`}>
-                        <Tejuelo codigo={codigo} tam="md" />
+                      <Link href={`/conteos/${id}/${u.locationId}`}>
+                        <ShelfMark code={code} size="md" />
                       </Link>
                     </td>
                     <td />
                     <td className="hidden sm:table-cell" />
                     <td className="w-px text-right">
-                      <Link href={`/conteos/${id}/${u.ubicacionId}`} className="boton-chico">
+                      <Link href={`/conteos/${id}/${u.locationId}`} className="btn-sm">
                         Contar
                       </Link>
                     </td>
                   </tr>
                 ) : (
-                  <tr key={u.ubicacionId}>
+                  <tr key={u.locationId}>
                     <td>
-                      <Tejuelo codigo={codigo} tam="md" />
+                      <ShelfMark code={code} size="md" />
                     </td>
                     <td>
-                      <Insignia tono="ok">Contada</Insignia>
-                      {quien && <span className="mt-1 block text-xs text-suave sm:hidden">Contó {quien}</span>}
+                      <Badge tone="ok">Contada</Badge>
+                      {who && <span className="mt-1 block text-xs text-muted sm:hidden">Contó {who}</span>}
                     </td>
-                    <td className="hidden text-suave sm:table-cell">{quien ?? "—"}</td>
+                    <td className="hidden text-muted sm:table-cell">{who ?? "—"}</td>
                     <td className="w-px text-right">
-                      {abierto && esSupervisor && (
-                        <BotonAccion accion={reabrir} ocultos={{ id, ubicacionId: u.ubicacionId }} clase="boton-chico" mostrarOk={false}>
+                      {isOpen && isSupervisor && (
+                        <ActionButton action={reopen} hiddenFields={{ id, locationId: u.locationId }} className="btn-sm" showOk={false}>
                           Reabrir
-                        </BotonAccion>
+                        </ActionButton>
                       )}
                     </td>
                   </tr>

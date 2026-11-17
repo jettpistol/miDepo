@@ -1,87 +1,87 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
-import { BotonAccion, Escaneo } from "@/components/Escaneo";
-import { Aviso, Codigo, Encabezado, Insignia, type Tono } from "@/components/ui";
-import { clientes, devolucionLineas, devoluciones, productos } from "@/db/schema";
-import { ESTADOS_LIBRO } from "@/lib/flujos/devoluciones";
-import { requerir } from "@/lib/sesion";
-import { cerrar, escanear, quitar } from "../acciones";
+import { ActionButton, ScanForm } from "@/components/ScanForm";
+import { Notice, Code, PageHeader, Badge, type Tone } from "@/components/ui";
+import { customers, returnLines, returns, products } from "@/db/schema";
+import { BOOK_CONDITIONS } from "@/lib/flows/returns";
+import { requireSession } from "@/lib/session";
+import { close, scan, remove } from "../actions";
 
-const TONO: Record<string, Tono> = { vendible: "ok", danado: "peligro", saldo: "alerta" };
+const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
-export default async function Devolucion({ params }: { params: Promise<{ id: string }> }) {
+export default async function ReturnDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa } = await requerir();
-  const [fila] = await db.select({ d: devoluciones, cliente: clientes.nombre }).from(devoluciones).innerJoin(clientes, eq(clientes.id, devoluciones.clienteId)).where(and(eq(devoluciones.id, id), eq(devoluciones.empresaId, empresa.id)));
-  if (!fila) notFound();
-  const { d, cliente } = fila;
-  const lineas = await db.select({ l: devolucionLineas, titulo: productos.titulo, codigo: productos.codigoBarras }).from(devolucionLineas).innerJoin(productos, eq(productos.id, devolucionLineas.productoId)).where(eq(devolucionLineas.devolucionId, id)).orderBy(asc(productos.titulo));
-  const abierta = d.estado === "en_curso";
-  const total = (e: string) => lineas.filter((x) => x.l.estadoLibro === e).reduce((s, x) => s + x.l.cantidad, 0);
+  const { db, company } = await requireSession();
+  const [row] = await db.select({ d: returns, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, company.id)));
+  if (!row) notFound();
+  const { d, customer } = row;
+  const lines = await db.select({ l: returnLines, title: products.title, code: products.barcode }).from(returnLines).innerJoin(products, eq(products.id, returnLines.productId)).where(eq(returnLines.returnId, id)).orderBy(asc(products.title));
+  const open = d.status === "in_progress";
+  const total = (e: string) => lines.filter((x) => x.l.bookCondition === e).reduce((s, x) => s + x.l.quantity, 0);
 
   return (
     <>
-      <Encabezado titulo={`Devolución ${d.numero}`} bajada={cliente} volver={{ href: "/devoluciones", texto: "Devoluciones" }} />
-      {!abierta && (
+      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }} />
+      {!open && (
         <div className="mb-6">
-          <Aviso tono="ok">
+          <Notice tone="ok">
             Devolución cerrada. Los vendibles esperan en Devoluciones para{" "}
             <Link href="/guardar?zona=devoluciones" className="font-semibold underline underline-offset-[3px]">
               guardar
             </Link>
             ; los dañados y los saldos ya están en su zona.
-          </Aviso>
+          </Notice>
         </div>
       )}
-      <div className={`grid gap-5 lg:items-start lg:gap-10 ${abierta ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
-        {abierta && (
+      <div className={`grid gap-5 lg:items-start lg:gap-10 ${open ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
+        {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
-            <Escaneo accion={escanear} contexto="devolucion" ocultos={{ id }} campos={[{ nombre: "producto", etiqueta: "Libro", ayuda: "Código, título o autor" }]} cantidad={1} boton="Sumar">
+            <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar">
               <fieldset>
-                <legend className="etiqueta">¿En qué estado está?</legend>
+                <legend className="field-label">¿En qué estado está?</legend>
                 <div className="space-y-2">
-                  {ESTADOS_LIBRO.map((e, i) => (
-                    <label key={e.id} className="flex cursor-pointer items-start gap-3 rounded-control border border-borde-fuerte px-3 py-2.5 transition-colors duration-150 hover:bg-hundido has-checked:border-acento-texto has-checked:bg-acento-suave">
-                      <input type="radio" name="estadoLibro" value={e.id} defaultChecked={i === 0} className="mt-1 size-4 accent-(--acento-texto)" />
+                  {BOOK_CONDITIONS.map((e, i) => (
+                    <label key={e.id} className="flex cursor-pointer items-start gap-3 rounded-control border border-line-strong px-3 py-2.5 transition-colors duration-150 hover:bg-sunken has-checked:border-accent-text has-checked:bg-accent-soft">
+                      <input type="radio" name="bookCondition" value={e.id} defaultChecked={i === 0} className="mt-1 size-4 accent-(--accent-text)" />
                       <span>
-                        <span className="block font-semibold">{e.nombre}</span>
-                        <span className="block text-sm text-suave">{e.ayuda}</span>
+                        <span className="block font-semibold">{e.name}</span>
+                        <span className="block text-sm text-muted">{e.help}</span>
                       </span>
                     </label>
                   ))}
                 </div>
               </fieldset>
-            </Escaneo>
-            <BotonAccion accion={cerrar} ocultos={{ id }} clase="boton w-full" motivo={lineas.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirmar="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
+            </ScanForm>
+            <ActionButton action={close} hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirm="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
               Cerrar devolución
-            </BotonAccion>
+            </ActionButton>
           </div>
         )}
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap gap-2">
-            {ESTADOS_LIBRO.map((e) => (
-              <Insignia key={e.id} tono={TONO[e.id]}>
-                {e.nombre}: {total(e.id)}
-              </Insignia>
+            {BOOK_CONDITIONS.map((e) => (
+              <Badge key={e.id} tone={TONE_CLASS[e.id]}>
+                {e.name}: {total(e.id)}
+              </Badge>
             ))}
           </div>
-          {lineas.length === 0 ? (
-            <p className="border-y border-borde px-2 py-8 text-sm text-suave lg:px-3">Todavía no hay libros. Escaneá el primero.</p>
+          {lines.length === 0 ? (
+            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay libros. Escaneá el primero.</p>
           ) : (
-            <ul className="lista">
-              {lineas.map(({ l, titulo, codigo }) => (
-                <li key={`${l.productoId}-${l.estadoLibro}`} className="fila flex-wrap">
+            <ul className="ruled-list">
+              {lines.map(({ l, title, code }) => (
+                <li key={`${l.productId}-${l.bookCondition}`} className="row flex-wrap">
                   <span className="min-w-0 flex-1 basis-48">
-                    <span className="block font-medium">{titulo}</span>
-                    <Codigo>{codigo}</Codigo>
+                    <span className="block font-medium">{title}</span>
+                    <Code>{code}</Code>
                   </span>
-                  <Insignia tono={TONO[l.estadoLibro]}>{ESTADOS_LIBRO.find((e) => e.id === l.estadoLibro)?.nombre}</Insignia>
-                  <span className="w-10 text-right font-bold whitespace-nowrap">× {l.cantidad}</span>
-                  {abierta && (
-                    <BotonAccion accion={quitar} ocultos={{ id, productoId: l.productoId, estadoLibro: l.estadoLibro }} clase="boton-chico border-peligro/50 text-peligro hover:border-peligro hover:bg-peligro-suave hover:text-peligro" mostrarOk={false}>
+                  <Badge tone={TONE_CLASS[l.bookCondition]}>{BOOK_CONDITIONS.find((e) => e.id === l.bookCondition)?.name}</Badge>
+                  <span className="w-10 text-right font-bold whitespace-nowrap">× {l.quantity}</span>
+                  {open && (
+                    <ActionButton action={remove} hiddenFields={{ id, productId: l.productId, bookCondition: l.bookCondition }} className="btn-sm border-danger/50 text-danger hover:border-danger hover:bg-danger-soft hover:text-danger" showOk={false}>
                       Quitar
-                    </BotonAccion>
+                    </ActionButton>
                   )}
                 </li>
               ))}

@@ -1,49 +1,49 @@
 import Link from "next/link";
 import { and, eq, sql } from "drizzle-orm";
-import { Aviso, Codigo, Encabezado, Vacio } from "@/components/ui";
-import { fierroStock, productos, stock } from "@/db/schema";
-import { pendientesDeEnvio } from "@/lib/flujos/envios";
-import { requerir } from "@/lib/sesion";
+import { Notice, Code, PageHeader, EmptyState } from "@/components/ui";
+import { fierroStock, products, stock } from "@/db/schema";
+import { pendingExports } from "@/lib/flows/exports";
+import { requireSession } from "@/lib/session";
 
 export const metadata = { title: "Conciliación con Fierro" };
 
-export default async function Conciliacion() {
-  const { db, empresa } = await requerir("supervisor");
-  const fisico = db.select({ productoId: stock.productoId, total: sql<number>`sum(${stock.cantidad})`.as("total") }).from(stock).where(eq(stock.empresaId, empresa.id)).groupBy(stock.productoId).as("fisico");
-  const enDeposito = sql<number>`coalesce(${fisico.total}, 0)`;
-  const enFierro = sql<number>`coalesce(${fierroStock.cantidad}, 0)`;
-  const filas = await db
-    .select({ id: productos.id, titulo: productos.titulo, codigo: productos.codigoBarras, deposito: enDeposito.mapWith(Number), fierro: enFierro.mapWith(Number) })
-    .from(productos)
-    .leftJoin(fierroStock, and(eq(fierroStock.productoId, productos.id), eq(fierroStock.empresaId, empresa.id)))
-    .leftJoin(fisico, eq(fisico.productoId, productos.id))
-    .where(and(eq(productos.empresaId, empresa.id), sql`${enDeposito} <> ${enFierro}`))
-    .orderBy(sql`abs(${enDeposito} - ${enFierro}) desc`, productos.titulo)
+export default async function Reconciliation() {
+  const { db, company } = await requireSession("supervisor");
+  const physical = db.select({ productId: stock.productId, total: sql<number>`sum(${stock.quantity})`.as("total") }).from(stock).where(eq(stock.companyId, company.id)).groupBy(stock.productId).as("fisico");
+  const inWarehouse = sql<number>`coalesce(${physical.total}, 0)`;
+  const inFierro = sql<number>`coalesce(${fierroStock.quantity}, 0)`;
+  const rows = await db
+    .select({ id: products.id, title: products.title, code: products.barcode, warehouse: inWarehouse.mapWith(Number), fierro: inFierro.mapWith(Number) })
+    .from(products)
+    .leftJoin(fierroStock, and(eq(fierroStock.productId, products.id), eq(fierroStock.companyId, company.id)))
+    .leftJoin(physical, eq(physical.productId, products.id))
+    .where(and(eq(products.companyId, company.id), sql`${inWarehouse} <> ${inFierro}`))
+    .orderBy(sql`abs(${inWarehouse} - ${inFierro}) desc`, products.title)
     .limit(300);
-  const sinEnviar = (await pendientesDeEnvio(db, empresa.id)).length;
+  const unsent = (await pendingExports(db, company.id)).length;
 
   return (
     <>
-      <Encabezado titulo="Conciliación con Fierro" volver={{ href: "/fierro", texto: "Fierro" }} />
-      {sinEnviar > 0 && (
+      <PageHeader title="Conciliación con Fierro" back={{ href: "/fierro", text: "Fierro" }} />
+      {unsent > 0 && (
         <div className="mb-6">
-          <Aviso tono="alerta">
-            Hay {sinEnviar} {sinEnviar === 1 ? "documento sin cargar" : "documentos sin cargar"} en Fierro. Parte de estas diferencias se van a ir cuando los cargues.{" "}
+          <Notice tone="warn">
+            Hay {unsent} {unsent === 1 ? "documento sin cargar" : "documentos sin cargar"} en Fierro. Parte de estas diferencias se van a ir cuando los cargues.{" "}
             <Link href="/fierro" className="font-semibold underline underline-offset-[3px]">
               Ver pendientes
             </Link>
-          </Aviso>
+          </Notice>
         </div>
       )}
-      {filas.length === 0 ? (
-        <Vacio titulo="El depósito y Fierro dicen lo mismo">No hay ninguna diferencia de stock.</Vacio>
+      {rows.length === 0 ? (
+        <EmptyState title="El depósito y Fierro dicen lo mismo">No hay ninguna diferencia de stock.</EmptyState>
       ) : (
         <>
-          <p className="mb-3 max-w-[70ch] text-sm text-suave">
-            {filas.length === 300 ? "Las 300 diferencias más grandes" : `${filas.length} títulos con diferencia`}
+          <p className="mb-3 max-w-[70ch] text-sm text-muted">
+            {rows.length === 300 ? "Las 300 diferencias más grandes" : `${rows.length} títulos con diferencia`}
           </p>
-          <div className="overflow-x-auto border-y border-borde">
-            <table className="tabla">
+          <div className="overflow-x-auto border-y border-line">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Título</th>
@@ -54,27 +54,27 @@ export default async function Conciliacion() {
                 </tr>
               </thead>
               <tbody>
-                {filas.map((f) => (
+                {rows.map((f) => (
                   <tr key={f.id}>
                     <td>
-                      <Link href={`/stock/${f.id}`} className="enlace">
-                        {f.titulo}
+                      <Link href={`/stock/${f.id}`} className="link">
+                        {f.title}
                       </Link>
-                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-suave sm:hidden">
-                        <Codigo>{f.codigo}</Codigo>
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted sm:hidden">
+                        <Code>{f.code}</Code>
                         <span>
-                          Depósito {f.deposito} · Fierro {f.fierro}
+                          Depósito {f.warehouse} · Fierro {f.fierro}
                         </span>
                       </span>
                     </td>
                     <td className="hidden sm:table-cell">
-                      <Codigo>{f.codigo}</Codigo>
+                      <Code>{f.code}</Code>
                     </td>
-                    <td className="hidden text-right sm:table-cell">{f.deposito}</td>
+                    <td className="hidden text-right sm:table-cell">{f.warehouse}</td>
                     <td className="hidden text-right sm:table-cell">{f.fierro}</td>
-                    <td className={`text-right font-semibold ${f.deposito < f.fierro ? "text-peligro" : "text-ok"}`}>
-                      {f.deposito > f.fierro ? "+" : ""}
-                      {f.deposito - f.fierro}
+                    <td className={`text-right font-semibold ${f.warehouse < f.fierro ? "text-danger" : "text-ok"}`}>
+                      {f.warehouse > f.fierro ? "+" : ""}
+                      {f.warehouse - f.fierro}
                     </td>
                   </tr>
                 ))}

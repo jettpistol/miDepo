@@ -12,349 +12,349 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-const creado = () => timestamp("creado", { withTimezone: true }).notNull().defaultNow();
+const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
-// ───────────── Empresas y usuarios ─────────────
+// ───────────── Companies and users ─────────────
 
-export const empresas = pgTable("empresas", {
+export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
-  nombre: text("nombre").notNull(),
-  /** Código corto que los operarios escriben una sola vez en el teléfono para entrar con PIN. */
+  name: text("name").notNull(),
+  /** Short code operators type once on the phone to log in with a PIN. */
   slug: text("slug").notNull().unique(),
-  /** Esquema de nombres de ubicaciones elegido (ver src/lib/ubicaciones.ts). */
-  esquemaUbicaciones: jsonb("esquema_ubicaciones"),
-  /** Estado del Fierro simulado: cuántos pedidos e ingresos "existen" del otro lado. */
-  simPedidos: integer("sim_pedidos").notNull().default(0),
-  simIngresos: integer("sim_ingresos").notNull().default(0),
-  simSemilla: integer("sim_semilla").notNull().default(1),
-  simTitulos: integer("sim_titulos").notNull().default(500),
-  simClientes: integer("sim_clientes").notNull().default(60),
-  ultimaSync: timestamp("ultima_sync", { withTimezone: true }),
-  creado: creado(),
+  /** The chosen location naming scheme (see src/lib/locations.ts). */
+  locationScheme: jsonb("location_scheme"),
+  /** State of the simulated Fierro: how many orders and receipts "exist" on the other side. */
+  simOrders: integer("sim_orders").notNull().default(0),
+  simReceipts: integer("sim_receipts").notNull().default(0),
+  simSeed: integer("sim_seed").notNull().default(1),
+  simTitles: integer("sim_titles").notNull().default(500),
+  simCustomers: integer("sim_customers").notNull().default(60),
+  lastSync: timestamp("last_sync", { withTimezone: true }),
+  createdAt: createdAt(),
 });
 
-export type Rol = "operario" | "supervisor" | "admin";
+export type Role = "operator" | "supervisor" | "admin";
 
-export const usuarios = pgTable(
-  "usuarios",
+export const users = pgTable(
+  "users",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    nombre: text("nombre").notNull(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    name: text("name").notNull(),
     email: text("email").notNull().unique(),
     passwordHash: text("password_hash"),
-    /** HMAC del PIN: permite identificar al operario solo con el PIN dentro de su empresa. */
+    /** HMAC of the PIN: lets an operator be identified by PIN alone within their company. */
     pinHmac: text("pin_hmac"),
-    rol: text("rol").$type<Rol>().notNull().default("operario"),
-    acento: text("acento").notNull().default("#002FA7"),
-    tema: text("tema").$type<"claro" | "oscuro" | "sistema">().notNull().default("sistema"),
-    activo: boolean("activo").notNull().default(true),
-    /** null = sin foto. Cambia con cada foto nueva, para que el navegador no muestre la vieja. */
-    fotoVersion: integer("foto_version"),
-    creado: creado(),
+    role: text("role").$type<Role>().notNull().default("operator"),
+    accent: text("accent").notNull().default("#002FA7"),
+    theme: text("theme").$type<"light" | "dark" | "system">().notNull().default("system"),
+    active: boolean("active").notNull().default(true),
+    /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
+    photoVersion: integer("photo_version"),
+    createdAt: createdAt(),
   },
-  (t) => [uniqueIndex("usuarios_pin").on(t.empresaId, t.pinHmac)],
+  (t) => [uniqueIndex("users_company_id_pin_hmac_idx").on(t.companyId, t.pinHmac)],
 );
 
-/** La foto va en tabla aparte para no cargarla en cada consulta de usuario. */
-export const usuarioFotos = pgTable("usuario_fotos", {
-  usuarioId: integer("usuario_id").primaryKey().references(() => usuarios.id, { onDelete: "cascade" }),
-  /** JPEG cuadrado de 256 px, en base64. */
-  datos: text("datos").notNull(),
+/** The photo sits in its own table so it is not loaded on every user query. */
+export const userPhotos = pgTable("user_photos", {
+  userId: integer("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  /** Square 256 px JPEG, base64. */
+  data: text("data").notNull(),
 });
 
-export const sesiones = pgTable("sesiones", {
+export const sessions = pgTable("sessions", {
   tokenHash: text("token_hash").primaryKey(),
-  usuarioId: integer("usuario_id").notNull().references(() => usuarios.id, { onDelete: "cascade" }),
-  expira: timestamp("expira", { withTimezone: true }).notNull(),
-  creado: creado(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: createdAt(),
 });
 
 export const passkeys = pgTable("passkeys", {
   id: text("id").primaryKey(), // credential ID (base64url)
-  usuarioId: integer("usuario_id").notNull().references(() => usuarios.id, { onDelete: "cascade" }),
-  clavePublica: text("clave_publica").notNull(), // base64url
-  contador: integer("contador").notNull().default(0),
-  transportes: text("transportes"),
-  nombre: text("nombre").notNull().default("Llave de acceso"),
-  creado: creado(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  publicKeyData: text("public_key_data").notNull(), // base64url
+  sequence: integer("sequence").notNull().default(0),
+  carriers: text("carriers"),
+  name: text("name").notNull().default("Llave de acceso"),
+  createdAt: createdAt(),
 });
 
-export const intentosLogin = pgTable("intentos_login", {
-  clave: text("clave").primaryKey(),
-  cantidad: integer("cantidad").notNull().default(0),
-  bloqueadoHasta: timestamp("bloqueado_hasta", { withTimezone: true }),
+export const loginAttempts = pgTable("login_attempts", {
+  key: text("key").primaryKey(),
+  attempts: integer("attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
 });
 
-// ───────────── Espejo de Fierro (solo lectura para miDepo) ─────────────
+// ───────────── Mirror of Fierro (read-only for miDepo) ─────────────
 
-export type TipoProducto = "libro" | "grapa" | "variante" | "pack";
+export type ProductType = "book" | "floppy" | "variant" | "pack";
 
-export const productos = pgTable(
-  "productos",
+export const products = pgTable(
+  "products",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    companyId: integer("company_id").notNull().references(() => companies.id),
     fierroId: text("fierro_id").notNull(),
-    codigoInterno: text("codigo_interno").notNull(),
+    internalCode: text("internal_code").notNull(),
     isbn: text("isbn"),
-    /** Lo que lee el lector: EAN/ISBN impreso, o el código interno si el artículo no tiene ISBN. */
-    codigoBarras: text("codigo_barras").notNull(),
-    titulo: text("titulo").notNull(),
-    autor: text("autor"),
-    sello: text("sello"),
-    tipo: text("tipo").$type<TipoProducto>().notNull().default("libro"),
-    precio: integer("precio").notNull().default(0),
-    pesoGramos: integer("peso_gramos").notNull().default(300),
-    activo: boolean("activo").notNull().default(true),
+    /** What the scanner reads: the printed EAN/ISBN, or the internal code if the item has no ISBN. */
+    barcode: text("barcode").notNull(),
+    title: text("title").notNull(),
+    author: text("author"),
+    imprint: text("imprint"),
+    type: text("type").$type<ProductType>().notNull().default("book"),
+    price: integer("price").notNull().default(0),
+    weightGrams: integer("weight_grams").notNull().default(300),
+    active: boolean("active").notNull().default(true),
   },
   (t) => [
-    uniqueIndex("productos_fierro").on(t.empresaId, t.fierroId),
-    index("productos_barras").on(t.empresaId, t.codigoBarras),
-    index("productos_isbn").on(t.empresaId, t.isbn),
-    index("productos_interno").on(t.empresaId, t.codigoInterno),
+    uniqueIndex("products_company_id_fierro_id_idx").on(t.companyId, t.fierroId),
+    index("products_company_id_barcode_idx").on(t.companyId, t.barcode),
+    index("products_company_id_isbn_idx").on(t.companyId, t.isbn),
+    index("products_company_id_internal_code_idx").on(t.companyId, t.internalCode),
   ],
 );
 
-export const clientes = pgTable(
-  "clientes",
+export const customers = pgTable(
+  "customers",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    companyId: integer("company_id").notNull().references(() => companies.id),
     fierroId: text("fierro_id").notNull(),
-    nombre: text("nombre").notNull(),
-    direccion: text("direccion"),
-    localidad: text("localidad"),
-    provincia: text("provincia"),
+    name: text("name").notNull(),
+    address: text("address"),
+    city: text("city"),
+    province: text("province"),
   },
-  (t) => [uniqueIndex("clientes_fierro").on(t.empresaId, t.fierroId)],
+  (t) => [uniqueIndex("customers_company_id_fierro_id_idx").on(t.companyId, t.fierroId)],
 );
 
-/** Stock que Fierro cree tener, por producto. Se compara contra miDepo en la conciliación. */
+/** The stock Fierro believes it has, per product. Compared against miDepo in the reconciliation. */
 export const fierroStock = pgTable(
   "fierro_stock",
   {
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    cantidad: integer("cantidad").notNull().default(0),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    productId: integer("product_id").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.empresaId, t.productoId] })],
+  (t) => [primaryKey({ columns: [t.companyId, t.productId] })],
 );
 
-// ───────────── Lo que es propio de miDepo: ubicaciones y stock físico ─────────────
+// ───────────── What miDepo owns: locations and physical stock ─────────────
 
-export type TipoUbicacion = "estanteria" | "recepcion" | "devoluciones" | "danados" | "saldos" | "preparacion";
+export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging";
 
-export const ubicaciones = pgTable(
-  "ubicaciones",
+export const locations = pgTable(
+  "locations",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    codigo: text("codigo").notNull(),
-    tipo: text("tipo").$type<TipoUbicacion>().notNull().default("estanteria"),
-    activa: boolean("activa").notNull().default(true),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    code: text("code").notNull(),
+    type: text("type").$type<LocationType>().notNull().default("shelf"),
+    active: boolean("active").notNull().default(true),
   },
-  (t) => [uniqueIndex("ubicaciones_codigo").on(t.empresaId, t.codigo)],
+  (t) => [uniqueIndex("locations_company_id_code_idx").on(t.companyId, t.code)],
 );
 
 export const stock = pgTable(
   "stock",
   {
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    ubicacionId: integer("ubicacion_id").notNull().references(() => ubicaciones.id),
-    cantidad: integer("cantidad").notNull().default(0),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    productId: integer("product_id").notNull().references(() => products.id),
+    locationId: integer("location_id").notNull().references(() => locations.id),
+    quantity: integer("quantity").notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.productoId, t.ubicacionId] }), index("stock_ubicacion").on(t.ubicacionId)],
+  (t) => [primaryKey({ columns: [t.productId, t.locationId] }), index("stock_location_id_idx").on(t.locationId)],
 );
 
-export type MotivoMovimiento =
-  | "inicial"
-  | "recepcion"
-  | "guardado"
-  | "movimiento"
+export type MovementReason =
+  | "initial"
+  | "receiving"
+  | "putaway"
+  | "movement"
   | "picking"
-  | "despacho"
-  | "devolucion"
-  | "ajuste_conteo";
+  | "shipment"
+  | "return"
+  | "count_adjustment";
 
-export const movimientos = pgTable(
-  "movimientos",
+export const movements = pgTable(
+  "movements",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    desdeId: integer("desde_id").references(() => ubicaciones.id),
-    haciaId: integer("hacia_id").references(() => ubicaciones.id),
-    cantidad: integer("cantidad").notNull(),
-    motivo: text("motivo").$type<MotivoMovimiento>().notNull(),
-    referencia: text("referencia"),
-    usuarioId: integer("usuario_id").references(() => usuarios.id),
-    creado: creado(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    productId: integer("product_id").notNull().references(() => products.id),
+    fromId: integer("from_id").references(() => locations.id),
+    toId: integer("to_id").references(() => locations.id),
+    quantity: integer("quantity").notNull(),
+    reason: text("reason").$type<MovementReason>().notNull(),
+    reference: text("reference"),
+    userId: integer("user_id").references(() => users.id),
+    createdAt: createdAt(),
   },
-  (t) => [index("movimientos_producto").on(t.productoId, t.creado)],
+  (t) => [index("movements_product_id_created_at_idx").on(t.productId, t.createdAt)],
 );
 
-// ───────────── Salidas: pedidos, picking y cajas ─────────────
+// ───────────── Outbound: orders, picking and boxes ─────────────
 
-export type EstadoPedido = "pendiente" | "en_preparacion" | "preparado" | "empacado" | "despachado";
+export type OrderStatus = "pending" | "in_picking" | "picked" | "packed" | "shipped";
 
-export const pedidos = pgTable(
-  "pedidos",
+export const orders = pgTable(
+  "orders",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    companyId: integer("company_id").notNull().references(() => companies.id),
     fierroId: text("fierro_id").notNull(),
-    numero: text("numero").notNull(),
-    clienteId: integer("cliente_id").notNull().references(() => clientes.id),
-    modalidad: text("modalidad").$type<"firme" | "consignacion">().notNull().default("firme"),
-    estado: text("estado").$type<EstadoPedido>().notNull().default("pendiente"),
-    fecha: timestamp("fecha", { withTimezone: true }).notNull().defaultNow(),
-    tomadoPor: integer("tomado_por").references(() => usuarios.id),
-    enviadoAFierro: timestamp("enviado_a_fierro", { withTimezone: true }),
+    number: text("number").notNull(),
+    customerId: integer("customer_id").notNull().references(() => customers.id),
+    saleMode: text("sale_mode").$type<"firm" | "consignment">().notNull().default("firm"),
+    status: text("status").$type<OrderStatus>().notNull().default("pending"),
+    date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+    takenBy: integer("taken_by").references(() => users.id),
+    sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
   },
-  (t) => [uniqueIndex("pedidos_fierro").on(t.empresaId, t.fierroId), index("pedidos_estado").on(t.empresaId, t.estado)],
+  (t) => [uniqueIndex("orders_company_id_fierro_id_idx").on(t.companyId, t.fierroId), index("orders_company_id_status_idx").on(t.companyId, t.status)],
 );
 
-export const pedidoLineas = pgTable(
-  "pedido_lineas",
+export const orderLines = pgTable(
+  "order_lines",
   {
     id: serial("id").primaryKey(),
-    pedidoId: integer("pedido_id").notNull().references(() => pedidos.id, { onDelete: "cascade" }),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    cantidad: integer("cantidad").notNull(),
-    pickeado: integer("pickeado").notNull().default(0),
-    empacado: integer("empacado").notNull().default(0),
+    orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull(),
+    picked: integer("picked").notNull().default(0),
+    packed: integer("packed").notNull().default(0),
   },
-  (t) => [index("pedido_lineas_pedido").on(t.pedidoId)],
+  (t) => [index("order_lines_order_id_idx").on(t.orderId)],
 );
 
-/** Una parada del recorrido: "andá a tal ubicación y tomá N de este título". */
-export const tareasPicking = pgTable(
-  "tareas_picking",
+/** One stop on the route: "go to this location and take N of this title". */
+export const pickTasks = pgTable(
+  "pick_tasks",
   {
     id: serial("id").primaryKey(),
-    pedidoId: integer("pedido_id").notNull().references(() => pedidos.id, { onDelete: "cascade" }),
-    lineaId: integer("linea_id").notNull().references(() => pedidoLineas.id, { onDelete: "cascade" }),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    /** null = no había stock en ninguna estantería al armar el recorrido. */
-    ubicacionId: integer("ubicacion_id").references(() => ubicaciones.id),
-    cantidad: integer("cantidad").notNull(),
-    pickeado: integer("pickeado").notNull().default(0),
-    estado: text("estado").$type<"pendiente" | "hecha" | "faltante">().notNull().default("pendiente"),
+    orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    lineId: integer("line_id").notNull().references(() => orderLines.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    /** null = no shelf had stock when the route was built. */
+    locationId: integer("location_id").references(() => locations.id),
+    quantity: integer("quantity").notNull(),
+    picked: integer("picked").notNull().default(0),
+    status: text("status").$type<"pending" | "done" | "short">().notNull().default("pending"),
   },
-  (t) => [index("tareas_pedido").on(t.pedidoId)],
+  (t) => [index("pick_tasks_order_id_idx").on(t.orderId)],
 );
 
-export const cajas = pgTable(
-  "cajas",
+export const boxes = pgTable(
+  "boxes",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    pedidoId: integer("pedido_id").notNull().references(() => pedidos.id, { onDelete: "cascade" }),
-    numero: integer("numero").notNull(),
-    pesoGramos: integer("peso_gramos"),
-    estado: text("estado").$type<"abierta" | "cerrada">().notNull().default("abierta"),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    number: integer("number").notNull(),
+    weightGrams: integer("weight_grams"),
+    status: text("status").$type<"open" | "closed">().notNull().default("open"),
   },
-  (t) => [index("cajas_pedido").on(t.pedidoId)],
+  (t) => [index("boxes_order_id_idx").on(t.orderId)],
 );
 
-export const cajaItems = pgTable(
-  "caja_items",
+export const boxItems = pgTable(
+  "box_items",
   {
-    cajaId: integer("caja_id").notNull().references(() => cajas.id, { onDelete: "cascade" }),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    cantidad: integer("cantidad").notNull(),
+    boxId: integer("box_id").notNull().references(() => boxes.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.cajaId, t.productoId] })],
+  (t) => [primaryKey({ columns: [t.boxId, t.productId] })],
 );
 
-// ───────────── Entradas: recepciones y devoluciones ─────────────
+// ───────────── Inbound: receivings and returns ─────────────
 
-export const recepciones = pgTable(
-  "recepciones",
+export const receivings = pgTable(
+  "receivings",
   {
     id: serial("id").primaryKey(),
-    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    /** null = recepción sin aviso, creada en el depósito. */
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** null = unannounced receiving, created in the warehouse. */
     fierroId: text("fierro_id"),
-    numero: text("numero").notNull(),
-    proveedor: text("proveedor").notNull(),
-    estado: text("estado").$type<"pendiente" | "en_curso" | "cerrada">().notNull().default("pendiente"),
-    fecha: timestamp("fecha", { withTimezone: true }).notNull().defaultNow(),
-    enviadoAFierro: timestamp("enviado_a_fierro", { withTimezone: true }),
+    number: text("number").notNull(),
+    supplier: text("supplier").notNull(),
+    status: text("status").$type<"pending" | "in_progress" | "closed">().notNull().default("pending"),
+    date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+    sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
   },
-  (t) => [index("recepciones_estado").on(t.empresaId, t.estado)],
+  (t) => [index("receivings_company_id_status_idx").on(t.companyId, t.status)],
 );
 
-export const recepcionLineas = pgTable(
-  "recepcion_lineas",
+export const receivingLines = pgTable(
+  "receiving_lines",
   {
     id: serial("id").primaryKey(),
-    recepcionId: integer("recepcion_id").notNull().references(() => recepciones.id, { onDelete: "cascade" }),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    esperado: integer("esperado").notNull().default(0),
-    recibido: integer("recibido").notNull().default(0),
+    receivingId: integer("receiving_id").notNull().references(() => receivings.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    expected: integer("expected").notNull().default(0),
+    received: integer("received").notNull().default(0),
   },
-  (t) => [uniqueIndex("recepcion_lineas_prod").on(t.recepcionId, t.productoId)],
+  (t) => [uniqueIndex("receiving_lines_receiving_id_product_id_idx").on(t.receivingId, t.productId)],
 );
 
-export type EstadoLibro = "vendible" | "danado" | "saldo";
+export type BookCondition = "sellable" | "damaged" | "clearance";
 
-export const devoluciones = pgTable("devoluciones", {
+export const returns = pgTable("returns", {
   id: serial("id").primaryKey(),
-  empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-  numero: text("numero").notNull(),
-  clienteId: integer("cliente_id").notNull().references(() => clientes.id),
-  estado: text("estado").$type<"en_curso" | "cerrada">().notNull().default("en_curso"),
-  fecha: timestamp("fecha", { withTimezone: true }).notNull().defaultNow(),
-  enviadoAFierro: timestamp("enviado_a_fierro", { withTimezone: true }),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  number: text("number").notNull(),
+  customerId: integer("customer_id").notNull().references(() => customers.id),
+  status: text("status").$type<"in_progress" | "closed">().notNull().default("in_progress"),
+  date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
 });
 
-export const devolucionLineas = pgTable(
-  "devolucion_lineas",
+export const returnLines = pgTable(
+  "return_lines",
   {
-    devolucionId: integer("devolucion_id").notNull().references(() => devoluciones.id, { onDelete: "cascade" }),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    estadoLibro: text("estado_libro").$type<EstadoLibro>().notNull(),
-    cantidad: integer("cantidad").notNull(),
+    returnId: integer("return_id").notNull().references(() => returns.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    bookCondition: text("book_condition").$type<BookCondition>().notNull(),
+    quantity: integer("quantity").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.devolucionId, t.productoId, t.estadoLibro] })],
+  (t) => [primaryKey({ columns: [t.returnId, t.productId, t.bookCondition] })],
 );
 
-// ───────────── Conteos cíclicos ─────────────
+// ───────────── Cycle counts ─────────────
 
-export const conteos = pgTable("conteos", {
+export const counts = pgTable("counts", {
   id: serial("id").primaryKey(),
-  empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-  nombre: text("nombre").notNull(),
-  estado: text("estado").$type<"abierto" | "cerrado">().notNull().default("abierto"),
-  fecha: timestamp("fecha", { withTimezone: true }).notNull().defaultNow(),
-  enviadoAFierro: timestamp("enviado_a_fierro", { withTimezone: true }),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: text("name").notNull(),
+  status: text("status").$type<"open" | "closed">().notNull().default("open"),
+  date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
 });
 
-export const conteoUbicaciones = pgTable(
-  "conteo_ubicaciones",
+export const countLocations = pgTable(
+  "count_locations",
   {
-    conteoId: integer("conteo_id").notNull().references(() => conteos.id, { onDelete: "cascade" }),
-    ubicacionId: integer("ubicacion_id").notNull().references(() => ubicaciones.id),
-    estado: text("estado").$type<"pendiente" | "contada">().notNull().default("pendiente"),
-    contadoPor: integer("contado_por").references(() => usuarios.id),
+    countId: integer("count_id").notNull().references(() => counts.id, { onDelete: "cascade" }),
+    locationId: integer("location_id").notNull().references(() => locations.id),
+    status: text("status").$type<"pending" | "counted">().notNull().default("pending"),
+    countedBy: integer("counted_by").references(() => users.id),
   },
-  (t) => [primaryKey({ columns: [t.conteoId, t.ubicacionId] })],
+  (t) => [primaryKey({ columns: [t.countId, t.locationId] })],
 );
 
-export const conteoLineas = pgTable(
-  "conteo_lineas",
+export const countLines = pgTable(
+  "count_lines",
   {
-    conteoId: integer("conteo_id").notNull().references(() => conteos.id, { onDelete: "cascade" }),
-    ubicacionId: integer("ubicacion_id").notNull().references(() => ubicaciones.id),
-    productoId: integer("producto_id").notNull().references(() => productos.id),
-    contado: integer("contado").notNull().default(0),
-    /** Lo que decía el sistema al cerrar el conteo (queda como registro). */
-    sistema: integer("sistema"),
+    countId: integer("count_id").notNull().references(() => counts.id, { onDelete: "cascade" }),
+    locationId: integer("location_id").notNull().references(() => locations.id),
+    productId: integer("product_id").notNull().references(() => products.id),
+    countedQty: integer("counted_qty").notNull().default(0),
+    /** What the system said when the count was closed (kept as a record). */
+    system: integer("system"),
   },
-  (t) => [primaryKey({ columns: [t.conteoId, t.ubicacionId, t.productoId] })],
+  (t) => [primaryKey({ columns: [t.countId, t.locationId, t.productId] })],
 );
 
-export const ahora = sql`now()`;
+export const now = sql`now()`;

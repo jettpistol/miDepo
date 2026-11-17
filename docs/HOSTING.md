@@ -66,15 +66,15 @@ This matters: that command creates the database tables before building.
 | Name | Value |
 |---|---|
 | `DATABASE_URL` | The string from step 1 |
-| `SECRETO` | The text from step 2 |
+| `SECRET` | The text from step 2 |
 | `APP_URL` | `https://midepo.yourdomain.com` (the address you will use, no slash at the end) |
-| `DATOS_DEMO` | `si` to load the demo companies, `no` for a clean site |
+| `DEMO_DATA` | `yes` to load the demo companies, `no` for a clean site |
 
 6. Press **Deploy** and wait two or three minutes.
 
 When it finishes, Vercel gives you an address ending in `.vercel.app`. Open it: you should see the miDepo login page.
 
-> With `DATOS_DEMO=si` the site contains demo users with a publicly known password (`midepo1234`). That is fine for testing. Before real warehouse data goes in, see [Going from test to real use](#going-from-test-to-real-use).
+> With `DEMO_DATA=yes` the site contains demo users with a publicly known password (`midepo1234`). That is fine for testing. Before real warehouse data goes in, see [Going from test to real use](#going-from-test-to-real-use).
 
 ## Step 4: Connect your domain
 
@@ -105,12 +105,12 @@ Check that `APP_URL` from step 3 matches this address exactly. If you change it,
 ## Going from test to real use
 
 1. In Neon, create a **new, empty** database (or a new project) and copy its connection string.
-2. In Vercel, **Settings → Environment Variables**: replace `DATABASE_URL` with the new string and set `DATOS_DEMO` to `no`.
+2. In Vercel, **Settings → Environment Variables**: replace `DATABASE_URL` with the new string and set `DEMO_DATA` to `no`.
 3. Redeploy. The site now has tables and no data.
 4. Create the first company and its administrator. This needs Node.js on your computer and the project downloaded. In the project folder, with the **new** database string and your secret:
 
 ```bash
-DATABASE_URL="postgresql://..." SECRETO="your-secret" npm run empresa:crear -- "Ovnipress" ovnipress you@yourmail.com "a-long-password"
+DATABASE_URL="postgresql://..." SECRET="your-secret" npm run company:create -- "Ovnipress" ovnipress you@yourmail.com "a-long-password"
 ```
 
 5. Log in with that email and password. Under **Usuarios** add the rest of the team; under **Ubicaciones** create the shelf locations.
@@ -131,7 +131,7 @@ Neon keeps a history of the database and can restore it to an earlier moment. Ho
 
 | What you see | Likely cause | Fix |
 |---|---|---|
-| Build fails with "Falta la variable SECRETO" | `SECRETO` not set | Add it under Environment Variables and redeploy. |
+| Build fails with "The SECRET variable is missing" | `SECRET` not set | Add it under Environment Variables and redeploy. |
 | Build fails mentioning the database or a timeout | Wrong `DATABASE_URL` | Copy it again from Neon, with pooling on, and redeploy. |
 | Login page loads, logging in gives an error | Tables missing | Check the Build Command is `npm run build:prod`, then redeploy. |
 | "Entrar con huella" fails on the real domain | `APP_URL` does not match the address in the browser | Fix `APP_URL` and redeploy. Passkeys registered on the `.vercel.app` address do not work on your domain: register again. |

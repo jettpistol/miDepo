@@ -1,38 +1,38 @@
 import Link from "next/link";
 import { and, asc, eq, sql } from "drizzle-orm";
-import { Encabezado, Insignia, plural, Vacio } from "@/components/ui";
-import { clientes, pedidoLineas, pedidos } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
+import { PageHeader, Badge, plural, EmptyState } from "@/components/ui";
+import { customers, orderLines, orders } from "@/db/schema";
+import { requireSession } from "@/lib/session";
 
 export const metadata = { title: "Empaque" };
 
-export default async function Empaque() {
-  const { db, empresa } = await requerir();
-  const filas = await db
+export default async function Packing() {
+  const { db, company } = await requireSession();
+  const rows = await db
     .select({
-      p: pedidos,
-      cliente: clientes.nombre,
-      pickeado: sql<number>`coalesce(sum(${pedidoLineas.pickeado}), 0)`.mapWith(Number),
-      empacado: sql<number>`coalesce(sum(${pedidoLineas.empacado}), 0)`.mapWith(Number),
-      pedido: sql<number>`coalesce(sum(${pedidoLineas.cantidad}), 0)`.mapWith(Number),
+      p: orders,
+      customer: customers.name,
+      picked: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number),
+      packed: sql<number>`coalesce(sum(${orderLines.packed}), 0)`.mapWith(Number),
+      order: sql<number>`coalesce(sum(${orderLines.quantity}), 0)`.mapWith(Number),
     })
-    .from(pedidos)
-    .innerJoin(clientes, eq(clientes.id, pedidos.clienteId))
-    .leftJoin(pedidoLineas, eq(pedidoLineas.pedidoId, pedidos.id))
-    .where(and(eq(pedidos.empresaId, empresa.id), eq(pedidos.estado, "preparado")))
-    .groupBy(pedidos.id, clientes.nombre)
-    .orderBy(asc(pedidos.fecha));
+    .from(orders)
+    .innerJoin(customers, eq(customers.id, orders.customerId))
+    .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
+    .where(and(eq(orders.companyId, company.id), eq(orders.status, "picked")))
+    .groupBy(orders.id, customers.name)
+    .orderBy(asc(orders.date));
 
   return (
     <>
-      <Encabezado titulo="Empaque" />
-      {filas.length === 0 ? (
-        <Vacio icono="empaque" titulo="No hay pedidos esperando empaque">
+      <PageHeader title="Empaque" />
+      {rows.length === 0 ? (
+        <EmptyState icon="packing" title="No hay pedidos esperando empaque">
           Cuando alguien termine un picking, el pedido aparece acá.
-        </Vacio>
+        </EmptyState>
       ) : (
-        <div className="overflow-x-auto border-y border-borde">
-          <table className="tabla">
+        <div className="overflow-x-auto border-y border-line">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Pedido</th>
@@ -43,29 +43,29 @@ export default async function Empaque() {
               </tr>
             </thead>
             <tbody>
-              {filas.map(({ p, cliente, pickeado, empacado, pedido }) => (
+              {rows.map(({ p, customer, picked, packed, order }) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/empaque/${p.id}`} className="enlace numero">
-                      {p.numero}
+                    <Link href={`/empaque/${p.id}`} className="link doc-number">
+                      {p.number}
                     </Link>
                   </td>
                   <td>
-                    <span className="font-medium">{cliente}</span>
-                    <span className="block text-suave sm:hidden">
-                      {plural(pickeado, "unidad preparada", "unidades preparadas")}
-                      {pickeado < pedido && ` · ${pedido - pickeado} faltantes`}
+                    <span className="font-medium">{customer}</span>
+                    <span className="block text-muted sm:hidden">
+                      {plural(picked, "unidad preparada", "unidades preparadas")}
+                      {picked < order && ` · ${order - picked} faltantes`}
                     </span>
                   </td>
-                  <td className="hidden text-right font-semibold sm:table-cell">{pickeado}</td>
-                  <td className={`hidden text-right sm:table-cell ${pickeado < pedido ? "font-semibold text-peligro" : "text-suave"}`}>{pickeado < pedido ? pedido - pickeado : "—"}</td>
+                  <td className="hidden text-right font-semibold sm:table-cell">{picked}</td>
+                  <td className={`hidden text-right sm:table-cell ${picked < order ? "font-semibold text-danger" : "text-muted"}`}>{picked < order ? order - picked : "—"}</td>
                   <td>
-                    {empacado > 0 ? (
-                      <Insignia tono="acento">
-                        {empacado} de {pickeado} en cajas
-                      </Insignia>
+                    {packed > 0 ? (
+                      <Badge tone="accent">
+                        {packed} de {picked} en cajas
+                      </Badge>
                     ) : (
-                      <Insignia>Sin empezar</Insignia>
+                      <Badge>Sin empezar</Badge>
                     )}
                   </td>
                 </tr>

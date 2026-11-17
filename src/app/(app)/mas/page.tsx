@@ -1,36 +1,36 @@
 import Link from "next/link";
-import { Cuentas } from "@/components/Cuentas";
-import { Icono } from "@/components/Icono";
-import { Encabezado } from "@/components/ui";
+import { Accounts } from "@/components/Accounts";
+import { Icon } from "@/components/Icon";
+import { PageHeader } from "@/components/ui";
 import { MENU } from "@/lib/menu";
-import { puede, requerir } from "@/lib/sesion";
+import { can, requireSession } from "@/lib/session";
 
 export const metadata = { title: "Menú" };
 
-export default async function Mas() {
-  const { usuario, empresa } = await requerir();
+export default async function More() {
+  const { user, company } = await requireSession();
   return (
     <>
-      <Encabezado titulo="Menú" bajada={empresa.nombre} />
+      <PageHeader title="Menú" subtitle={company.name} />
       <section className="mb-9">
-        <h2 className="titulo-seccion">Tu cuenta</h2>
-        <div className="border-y border-borde py-1.5">
-          <Cuentas mostrarActual />
+        <h2 className="section-title">Tu cuenta</h2>
+        <div className="border-y border-line py-1.5">
+          <Accounts showCurrent />
         </div>
       </section>
       {MENU.map((g) => {
-        const items = g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario"));
+        const items = g.items.filter((i) => can(user.role, i.minRole ?? "operator"));
         if (items.length === 0) return null;
         return (
-          <section key={g.grupo} className="mb-9">
-            <h2 className="titulo-seccion">{g.grupo}</h2>
-            <ul className="lista">
+          <section key={g.group} className="mb-9">
+            <h2 className="section-title">{g.group}</h2>
+            <ul className="ruled-list">
               {items.map((i) => (
                 <li key={i.href}>
-                  <Link href={i.href} className="fila py-3">
-                    <Icono nombre={i.icono} className="size-6 text-acento-texto" />
-                    <span className="min-w-0 flex-1 font-semibold">{i.nombre}</span>
-                    <Icono nombre="flecha" className="size-4 text-suave" />
+                  <Link href={i.href} className="row py-3">
+                    <Icon name={i.icon} className="size-6 text-accent-text" />
+                    <span className="min-w-0 flex-1 font-semibold">{i.name}</span>
+                    <Icon name="arrow" className="size-4 text-muted" />
                   </Link>
                 </li>
               ))}
