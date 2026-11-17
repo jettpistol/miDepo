@@ -38,7 +38,7 @@ export default async function Account() {
 
         <section className={section}>
           <h2 className="section-title">Apariencia</h2>
-          <Appearance action={saveAppearance} accent={user.accent} theme={user.theme} />
+          <Appearance action={saveAppearance} accent={user.accent} theme={user.theme} font={user.font} />
         </section>
 
         <section className={section}>

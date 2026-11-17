@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, or, sql } from "drizzle-orm";
 import { Icon } from "@/components/Icon";
-import { Code, PageHeader, Badge, ShelfMark, EmptyState } from "@/components/ui";
+import { Code, PageHeader, Badge, ShelfMark, EmptyRow } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { containsText } from "@/lib/lookup";
 import { requireSession } from "@/lib/session";
@@ -10,20 +10,28 @@ import { StockSearch } from "./StockSearch";
 export const metadata = { title: "Stock" };
 
 const TYPE_LABEL = { book: "Libro", floppy: "Grapa", variant: "Variante", pack: "Pack" } as const;
+const PAGE = 50;
+const fmt = (n: number) => n.toLocaleString("es-AR");
 
-export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
   const { db, company } = await requireSession();
-  const q = ((await searchParams).q ?? "").trim();
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
 
   const [location] = q ? await db.select().from(locations).where(and(eq(locations.companyId, company.id), eq(locations.code, q.toUpperCase()))) : [];
-  const found = q
-    ? await db
-        .select()
-        .from(products)
-        .where(and(eq(products.companyId, company.id), or(eq(products.barcode, q), eq(products.isbn, q), eq(products.internalCode, q.toUpperCase()), containsText(products.title, q), containsText(products.author, q))))
-        .orderBy(asc(products.title))
-        .limit(50)
-    : [];
+  // Without a search the whole catalogue is listed, a page at a time; a search narrows it.
+  const filter = and(eq(products.companyId, company.id), q ? or(eq(products.barcode, q), eq(products.isbn, q), eq(products.internalCode, q.toUpperCase()), containsText(products.title, q), containsText(products.author, q)) : undefined);
+  const [{ n: total }] = await db.select({ n: count() }).from(products).where(filter);
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const page = Math.min(pages, Math.max(1, Math.floor(Number(sp.pagina)) || 1));
+  const found = await db
+    .select()
+    .from(products)
+    .where(filter)
+    .orderBy(asc(products.title))
+    .limit(PAGE)
+    .offset((page - 1) * PAGE);
+  const pageHref = (n: number) => `/stock?${new URLSearchParams({ ...(q ? { q } : {}), ...(n > 1 ? { pagina: String(n) } : {}) })}`;
   const totals = new Map<number, number>();
   if (found.length > 0) {
     const sums = await db.select({ productId: stock.productId, n: sql<number>`sum(${stock.quantity})`.mapWith(Number) }).from(stock).where(inArray(stock.productId, found.map((p) => p.id))).groupBy(stock.productId);
@@ -45,10 +53,10 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
         </Link>
       )}
 
-      {q && found.length === 0 && !location && <EmptyState icon="stock" title={`Nada coincide con "${q}"`}>Probá con menos palabras o con el código de barras completo.</EmptyState>}
-
-      {found.length > 0 && (
-        <div className="table-wrap">
+      <h2 className="section-title">
+        {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
+      </h2>
+      <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
@@ -59,6 +67,11 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
               </tr>
             </thead>
             <tbody>
+              {found.length === 0 && (
+                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}>
+                  {q ? "Probá con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
+                </EmptyRow>
+              )}
               {found.map((p) => (
                 <tr key={p.id}>
                   <td>
@@ -88,8 +101,33 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
             </tbody>
           </table>
         </div>
+      {total > PAGE && (
+        <nav aria-label="Páginas" className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
+          <span>
+            {fmt((page - 1) * PAGE + 1)}–{fmt(Math.min(page * PAGE, total))} de {fmt(total)}
+          </span>
+          <span className="flex gap-2">
+            {page > 1 ? (
+              <Link href={pageHref(page - 1)} className="btn-sm" scroll={false}>
+                <Icon name="arrow" className="size-4 rotate-180" /> Anterior
+              </Link>
+            ) : (
+              <span className="btn-sm pointer-events-none opacity-55" aria-disabled="true">
+                <Icon name="arrow" className="size-4 rotate-180" /> Anterior
+              </span>
+            )}
+            {page < pages ? (
+              <Link href={pageHref(page + 1)} className="btn-sm" scroll={false}>
+                Siguiente <Icon name="arrow" className="size-4" />
+              </Link>
+            ) : (
+              <span className="btn-sm pointer-events-none opacity-55" aria-disabled="true">
+                Siguiente <Icon name="arrow" className="size-4" />
+              </span>
+            )}
+          </span>
+        </nav>
       )}
-      {found.length === 50 && <p className="mt-3 text-sm text-muted">Se muestran los primeros 50.</p>}
     </>
   );
 }

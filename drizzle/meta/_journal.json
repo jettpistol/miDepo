@@ -22,6 +22,13 @@
       "when": 1794951450115,
       "tag": "0002_receivings_require_supplier",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794952502442,
+      "tag": "0003_user_font",
+      "breakpoints": true
     }
   ]
 }

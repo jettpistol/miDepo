@@ -5,14 +5,17 @@ import { action, txt } from "@/lib/action";
 import { passkeys, userPhotos, users } from "@/db/schema";
 import { hashPassword, VALID_PIN, pinHmac, verifyPassword } from "@/lib/credentials";
 import { VALID_HEX } from "@/lib/color";
+import { isFont } from "@/lib/fonts";
 import { UserError } from "@/lib/errors";
 
 export const saveAppearance = action("operator", async (c, f) => {
   const accent = txt(f, "accent");
   const theme = txt(f, "theme");
+  const font = txt(f, "font");
   if (!VALID_HEX.test(accent)) throw new UserError("Ese color no es válido.");
+  if (!isFont(font)) throw new UserError("Elegí una letra de la lista.");
   if (theme !== "light" && theme !== "dark" && theme !== "system") throw new UserError("Elegí un tema.");
-  await c.db.update(users).set({ accent: accent.toUpperCase(), theme }).where(eq(users.id, c.userId));
+  await c.db.update(users).set({ accent: accent.toUpperCase(), theme, font }).where(eq(users.id, c.userId));
   return "Guardado. Así vas a ver miDepo en todos tus dispositivos.";
 });
 

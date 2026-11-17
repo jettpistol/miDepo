@@ -48,6 +48,8 @@ export const users = pgTable(
     role: text("role").$type<Role>().notNull().default("operator"),
     accent: text("accent").notNull().default("#002FA7"),
     theme: text("theme").$type<"light" | "dark" | "system">().notNull().default("system"),
+    /** Interface font, one of the ids in src/lib/fonts.ts. */
+    font: text("font").notNull().default("libre-franklin"),
     active: boolean("active").notNull().default(true),
     /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
     photoVersion: integer("photo_version"),

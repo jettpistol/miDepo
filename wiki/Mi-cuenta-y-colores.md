@@ -34,6 +34,12 @@ El color se guarda en tu usuario: lo vas a ver en cualquier teléfono o computad
 
 Cualquier color sirve. Si elegís uno muy claro, miDepo oscurece los textos para que se sigan leyendo.
 
+## Elegir la letra
+
+En **Apariencia**, debajo del tema, está **Letra**: hay 14 tipografías para elegir. Cada opción se muestra escrita con esa letra, y al tocarla todo miDepo cambia al instante para que la pruebes. Tocá **Guardar apariencia** para quedártela; si salís sin guardar, vuelve a la que tenías.
+
+Como el color, la letra es solo tuya. Los códigos (estantes, ISBN, números de pedido) siempre se ven con la misma letra de máquina de escribir, para que se lean igual en todas las pantallas.
+
 ## Tema claro u oscuro
 
 - **Como el dispositivo:** sigue lo que tenga configurado tu teléfono o computadora.
