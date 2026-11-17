@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Progress, Notice, Code, PageHeader, Badge } from "@/components/ui";
-import { products, receivingLines, receivings } from "@/db/schema";
+import { products, receivingLines, receivings, suppliers } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { close, correct, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
@@ -11,7 +11,8 @@ import { EditNumber } from "./EditNumber";
 export default async function ReceivingDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
   const { db, company } = await requireSession();
-  const [r] = await db.select().from(receivings).where(and(eq(receivings.id, id), eq(receivings.companyId, company.id)));
+  const [row] = await db.select({ r: receivings, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, company.id)));
+  const r = row?.r;
   if (!r) notFound();
   const lines = await db
     .select({ l: receivingLines, title: products.title, code: products.barcode })
@@ -26,7 +27,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader title={`${r.number} · ${r.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
+      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
 
       {open ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">

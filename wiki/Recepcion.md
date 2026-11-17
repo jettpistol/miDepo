@@ -30,9 +30,11 @@ Si contaste mal, tocá el número en la columna **Recibido**, escribí el correc
 
 Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que no figure:
 
-1. En **Recepción**, bajá hasta **Llegó algo sin aviso**.
-2. Escribí de dónde viene y tocá **Crear recepción**.
-3. Escaneá todo y cerrá.
+1. En **Recepción**, tocá **Nueva**.
+2. Abrí **Proveedor** y elegilo de la lista. Podés escribir parte del nombre para encontrarlo.
+3. Tocá **Crear recepción**, escaneá todo y cerrá.
+
+**Si el proveedor no está en la lista:** escribí el nombre completo. Si no coincide con ninguno, aparece **Crear proveedor**; tocalo y confirmá. Antes fijate bien: si el nombre se parece mucho a uno que ya existe, miDepo no lo deja crear y te muestra cuál es. Los proveedores que manda Fierro aparecen solos.
 
 ## Qué pasa al cerrar
 

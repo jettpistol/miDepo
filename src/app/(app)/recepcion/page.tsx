@@ -1,26 +1,31 @@
 import Link from "next/link";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { ActionForm } from "@/components/ScanForm";
-import { PageHeader, shortDate, Badge, plural, EmptyState } from "@/components/ui";
-import { receivingLines, receivings } from "@/db/schema";
+import { NewButton } from "@/components/NewButton";
+import { PageHeader, shortDate, Badge, plural, EmptyRow } from "@/components/ui";
+import { receivingLines, receivings, suppliers } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { create } from "./actions";
+import { SupplierSelect } from "./SupplierSelect";
 
 export const metadata = { title: "Recepción" };
 
 export default async function Receivings() {
   const { db, company } = await requireSession();
+  const supplierList = await db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, company.id)).orderBy(asc(suppliers.name));
   const rows = await db
     .select({
       r: receivings,
+      supplier: suppliers.name,
       titles: sql<number>`count(${receivingLines.id})`.mapWith(Number),
       expected: sql<number>`coalesce(sum(${receivingLines.expected}), 0)`.mapWith(Number),
       received: sql<number>`coalesce(sum(${receivingLines.received}), 0)`.mapWith(Number),
     })
     .from(receivings)
+    .innerJoin(suppliers, eq(suppliers.id, receivings.supplierId))
     .leftJoin(receivingLines, eq(receivingLines.receivingId, receivings.id))
     .where(and(eq(receivings.companyId, company.id)))
-    .groupBy(receivings.id)
+    .groupBy(receivings.id, suppliers.name)
     .orderBy(desc(receivings.date))
     .limit(60);
   const openList = rows.filter((f) => f.r.status !== "closed").reverse();
@@ -28,10 +33,22 @@ export default async function Receivings() {
 
   return (
     <>
-      <PageHeader title="Recepción" />
-      {openList.length === 0 ? (
-        <EmptyState title="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</EmptyState>
-      ) : (
+      <PageHeader title="Recepción">
+        <NewButton title="Nueva recepción sin aviso">
+          <ActionForm action={create} button="Crear recepción" className="space-y-3 [&>button]:w-full">
+            <div>
+              <label htmlFor="supplier" className="field-label">
+                Proveedor
+              </label>
+              <SupplierSelect options={supplierList.map((x) => ({ value: String(x.id), label: x.name }))} />
+            </div>
+          </ActionForm>
+        </NewButton>
+      </PageHeader>
+      <section>
+        <h2 className="section-title">
+          Abiertas <small>{openList.length}</small>
+        </h2>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -45,7 +62,12 @@ export default async function Receivings() {
               </tr>
             </thead>
             <tbody>
-              {openList.map(({ r, titles, expected, received }) => (
+              {openList.length === 0 && (
+                <EmptyRow columns={6} title="No hay recepciones abiertas">
+                  Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, tocá Nueva.
+                </EmptyRow>
+              )}
+              {openList.map(({ r, supplier, titles, expected, received }) => (
                 <tr key={r.id}>
                   <td>
                     <Link href={`/recepcion/${r.id}`} className="link doc-number">
@@ -53,7 +75,7 @@ export default async function Receivings() {
                     </Link>
                   </td>
                   <td>
-                    <span className="font-medium">{r.supplier}</span>
+                    <span className="font-medium">{supplier}</span>
                     <span className="block text-muted md:hidden">
                       <span className="sm:hidden">
                         {plural(titles, "título", "títulos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
@@ -70,24 +92,17 @@ export default async function Receivings() {
             </tbody>
           </table>
         </div>
-      )}
-
-      <section className="mt-8 lg:mt-6">
-        <h2 className="section-title">Llegó algo sin aviso</h2>
-        <ActionForm action={create} button="Crear recepción" className="flex flex-wrap items-start gap-3">
-          <input name="supplier" className="field max-w-sm flex-1 basis-64" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
-        </ActionForm>
       </section>
 
       {closedList.length > 0 && (
         <section className="mt-8 lg:mt-6">
           <h2 className="section-title">Últimas cerradas</h2>
           <ul className="ruled-list framed">
-            {closedList.map(({ r, received }) => (
+            {closedList.map(({ r, supplier, received }) => (
               <li key={r.id}>
                 <Link href={`/recepcion/${r.id}`} className="row justify-between">
                   <span className="min-w-0">
-                    <span className="doc-number">{r.number}</span> · {r.supplier}
+                    <span className="doc-number">{r.number}</span> · {supplier}
                   </span>
                   <span className="text-sm whitespace-nowrap text-muted">{received} unidades</span>
                 </Link>

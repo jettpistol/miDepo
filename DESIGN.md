@@ -182,6 +182,9 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **Scan form** (`<ScanForm context>`): every keystroke is rehearsed against the server (`/api/lookup`, logic in `src/lib/lookup.ts`) with the same rules as the real action. Under each field a one-line note says what was recognised (the book's title, how much a shelf holds) or why it will not work, in `ok`, `warn` or `danger`. A field in `danger` blocks the submit. Suggestions open under the field as you type (a listbox; shelves as shelf marks). One-tap fixes sit under the field as `btn-sm` chips ("Está en", "Ya hay en", "Todas: 60"). Picking and packing validate but never suggest, because the scan there proves which book is in hand.
 - **Disabled with a reason**: an action that cannot work yet is disabled and says why in one muted line (`<ActionButton reason>`).
 - **Badge**: a small rectangular state badge in five tones. **Notice**: a bordered, tinted notice. **EmptyState**: an empty state between two hairlines that says what is missing and how it appears.
+- **Dropdown** (`<Select>`): drawn by miDepo, never the system `<select>`. Opens the full list with a search box that keeps focus, so typing narrows the list while it is open; arrows and Enter pick. Only listed values can be submitted. With `create`, a search that matches nothing offers "Crear …", which asks for confirmation; Enter alone never creates.
+- **New button** (`<NewButton>`): "+ Nueva" in the page header, opening a small panel with the form, like Jira's Create.
+- **Always-on tables**: list screens keep their table even when empty, with one `<EmptyRow>` that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
 - **`panel`**: a plain 6px bordered panel, used only around a form or a settings group. Never nested.
 - **Progress**: a 6px progress bar with "12 de 40" beside it; it turns green when complete.
@@ -197,5 +200,6 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.
 - Don't use unicode glyphs as icons; use `Icon`.
+- Do treat the database as the source of truth: suppliers, customers, products, stock and locations are chosen from what exists. Never accept free text for something that should already exist; creating one is a separate, confirmed action that refuses near-duplicates.
 - Do say a problem before the click: validate while typing, suggest valid values, and disable what cannot work with the reason beside it.
 - Don't explain what a screen is for under its title, or how an ordinary control works. Keep text that states a fact (a count, a state) or a consequence the user could not guess.

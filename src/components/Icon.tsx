@@ -19,6 +19,8 @@ const PATHS = {
   download: "M12 4v11m0 0-4-4m4 4 4-4M5 20h14",
   logout: "M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9",
   arrow: "m9 6 6 6-6 6",
+  chevron: "m6 9 6 6 6-6",
+  plus: "M12 5v14M5 12h14",
   ok: "m5 12.500 4.500 4.500L19 7.500",
   warn: "M12 4 2.500 20h19L12 4Zm0 6v4.500M12 17.500h.01",
 } as const;

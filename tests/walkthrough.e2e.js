@@ -56,6 +56,13 @@ async function warning(p, field, value) {
   await shot('receiving');
   await p.click('button:has-text("Cerrar recepción")'); await p.waitForSelector('text=Recepción cerrada');
 
+  // An unannounced receiving only takes a listed supplier; junk text is never accepted.
+  await p.goto(BASE + '/recepcion'); await p.click('button:has-text("Nueva")'); await p.click('button:has-text("Crear recepción")');
+  step('  no supplier chosen → ' + await p.locator('[role=dialog] input[required]').evaluate((e) => e.validationMessage));
+  await p.click('#supplier'); await p.keyboard.type('asdasdasds'); await p.keyboard.press('Enter');
+  step('  junk + Enter only asks: ' + ((await p.inputValue('input[name=supplierId]')) === '' && (await p.locator('text=¿Crear').count()) === 1 ? 'ok' : fail('junk was accepted')));
+  await p.keyboard.press('Escape');
+
   // Put-away
   await p.goto(BASE + '/guardar'); await p.waitForSelector('#scan-product'); await shot('putaway');
   await p.fill('#scan-product', rows[0].code);
@@ -101,7 +108,8 @@ async function warning(p, field, value) {
   for (const r of ['cajas', 'lista']) { await p.goto(`${BASE}/imprimir/${r}/${orderId}`); await p.waitForSelector('main, body'); await shot('print-' + r); }
 
   // Return
-  await p.goto(BASE + '/devoluciones'); await p.fill('[aria-label="Cliente que devuelve"]', 'aleph'); await p.press('[aria-label="Cliente que devuelve"]', 'Enter');
+  await p.goto(BASE + '/devoluciones'); await p.click('button:has-text("Nueva")'); await p.click('#customer');
+  await p.keyboard.type('aleph'); await p.keyboard.press('Enter');
   await p.click('button:has-text("Empezar a revisar")'); await p.waitForURL(/\/devoluciones\/\d+/);
   step('  return → ' + await scan(p, { product: rows[0].code }, 3));
   await p.check('input[value=damaged]'); step('  return → ' + await scan(p, { product: rows[1].code }, 2)); await shot('return');

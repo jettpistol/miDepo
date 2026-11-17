@@ -5,14 +5,14 @@ process.env.PGLITE_DIR = "memory://";
 delete process.env.DATABASE_URL;
 
 import { getDb, runMigrations, type DB } from "@/db";
-import { boxes, companies, fierroStock, orderLines, orders, products, receivings, stock, pickTasks, locations } from "@/db/schema";
+import { boxes, companies, fierroStock, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
 import { createCompany, createUser } from "@/db/seed";
 import { sync } from "@/lib/fierro";
 import { UserError } from "@/lib/errors";
 import { moveStock, zone } from "@/lib/stock";
 import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
 import type { Ctx } from "@/lib/flows/common";
-import { closeReceiving, scanReceiving } from "@/lib/flows/receiving";
+import { closeReceiving, createSupplier, createUnannouncedReceiving, scanReceiving } from "@/lib/flows/receiving";
 import { move } from "@/lib/flows/move";
 import { confirmPick, markShort, takeOrder } from "@/lib/flows/picking";
 import { closeBox, scanIntoBox, finishPacking } from "@/lib/flows/packing";
@@ -196,6 +196,40 @@ describe("returns and counts", () => {
     expect(await db.select().from(stock).where(eq(stock.locationId, u2.id))).toEqual(atU2Before);
     const file = await fileFor(db, c.companyId, "count", id);
     expect(file.contents).toContain(",A-01-1");
+  });
+});
+
+describe("suppliers", () => {
+  it("fills the supplier list from Fierro's receipts on sync", async () => {
+    const list = await db.select().from(suppliers).where(eq(suppliers.companyId, c.companyId));
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.every((s) => s.createdBy === null)).toBe(true);
+  });
+
+  it("only accepts a supplier from the list for an unannounced receiving", async () => {
+    await expect(createUnannouncedReceiving(c, NaN)).rejects.toBeInstanceOf(UserError);
+    await expect(createUnannouncedReceiving(c, 999999)).rejects.toBeInstanceOf(UserError);
+    const [s] = await db.select().from(suppliers).where(eq(suppliers.companyId, c.companyId)).limit(1);
+    const id = await createUnannouncedReceiving(c, s.id);
+    expect((await db.select().from(receivings).where(eq(receivings.id, id)))[0].supplierId).toBe(s.id);
+  });
+
+  it("creates a supplier on purpose but refuses near-copies and junk", async () => {
+    const created = await createSupplier(c, "  Editorial   Nórdica ");
+    expect(created.name).toBe("Editorial Nórdica");
+    await expect(createSupplier(c, "editorial nordica")).rejects.toThrow(/Ya existe: Editorial Nórdica/);
+    await expect(createSupplier(c, "Editorial Nordicaa")).rejects.toThrow(/casi igual/);
+    await expect(createSupplier(c, "Editorial Sur")).resolves.toMatchObject({ name: "Editorial Sur" });
+    await expect(createSupplier(c, "x")).rejects.toBeInstanceOf(UserError);
+    await expect(createSupplier(c, "12345")).rejects.toBeInstanceOf(UserError);
+  });
+
+  it("does not let one company use another company's supplier", async () => {
+    const { e, u } = await buildCompany("Ajena SRL", "ajena", 11);
+    const [foreign] = await db.select().from(suppliers).where(eq(suppliers.companyId, e.id)).limit(1);
+    expect(foreign).toBeDefined();
+    await expect(createUnannouncedReceiving(c, foreign.id)).rejects.toBeInstanceOf(UserError);
+    expect(u.companyId).toBe(e.id);
   });
 });
 

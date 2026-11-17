@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import type { DB } from "@/db";
-import { boxItems, boxes, customers, countLines, counts, returnLines, returns, companies, orderLines, orders, products, receivingLines, receivings, locations } from "@/db/schema";
+import { boxItems, boxes, customers, countLines, counts, returnLines, returns, companies, orderLines, orders, products, receivingLines, receivings, suppliers, locations } from "@/db/schema";
 import { UserError } from "../errors";
 import { connector, sync, type Company } from "../fierro";
 import { fierroCode, csv } from "../fierro/csv";
@@ -20,7 +20,7 @@ export type Pending = { type: ExportType; id: number; number: string; detail: st
 export async function pendingExports(db: DB, companyId: number): Promise<Pending[]> {
   const [ps, rs, ds, ks] = await Promise.all([
     db.select({ id: orders.id, number: orders.number, detail: customers.name, date: orders.date }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.companyId, companyId), eq(orders.status, "packed"), isNull(orders.sentToFierro))),
-    db.select({ id: receivings.id, number: receivings.number, detail: receivings.supplier, date: receivings.date }).from(receivings).where(and(eq(receivings.companyId, companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))),
+    db.select({ id: receivings.id, number: receivings.number, detail: suppliers.name, date: receivings.date }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.companyId, companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))),
     db.select({ id: returns.id, number: returns.number, detail: customers.name, date: returns.date }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.companyId, companyId), eq(returns.status, "closed"), isNull(returns.sentToFierro))),
     db.select({ id: counts.id, number: counts.name, date: counts.date }).from(counts).where(and(eq(counts.companyId, companyId), eq(counts.status, "closed"), isNull(counts.sentToFierro))),
   ]);
@@ -47,7 +47,7 @@ export async function fileFor(db: DB, companyId: number, type: ExportType, id: n
     return { name: `pedido-${p.number}.csv`, contents: csv(rows.map((f) => [p.number, p.customer, f.box, fierroCode(f), f.title, f.quantity, f.weight]), ["pedido", "cliente", "caja", "codigo", "titulo", "cantidad", "peso_caja_gramos"]) };
   }
   if (type === "receiving") {
-    const [r] = await db.select().from(receivings).where(and(eq(receivings.id, id), eq(receivings.companyId, companyId)));
+    const [r] = await db.select({ number: receivings.number, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, companyId)));
     if (!r) throw new UserError("No encuentro esa recepción.");
     const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
     return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido"]) };

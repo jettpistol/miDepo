@@ -8,6 +8,20 @@
       "when": 1794887741386,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794951443331,
+      "tag": "0001_suppliers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794951450115,
+      "tag": "0002_receivings_require_supplier",
+      "breakpoints": true
     }
   ]
 }

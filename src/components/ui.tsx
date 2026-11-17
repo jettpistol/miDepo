@@ -45,6 +45,18 @@ export function EmptyState({ title, children }: { icon?: unknown; title: string;
   );
 }
 
+/** The single row of an empty table: the table keeps its columns, and says what is missing. */
+export function EmptyRow({ columns, title, children }: { columns: number; title: string; children?: ReactNode }) {
+  return (
+    <tr className="hover:bg-transparent!">
+      <td colSpan={columns} className="px-3 py-8 text-center lg:py-6">
+        <p className="font-semibold">{title}</p>
+        {children && <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{children}</p>}
+      </td>
+    </tr>
+  );
+}
+
 export function Notice({ tone = "accent", children }: { tone?: Tone; children: ReactNode }) {
   return <div className={`rounded-control border px-4 py-3 text-sm font-medium ${TONES[tone]}`}>{children}</div>;
 }

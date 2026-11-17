@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ActionForm, type Action } from "@/components/ScanForm";
 import { ShelfMark } from "@/components/ui";
 import { generateCodes, TEMPLATES, locationTotal, validateScheme, type Scheme, type Segment } from "@/lib/locations";
+import { Select } from "@/components/Select";
 
 const copy = (e: Scheme): Scheme => ({ ...e, segments: e.segments.map((t) => ({ ...t })) });
 
@@ -46,10 +47,15 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
               </label>
               <label className="text-[13px] font-semibold text-muted">
                 Se nombra con
-                <select value={t.type} onChange={(e) => change(i, { type: e.target.value as Segment["type"] })} className="field mt-1">
-                  <option value="letters">Letras (A, B, C…)</option>
-                  <option value="numbers">Números (1, 2, 3…)</option>
-                </select>
+                <Select
+                  className="mt-1"
+                  value={t.type}
+                  onChange={(v) => change(i, { type: v as Segment["type"] })}
+                  options={[
+                    { value: "letters", label: "Letras (A, B, C…)" },
+                    { value: "numbers", label: "Números (1, 2, 3…)" },
+                  ]}
+                />
               </label>
               <label className="text-[13px] font-semibold text-muted">
                 Cuántos hay
@@ -75,12 +81,17 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
           </button>
           <label className="flex items-center gap-2 text-sm font-semibold">
             Separador
-            <select value={scheme.separator} onChange={(e) => setScheme((x) => ({ ...x, id: "custom", separator: e.target.value }))} className="field w-auto font-mono">
-              <option value="-">Guion ( - )</option>
-              <option value=".">Punto ( . )</option>
-              <option value="/">Barra ( / )</option>
-              <option value="">Ninguno</option>
-            </select>
+            <Select
+              className="w-44 font-normal"
+              value={scheme.separator}
+              onChange={(v) => setScheme((x) => ({ ...x, id: "custom", separator: v }))}
+              options={[
+                { value: "-", label: "Guion ( - )" },
+                { value: ".", label: "Punto ( . )" },
+                { value: "/", label: "Barra ( / )" },
+                { value: "", label: "Ninguno" },
+              ]}
+            />
           </label>
         </div>
       </fieldset>

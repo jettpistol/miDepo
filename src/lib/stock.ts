@@ -104,8 +104,8 @@ export async function zone(tx: Executor, companyId: number, type: Exclude<Locati
     .limit(1);
   if (u) return u;
   const def = ZONES.find((z) => z.type === type)!;
-  const [newPassword] = await tx.insert(locations).values({ companyId, code: def.code, type }).returning();
-  return newPassword;
+  const [created] = await tx.insert(locations).values({ companyId, code: def.code, type }).returning();
+  return created;
 }
 
 export function locationName(u: { code: string; type: LocationType }) {

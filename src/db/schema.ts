@@ -271,6 +271,20 @@ export const boxItems = pgTable(
 
 // ───────────── Inbound: receivings and returns ─────────────
 
+/** Who sends stock in. Filled from Fierro on sync; a receiving can only name one of these. */
+export const suppliers = pgTable(
+  "suppliers",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    name: text("name").notNull(),
+    /** null = came from Fierro; otherwise the person who created it in miDepo. */
+    createdBy: integer("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("suppliers_company_id_name_idx").on(t.companyId, sql`lower(${t.name})`)],
+);
+
 export const receivings = pgTable(
   "receivings",
   {
@@ -279,7 +293,9 @@ export const receivings = pgTable(
     /** null = unannounced receiving, created in the warehouse. */
     fierroId: text("fierro_id"),
     number: text("number").notNull(),
-    supplier: text("supplier").notNull(),
+    supplierId: integer("supplier_id")
+      .notNull()
+      .references(() => suppliers.id),
     status: text("status").$type<"pending" | "in_progress" | "closed">().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),

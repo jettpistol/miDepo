@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import type { DB, Executor } from "@/db";
-import { customers, companies, fierroStock, orderLines, orders, products, receivingLines, receivings } from "@/db/schema";
+import { customers, companies, fierroStock, orderLines, orders, products, receivingLines, receivings, suppliers } from "@/db/schema";
 import { SimulatedFierro } from "./simulated";
 import type { FierroConnector } from "./types";
 
@@ -59,12 +59,16 @@ export async function sync(db: DB, company: Company) {
     }
 
     const existingReceipts = new Set((await tx.select({ f: receivings.fierroId }).from(receivings).where(eq(receivings.companyId, company.id))).map((r) => r.f));
+    // Suppliers named on Fierro's receipts join the supplier list (matched by name, case-insensitively).
+    const names = [...new Set(rcpts.filter((i) => !existingReceipts.has(i.id)).map((i) => i.supplier.trim()))];
+    if (names.length > 0) await tx.insert(suppliers).values(names.map((name) => ({ companyId: company.id, name }))).onConflictDoNothing();
+    const supplierId = new Map((await tx.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, company.id))).map((s) => [s.name.toLowerCase(), s.id]));
     for (const i of rcpts) {
       if (existingReceipts.has(i.id)) continue;
       const ls = i.lines.flatMap((l) => (productRef.has(l.bookId) ? [{ productId: productRef.get(l.bookId)!, expected: l.quantity }] : []));
       if (ls.length === 0) continue;
-      const [newPassword] = await tx.insert(receivings).values({ companyId: company.id, fierroId: i.id, number: i.number, supplier: i.supplier, date: i.date }).returning({ id: receivings.id });
-      await tx.insert(receivingLines).values(ls.map((l) => ({ receivingId: newPassword.id, ...l })));
+      const [receiving] = await tx.insert(receivings).values({ companyId: company.id, fierroId: i.id, number: i.number, supplierId: supplierId.get(i.supplier.trim().toLowerCase())!, date: i.date }).returning({ id: receivings.id });
+      await tx.insert(receivingLines).values(ls.map((l) => ({ receivingId: receiving.id, ...l })));
       summary.newReceipts++;
     }
 

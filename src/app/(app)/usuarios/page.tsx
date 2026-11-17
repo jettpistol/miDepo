@@ -3,6 +3,7 @@ import { Avatar } from "@/components/Avatar";
 import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Code, PageHeader, Badge } from "@/components/ui";
 import { users } from "@/db/schema";
+import { Select } from "@/components/Select";
 import { requireSession } from "@/lib/session";
 import { toggleActive, changeRole, create, setAccess, removePhotoOf } from "./actions";
 
@@ -56,13 +57,7 @@ export default async function Users() {
                     <label className="field-label" htmlFor={`rol-${u.id}`}>
                       Rol
                     </label>
-                    <select id={`rol-${u.id}`} name="role" defaultValue={u.role} className="field">
-                      {ROLES.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Select id={`rol-${u.id}`} name="role" defaultValue={u.role} options={ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }))} />
                   </ActionForm>
                   <ActionForm action={setAccess} button="Guardar acceso" className="space-y-2" anyOf={{ fields: ["pin", "password"], message: "Escribí un PIN nuevo, una contraseña nueva o las dos cosas." }}>
                     <input type="hidden" name="id" value={u.id} />
@@ -108,13 +103,7 @@ export default async function Users() {
             <label htmlFor="role" className="field-label">
               Rol
             </label>
-            <select id="role" name="role" className="field" defaultValue="operator">
-              {ROLES.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}: {r.help}
-                </option>
-              ))}
-            </select>
+            <Select id="role" name="role" defaultValue="operator" required options={ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }))} />
           </div>
           <div>
             <label htmlFor="pin" className="field-label">
