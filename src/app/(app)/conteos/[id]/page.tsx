@@ -7,6 +7,7 @@ import { countLocations, counts, locations, users } from "@/db/schema";
 import { differences } from "@/lib/flows/counts";
 import { can, requireSession } from "@/lib/session";
 import { approve, reopen } from "../actions";
+import { hotkey } from "@/lib/hotkeys";
 
 export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -73,7 +74,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             </div>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <ActionButton action={approve} hiddenFields={{ id }} confirm={`Se va a ajustar el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}>
+            <ActionButton action={approve} hotkey="finish" hiddenFields={{ id }} confirm={`Se va a ajustar el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}>
               Aprobar y ajustar stock
             </ActionButton>
           </div>
@@ -106,7 +107,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                     <td />
                     <td className="hidden sm:table-cell" />
                     <td className="w-px text-right">
-                      <Link href={`/conteos/${id}/${u.locationId}`} className="btn-sm">
+                      <Link href={`/conteos/${id}/${u.locationId}`} className="btn-sm" {...(u.locationId === us.find((x) => x.u.status === "pending")?.u.locationId ? hotkey("primary", `Contar ${code}`) : {})}>
                         Contar
                       </Link>
                     </td>

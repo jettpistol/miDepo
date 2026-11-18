@@ -1,10 +1,10 @@
-# Guardar
+# Reposición
 
-Guardar es llevar a un estante lo que quedó en la zona de Recepción o de Devoluciones.
+Reposición es llevar a un estante lo que quedó en la zona de Recepción o de Devoluciones.
 
 ## Paso a paso
 
-1. Andá a **Guardar**.
+1. Andá a **Reposición**.
 2. Elegí arriba **Desde Recepción** o **Desde Devoluciones**.
 3. Mirá la lista: cada título dice cuántas unidades faltan guardar y en qué estante **ya hay** de ese título.
 4. Llevá los libros al estante.

@@ -22,6 +22,8 @@ Consejos: buena luz, el código derecho y a unos 15 cm. Si el código está arru
 
 Si el código está roto o no se lee, escribilo y apretá **Enter**. Sirve el ISBN, el código de barras o el código interno.
 
+En la computadora, **Esc** borra lo escaneado y las teclas F hacen el resto: mirá [Atajos de teclado](Atajos-de-teclado).
+
 ## Qué se puede escanear
 
 | Qué | Dónde está el código | Ejemplo |

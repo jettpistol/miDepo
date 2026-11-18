@@ -5,8 +5,9 @@ import { Code, PageHeader, ShelfMark, EmptyState } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { moveAction } from "../mover/actions";
+import { hotkey } from "@/lib/hotkeys";
 
-export const metadata = { title: "Guardar" };
+export const metadata = { title: "Reposición" };
 
 export default async function PutAway({ searchParams }: { searchParams: Promise<{ zona?: string }> }) {
   const { db, company } = await requireSession();
@@ -39,10 +40,10 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <PageHeader title="Guardar" />
+      <PageHeader title="Reposición" />
       <div className="mb-6 flex gap-5 border-b border-line">
         {(["receiving", "returns"] as const).map((z) => (
-          <Link key={z} href={z === "receiving" ? "/guardar" : "/guardar?zona=devoluciones"} aria-current={zone === z ? "page" : undefined} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zone === z ? "border-accent-text font-bold text-accent-text" : "border-transparent font-medium text-muted hover:text-ink"}`}>
+          <Link key={z} href={z === "receiving" ? "/reposicion" : "/reposicion?zona=devoluciones"} aria-current={zone === z ? "page" : undefined} {...(zone !== z ? hotkey("secondary", z === "receiving" ? "Ver desde Recepción" : "Ver desde Devoluciones") : {})} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zone === z ? "border-accent-text font-bold text-accent-text" : "border-transparent font-medium text-muted hover:text-ink"}`}>
             {z === "receiving" ? "Desde Recepción" : "Desde Devoluciones"}
           </Link>
         ))}

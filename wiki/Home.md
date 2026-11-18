@@ -4,14 +4,14 @@ miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la p
 
 > Este manual tiene **buscador**: está arriba de todo.
 
-> **¿Primer día?** Leé [Primeros pasos](Primeros-pasos) y [Cómo escanear](Como-escanear). Con eso ya podés trabajar.
+> **¿Primer día?** Leé [Primeros pasos](Primeros-pasos) y [Cómo escanear](Como-escanear). Con eso ya podés trabajar. En la computadora, mirá también los [Atajos de teclado](Atajos-de-teclado).
 
 ## El trabajo del día
 
 | Si tenés que… | Andá a | Guía |
 |---|---|---|
 | Contar mercadería que llega | **Recepción** | [Recepción](Recepcion) |
-| Llevar lo recibido a su estante | **Guardar** | [Guardar](Guardar) |
+| Llevar lo recibido a su estante | **Reposición** | [Reposición](Reposicion) |
 | Preparar un pedido | **Picking** | [Picking](Picking) |
 | Armar las cajas de un pedido | **Empaque** | [Empaque](Empaque) |
 | Revisar libros que vuelven | **Devoluciones** | [Devoluciones](Devoluciones) |

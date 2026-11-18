@@ -15,7 +15,7 @@ Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir
 ## El recorrido de un libro
 
 1. **Llega** al depósito: se cuenta en [Recepción](Recepcion).
-2. **Se guarda** en un estante: [Guardar](Guardar).
+2. **Se guarda** en un estante: [Reposición](Reposicion).
 3. Un cliente lo pide: se busca en [Picking](Picking).
 4. **Se empaca** en una caja: [Empaque](Empaque).
 5. La oficina hace el remito en Fierro y la caja **sale**.

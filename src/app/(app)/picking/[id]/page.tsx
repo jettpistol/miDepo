@@ -7,6 +7,7 @@ import { Progress, Notice, PageHeader, Badge, ShelfMark } from "@/components/ui"
 import { customers, orderLines, orders, products, pickTasks, locations } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { confirm, shortage, take } from "../actions";
+import { hotkey } from "@/lib/hotkeys";
 
 export default async function PickingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -41,7 +42,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
           <p>
             Este pedido tiene <strong>{total} unidades</strong> de {lines.length} títulos y todavía no lo tomó nadie.
           </p>
-          <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false}>
+          <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary">
             Preparar este pedido
           </ActionButton>
         </div>
@@ -72,14 +73,14 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   quantity={nextStop.t.quantity - nextStop.t.picked}
                   button="Confirmar"
                 />
-                <ActionButton action={shortage} hiddenFields={{ taskId: nextStop.t.id }} className="btn-soft w-full" confirm={`¿Seguro que en ${nextStop.location} no ${nextStop.t.quantity - nextStop.t.picked === 1 ? "está la unidad que falta" : `están las ${nextStop.t.quantity - nextStop.t.picked} unidades que faltan`}? miDepo va a buscar el título en otro estante.`}>
+                <ActionButton action={shortage} hotkey="secondary" hiddenFields={{ taskId: nextStop.t.id }} className="btn-soft w-full" confirm={`¿Seguro que en ${nextStop.location} no ${nextStop.t.quantity - nextStop.t.picked === 1 ? "está la unidad que falta" : `están las ${nextStop.t.quantity - nextStop.t.picked} unidades que faltan`}? miDepo va a buscar el título en otro estante.`}>
                   No está en el estante
                 </ActionButton>
               </>
             ) : p.status === "picked" ? (
               <Notice tone="ok">
                 <p className="mb-3 text-base">Picking terminado. {shortages.length > 0 ? "Sale con faltantes." : "Está completo."}</p>
-                <Link href={`/empaque/${id}`} className="btn w-full">
+                <Link href={`/empaque/${id}`} className="btn w-full" {...hotkey("primary")}>
                   Ir a empacar
                 </Link>
               </Notice>

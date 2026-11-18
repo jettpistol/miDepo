@@ -6,7 +6,7 @@ Esta página es para administradores.
 
 | Tarea | Operario | Supervisor | Administrador |
 |---|:-:|:-:|:-:|
-| Recepción, guardar, picking, empaque | Sí | Sí | Sí |
+| Recepción, reposición, picking, empaque | Sí | Sí | Sí |
 | Devoluciones, mover, consultar stock | Sí | Sí | Sí |
 | Contar ubicaciones | Sí | Sí | Sí |
 | Crear y aprobar conteos | — | Sí | Sí |

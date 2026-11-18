@@ -3,6 +3,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { PageHeader, Badge, plural, EmptyState } from "@/components/ui";
 import { customers, orderLines, orders } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { hotkey } from "@/lib/hotkeys";
 
 export const metadata = { title: "Empaque" };
 
@@ -43,10 +44,10 @@ export default async function Packing() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ p, customer, picked, packed, order }) => (
+              {rows.map(({ p, customer, picked, packed, order }, i) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/empaque/${p.id}`} className="link doc-number">
+                    <Link href={`/empaque/${p.id}`} className="link doc-number" {...(i === 0 ? hotkey("primary", `Empacar ${p.number}`) : {})}>
                       {p.number}
                     </Link>
                   </td>

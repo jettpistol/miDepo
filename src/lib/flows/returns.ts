@@ -56,6 +56,6 @@ export async function closeReturn(c: Ctx, returnId: number) {
     }
     await tx.update(returns).set({ status: "closed" }).where(eq(returns.id, returnId));
     const sellables = lines.filter((l) => l.bookCondition === "sellable").reduce((s, l) => s + l.quantity, 0);
-    return `Devolución ${d.number} cerrada. ${sellables} unidades vendibles esperan para guardar.`;
+    return `Devolución ${d.number} cerrada. ${sellables} unidades vendibles esperan reposición.`;
   });
 }

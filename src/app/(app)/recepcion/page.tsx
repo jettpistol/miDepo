@@ -7,6 +7,7 @@ import { receivingLines, receivings, suppliers } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { create } from "./actions";
 import { SupplierSelect } from "./SupplierSelect";
+import { hotkey } from "@/lib/hotkeys";
 
 export const metadata = { title: "Recepción" };
 
@@ -67,10 +68,10 @@ export default async function Receivings() {
                   Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, tocá Nueva.
                 </EmptyRow>
               )}
-              {openList.map(({ r, supplier, titles, expected, received }) => (
+              {openList.map(({ r, supplier, titles, expected, received }, i) => (
                 <tr key={r.id}>
                   <td>
-                    <Link href={`/recepcion/${r.id}`} className="link doc-number">
+                    <Link href={`/recepcion/${r.id}`} className="link doc-number" {...(i === 0 ? hotkey("primary", `Abrir ${r.number}`) : {})}>
                       {r.number}
                     </Link>
                   </td>

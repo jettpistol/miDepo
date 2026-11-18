@@ -6,6 +6,7 @@ import type { Result } from "@/lib/errors";
 import { Camera } from "./Camera";
 import { Icon } from "./Icon";
 import { ShelfMark } from "./ui";
+import { hotkey, type HotkeyName } from "@/lib/hotkeys";
 
 export type Action = (prev: Result, data: FormData) => Promise<Result>;
 
@@ -198,6 +199,19 @@ export function ScanForm({
 
   const suggestions = open && lookup && lookup.field === focusedField ? lookup.suggestions : [];
   const shortcutsFor = (name: string) => (lookup?.shortcuts ?? []).filter((a) => a.field === name);
+  // F7 fills a suggested shelf: the first one for the field being filled, or else the first one there is.
+  const shelves = (lookup?.shortcuts ?? []).filter((a) => a.shelfMark);
+  const shelfKey = shelves.find((a) => a.field === focusedField) ?? shelves[0];
+
+  /** Esc: starts the scan over, keeping the fields that came filled in. */
+  function clear() {
+    inputs().forEach((e, i) => e && (e.value = fields[i].value ?? ""));
+    const qty = inputOf("quantity");
+    if (qty && quantity != null) qty.value = String(quantity);
+    setLookup(null);
+    setOpen(false);
+    focusFirstEmpty();
+  }
 
   return (
     <form
@@ -243,6 +257,7 @@ export function ScanForm({
               <input
                 id={`scan-${c.name}`}
                 name={c.name}
+                data-scan-field
                 defaultValue={c.value ?? ""}
                 className={`field font-mono font-bold placeholder:font-sans placeholder:font-normal ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}
                 placeholder={c.help ?? "Escaneá o escribí"}
@@ -270,7 +285,10 @@ export function ScanForm({
                     setActive((a) => (ev.key === "ArrowDown" ? (a + 1) % list.length : (a <= 0 ? list.length : a) - 1));
                     return;
                   }
-                  if (ev.key === "Escape" && list.length > 0) return setOpen(false);
+                  if (ev.key === "Escape") {
+                    ev.preventDefault();
+                    return list.length > 0 ? setOpen(false) : clear();
+                  }
                   if (ev.key !== "Enter") return;
                   ev.preventDefault();
                   // The scanner sends Enter the moment it finishes: a suggestion is only chosen if you arrowed down to it.
@@ -305,7 +323,7 @@ export function ScanForm({
               )}
             </div>
             <Note id={`note-${c.name}`} status={note} />
-            <Shortcuts list={shortcutsFor(c.name)} setValue={setValue} />
+            <Shortcuts list={shortcutsFor(c.name)} setValue={setValue} shelfKey={shelfKey} />
           </div>
         );
       })}
@@ -333,12 +351,12 @@ export function ScanForm({
               />
             </div>
           )}
-          <button className="btn flex-1" disabled={submitting}>
+          <button className="btn flex-1" disabled={submitting} {...hotkey("primary", button)}>
             {submitting ? "Un momento…" : button}
           </button>
         </div>
         <Note id="note-quantity" status={lookup?.statuses.quantity} />
-        <Shortcuts list={shortcutsFor("quantity")} setValue={setValue} />
+        <Shortcuts list={shortcutsFor("quantity")} setValue={setValue} shelfKey={shelfKey} />
       </div>
       <Message status={status} />
       {cameraFor && <Camera onRead={onRead} onClose={closeCamera} />}
@@ -347,12 +365,19 @@ export function ScanForm({
 }
 
 /** Values set with one tap: "Está en A-01-1", "Todas: 60". */
-function Shortcuts({ list, setValue }: { list: Shortcut[]; setValue: (field: string, value: string) => void }) {
+function Shortcuts({ list, setValue, shelfKey }: { list: Shortcut[]; setValue: (field: string, value: string) => void; shelfKey?: Shortcut }) {
   if (list.length === 0) return null;
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-      {list.map((a) => (
-        <button key={a.field + a.value} type="button" className="btn-sm" onClick={() => setValue(a.field, a.value)}>
+      {list.map((a, i) => (
+        <button
+          key={a.field + a.value}
+          type="button"
+          className="btn-sm"
+          onClick={() => setValue(a.field, a.value)}
+          // On the keyboard, the suggested quantity is F4 and the suggested shelf F7.
+          {...(a === shelfKey ? hotkey("shelf", `${a.text} ${a.value}`) : a.field === "quantity" && i === 0 ? hotkey("quantity") : {})}
+        >
           {a.text}
           {a.shelfMark && <ShelfMark code={a.value} />}
           {a.suffix}
@@ -371,6 +396,7 @@ export function ActionButton({
   confirm,
   showOk = true,
   reason,
+  hotkey: key,
 }: {
   action: Action;
   hiddenFields?: Record<string, string | number>;
@@ -380,6 +406,8 @@ export function ActionButton({
   showOk?: boolean;
   /** If the action cannot work yet, why: the button is disabled and says so. */
   reason?: string;
+  /** The F-key that presses it (see src/lib/hotkeys.ts). */
+  hotkey?: HotkeyName;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const id = useId();
@@ -394,7 +422,7 @@ export function ActionButton({
       {Object.entries(hiddenFields).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
-      <button className={className} disabled={submitting || Boolean(reason)} aria-describedby={reason ? id : undefined}>
+      <button className={className} disabled={submitting || Boolean(reason)} aria-describedby={reason ? id : undefined} {...(key ? hotkey(key, typeof children === "string" ? children : undefined) : {})}>
         {submitting ? "Un momento…" : children}
       </button>
       {reason && (
@@ -419,6 +447,7 @@ export function ActionForm({
   className = "space-y-4",
   resetOnOk = true,
   anyOf,
+  hotkey: key,
 }: {
   action: Action;
   children: ReactNode;
@@ -427,6 +456,8 @@ export function ActionForm({
   resetOnOk?: boolean;
   /** Fields of which at least one must be filled in; otherwise the browser asks before submitting. */
   anyOf?: { fields: string[]; message: string };
+  /** The F-key that submits it (see src/lib/hotkeys.ts). */
+  hotkey?: HotkeyName;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const form = useRef<HTMLFormElement>(null);
@@ -448,7 +479,7 @@ export function ActionForm({
       }}
     >
       {children}
-      <button className="btn" disabled={submitting}>
+      <button className="btn" disabled={submitting} {...(key ? hotkey(key, button) : {})}>
         {submitting ? "Un momento…" : button}
       </button>
       <Message status={status} />

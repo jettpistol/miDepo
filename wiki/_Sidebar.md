@@ -4,12 +4,13 @@
 - [Primeros pasos](Primeros-pasos)
 - [Ingresar](Ingresar)
 - [Cómo escanear](Como-escanear)
+- [Atajos de teclado](Atajos-de-teclado)
 - [Instalar en el teléfono](Instalar-en-el-telefono)
 
 ### Trabajo del día
 
 - [Recepción](Recepcion)
-- [Guardar](Guardar)
+- [Reposición](Reposicion)
 - [Picking](Picking)
 - [Empaque](Empaque)
 - [Devoluciones](Devoluciones)

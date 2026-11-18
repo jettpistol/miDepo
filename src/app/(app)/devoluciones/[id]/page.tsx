@@ -7,6 +7,7 @@ import { customers, returnLines, returns, products } from "@/db/schema";
 import { BOOK_CONDITIONS } from "@/lib/flows/returns";
 import { requireSession } from "@/lib/session";
 import { close, scan, remove } from "../actions";
+import { hotkey } from "@/lib/hotkeys";
 
 const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
@@ -26,9 +27,9 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
       {!open && (
         <div className="mb-6">
           <Notice tone="ok">
-            Devolución cerrada. Los vendibles esperan en Devoluciones para{" "}
-            <Link href="/guardar?zona=devoluciones" className="font-semibold underline underline-offset-[3px]">
-              guardar
+            Devolución cerrada. Los vendibles esperan en Devoluciones su{" "}
+            <Link href="/reposicion?zona=devoluciones" className="font-semibold underline underline-offset-[3px]" {...hotkey("primary", "Ir a reposición")}>
+              reposición
             </Link>
             ; los dañados y los saldos ya están en su zona.
           </Notice>
@@ -38,7 +39,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar">
-              <fieldset>
+              <fieldset {...hotkey("option", "Cambiar el estado del libro")} data-hotkey-cycle>
                 <legend className="field-label">¿En qué estado está?</legend>
                 <div className="space-y-2">
                   {BOOK_CONDITIONS.map((e, i) => (
@@ -53,7 +54,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
                 </div>
               </fieldset>
             </ScanForm>
-            <ActionButton action={close} hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirm="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
+            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirm="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
               Cerrar devolución
             </ActionButton>
           </div>

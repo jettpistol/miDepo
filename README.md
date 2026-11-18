@@ -2,7 +2,7 @@
 
 A warehouse tool for small book warehouses, built to sit **on top of [Fierro](https://www.fierro.com.ar)** rather than replace it. Fierro keeps the catalogue, customers, orders, remitos and invoices; miDepo owns what Fierro does not track: which shelf every copy is on, and the scan-by-scan work of the warehouse floor.
 
-The interface is entirely in Spanish (Argentina). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/guardar`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
+The interface is entirely in Spanish (Argentina). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/reposicion`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
 
 > **Status: MVP for testing.** It runs against a **simulated Fierro** with invented data. No real Fierro connection exists yet. See [What is not done](#what-is-not-done).
 
@@ -38,7 +38,7 @@ Ovnipress is seeded with 6,000 titles, 300 customers, 80 pending orders, 6 expec
 
 1. Log in as the supervisor.
 2. **Recepción** → open a receipt, type a few of the listed codes (or scan them), close it.
-3. **Guardar** → put those titles on a shelf such as `A-01-1`.
+3. **Reposición** (put-away) → put those titles on a shelf such as `A-01-1`.
 4. **Picking** → *Preparar* the first order and follow the stops. The shelf code and book code to scan are shown on screen.
 5. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
 6. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.

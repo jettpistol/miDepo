@@ -27,7 +27,7 @@ These came from the owner directly; keep to them unless told otherwise.
 ## Conventions
 
 - Code, comments, database names and configuration are in English. Interface copy is Spanish (Argentina, voseo).
-- Kept Spanish on purpose: page URLs and their query parameters (`/recepcion`, `?prefijo=`), the CSV headers and condition words in files sent to Fierro, and zone codes printed on shelf labels (`RECEPCION`, `DEVOLUCIONES`…).
+- Kept Spanish on purpose: page URLs and their query parameters (`/recepcion`, `/reposicion`, `?prefijo=`), the CSV headers and condition words in files sent to Fierro, and zone codes printed on shelf labels (`RECEPCION`, `DEVOLUCIONES`…).
 - Spanish domain words with English names: tejuelo = shelf mark (`ShelfMark`), grapa = floppy (stapled single issue), saldo = clearance, remito = delivery note (Fierro issues those, not miDepo).
 
 ## How the code is organised
@@ -52,11 +52,13 @@ src/app/(app)/layout.tsx  Shell: top bar, sidebar with queue counts, phone botto
 src/app/(print)/          A4 print layouts (labels, packing list).
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/.
 src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
-                          (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon.
+                          (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
+src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
+                          buttons with hotkey("primary") etc.; F1 lists what is marked.
 src/app/globals.css       Design tokens and component classes (btn, field, data-table…).
 ```
 
-Adding a feature usually means: rule in `src/lib/flows/`, test in `tests/`, action in the screen's `actions.ts`, UI in the screen's `page.tsx`, and, if it is a scan form, the matching check in `src/lib/lookup.ts`.
+Adding a feature usually means: rule in `src/lib/flows/`, test in `tests/`, action in the screen's `actions.ts`, UI in the screen's `page.tsx` with its buttons marked for the keyboard (`hotkey()`, same F-key for the same kind of action), and, if it is a scan form, the matching check in `src/lib/lookup.ts`.
 
 Migrations that change existing data: generate with `npm run db:generate`, then append the data backfill to the generated SQL (separated by `--> statement-breakpoint`). See `drizzle/0001_suppliers.sql`. Never rewrite a migration that has shipped; the owner's local database and any deployed one have applied it.
 

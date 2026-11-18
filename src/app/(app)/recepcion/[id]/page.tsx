@@ -7,6 +7,7 @@ import { products, receivingLines, receivings, suppliers } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { close, correct, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
+import { hotkey } from "@/lib/hotkeys";
 
 export default async function ReceivingDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -35,7 +36,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
             <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar" />
             {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <ActionButton action={close} hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} títulos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
+              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} títulos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
                 Cerrar recepción
               </ActionButton>
             </div>
@@ -46,8 +47,8 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
         <div className="space-y-6">
           <Notice tone="ok">
             Recepción cerrada con {received} unidades. {r.sentToFierro ? "Ya está cargada en Fierro." : "Falta cargarla en Fierro."}{" "}
-            <Link href="/guardar" className="font-semibold underline underline-offset-[3px]">
-              Ir a guardar
+            <Link href="/reposicion" className="font-semibold underline underline-offset-[3px]" {...hotkey("primary", "Ir a reposición")}>
+              Ir a reposición
             </Link>
           </Notice>
           <Lines lines={lines} id={id} />

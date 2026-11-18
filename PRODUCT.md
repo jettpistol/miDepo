@@ -23,7 +23,7 @@ A warehouse layer built for one ERP (Fierro) and one trade (books): it speaks Fi
 ## Operating Context
 
 - Interface entirely in Spanish (Argentina, voseo). Text lives in the pages.
-- Daily flows: Recepción, Guardar, Picking, Empaque, Devoluciones, Conteos, Mover, Stock. Management: Ubicaciones, Fierro (sync, CSV export, stock reconciliation), Usuarios. Plus Mi cuenta and a user manual at `/ayuda`.
+- Daily flows: Recepción, Reposición (put-away), Picking, Empaque, Devoluciones, Conteos, Mover, Stock. Management: Ubicaciones, Fierro (sync, CSV export, stock reconciliation), Usuarios. Plus Mi cuenta and a user manual at `/ayuda`.
 - Barcodes everywhere: ISBN/EAN on books, Code 128 on shelf labels. USB and Bluetooth scanners act as keyboards; phones scan with the camera.
 - Printed output on A4: shelf labels (24 per sheet), box labels, packing lists, product labels.
 - Installable as a PWA. Needs working wifi; there is no offline mode.

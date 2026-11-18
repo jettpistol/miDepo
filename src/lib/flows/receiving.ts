@@ -80,6 +80,6 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
       }
     }
     await tx.update(receivings).set({ status: "closed" }).where(eq(receivings.id, receivingId));
-    return `Recepción ${r.number} cerrada: ${total} unidades esperan en Recepción para guardar.`;
+    return `Recepción ${r.number} cerrada: ${total} unidades esperan en Recepción para reponer.`;
   });
 }

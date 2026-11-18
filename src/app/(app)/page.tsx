@@ -91,7 +91,7 @@ export default async function Home() {
           <ul className="ruled-list framed">
             <Queue href="/empaque" number={toPack[0].n} title="Pedidos para empacar" />
             <Queue href="/recepcion" number={openReceivings[0].n} title="Recepciones abiertas" />
-            <Queue href="/guardar" number={toPutAway[0].n ?? 0} title="Unidades por guardar" />
+            <Queue href="/reposicion" number={toPutAway[0].n ?? 0} title="Unidades por reponer" />
             <Queue href="/devoluciones" number={openReturns[0].n} title="Devoluciones en curso" />
             <Queue href="/conteos" number={openCounts[0].n} title="Conteos abiertos" />
             {can(user.role, "supervisor") && <Queue href="/fierro" number={exports.length} title="Para cargar en Fierro" />}

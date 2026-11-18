@@ -5,6 +5,7 @@ import { Progress, shortDate, Badge, ShelfMark } from "@/components/ui";
 import { customers, orderLines, orders, pickTasks, locations, users } from "@/db/schema";
 import type { requireSession } from "@/lib/session";
 import { take } from "./actions";
+import { hotkey } from "@/lib/hotkeys";
 
 type Db = Awaited<ReturnType<typeof requireSession>>["db"];
 
@@ -64,7 +65,8 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
             <tr key={p.id} className={p.takenBy === userId ? "bg-accent-soft" : ""}>
               <td>{nextShelf ? <ShelfMark code={nextShelf} size="md" /> : <Badge tone="ok">Recorrido terminado</Badge>}</td>
               <td>
-                <Link href={`/picking/${p.id}`} className="link doc-number">
+                {/* F2 carries on with your own order first (it is marked earlier on the page than "Preparar"). */}
+                <Link href={`/picking/${p.id}`} className="link doc-number" {...(p.id === rows.find((r) => r.p.takenBy === userId)?.p.id ? hotkey("primary", `Seguir con el pedido ${p.number}`) : {})}>
                   {p.number}
                 </Link>
                 <span className="block max-w-40 truncate text-muted sm:max-w-64">{customer}</span>
@@ -100,7 +102,7 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, customer, city, lines, units }) => (
+          {rows.map(({ p, customer, city, lines, units }, i) => (
             <tr key={p.id}>
               <td>
                 <Link href={`/picking/${p.id}`} className="link doc-number">
@@ -125,7 +127,7 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
               <td className="hidden text-right font-semibold sm:table-cell">{units}</td>
               <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(p.date)}</td>
               <td className="w-px text-right">
-                <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm">
+                <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm" hotkey={i === 0 ? "primary" : undefined}>
                   Preparar
                 </ActionButton>
               </td>

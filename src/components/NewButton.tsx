@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
+import { hotkey } from "@/lib/hotkeys";
 
 /** "+ Nueva": a primary button that opens a small panel with the form to create something. */
 export function NewButton({ label = "Nueva", title, children }: { label?: string; title: string; children: ReactNode }) {
@@ -11,6 +12,8 @@ export function NewButton({ label = "Nueva", title, children }: { label?: string
 
   useEffect(() => {
     if (!open) return;
+    // Opened from the keyboard (F10) or not, the cursor goes to the first field.
+    root.current?.querySelector<HTMLElement>("[role=dialog] :is(input:not([type=hidden]), button, textarea)")?.focus();
     const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
     const esc = (e: KeyboardEvent) => {
       // A dropdown inside the panel handles its own Escape first.
@@ -29,7 +32,7 @@ export function NewButton({ label = "Nueva", title, children }: { label?: string
 
   return (
     <div ref={root} className="relative">
-      <button ref={button} type="button" className="btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button ref={button} type="button" className="btn" aria-expanded={open} onClick={() => setOpen((o) => !o)} {...hotkey("create", title)}>
         <Icon name="plus" className="size-4" />
         {label}
       </button>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
+import { hotkey } from "@/lib/hotkeys";
 
 export function PageHeader({ title, subtitle, back, children }: { title: ReactNode; subtitle?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
   return (
@@ -8,7 +9,7 @@ export function PageHeader({ title, subtitle, back, children }: { title: ReactNo
       <div className="min-w-0">
         {back && (
           <nav aria-label="Ruta" className="mb-1 flex items-center gap-1.5 text-sm text-muted">
-            <Link href={back.href} className="transition-colors duration-150 hover:text-accent-text hover:underline">
+            <Link href={back.href} {...hotkey("back", `Volver a ${back.text}`)} className="transition-colors duration-150 hover:text-accent-text hover:underline">
               {back.text}
             </Link>
             <span aria-hidden="true">/</span>

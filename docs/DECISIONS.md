@@ -47,3 +47,7 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 **D17. Login protections:** passwords with scrypt; PINs are 6 digits hashed with an HMAC keyed by `SECRET` so a PIN identifies someone within a company; after 6 failures the key is blocked 5 minutes; session tokens are random and stored hashed.
 
 **D18. Hosting guide targets Vercel + Neon.** Fewest decisions for a first-time host. Vercel's free tier is non-commercial.
+
+**D19. "Guardar" is now "Reposición"** (owner, 2026-11-18). URL `/reposicion`; `/guardar` and the manual's old page redirect (`next.config.ts`). In code it is still put-away (`context="putaway"`, icon `putaway`).
+
+**D20. Keyboard shortcuts for desktop keyboards** (owner, 2026-11-18). Only desktop keyboards were asked for, not handheld terminals. Alt + digit opens a daily-work screen. F-keys run actions on a screen, with the same meaning everywhere: F2 main button, F3 back, F4 suggested quantity, F6 option, F7 suggested shelf, F8 other action, F9 finish the task, F10 new, Esc clear the scan. F1 lists them. The owner chose that list over badges on buttons, which keeps the density. A screen marks elements with `hotkey()` from `src/lib/hotkeys.ts`; `src/components/Hotkeys.tsx` presses them and builds the F1 list from the page, so the list cannot go stale. A key is only taken from the browser where the screen uses it; F5, F11 and F12 never are. Assumed: Alt + digit does not clash with how the warehouse's browsers switch tabs (on Linux, Chrome and Firefox use Alt + digit for that; the page takes it first).

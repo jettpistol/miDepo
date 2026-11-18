@@ -60,7 +60,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
             {open && items.some((x) => x.i.boxId === open.id) && (
               <div className="panel p-4 lg:p-3">
                 <h2 className="section-title mb-3">Cerrar la caja {open.number}</h2>
-                <ActionForm action={close} button="Cerrar caja" className="space-y-3">
+                <ActionForm action={close} button="Cerrar caja" className="space-y-3" hotkey="secondary">
                   <input type="hidden" name="boxId" value={open.id} />
                   <div>
                     <label htmlFor="kg" className="field-label">
@@ -72,7 +72,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
               </div>
             )}
             {packed === picked && !open && (
-              <ActionButton action={finish} hiddenFields={{ id }} className="btn w-full">
+              <ActionButton action={finish} hiddenFields={{ id }} className="btn w-full" hotkey="finish">
                 Terminar pedido
               </ActionButton>
             )}

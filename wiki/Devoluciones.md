@@ -28,7 +28,7 @@ Si cargaste mal una línea, tocá **Quitar** y escaneala de nuevo con el estado 
 
 ## Qué pasa al cerrar
 
-- Los **vendibles** quedan en la zona de Devoluciones. Guardalos desde [Guardar](Guardar), eligiendo **Desde Devoluciones**.
+- Los **vendibles** quedan en la zona de Devoluciones. Guardalos desde [Reposición](Reposicion), eligiendo **Desde Devoluciones**.
 - Los **saldos** y los **dañados** ya quedan en su zona: llevá los libros físicamente ahí.
 - La devolución le aparece al supervisor para cargarla en Fierro.
 

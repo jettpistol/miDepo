@@ -7,6 +7,7 @@ import { Accounts, ROLE_LABEL } from "@/components/Accounts";
 import { Dropdown } from "@/components/Dropdown";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
+import { Hotkeys } from "@/components/Hotkeys";
 import { counts, orders, receivings, returns } from "@/db/schema";
 import { MENU } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
@@ -41,7 +42,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted lg:hidden">{company.name}</span>
 
           <div className="ml-auto hidden items-center gap-1 lg:flex">
-            <Link href="/ayuda" title="Manual" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
+            <Link href="/ayuda" title="Manual · F1: atajos de teclado" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
               <Icon name="help" className="size-5" />
             </Link>
             <Dropdown key={user.id} className="group relative">
@@ -78,6 +79,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-6 lg:pb-12">{children}</main>
       </div>
       <BottomBar />
+      <Hotkeys allowed={groups.flatMap((g) => g.items.map((i) => i.href))} names={Object.fromEntries(groups.flatMap((g) => g.items.map((i) => [i.href, i.name])))} />
     </>
   );
 }

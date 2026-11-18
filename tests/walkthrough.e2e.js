@@ -1,5 +1,6 @@
 /**
  * Full walkthrough in a real browser: receiving, put-away, picking, packing, return, count,
+ * keyboard shortcuts (several steps below press F-keys instead of clicking),
  * Fierro, per-user colour, phone login with a PIN, and separation between companies.
  * Needs Playwright and miDepo running on localhost:3000 with freshly loaded demo data:
  *   npm run db:reset && npm run dev        (in another terminal)
@@ -63,13 +64,23 @@ async function warning(p, field, value) {
   step('  junk + Enter only asks: ' + ((await p.inputValue('input[name=supplierId]')) === '' && (await p.locator('text=¿Crear').count()) === 1 ? 'ok' : fail('junk was accepted')));
   await p.keyboard.press('Escape');
 
-  // Put-away
-  await p.goto(BASE + '/guardar'); await p.waitForSelector('#scan-product'); await shot('putaway');
+  // Keyboard: Alt + digit opens a screen, F1 lists the keys, Esc clears a scan, F2 confirms.
+  await p.keyboard.press('Alt+7'); await p.waitForURL(BASE + '/mover'); await p.waitForSelector('#scan-source');
+  await p.fill('#scan-source', 'A-01-1'); await p.press('#scan-source', 'Escape');
+  step('Esc clears the scan: ' + ((await p.inputValue('#scan-source')) === '' ? 'ok' : fail('not cleared')));
+  await p.keyboard.press('F1'); await p.waitForSelector('[role=dialog]:has-text("Atajos de teclado")'); await p.waitForTimeout(400); await shot('hotkeys');
+  const listed = await p.textContent('[role=dialog]');
+  step('F1 lists F2 Mover and Alt+2: ' + (listed.includes('Mover') && listed.includes('Reposición') ? 'ok' : fail(listed.slice(0, 200))));
+  await p.keyboard.press('Escape'); await p.waitForSelector('[role=dialog]', { state: 'detached' });
+  await p.goto(BASE + '/guardar'); step('/guardar redirects: ' + (p.url().endsWith('/reposicion') ? 'ok' : fail(p.url())));
+
+  // Put-away (Reposición)
+  await p.keyboard.press('Alt+2'); await p.waitForURL(BASE + '/reposicion'); await p.waitForSelector('#scan-product'); await shot('putaway');
   await p.fill('#scan-product', rows[0].code);
   step('  missing location, before the click → ' + await warning(p, 'destination', 'ZZ-99'));
   await p.fill('#scan-product', ''); await p.fill('#scan-destination', '');
   for (const r of rows.slice(0, 4)) step('  put away → ' + await scan(p, { product: r.code, destination: 'A-01-1' }, r.expected));
-  await p.goto(BASE + '/guardar'); step('put-away empty: ' + ((await p.textContent('main')).includes('No queda nada') ? 'ok' : fail('something left to put away')));
+  await p.goto(BASE + '/reposicion'); step('put-away empty: ' + ((await p.textContent('main')).includes('No queda nada') ? 'ok' : fail('something left to put away')));
 
   // Picking
   await p.goto(BASE + '/picking'); await shot('picking-list');
@@ -87,15 +98,15 @@ async function warning(p, field, value) {
       step('  wrong shelf, before the click → ' + await warning(p, 'location', shelf === 'A-01-1' ? 'A-01-2' : 'A-01-1'));
       await p.fill('#scan-location', '');
     }
-    if (stops === 2) { await p.click('button:has-text("No está en el estante")'); await p.waitForSelector('[role=status]'); step('  shortage → ' + (await p.textContent('[role=status]')).trim()); await p.reload(); stops++; continue; }
+    if (stops === 2) { await p.focus('#scan-location'); await p.keyboard.press('F8'); await p.waitForSelector('[role=status]'); step('  shortage → ' + (await p.textContent('[role=status]')).trim()); await p.reload(); stops++; continue; }
     const before = await stopKey(); const msg = await scan(p, { location: shelf, product: code }); stops++;
     await p.waitForFunction((b) => ((document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? '')) !== b, before, { timeout: 15000 });
     if (stops === 1) step('  pick ok → ' + msg);
   }
   step(`picking finished in ${stops} stops`); await shot('picking-done');
 
-  // Packing
-  await p.goto(`${BASE}/empaque/${orderId}`); await p.waitForSelector('#scan-product');
+  // Packing (F2 on a finished route goes to packing)
+  await p.keyboard.press('F2'); await p.waitForURL(`${BASE}/empaque/${orderId}`); await p.waitForSelector('#scan-product');
   const lines = await p.$$eval('table tbody tr', (trs) => trs.map((tr) => ({ title: tr.querySelector('td span.font-medium').textContent.trim(), picked: Number(tr.children[2].textContent) })));
   let n = 0;
   for (const l of lines.filter((l) => l.picked > 0)) {
@@ -103,8 +114,8 @@ async function warning(p, field, value) {
     if (++n === 2) { await p.fill('#kg', '3,4'); await p.click('button:has-text("Cerrar caja")'); await p.waitForSelector('text=Cerrada · 3,4 kg'); }
   }
   await shot('packing');
-  if (await p.$('button:has-text("Cerrar caja")')) { await p.click('button:has-text("Cerrar caja")'); await p.waitForSelector('button:has-text("Terminar pedido")'); }
-  await p.click('button:has-text("Terminar pedido")'); await p.waitForSelector('text=Pedido empacado en'); await shot('packing-done');
+  if (await p.$('button:has-text("Cerrar caja")')) { await p.keyboard.press('F8'); await p.waitForSelector('button:has-text("Terminar pedido")'); }
+  await p.keyboard.press('F9'); await p.waitForSelector('text=Pedido empacado en'); await shot('packing-done');
   for (const r of ['cajas', 'lista']) { await p.goto(`${BASE}/imprimir/${r}/${orderId}`); await p.waitForSelector('main, body'); await shot('print-' + r); }
 
   // Return
@@ -112,17 +123,19 @@ async function warning(p, field, value) {
   await p.keyboard.type('aleph'); await p.keyboard.press('Enter');
   await p.click('button:has-text("Empezar a revisar")'); await p.waitForURL(/\/devoluciones\/\d+/);
   step('  return → ' + await scan(p, { product: rows[0].code }, 3));
-  await p.check('input[value=damaged]'); step('  return → ' + await scan(p, { product: rows[1].code }, 2)); await shot('return');
-  await p.click('button:has-text("Cerrar devolución")'); await p.waitForSelector('text=Devolución cerrada');
+  await p.focus('#scan-product'); await p.keyboard.press('F6');
+  step('F6 changes the condition: ' + ((await p.isChecked('input[value=damaged]')) ? 'ok' : fail('still sellable')));
+  step('  return → ' + await scan(p, { product: rows[1].code }, 2)); await shot('return');
+  await p.keyboard.press('F9'); await p.waitForSelector('text=Devolución cerrada');
 
   // Count
   await p.goto(BASE + '/conteos'); await p.fill('#name', 'Prueba A-01'); await p.fill('#prefix', 'a-01');
   await p.waitForSelector('#note-prefix:has-text("ubicaciones")'); step('  count range → ' + (await p.textContent('#note-prefix')).trim());
   await p.click('button:has-text("Crear conteo")'); await p.waitForURL(/\/conteos\/\d+$/);
-  const countUrl = p.url(); await p.click('a:has-text("Contar")'); await p.waitForSelector('#scan-product');
+  const countUrl = p.url(); await p.keyboard.press('F2'); await p.waitForSelector('#scan-product');
   step('  count → ' + await scan(p, { product: rows[0].code }, rows[0].expected - 1));
-  await p.click('button:has-text("Terminé esta ubicación")'); await p.waitForURL(countUrl); await p.waitForSelector('text=Revisión del supervisor'); await shot('count');
-  await p.click('button:has-text("Aprobar y ajustar stock")'); await p.waitForSelector('text=Conteo cerrado');
+  await p.keyboard.press('F8'); await p.waitForURL(countUrl); await p.waitForSelector('text=Revisión del supervisor'); await shot('count');
+  await p.keyboard.press('F9'); await p.waitForSelector('text=Conteo cerrado');
 
   // Fierro
   await p.goto(BASE + '/fierro'); await shot('fierro');

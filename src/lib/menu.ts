@@ -9,7 +9,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
     items: [
       { href: "/", name: "Inicio", icon: "home", help: "Qué hay para hacer ahora" },
       { href: "/recepcion", name: "Recepción", icon: "receiving", help: "Contar lo que llega" },
-      { href: "/guardar", name: "Guardar", icon: "putaway", help: "Llevar lo recibido a su estante" },
+      { href: "/reposicion", name: "Reposición", icon: "putaway", help: "Llevar lo recibido a su estante" },
       { href: "/picking", name: "Picking", icon: "picking", help: "Preparar pedidos" },
       { href: "/empaque", name: "Empaque", icon: "packing", help: "Armar las cajas" },
       { href: "/devoluciones", name: "Devoluciones", icon: "return", help: "Revisar libros que vuelven" },

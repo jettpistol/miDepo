@@ -6,6 +6,7 @@ import { countLocations, counts } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { create } from "./actions";
 import { PrefixField } from "./PrefixField";
+import { hotkey } from "@/lib/hotkeys";
 
 export const metadata = { title: "Conteos" };
 
@@ -60,7 +61,7 @@ export default async function Counts() {
               {rows.map(({ k, total, countedCount }) => (
                 <tr key={k.id}>
                   <td>
-                    <Link href={`/conteos/${k.id}`} className="link">
+                    <Link href={`/conteos/${k.id}`} className="link" {...(k.id === rows.find((x) => x.k.status === "open")?.k.id ? hotkey("primary", `Abrir ${k.name}`) : {})}>
                       {k.name}
                     </Link>
                     <span className="block text-muted md:hidden">

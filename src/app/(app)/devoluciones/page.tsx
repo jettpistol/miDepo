@@ -7,6 +7,7 @@ import { Badge, EmptyRow, PageHeader, plural, shortDate } from "@/components/ui"
 import { customers, returnLines, returns } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { create } from "./actions";
+import { hotkey } from "@/lib/hotkeys";
 
 export const metadata = { title: "Devoluciones" };
 
@@ -31,10 +32,10 @@ function ReturnsTable({ rows, empty }: { rows: Row[]; empty?: { title: string; t
               {empty.text}
             </EmptyRow>
           )}
-          {rows.map(({ d, customer, units }) => (
+          {rows.map(({ d, customer, units }, i) => (
             <tr key={d.id}>
               <td>
-                <Link href={`/devoluciones/${d.id}`} className="link doc-number">
+                <Link href={`/devoluciones/${d.id}`} className="link doc-number" {...(i === 0 && d.status === "in_progress" ? hotkey("primary", `Abrir ${d.number}`) : {})}>
                   {d.number}
                 </Link>
               </td>

@@ -39,7 +39,7 @@ Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que
 ## Qué pasa al cerrar
 
 - Lo recibido entra al stock en la zona **Recepción**. Todavía no está en un estante.
-- Aparece en [Guardar](Guardar) para llevarlo a su lugar.
+- Aparece en [Reposición](Reposicion) para llevarlo a su lugar.
 - La recepción cerrada **no se puede volver a abrir**. Si te equivocaste, avisá a tu supervisor: se corrige con un [conteo](Conteos).
 
 > Los libros que vuelven de un cliente **no** van por Recepción: van por [Devoluciones](Devoluciones), porque hay que revisar en qué estado están.
