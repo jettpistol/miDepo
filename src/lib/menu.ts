@@ -22,6 +22,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
     group: "Gestión",
     items: [
       { href: "/ubicaciones", name: "Ubicaciones", icon: "locations", help: "Nombres y etiquetas de estantes", minRole: "supervisor" },
+      { href: "/bajas", name: "Bajas", icon: "writeoff", help: "Faltantes, dañados y su historial", minRole: "supervisor" },
       { href: "/fierro", name: "Fierro", icon: "fierro", help: "Sincronizar y enviar documentos", minRole: "supervisor" },
       { href: "/usuarios", name: "Usuarios", icon: "users", help: "Altas, roles y PIN", minRole: "admin" },
     ],

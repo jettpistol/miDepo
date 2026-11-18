@@ -22,6 +22,7 @@ miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la p
 ## Para supervisores y administradores
 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas): ponerle nombre a los estantes e imprimir sus carteles.
+- [Bajas y faltantes](Bajas-y-faltantes): lo que falta, lo roto y lo que aparece, con su motivo.
 - [Trabajar con Fierro](Trabajar-con-Fierro): sincronizar, cargar documentos y conciliar el stock.
 - [Usuarios y roles](Usuarios-y-roles): quién puede entrar y qué puede hacer.
 

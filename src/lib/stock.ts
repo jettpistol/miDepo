@@ -94,6 +94,7 @@ export const ZONES: { type: Exclude<LocationType, "shelf">; code: string; name: 
   { type: "damaged", code: "DANADOS", name: "Dañados" },
   { type: "clearance", code: "SALDOS", name: "Saldos" },
   { type: "staging", code: "PREPARACION", name: "Pedidos preparados" },
+  { type: "missing", code: "FALTANTES", name: "Faltantes" },
 ];
 
 export async function zone(tx: Executor, companyId: number, type: Exclude<LocationType, "shelf">) {

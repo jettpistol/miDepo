@@ -5,7 +5,7 @@ process.env.PGLITE_DIR = "memory://";
 delete process.env.DATABASE_URL;
 
 import { getDb, runMigrations, type DB } from "@/db";
-import { boxes, companies, fierroStock, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
+import { adjustmentLines, adjustments, boxes, companies, fierroStock, movements, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
 import { createCompany, createUser } from "@/db/seed";
 import { sync } from "@/lib/fierro";
 import { UserError } from "@/lib/errors";
@@ -17,7 +17,8 @@ import { move } from "@/lib/flows/move";
 import { confirmPick, markShort, takeOrder } from "@/lib/flows/picking";
 import { closeBox, scanIntoBox, finishPacking } from "@/lib/flows/packing";
 import { closeReturn, createReturn, scanReturn } from "@/lib/flows/returns";
-import { closeCount, createCount, differences, scanCount, markLocation } from "@/lib/flows/counts";
+import { closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
+import { writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 
 let db: DB;
@@ -189,6 +190,15 @@ describe("returns and counts", () => {
 
     const diffs = (await differences(db, id)).filter((d) => d.system !== d.countedQty);
     expect(diffs).toHaveLength(2);
+    // Large differences wait for a second person to recount the shelf.
+    await expect(closeCount(c, id)).rejects.toThrow(/sin recontar/);
+    await requestRecount(c, id, u1.id);
+    await expect(scanCount(c, id, u1.id, prods.get(atU1[0].productId)!.barcode, 1)).rejects.toThrow(/otra persona/);
+    const second = await createUser(db, c.companyId, { name: "Segunda", email: "segunda@prueba.test", role: "operator", pin: "246810" });
+    const c2 = { ...c, userId: second.id };
+    await scanCount(c2, id, u1.id, prods.get(atU1[0].productId)!.barcode, atU1[0].quantity - 2);
+    for (const s of atU1.slice(2)) await scanCount(c2, id, u1.id, prods.get(s.productId)!.barcode, s.quantity);
+    await markLocation(c2, id, u1.id, true);
     await closeCount(c, id);
     expect(await atLocation(atU1[0].productId, u1.id)).toBe(atU1[0].quantity - 2);
     expect(await atLocation(atU1[1].productId, u1.id)).toBe(0);
@@ -196,6 +206,92 @@ describe("returns and counts", () => {
     expect(await db.select().from(stock).where(eq(stock.locationId, u2.id))).toEqual(atU2Before);
     const file = await fileFor(db, c.companyId, "count", id);
     expect(file.contents).toContain(",A-01-1");
+  });
+});
+
+describe("losses, finds and write-offs", () => {
+  it("asks for a recount from 5 units or 20% (2 units minimum)", () => {
+    expect([needsRecount(10, 5), needsRecount(50, 45), needsRecount(3, 1), needsRecount(0, 2)]).toEqual([true, true, true, true]);
+    expect([needsRecount(10, 9), needsRecount(3, 2), needsRecount(50, 46), needsRecount(0, 1)]).toEqual([false, false, false, false]);
+  });
+
+  it("tells misplaced units from losses and finds", () => {
+    const plan = planCount([
+      { productId: 1, locationId: 10, system: 5, countedQty: 2 },
+      { productId: 1, locationId: 11, system: 0, countedQty: 2 },
+      { productId: 2, locationId: 10, system: 1, countedQty: 2 },
+    ]);
+    expect(plan.relocations).toEqual([{ productId: 1, fromId: 10, toId: 11, quantity: 2 }]);
+    expect(plan.losses).toEqual([{ productId: 1, locationId: 10, quantity: 1 }]);
+    expect(plan.found).toEqual([{ productId: 2, locationId: 10, quantity: 1 }]);
+  });
+
+  it("a picking shortage moves the units to FALTANTES; a found book comes back with Mover; the rest is written off with a cause", async () => {
+    const missingZone = await zone(db, c.companyId, "missing");
+    const held = await db.select().from(stock).where(eq(stock.locationId, missingZone.id));
+    // The shortage test above reported a title missing from a shelf that had it.
+    expect(held.length).toBeGreaterThan(0);
+    const [h] = held;
+    // One more unit, so that one can turn up and the rest be written off.
+    await moveStock(db, { companyId: c.companyId, productId: h.productId, fromId: null, toId: missingZone.id, quantity: 1, reason: "initial" });
+    const before = await total(h.productId);
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, c.companyId), eq(locations.code, "A-02-1")));
+    const [p] = await db.select().from(products).where(eq(products.id, h.productId));
+
+    await expect(move(c, { source: "A-02-1", product: p.barcode, destination: "FALTANTES", quantity: 1 })).rejects.toThrow(/Faltantes/);
+    await move(c, { source: "FALTANTES", product: p.barcode, destination: "A-02-1", quantity: 1 });
+    const [last] = await db.select().from(movements).where(eq(movements.productId, p.id)).orderBy(sql`${movements.id} desc`).limit(1);
+    expect(last.reason).toBe("found");
+    expect(await total(p.id)).toBe(before);
+
+    const left = await atLocation(p.id, missingZone.id);
+    await expect(writeOff(c, { locationId: shelf.id, productId: p.id, quantity: 1, cause: "theft_or_loss" })).rejects.toThrow(/Faltantes o en Dañados/);
+    await expect(writeOff(c, { locationId: missingZone.id, productId: p.id, quantity: 1, cause: "found" })).rejects.toThrow(/motivo/);
+    await expect(writeOff(c, { locationId: missingZone.id, productId: p.id, quantity: left + 1, cause: "theft_or_loss" })).rejects.toBeInstanceOf(UserError);
+    expect(await writeOff(c, { locationId: missingZone.id, productId: p.id, quantity: left, cause: "theft_or_loss" })).toMatch(/AJ-\d+.*dado de baja/);
+    expect(await total(p.id)).toBe(before - left);
+
+    const pending = (await pendingExports(db, c.companyId)).find((x) => x.type === "adjustment")!;
+    const file = await fileFor(db, c.companyId, "adjustment", pending.id);
+    expect(file.contents).toContain(`,FALTANTES,-${left},Robo o extravío`);
+    const fierroBefore = await fierro(p.id);
+    await markSent(c, company, "adjustment", pending.id);
+    expect(await fierro(p.id)).toBe(fierroBefore - left);
+    await expect(markSent(c, company, "adjustment", pending.id)).rejects.toThrow(/no está pendiente/);
+  });
+
+  it("closing a count moves misplaced units, brings back units from FALTANTES and writes off the rest; Fierro hears only the real change", async () => {
+    const [l1, l2] = await db.insert(locations).values(["C-01-1", "C-01-2"].map((code) => ({ companyId: c.companyId, code }))).returning();
+    const [moved, back, lost] = await db.select().from(products).where(eq(products.companyId, c.companyId)).orderBy(asc(products.id)).offset(40).limit(3);
+    const missingZone = await zone(db, c.companyId, "missing");
+    for (const p of [moved, back, lost]) await db.delete(stock).where(eq(stock.productId, p.id));
+    const put = (productId: number, toId: number, quantity: number) => moveStock(db, { companyId: c.companyId, productId, fromId: null, toId, quantity, reason: "initial" });
+    await put(moved.id, l1.id, 10);
+    await put(back.id, l1.id, 10);
+    await put(back.id, missingZone.id, 1);
+    await put(lost.id, l2.id, 10);
+    const totals = { moved: await total(moved.id), back: await total(back.id), lost: await total(lost.id) };
+    const fierroBefore = { moved: await fierro(moved.id), back: await fierro(back.id), lost: await fierro(lost.id) };
+
+    const id = await createCount(c, "Pasillo C", "C-01");
+    await scanCount(c, id, l1.id, moved.barcode, 9);
+    await scanCount(c, id, l1.id, back.barcode, 11);
+    await scanCount(c, id, l2.id, moved.barcode, 1);
+    await scanCount(c, id, l2.id, lost.barcode, 9);
+    await markLocation(c, id, l1.id, true);
+    await markLocation(c, id, l2.id, true);
+    expect(await closeCount(c, id, "damage")).toBe("Conteo cerrado: 1 mal ubicados, 1 aparecieron, 1 dados de baja.");
+
+    expect([await atLocation(moved.id, l1.id), await atLocation(moved.id, l2.id)]).toEqual([9, 1]);
+    expect(await atLocation(back.id, missingZone.id)).toBe(0);
+    expect({ moved: await total(moved.id), back: await total(back.id), lost: await total(lost.id) }).toEqual({ ...totals, lost: totals.lost - 1 });
+
+    const [adj] = await db.select().from(adjustments).where(eq(adjustments.countId, id));
+    expect(await db.select({ productId: adjustmentLines.productId, quantity: adjustmentLines.quantity, cause: adjustmentLines.cause }).from(adjustmentLines).where(eq(adjustmentLines.adjustmentId, adj.id))).toEqual([{ productId: lost.id, quantity: -1, cause: "damage" }]);
+    // The count's adjustment is not listed on its own: it reaches Fierro with the count.
+    expect((await pendingExports(db, c.companyId)).some((x) => x.type === "adjustment" && x.id === adj.id)).toBe(false);
+    await markSent(c, company, "count", id);
+    expect({ moved: await fierro(moved.id), back: await fierro(back.id), lost: await fierro(lost.id) }).toEqual({ ...fierroBefore, lost: fierroBefore.lost - 1 });
   });
 });
 

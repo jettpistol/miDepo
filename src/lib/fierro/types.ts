@@ -28,7 +28,7 @@ export type FierroReceipt = { id: string; number: string; supplier: string; date
 
 /** What miDepo gives back to Fierro: how much each title's stock changed and why. */
 export type FierroDocument = {
-  type: "shipment" | "receiving" | "return" | "count";
+  type: "shipment" | "receiving" | "return" | "count" | "adjustment";
   reference: string;
   lines: { productId: number; delta: number }[];
 };

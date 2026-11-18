@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
-import { Code, PageHeader, ShelfMark } from "@/components/ui";
+import { Badge, Code, Notice, PageHeader, ShelfMark } from "@/components/ui";
 import { countLines, countLocations, counts, products, locations } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { EditNumber } from "../../../recepcion/[id]/EditNumber";
@@ -11,7 +11,7 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
   const { id: idText, location } = await params;
   const id = Number(idText);
   const locationId = Number(location);
-  const { db, company } = await requireSession();
+  const { db, company, user } = await requireSession();
   const [row] = await db
     .select({ k: counts, u: countLocations, code: locations.code })
     .from(countLocations)
@@ -20,16 +20,25 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
     .where(and(eq(countLocations.countId, id), eq(countLocations.locationId, locationId), eq(counts.companyId, company.id)));
   if (!row) notFound();
   const lines = await db.select({ l: countLines, title: products.title, code: products.barcode }).from(countLines).innerJoin(products, eq(products.id, countLines.productId)).where(and(eq(countLines.countId, id), eq(countLines.locationId, locationId))).orderBy(asc(products.title));
-  const open = row.k.status === "open" && row.u.status === "pending";
+  const recount = row.u.firstCountedBy != null && row.u.status === "pending";
+  // Whoever counted first cannot recount: a second pair of eyes is the point.
+  const firstCounter = recount && row.u.firstCountedBy === user.id;
+  const open = row.k.status === "open" && row.u.status === "pending" && !firstCounter;
 
   return (
     <>
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-3">
-            Contar <ShelfMark code={row.code} size="md" className="text-[22px] lg:text-2xl" />
+            {recount ? "Recontar" : "Contar"} <ShelfMark code={row.code} size="md" className="text-[22px] lg:text-2xl" />
+            {recount && <Badge tone="warn">Recuento</Badge>}
           </span>
         } back={{ href: `/conteos/${id}`, text: row.k.name }} />
+      {firstCounter && (
+        <div className="mb-5 max-w-xl">
+          <Notice tone="warn">Este recuento lo tiene que hacer otra persona.</Notice>
+        </div>
+      )}
       <div className={open ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8" : "max-w-3xl"}>
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">

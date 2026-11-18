@@ -1,34 +1,40 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import type { DB } from "@/db";
-import { boxItems, boxes, customers, countLines, counts, returnLines, returns, companies, orderLines, orders, products, receivingLines, receivings, suppliers, locations } from "@/db/schema";
+import { adjustmentLines, adjustments, boxItems, boxes, customers, countLines, counts, returnLines, returns, companies, orderLines, orders, products, receivingLines, receivings, suppliers, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
 import { connector, sync, type Company } from "../fierro";
 import { fierroCode, csv } from "../fierro/csv";
 import type { FierroDocument } from "../fierro/types";
 import { moveStock, zone } from "../stock";
 import type { Ctx } from "./common";
+import { causeName } from "./adjustments";
 
-export type ExportType = "order" | "receiving" | "return" | "count";
+export const EXPORT_TYPES = ["order", "receiving", "return", "count", "adjustment"] as const;
+export type ExportType = (typeof EXPORT_TYPES)[number];
+export const isExportType = (v: string): v is ExportType => (EXPORT_TYPES as readonly string[]).includes(v);
 /** The files go to Fierro, so the condition keeps the Spanish word Fierro users know. */
 const CONDITION_FOR_FIERRO = { sellable: "vendible", clearance: "saldo", damaged: "danado" } as const;
 
-export const EXPORT_NAME: Record<ExportType, string> = { order: "Pedido empacado", receiving: "Recepción", return: "Devolución", count: "Conteo" };
+export const EXPORT_NAME: Record<ExportType, string> = { order: "Pedido empacado", receiving: "Recepción", return: "Devolución", count: "Conteo", adjustment: "Baja de stock" };
 
 export type Pending = { type: ExportType; id: number; number: string; detail: string; date: Date };
 
 /** Everything the warehouse has finished that Fierro does not know about yet. */
 export async function pendingExports(db: DB, companyId: number): Promise<Pending[]> {
-  const [ps, rs, ds, ks] = await Promise.all([
+  const [ps, rs, ds, ks, as] = await Promise.all([
     db.select({ id: orders.id, number: orders.number, detail: customers.name, date: orders.date }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.companyId, companyId), eq(orders.status, "packed"), isNull(orders.sentToFierro))),
     db.select({ id: receivings.id, number: receivings.number, detail: suppliers.name, date: receivings.date }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.companyId, companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))),
     db.select({ id: returns.id, number: returns.number, detail: customers.name, date: returns.date }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.companyId, companyId), eq(returns.status, "closed"), isNull(returns.sentToFierro))),
     db.select({ id: counts.id, number: counts.name, date: counts.date }).from(counts).where(and(eq(counts.companyId, companyId), eq(counts.status, "closed"), isNull(counts.sentToFierro))),
+    // A count's own adjustment travels with the count.
+    db.select({ id: adjustments.id, number: adjustments.number, date: adjustments.createdAt, detail: users.name }).from(adjustments).innerJoin(users, eq(users.id, adjustments.approvedBy)).where(and(eq(adjustments.companyId, companyId), isNull(adjustments.countId), isNull(adjustments.sentToFierro))),
   ]);
   return [
     ...ps.map((p) => ({ type: "order" as const, ...p })),
     ...rs.map((r) => ({ type: "receiving" as const, ...r })),
     ...ds.map((d) => ({ type: "return" as const, ...d })),
     ...ks.map((k) => ({ type: "count" as const, ...k, detail: "Ajustes de stock por ubicación" })),
+    ...as.map((a) => ({ type: "adjustment" as const, ...a, detail: `Aprobó ${a.detail}` })),
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
@@ -57,6 +63,19 @@ export async function fileFor(db: DB, companyId: number, type: ExportType, id: n
     if (!d) throw new UserError("EXP-03", "No se encontró esa devolución.");
     const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, status: returnLines.bookCondition, quantity: returnLines.quantity }).from(returnLines).innerJoin(products, eq(products.id, returnLines.productId)).where(eq(returnLines.returnId, id)).orderBy(asc(products.title));
     return { name: `devolucion-${d.number}.csv`, contents: csv(rows.map((f) => [d.number, d.customer, fierroCode(f), f.title, CONDITION_FOR_FIERRO[f.status], f.quantity]), ["devolucion", "cliente", "codigo", "titulo", "estado", "cantidad"]) };
+  }
+  if (type === "adjustment") {
+    const [a] = await db.select().from(adjustments).where(and(eq(adjustments.id, id), eq(adjustments.companyId, companyId)));
+    if (!a) throw new UserError("EXP-12", "No se encontró esa baja.");
+    const rows = await db
+      .select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, location: locations.code, quantity: adjustmentLines.quantity, cause: adjustmentLines.cause })
+      .from(adjustmentLines)
+      .innerJoin(products, eq(products.id, adjustmentLines.productId))
+      .innerJoin(locations, eq(locations.id, adjustmentLines.locationId))
+      .where(eq(adjustmentLines.adjustmentId, id))
+      .orderBy(asc(products.title));
+    // Negative quantity = leaves the stock. The cause is the reason Fierro's stock document should carry.
+    return { name: `ajuste-${a.number}.csv`, contents: csv(rows.map((f) => [a.number, fierroCode(f), f.title, f.location, f.quantity, causeName(f.cause)]), ["ajuste", "codigo", "titulo", "ubicacion", "cantidad", "motivo"]) };
   }
   const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, companyId)));
   if (!k) throw new UserError("EXP-04", "No se encontró ese conteo.");
@@ -102,12 +121,24 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
       doc.type = "return";
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(returnLines).where(eq(returnLines.returnId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
+    } else if (type === "adjustment") {
+      const flagged = await tx.update(adjustments).set({ sentToFierro: now }).where(and(eq(adjustments.id, id), eq(adjustments.companyId, c.companyId), isNull(adjustments.countId), isNull(adjustments.sentToFierro))).returning();
+      if (flagged.length === 0) throw new UserError("EXP-13", "Esa baja no está pendiente de envío.");
+      doc.type = "adjustment";
+      doc.reference = flagged[0].number;
+      doc.lines = (await tx.select().from(adjustmentLines).where(eq(adjustmentLines.adjustmentId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
     } else {
       const flagged = await tx.update(counts).set({ sentToFierro: now }).where(and(eq(counts.id, id), eq(counts.companyId, c.companyId), eq(counts.status, "closed"), isNull(counts.sentToFierro))).returning();
       if (flagged.length === 0) throw new UserError("EXP-08", "Ese conteo no está pendiente de envío.");
       doc.type = "count";
       doc.reference = flagged[0].name;
-      doc.lines = (await tx.select().from(countLines).where(eq(countLines.countId, id))).map((l) => ({ productId: l.productId, delta: l.countedQty - (l.system ?? l.countedQty) }));
+      const [own] = await tx.update(adjustments).set({ sentToFierro: now }).where(eq(adjustments.countId, id)).returning();
+      // The total stock only changes by what was found or written off; misplaced units and units
+      // back from FALTANTES were never out of Fierro's stock. Counts closed before adjustment
+      // documents existed fall back to counted minus system.
+      doc.lines = own
+        ? (await tx.select().from(adjustmentLines).where(eq(adjustmentLines.adjustmentId, own.id))).map((l) => ({ productId: l.productId, delta: l.quantity }))
+        : (await tx.select().from(countLines).where(eq(countLines.countId, id))).map((l) => ({ productId: l.productId, delta: l.countedQty - (l.system ?? l.countedQty) }));
     }
     await connector(tx, company).submit(doc);
     return `${EXPORT_NAME[type]} ${doc.reference}: marcado como cargado en Fierro.`;

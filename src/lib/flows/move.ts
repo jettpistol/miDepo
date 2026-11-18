@@ -11,9 +11,12 @@ export async function move(c: Ctx, d: { source: string; product: string; destina
   if (source.type === "staging" || destination.type === "staging") {
     throw new UserError("STK-09", "Los pedidos preparados no se mueven a mano: salen cuando se despacha el pedido.");
   }
+  if (destination.type === "missing") throw new UserError("STK-11", "Nada pasa a Faltantes a mano: pasa solo cuando un libro no está en el estante al preparar un pedido.");
   const putaway = source.type === "receiving" || source.type === "returns";
+  // A book taken out of FALTANTES turned up: it was never written off, so it simply comes back.
+  const reason = source.type === "missing" ? "found" : putaway ? "putaway" : "movement";
   await c.db.transaction((tx) =>
-    moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: source.id, toId: destination.id, quantity: n, reason: putaway ? "putaway" : "movement", userId: c.userId }),
+    moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: source.id, toId: destination.id, quantity: n, reason, userId: c.userId }),
   );
   return `${n} × ${p.title}: ${source.code} → ${destination.code}`;
 }

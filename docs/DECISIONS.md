@@ -47,3 +47,15 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 **D17. Login protections:** passwords with scrypt; PINs are 6 digits hashed with an HMAC keyed by `SECRET` so a PIN identifies someone within a company; after 6 failures the key is blocked 5 minutes; session tokens are random and stored hashed.
 
 **D18. Hosting guide targets Vercel + Neon.** Fewest decisions for a first-time host. Vercel's free tier is non-commercial.
+
+## Stock losses
+
+Owner's experience: in a previous warehouse the system only let stock change through a sale or a purchase, so losses were booked through a ghost customer or orders with negative quantities. That corrupts sales figures, hides why stock disappears and leaves no real audit trail. These decisions make the honest path the easy one.
+
+**D19. A stock change with nobody on the other side is an adjustment document** (`adjustments`, `adjustment_lines`, numbered `AJ-00001`): product, location, signed quantity, a cause per line (Diferencia de conteo, Robo o extravío, Rotura o daño, Error de carga, Uso interno o muestra, Apareció) and the supervisor who approved it. It is exported to Fierro as its own document ("Baja de stock"), never as an order. Any supervisor may approve (owner's answer). The CSV layout `ajuste,codigo,titulo,ubicacion,cantidad,motivo` is a guess, like the order, receipt and return layouts.
+
+**D20. Counts separate misplaced, found and lost units, title by title.** Short on one counted shelf and over on another is a misplacement: the units move (`count_relocation`), no adjustment. Units still over come back from FALTANTES first, then enter as "Apareció". Units still short are written off with the cause the supervisor picks at approval (default "Diferencia de conteo"). The count tells Fierro only the change in total stock (its adjustment lines). Owner did not answer this question; the recommended option was taken.
+
+**D21. Large count differences need a recount by someone else before approval:** 5 units or more, or 20% or more of the system quantity (from 2 units). Owner asked for no money threshold because of inflation; units and a percentage instead. The recount clears what was counted on that shelf (the count stays blind), and the first counter cannot do it. Once recounted, the difference can be approved even if it persists.
+
+**D22. A picking shortage moves the units to a FALTANTES zone, not out of stock.** They are still owned and still in Fierro's figures, so reconciliation shows no difference. They come back with Mover (`found`) or when a count finds them, and a supervisor can write them off at any time from **Bajas** (owner chose no waiting period). Damaged stock (DANADOS) is written off from the same screen. Nothing can be moved into FALTANTES by hand. The **Bajas** screen also shows units in and out by cause over 90 days, misplaced units separately, and every adjustment line with its approver.

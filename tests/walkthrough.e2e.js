@@ -122,7 +122,24 @@ async function warning(p, field, value) {
   const countUrl = p.url(); await p.click('a:has-text("Contar")'); await p.waitForSelector('#scan-product');
   step('  count → ' + await scan(p, { product: rows[0].code }, rows[0].expected - 1));
   await p.click('button:has-text("Terminar esta ubicación")'); await p.waitForURL(countUrl); await p.waitForSelector('text=Revisión del supervisor'); await shot('count');
-  await p.click('button:has-text("Aprobar y ajustar stock")'); await p.waitForSelector('text=Conteo cerrado');
+  // Only one title was counted on a shelf that holds several: large differences wait for a recount by someone else.
+  step('  approval waits for a recount: ' + ((await p.isDisabled('button:has-text("Aprobar y ajustar stock")')) ? 'ok' : fail('approve enabled')));
+  await p.click('button:has-text("Pedir recuento")'); await p.waitForSelector('text=Recuento');
+  await p.goto(countUrl); await p.click('a:has-text("Contar")'); await p.waitForSelector('text=Este recuento lo tiene que hacer otra persona'); step('  first counter cannot recount: ok');
+  const second = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const q = await second.newPage();
+  q.on('dialog', (d) => d.accept()); q.on('pageerror', (e) => errors.push('recount pageerror: ' + e.message)); q.on('response', (r) => r.status() >= 500 && errors.push(`recount HTTP ${r.status()} ${r.url()}`));
+  await q.goto(BASE + '/'); await q.click('button:has-text("PIN del depósito")'); await q.fill('#company', 'ovnipress'); await q.fill('#pin', '100001'); await q.click('button:has-text("Entrar")'); await q.waitForURL(BASE + '/');
+  await q.goto(countUrl); await q.click('a:has-text("Contar")'); await q.waitForSelector('#scan-product');
+  step('  recount → ' + await scan(q, { product: rows[0].code }, rows[0].expected - 1));
+  await q.click('button:has-text("Terminar esta ubicación")'); await q.waitForURL(countUrl); await second.close();
+  await p.goto(countUrl); await p.waitForSelector('text=Recontada');
+  await p.click('button:has-text("Aprobar y ajustar stock")'); await p.waitForSelector('text=Conteo cerrado'); step('  count approved after the recount: ok');
+
+  // Write-offs: the picking shortage above left units in FALTANTES
+  await p.goto(BASE + '/bajas'); await p.waitForSelector('text=Faltantes y dañados'); await shot('write-offs');
+  const historyBefore = Number(await p.textContent('#history small'));
+  await p.locator('button:has-text("Dar de baja"):visible').first().click(); await p.waitForFunction((n) => Number(document.querySelector('#history small')?.textContent) > n, historyBefore, { timeout: 15000 });
+  step('  write-off → ' + (await p.textContent('#history ~ div tbody tr')).replace(/\s+/g, ' ').trim());
 
   // Fierro
   await p.goto(BASE + '/fierro'); await shot('fierro');

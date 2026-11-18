@@ -20,6 +20,7 @@
 ### Gestión
 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas)
+- [Bajas y faltantes](Bajas-y-faltantes)
 - [Trabajar con Fierro](Trabajar-con-Fierro)
 - [Usuarios y roles](Usuarios-y-roles)
 

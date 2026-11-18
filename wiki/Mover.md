@@ -17,5 +17,7 @@ El mensaje verde resume el movimiento: `12 × Título: A-03-2 → B-01-4`.
 - Se mueve **un título por vez**. Para vaciar un estante, repite por cada título.
 - No se puede mover más de lo que hay en el origen. Si miDepo dice que no hay tantas unidades, el stock de ese estante está mal: pide un [conteo](Conteos).
 - Los pedidos ya preparados no se mueven con esta pantalla: salen solos al despacharse.
+- **Si aparece un faltante**, muévelo desde `FALTANTES` a su estante: vuelve al stock sin baja. A `FALTANTES` no se mueve nada a mano: solo llega desde el picking.
+- **Un libro roto** se mueve a `DANADOS`. Desde ahí un supervisor lo da de baja. Ver [Bajas y faltantes](Bajas-y-faltantes).
 
 > Mover libros sin registrarlo es la causa número uno de "el sistema dice que hay y no está". Son diez segundos.

@@ -73,6 +73,7 @@ Nothing here was tested against a real Fierro account. **No Fierro access exists
 4. Which **spreadsheet layouts** does Fierro accept for orders, remitos, receipts and returns, and can they be set up for a third-party system?
 5. Can the **B2B availability** endpoints be used to publish real warehouse stock per title for a publisher?
 6. Is there a **sandbox** account for a third-party developer?
+7. How should a warehouse report a **stock write-off with no customer or supplier** (loss, theft, damage, internal use), with its reason? Is there a stock document type for it, and can its reason be set from a file? miDepo exports them as `ajuste,codigo,titulo,ubicacion,cantidad,motivo` (see DECISIONS.md D19).
 
 ## Help-centre map
 

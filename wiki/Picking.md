@@ -35,6 +35,8 @@ miDepo busca el título en otro estante:
 - **Si lo encuentra**, suma una parada nueva al recorrido.
 - **Si no hay en ningún lado**, lo anota como **faltante** y el pedido sigue sin ese título.
 
+Las unidades que no estaban pasan de ese estante a la zona **FALTANTES**: así el estante deja de decir que las tiene. Si después aparecen, se devuelven con [Mover](Mover); si no, un supervisor las da de baja. Ver [Bajas y faltantes](Bajas-y-faltantes).
+
 > No completes el pedido con un tomo parecido ni lo saques de otro estante sin escanear. El faltante bien avisado se resuelve; el reemplazo silencioso genera una devolución.
 
 ## Terminar

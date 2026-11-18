@@ -41,6 +41,8 @@ src/lib/flows/*.ts        Warehouse rules, one file per flow. Plain functions ta
                           ({ db, companyId, userId }); they throw UserError for anything the
                           user should see. Tested in tests/flows.test.ts.
 src/lib/stock.ts          moveStock(): the only place stock quantities change; always logs a movement.
+src/lib/flows/adjustments.ts  Stock changes with nobody on the other side (write-offs, found stock):
+                          every one is an adjustment document with a cause. Never a fake order.
 src/lib/lookup.ts         The as-you-type check behind /api/lookup. It must accept and reject
                           exactly what the flow would; tests/lookup.test.ts checks that they agree.
 src/lib/action.ts         action(role, fn): wraps a flow as a server action (session, role,

@@ -114,14 +114,23 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
 }
 
 /**
- * The operator reports that what is missing is not at the location. miDepo looks for the title
- * elsewhere; if there is none, the stop is left as a shortage and the order carries on.
+ * The operator reports that what is missing is not at the location. Those units move from the shelf
+ * to FALTANTES (still owned, not written off: a count may find them, a supervisor may write them off).
+ * miDepo looks for the title elsewhere; if there is none, the stop is left as a shortage.
  */
 export async function markShort(c: Ctx, taskId: number) {
   const { task, order } = await taskOf(c, taskId);
   const missing = task.quantity - task.picked;
   return c.db.transaction(async (tx) => {
     await tx.update(pickTasks).set({ status: "short" }).where(eq(pickTasks.id, task.id));
+    if (task.locationId != null) {
+      const [onShelf] = await tx.select({ n: stock.quantity }).from(stock).where(and(eq(stock.productId, task.productId), eq(stock.locationId, task.locationId)));
+      const gone = Math.min(onShelf?.n ?? 0, missing);
+      if (gone > 0) {
+        const missingZone = await zone(tx, c.companyId, "missing");
+        await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: task.locationId, toId: missingZone.id, quantity: gone, reason: "missing", reference: order.number, userId: c.userId });
+      }
+    }
     // The operator is not sent back to a place where they already reported this title was missing.
     const alreadyFailed = await tx.select({ u: pickTasks.locationId }).from(pickTasks).where(and(eq(pickTasks.lineId, task.lineId), eq(pickTasks.status, "short")));
     const freeOnes = await available(tx, c.companyId, [task.productId], new Set(alreadyFailed.map((f) => f.u)));

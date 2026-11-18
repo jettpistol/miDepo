@@ -27,6 +27,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `PACK` | Empaque |
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
+| `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
 | `CFG` | Server configuration (environment variables) |
@@ -135,6 +136,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `STK-07` | No existe la ubicación "{código}". | `src/lib/stock.ts` · `findLocation` | No location of the company has that code. |
 | `STK-08` | La ubicación "{código}" está dada de baja. | `src/lib/stock.ts` · `findLocation` | The location exists but is deactivated. |
 | `STK-09` | Los pedidos preparados no se mueven a mano: salen cuando se despacha el pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into or out of the staging zone (picked orders) by hand. |
+| `STK-11` | Nada pasa a Faltantes a mano: pasa solo cuando un libro no está en el estante al preparar un pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into FALTANTES by hand. Moving out of it is allowed: that is how a missing book comes back. |
 | `STK-10` | La cantidad tiene que ser un número entero mayor que cero. | `src/lib/flows/common.ts` · `validQuantity` | A scanned quantity that is not a whole number from 1 to 100,000. Used by every scan flow. |
 
 ## RCV: Recepción and suppliers
@@ -206,6 +208,20 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `CNT-08` | Esta ubicación ya se dio por contada. | `src/lib/flows/counts.ts` · `scanCount` | Scanning into a location already marked as counted. |
 | `CNT-09` | Escribe un número de cero para arriba. | `src/lib/flows/counts.ts` · `setCounted` | Correcting a counted quantity to a negative or non-whole number. |
 | `CNT-10` | Todavía no hay ninguna ubicación contada. | `src/lib/flows/counts.ts` · `closeCount` | Closing a count with no location marked as counted. |
+| `CNT-11` | Hay diferencias grandes sin recontar. Pide el recuento antes de aprobar. | `src/lib/flows/counts.ts` · `closeCount` | Approving while a counted location has a difference of 5+ units or 20%+ (from 2 units) that nobody has recounted. The screen disables the button first. |
+| `CNT-12` | Este recuento lo tiene que hacer otra persona. | `src/lib/flows/counts.ts` · `scanCount`, `markLocation` | The person who counted a location first tries to scan into it or finish it during its recount. |
+| `CNT-13` | Esa ubicación todavía no se contó. | `src/lib/flows/counts.ts` · `requestRecount` | Asking for a recount of a location that is not marked as counted. |
+| `CNT-14` | Elige el motivo de lo que falta. | `src/lib/flows/counts.ts` · `closeCount` | Approving with a cause for the losses that is not in the list. Only reachable by editing the form. |
+
+## ADJ: Bajas
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `ADJ-01` | Solo se da de baja lo que está en Faltantes o en Dañados. | `src/lib/flows/adjustments.ts` · `writeOff` | Writing off from a location that is not FALTANTES or DANADOS, or from another company's. Only reachable by editing the form. |
+| `ADJ-02` | Elige el motivo de la baja. | `src/lib/flows/adjustments.ts` · `writeOff` | Writing off with no cause, or with "Apareció", which is not a loss. |
+| `ADJ-03` | Ese título no está en el catálogo. | `src/lib/flows/adjustments.ts` · `writeOff` | The title does not exist or belongs to another company. Only reachable by editing the form. |
+
+Writing off more units than the zone holds is refused by `STK-03`.
 
 ## EXP: Fierro documents
 
@@ -221,9 +237,11 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `EXP-08` | Ese conteo no está pendiente de envío. | `src/lib/flows/exports.ts` · `markSent` | Same, for a count. |
 | `EXP-09` | Documento desconocido. | `src/app/(app)/fierro/actions.ts` · `submit` | Marking as sent a document type that does not exist. Only reachable by editing the form. |
 | `EXP-10` | No autorizado | `src/app/api/export/[type]/[id]/route.ts` · `GET` | Downloading a CSV without a session or below supervisor (HTTP 401). Shown as plain text in the browser. |
+| `EXP-12` | No se encontró esa baja. | `src/lib/flows/exports.ts` · `fileFor` | Downloading the CSV of a write-off that does not exist or belongs to another company. |
+| `EXP-13` | Esa baja no está pendiente de envío. | `src/lib/flows/exports.ts` · `markSent` | Marking as sent a write-off already sent, or one that belongs to a count (it goes with the count). |
 | `EXP-11` | No existe | `src/app/api/export/[type]/[id]/route.ts` · `GET` | Downloading a CSV for a document type that does not exist (HTTP 404). |
 
-The CSV download route also returns `EXP-01` to `EXP-04` as plain text with HTTP 404.
+The CSV download route also returns `EXP-01` to `EXP-04` and `EXP-12` as plain text with HTTP 404.
 
 ## CAM: phone camera
 

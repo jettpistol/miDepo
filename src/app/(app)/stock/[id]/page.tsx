@@ -4,11 +4,11 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Icon } from "@/components/Icon";
 import { Code, PageHeader, shortDate, Badge, ShelfMark } from "@/components/ui";
-import { fierroStock, movements, products, stock, locations, users } from "@/db/schema";
+import { fierroStock, movements, products, stock, locations, users, type MovementReason } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
 
-const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Guardado", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo" } as const;
+const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Guardado", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);

@@ -419,6 +419,9 @@ export function ActionForm({
   className = "space-y-4",
   resetOnOk = true,
   anyOf,
+  confirm,
+  reason,
+  buttonClassName = "btn",
 }: {
   action: Action;
   children: ReactNode;
@@ -427,9 +430,15 @@ export function ActionForm({
   resetOnOk?: boolean;
   /** Fields of which at least one must be filled in; otherwise the browser asks before submitting. */
   anyOf?: { fields: string[]; message: string };
+  /** Asked before sending. */
+  confirm?: string;
+  /** If the form cannot be sent yet, why: the button is disabled and says so. */
+  reason?: string;
+  buttonClassName?: string;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const form = useRef<HTMLFormElement>(null);
+  const reasonId = useId();
   useEffect(() => {
     if (status.ok && resetOnOk) form.current?.reset();
   }, [status, resetOnOk]);
@@ -441,16 +450,24 @@ export function ActionForm({
       onInput={() => anyOf?.fields.forEach((n) => (form.current?.elements.namedItem(n) as HTMLInputElement | null)?.setCustomValidity(""))}
       onSubmit={(e) => {
         const inputs = (anyOf?.fields ?? []).map((n) => e.currentTarget.elements.namedItem(n) as HTMLInputElement | null);
-        if (inputs.length === 0 || inputs.some((x) => x?.value.trim())) return;
+        if (inputs.length === 0 || inputs.some((x) => x?.value.trim())) {
+          if (confirm && !window.confirm(confirm)) e.preventDefault();
+          return;
+        }
         e.preventDefault();
         inputs[0]?.setCustomValidity(anyOf!.message);
         inputs[0]?.reportValidity();
       }}
     >
       {children}
-      <button className="btn" disabled={submitting}>
+      <button className={buttonClassName} disabled={submitting || Boolean(reason)} aria-describedby={reason ? reasonId : undefined}>
         {submitting ? "Un momento…" : button}
       </button>
+      {reason && (
+        <p id={reasonId} className="basis-full text-sm text-muted">
+          {reason}
+        </p>
+      )}
       <Message status={status} />
     </form>
   );

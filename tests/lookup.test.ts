@@ -55,6 +55,7 @@ describe("rehearsing a move", () => {
       { source: "A-01-1", product: book.barcode, destination: "B-01-1", quantity: "8", field: "quantity" },
       { source: "A-01-1", product: book.barcode, destination: "A-01-1", quantity: "1", field: "destination" },
       { source: "A-01-1", product: "0000000", destination: "B-01-1", quantity: "1", field: "product" },
+      { source: "A-01-1", product: book.barcode, destination: "FALTANTES", quantity: "1", field: "destination" },
     ];
     for (const { field, ...d } of cases) {
       expect((await rehearsal({ ctx: "move", ...d })).statuses[field]?.tone, field).toBe("danger");

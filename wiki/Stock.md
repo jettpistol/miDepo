@@ -21,7 +21,7 @@ Escribe o escanea el código del estante en el buscador (por ejemplo `A-03-2`) y
 
 ## Las zonas especiales
 
-Además de los estantes, hay cinco zonas:
+Además de los estantes, hay seis zonas:
 
 | Zona | Qué hay ahí |
 |---|---|
@@ -30,6 +30,7 @@ Además de los estantes, hay cinco zonas:
 | Saldos | Libros con detalles, para vender con descuento. |
 | Dañados | Libros que no se pueden vender. |
 | Pedidos preparados | Lo que ya se sacó del estante para un pedido y todavía no salió. |
+| Faltantes | Lo que no estaba en el estante durante un picking. Sigue siendo del depósito hasta que aparece o se da de baja. Ver [Bajas y faltantes](Bajas-y-faltantes). |
 
 ## Artículos sin ISBN
 
