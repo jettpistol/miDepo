@@ -67,6 +67,7 @@ Every error message the user can see has a code (`RCV-02`), shown after the mess
 - Removed message: move its row to "Retired codes". Never reuse a number.
 - New area: add it to the area table in `docs/ERRORS.md` and to `AREAS` in `tests/errors.test.ts`.
 - As-you-type warnings (`src/lib/lookup.ts`) get no code.
+- Every error message is in Spanish (voseo), including script and configuration errors only a developer sees. Codes and the rest of `docs/ERRORS.md` stay in English.
 
 `tests/errors.test.ts` (which scans `src/` and `scripts/`) fails if a code is undocumented, documented in the wrong file, used in two files, retired but back, or if a `UserError` or a thrown `Error` has no code.
 

@@ -9,7 +9,8 @@ Every message miDepo shows when something fails has a code. This file lists all 
 - **What the user sees:** the message, a middle dot, then the code: `Esta recepción ya está cerrada. · RCV-02`. `withCode()` in `src/lib/errors.ts` builds that text. An operator can read the code to a supervisor, who finds it here.
 - **In the code:** `throw new UserError("RCV-02", "Esta recepción ya está cerrada.")`. The constructor requires the code. `attempt()` (used by every server action through `action()`) adds the code to what is shown.
 - **Unexpected errors** (a bug, the database being down) are never shown as is: the user sees `SYS-01` and the server log gets `[SYS-01]` with the real error.
-- **Command-line scripts and configuration** write the code in brackets at the start of the line: `[CLI-02] The company code must be…`. Those messages are in English because only a developer sees them.
+- **Command-line scripts and configuration** write the code in brackets at the start of the line: `[CLI-02] El código de empresa va en minúsculas…`.
+- **Every message is in Spanish (Argentina, voseo)**, including the ones only a developer sees. The only English that can appear is an error passed through from a library or the database (the `{error}` in `CLI-04` and `CLI-05`, the server log of `SYS-01`).
 - **Codes are never reused.** If a message is removed, move its row to [Retired codes](#retired-codes) and do not give its number to anything else. If a message changes wording but means the same, keep its code.
 
 | Area | Part of the app |
@@ -235,20 +236,20 @@ The CSV download route also returns `EXP-01` to `EXP-04` as plain text with HTTP
 
 | Code | Message | Where | When |
 |---|---|---|---|
-| `CFG-01` | The SECRET variable is missing. Generate one with: openssl rand -hex 32 | `src/lib/credentials.ts` · `secret` | The app is running against a real database (`DATABASE_URL`) without `SECRET`. PIN logins, setting a PIN and passkeys fail; users see `SYS-01` (or `ACCT-07` when changing their PIN). |
-| `CFG-02` | The SECRET variable is missing. It is required when DATABASE_URL is set. Generate one with: openssl rand -hex 32 | `src/db/setup.ts` · `main` | `npm run db:setup` (also run by the Vercel build) with `DATABASE_URL` but no `SECRET`. |
+| `CFG-01` | Falta la variable SECRET. Generá una con: openssl rand -hex 32 | `src/lib/credentials.ts` · `secret` | The app is running against a real database (`DATABASE_URL`) without `SECRET`. PIN logins, setting a PIN and passkeys fail; users see `SYS-01` (or `ACCT-07` when changing their PIN). |
+| `CFG-02` | Falta la variable SECRET. Es obligatoria cuando está DATABASE_URL. Generá una con: openssl rand -hex 32 | `src/db/setup.ts` · `main` | `npm run db:setup` (also run by the Vercel build) with `DATABASE_URL` but no `SECRET`. |
 
 ## CLI: scripts
 
 | Code | Message | Where | When |
 |---|---|---|---|
-| `CLI-01` | Missing arguments. Example: npm run company:create -- "Distribuidora Sur" sur admin@sur.com "a-long-password" | `src/db/create-company.ts` · `main` | `company:create` called with fewer than four arguments. |
-| `CLI-02` | The company code must be lowercase with no spaces (letters, numbers and hyphens). | `src/db/create-company.ts` · `main` | The company code is not 2–20 characters of `a-z`, `0-9` and `-`. |
-| `CLI-03` | The password needs at least 8 characters. | `src/db/create-company.ts` · `main` | The administrator password is too short. |
-| `CLI-04` | Could not create the company: {error} | `src/db/create-company.ts` · `main` | Anything else failed: the company code is taken, the email is in use, the database is unreachable. |
-| `CLI-05` | Database setup failed: {error} | `src/db/setup.ts` · `main` | `db:setup` or `db:reset` failed: the database is unreachable or a migration failed. |
-| `CLI-06` | HTTP {status} {url} | `scripts/scrape-ovnipress.mjs` · `get` | The Ovnipress store answered a request with an error. On a category page the script stops; on a product page it becomes `CLI-07`. |
-| `CLI-07` | Skipped {url}: {error} | `scripts/scrape-ovnipress.mjs` · product loop | A product page could not be fetched or read; the script skips it and carries on. |
+| `CLI-01` | Faltan datos. Ejemplo: npm run company:create -- "Distribuidora Sur" sur admin@sur.com "una-contraseña-larga" | `src/db/create-company.ts` · `main` | `company:create` called with fewer than four arguments. |
+| `CLI-02` | El código de empresa va en minúsculas y sin espacios (letras, números y guiones). | `src/db/create-company.ts` · `main` | The company code is not 2–20 characters of `a-z`, `0-9` and `-`. |
+| `CLI-03` | La contraseña necesita al menos 8 caracteres. | `src/db/create-company.ts` · `main` | The administrator password is too short. |
+| `CLI-04` | No se pudo crear la empresa: {error} | `src/db/create-company.ts` · `main` | Anything else failed: the company code is taken, the email is in use, the database is unreachable. |
+| `CLI-05` | No se pudo preparar la base de datos: {error} | `src/db/setup.ts` · `main` | `db:setup` or `db:reset` failed: the database is unreachable or a migration failed. |
+| `CLI-06` | La tienda respondió {status} en {url} | `scripts/scrape-ovnipress.mjs` · `get` | The Ovnipress store answered a request with an error. On a category page the script stops; on a product page it becomes `CLI-07`. |
+| `CLI-07` | Se salteó {url}: {error} | `scripts/scrape-ovnipress.mjs` · product loop | A product page could not be fetched or read; the script skips it and carries on. |
 
 ## Not coded on purpose
 

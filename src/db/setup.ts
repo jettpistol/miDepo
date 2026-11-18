@@ -11,7 +11,7 @@ import { seed } from "./seed";
 async function main() {
   const reset = process.argv.includes("--reset");
   if (process.env.DATABASE_URL && !process.env.SECRET) {
-    throw new Error("[CFG-02] The SECRET variable is missing. It is required when DATABASE_URL is set. Generate one with: openssl rand -hex 32");
+    throw new Error("[CFG-02] Falta la variable SECRET. Es obligatoria cuando está DATABASE_URL. Generá una con: openssl rand -hex 32");
   }
   if (reset && !process.env.DATABASE_URL) rmSync(process.env.PGLITE_DIR ?? ".data/pglite", { recursive: true, force: true });
   const { db, close, embedded } = await connect();
@@ -32,6 +32,6 @@ async function main() {
 main().catch((e) => {
   // CFG-02 above already carries its code; anything else (migration, connection) gets CLI-05.
   if (e instanceof Error && e.message.startsWith("[CFG-02]")) console.error(e.message);
-  else console.error("[CLI-05] Database setup failed:", e);
+  else console.error("[CLI-05] No se pudo preparar la base de datos:", e);
   process.exit(1);
 });
