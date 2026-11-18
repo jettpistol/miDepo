@@ -2,7 +2,7 @@
 
 A warehouse tool for small book warehouses, built to sit **on top of [Fierro](https://www.fierro.com.ar)** rather than replace it. Fierro keeps the catalogue, customers, orders, remitos and invoices; miDepo owns what Fierro does not track: which shelf every copy is on, and the scan-by-scan work of the warehouse floor.
 
-The interface is entirely in Spanish (Argentina). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/guardar`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
+The interface is entirely in Spanish, addressing the user as tú (never voseo). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/guardar`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
 
 > **Status: MVP for testing.** It runs against a **simulated Fierro** with invented data. No real Fierro connection exists yet. See [What is not done](#what-is-not-done).
 

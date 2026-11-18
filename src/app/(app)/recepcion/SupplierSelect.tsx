@@ -11,8 +11,8 @@ export function SupplierSelect({ options }: { options: Option[] }) {
       id="supplier"
       options={options}
       required
-      requiredMessage="Elegí un proveedor de la lista o creá uno."
-      placeholder="Elegí el proveedor"
+      requiredMessage="Elige un proveedor de la lista o crea uno."
+      placeholder="Elige el proveedor"
       searchPlaceholder="Buscar proveedor…"
       empty="No hay proveedores con ese nombre."
       create={{ noun: "proveedor", action: addSupplier }}

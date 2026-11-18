@@ -4,8 +4,8 @@ Picking es ir a buscar a los estantes lo que pide un pedido. miDepo arma el reco
 
 ## Tomar un pedido
 
-1. Andá a **Picking**. Los pedidos pendientes están ordenados del más viejo al más nuevo.
-2. Tocá **Preparar** en el primero.
+1. Ve a **Picking**. Los pedidos pendientes están ordenados del más viejo al más nuevo.
+2. Toca **Preparar** en el primero.
 
 Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
@@ -13,22 +13,22 @@ Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
 En pantalla aparece la **próxima parada**: el estante en grande, el título y cuántas unidades tomar.
 
-1. Andá al estante.
-2. Escaneá **el cartel del estante**.
-3. Tomá los libros y escaneá **uno**.
-4. Revisá la **cantidad**: ya viene con lo que pide la parada.
-5. Confirmá. Aparece la parada siguiente.
+1. Ve al estante.
+2. Escanea **el cartel del estante**.
+3. Toma los libros y escanea **uno**.
+4. Revisa la **cantidad**: ya viene con lo que pide la parada.
+5. Confirma. Aparece la parada siguiente.
 
 Abajo ves lo que viene **Después** y lo **Ya tomado**.
 
-### Si tomás menos
+### Si tomas menos
 
-Si la parada pide 8 y solo vas a llevar 5 por ahora, cambiá la cantidad a 5 y confirmá. La parada queda abierta por los 3 que faltan.
+Si la parada pide 8 y solo vas a llevar 5 por ahora, cambia la cantidad a 5 y confirma. La parada queda abierta por los 3 que faltan.
 
 ## Si el libro no está
 
-1. Mirá bien: detrás, en el nivel de arriba y en el de abajo.
-2. Si no está, tocá **No está en el estante** y confirmá.
+1. Mira bien: detrás, en el nivel de arriba y en el de abajo.
+2. Si no está, toca **No está en el estante** y confirma.
 
 miDepo busca el título en otro estante:
 
@@ -39,7 +39,7 @@ miDepo busca el título en otro estante:
 
 ## Terminar
 
-Cuando no quedan paradas, miDepo avisa **Picking terminado**. Llevá todo a la mesa de empaque y tocá **Ir a empacar**, o dejá que lo empaque otra persona desde [Empaque](Empaque).
+Cuando no quedan paradas, miDepo avisa **Picking terminado**. Lleva todo a la mesa de empaque y toca **Ir a empacar**, o deja que lo empaque otra persona desde [Empaque](Empaque).
 
 ## Preguntas frecuentes
 
@@ -49,4 +49,4 @@ Cuando no quedan paradas, miDepo avisa **Picking terminado**. Llevá todo a la m
 
 **¿Qué es "Consignación"?** El cliente recibe los libros y paga lo que vende. Para el picking no cambia nada.
 
-**Tomé de más.** Devolvé la diferencia al mismo estante. miDepo no deja confirmar más de lo que pide la parada.
+**Tomé de más.** Devuelve la diferencia al mismo estante. miDepo no deja confirmar más de lo que pide la parada.

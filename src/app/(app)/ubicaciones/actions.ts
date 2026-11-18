@@ -11,7 +11,7 @@ export const generate = action("supervisor", async (c, f) => {
   try {
     scheme = JSON.parse(txt(f, "scheme"));
   } catch {
-    throw new UserError("LOC-01", "No pude leer el esquema. Recargá la página y probá de nuevo.");
+    throw new UserError("LOC-01", "No pude leer el esquema. Recarga la página y prueba de nuevo.");
   }
   const problem = validateScheme(scheme);
   if (problem) throw new UserError(problem.code, problem.message);
@@ -25,7 +25,7 @@ export const generate = action("supervisor", async (c, f) => {
     await tx.update(companies).set({ locationScheme: scheme }).where(eq(companies.id, c.companyId));
   });
   const repeated = codes.length - newOnes;
-  return `Se crearon ${newOnes} ubicaciones${repeated ? ` (${repeated} ya existían y no se tocaron)` : ""}. Ya podés imprimir las etiquetas.`;
+  return `Se crearon ${newOnes} ubicaciones${repeated ? ` (${repeated} ya existían y no se tocaron)` : ""}. Ya puedes imprimir las etiquetas.`;
 });
 
 export const createStandalone = action("supervisor", async (c, f) => {
@@ -41,7 +41,7 @@ export const toggle = action("supervisor", async (c, f) => {
   if (!u || u.type !== "shelf") throw new UserError("LOC-04", "Esa ubicación no se puede dar de baja.");
   if (u.active) {
     const [remains] = await c.db.select().from(stock).where(eq(stock.locationId, u.id)).limit(1);
-    if (remains) throw new UserError("LOC-05", "Todavía hay libros en esta ubicación. Movelos antes de darla de baja.");
+    if (remains) throw new UserError("LOC-05", "Todavía hay libros en esta ubicación. Muévelos antes de darla de baja.");
   }
   await c.db.update(locations).set({ active: !u.active }).where(eq(locations.id, u.id));
   return u.active ? `${u.code} dada de baja.` : `${u.code} activa de nuevo.`;

@@ -3,24 +3,24 @@
 ## Al escanear
 
 **El lector no escribe nada.**
-Tocá el campo del código para que quede seleccionado. Si sigue sin escribir, probá el lector en cualquier otra app: si tampoco escribe, el problema es el lector o su cable.
+Toca el campo del código para que quede seleccionado. Si sigue sin escribir, prueba el lector en cualquier otra app: si tampoco escribe, el problema es el lector o su cable.
 
 **La cámara no abre.**
-El navegador no tiene permiso. En el teléfono, entrá a los ajustes del sitio y permití la cámara. Mientras tanto, escribí el código a mano.
+El navegador no tiene permiso. En el teléfono, entra a los ajustes del sitio y permite la cámara. Mientras tanto, escribe el código a mano.
 
 **"No conozco el código…"**
-El título no está en el catálogo de miDepo. Puede ser nuevo en Fierro: pedile a un supervisor que sincronice. Si es una grapa o un pack, puede faltarle la etiqueta con el código interno.
+El título no está en el catálogo de miDepo. Puede ser nuevo en Fierro: pídele a un supervisor que sincronice. Si es una grapa o un pack, puede faltarle la etiqueta con el código interno.
 
 **Escaneo un libro y me dice que es otro título.**
-Pasa con tomos de la misma serie, que tienen tapas parecidas. Fijate el número del tomo.
+Pasa con tomos de la misma serie, que tienen tapas parecidas. Fíjate el número del tomo.
 
 ## En el picking
 
 **El sistema dice que hay y no está.**
-Tocá **No está en el estante**. miDepo lo busca en otro lado o lo anota como faltante. Avisá a tu supervisor: ese estante necesita un conteo.
+Toca **No está en el estante**. miDepo lo busca en otro lado o lo anota como faltante. Avisa a tu supervisor: ese estante necesita un conteo.
 
 **"Ese pedido ya lo tomó otra persona."**
-Dos personas tocaron a la vez. Tomá el siguiente.
+Dos personas tocaron a la vez. Toma el siguiente.
 
 **Me fui y no encuentro mi pedido.**
 En Inicio aparece **Seguir con PED-…**. También está en Picking, en **En preparación**.
@@ -34,7 +34,7 @@ Lo más común es que haya documentos sin cargar en Fierro. Ver [Trabajar con Fi
 No se puede reabrir. Un supervisor lo corrige con un [conteo](Conteos) de la zona o del estante.
 
 **Guardé un libro en el estante equivocado.**
-Usá [Mover](Mover): desde donde lo registraste hacia donde está de verdad.
+Usa [Mover](Mover): desde donde lo registraste hacia donde está de verdad.
 
 ## Con la cuenta
 
@@ -49,4 +49,4 @@ Está bien: el color es de cada usuario.
 
 ## Si nada de esto ayuda
 
-Anotá **qué estabas haciendo**, **qué mensaje apareció** (una foto de la pantalla sirve) y **a qué hora**, y pasáselo a tu supervisor.
+Anota **qué estabas haciendo**, **qué mensaje apareció** (una foto de la pantalla sirve) y **a qué hora**, y pásaselo a tu supervisor.

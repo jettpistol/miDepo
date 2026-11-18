@@ -12,7 +12,7 @@ export const BOOK_CONDITIONS: { id: BookCondition; name: string; help: string }[
 
 export async function createReturn(c: Ctx, customerId: number) {
   const [cust] = await c.db.select().from(customers).where(and(eq(customers.id, customerId), eq(customers.companyId, c.companyId)));
-  if (!cust) throw new UserError("RET-01", "Elegí un cliente de la lista.");
+  if (!cust) throw new UserError("RET-01", "Elige un cliente de la lista.");
   const [{ n }] = await c.db.select({ n: count() }).from(returns).where(eq(returns.companyId, c.companyId));
   const [d] = await c.db.insert(returns).values({ companyId: c.companyId, customerId, number: `DEV-${String(n + 1).padStart(4, "0")}` }).returning();
   return d.id;
@@ -28,7 +28,7 @@ async function open(c: Ctx, id: number) {
 export async function scanReturn(c: Ctx, returnId: number, code: string, bookCondition: string, quantity: unknown) {
   const n = validQuantity(quantity);
   const status = BOOK_CONDITIONS.find((e) => e.id === bookCondition);
-  if (!status) throw new UserError("RET-04", "Elegí en qué estado está el libro.");
+  if (!status) throw new UserError("RET-04", "Elige en qué estado está el libro.");
   await open(c, returnId);
   const p = await findProduct(c.db, c.companyId, code);
   await c.db

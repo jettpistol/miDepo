@@ -36,7 +36,7 @@ export default async function Users() {
                 <Avatar person={u} className="size-9 text-sm" />
                 <span className="min-w-0">
                   <span className="block font-semibold">
-                    {u.name} {u.id === user.id && <span className="font-normal text-muted">(vos)</span>}
+                    {u.name} {u.id === user.id && <span className="font-normal text-muted">(tú)</span>}
                   </span>
                   <span className="block truncate text-sm text-muted">{u.email}</span>
                 </span>
@@ -59,7 +59,7 @@ export default async function Users() {
                     </label>
                     <Select id={`rol-${u.id}`} name="role" defaultValue={u.role} options={ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }))} />
                   </ActionForm>
-                  <ActionForm action={setAccess} button="Guardar acceso" className="space-y-2" anyOf={{ fields: ["pin", "password"], message: "Escribí un PIN nuevo, una contraseña nueva o las dos cosas." }}>
+                  <ActionForm action={setAccess} button="Guardar acceso" className="space-y-2" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o las dos cosas." }}>
                     <input type="hidden" name="id" value={u.id} />
                     <label className="field-label" htmlFor={`pin-${u.id}`}>
                       PIN nuevo y/o contraseña nueva

@@ -67,7 +67,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
           </table>
         </div>
       ) : (
-        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay estantes. Crealos con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
+        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay estantes. Créalos con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
       )}
       {list.length === 120 && <p className="mt-3 text-sm text-muted">Se muestran las primeras 120.</p>}
 

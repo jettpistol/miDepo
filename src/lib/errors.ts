@@ -29,6 +29,6 @@ export async function attempt(fn: () => Promise<string | void>): Promise<Result>
     // Next's redirect() and notFound() propagate as exceptions: they have to be let through.
     if (e && typeof e === "object" && "digest" in e) throw e;
     console.error("[SYS-01]", e);
-    return { error: withCode("Algo salió mal. Probá de nuevo; si sigue, avisá a tu supervisor.", "SYS-01"), sound: "error" };
+    return { error: withCode("Algo salió mal. Prueba de nuevo; si sigue, avisa a tu supervisor.", "SYS-01"), sound: "error" };
   }
 }

@@ -59,7 +59,7 @@ export async function moveStock(tx: Executor, m: Movement) {
 /** Looks up whatever the scanner read: barcode, ISBN or internal code. */
 export async function findProduct(tx: Executor, companyId: number, code: string) {
   const c = code.trim();
-  if (!c) throw new UserError("STK-04", "Escaneá o escribí el código del libro.");
+  if (!c) throw new UserError("STK-04", "Escanea o escribe el código del libro.");
   const [p] = await tx
     .select()
     .from(products)
@@ -70,13 +70,13 @@ export async function findProduct(tx: Executor, companyId: number, code: string)
       ),
     )
     .limit(1);
-  if (!p) throw new UserError("STK-05", `No conozco el código "${c}". Si es un título nuevo, pedí que sincronicen con Fierro.`);
+  if (!p) throw new UserError("STK-05", `No conozco el código "${c}". Si es un título nuevo, pide que sincronicen con Fierro.`);
   return p;
 }
 
 export async function findLocation(tx: Executor, companyId: number, code: string) {
   const c = code.trim().toUpperCase();
-  if (!c) throw new UserError("STK-06", "Escaneá o escribí la ubicación.");
+  if (!c) throw new UserError("STK-06", "Escanea o escribe la ubicación.");
   const [u] = await tx
     .select()
     .from(locations)

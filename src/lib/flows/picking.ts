@@ -97,11 +97,11 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
   const n = validQuantity(d.quantity);
   const { task, order } = await taskOf(c, d.taskId);
   const u = await findLocation(c.db, c.companyId, d.location);
-  if (u.id !== task.locationId) throw new UserError("PICK-05", `Estás en ${u.code}, pero esta parada es en otra ubicación. Fijate el cartel.`);
+  if (u.id !== task.locationId) throw new UserError("PICK-05", `Estás en ${u.code}, pero esta parada es en otra ubicación. Fíjate el cartel.`);
   const p = await findProduct(c.db, c.companyId, d.product);
   if (p.id !== task.productId) throw new UserError("PICK-06", `Ese es "${p.title}". No es el título que pide esta parada.`);
   const remaining = task.quantity - task.picked;
-  if (n > remaining) throw new UserError("PICK-07", `Esta parada pide ${remaining}. Si tomaste de más, devolvé ${n - remaining} al estante.`);
+  if (n > remaining) throw new UserError("PICK-07", `Esta parada pide ${remaining}. Si tomaste de más, devuelve ${n - remaining} al estante.`);
 
   return c.db.transaction(async (tx) => {
     const prep = await zone(tx, c.companyId, "staging");
@@ -109,7 +109,7 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
     const end = await checkEnd(tx, order.id);
-    return end ? `Pedido ${order.number} completo. Llevalo a empaque.` : `${n} × ${p.title} ✓`;
+    return end ? `Pedido ${order.number} completo. Llévalo a empaque.` : `${n} × ${p.title} ✓`;
   });
 }
 

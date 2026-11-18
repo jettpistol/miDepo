@@ -22,11 +22,12 @@ These came from the owner directly; keep to them unless told otherwise.
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
 - **Dropdowns are the app's own `<Select>`** with a search box that stays open; never a system `<select>`.
 - **List screens show their table even when empty** (one `EmptyRow`), with a "+ Nueva" button (`NewButton`) for creating.
+- **Tú, never voseo**, in the app, its messages and the manual.
 - The owner prefers concise replies, with assumptions stated up front, and asks questions before large changes.
 
 ## Conventions
 
-- Code, comments, database names and configuration are in English. Interface copy is Spanish (Argentina, voseo).
+- Code, comments, database names and configuration are in English. Interface copy is Spanish, addressing the user as tú ("Escanea", "Puedes"). Never voseo ("Escaneá", "Podés", "vos"); `tests/copy.test.ts` refuses it.
 - Kept Spanish on purpose: page URLs and their query parameters (`/recepcion`, `?prefijo=`), the CSV headers and condition words in files sent to Fierro, and zone codes printed on shelf labels (`RECEPCION`, `DEVOLUCIONES`…).
 - Spanish domain words with English names: tejuelo = shelf mark (`ShelfMark`), grapa = floppy (stapled single issue), saldo = clearance, remito = delivery note (Fierro issues those, not miDepo).
 
@@ -67,7 +68,7 @@ Every error message the user can see has a code (`RCV-02`), shown after the mess
 - Removed message: move its row to "Retired codes". Never reuse a number.
 - New area: add it to the area table in `docs/ERRORS.md` and to `AREAS` in `tests/errors.test.ts`.
 - As-you-type warnings (`src/lib/lookup.ts`) get no code.
-- Every error message is in Spanish (voseo), including script and configuration errors only a developer sees. Codes and the rest of `docs/ERRORS.md` stay in English.
+- Every error message is in Spanish (tú, never voseo), including script and configuration errors only a developer sees. Codes and the rest of `docs/ERRORS.md` stay in English.
 
 `tests/errors.test.ts` (which scans `src/` and `scripts/`) fails if a code is undocumented, documented in the wrong file, used in two files, retired but back, or if a `UserError` or a thrown `Error` has no code.
 

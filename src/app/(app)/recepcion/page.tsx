@@ -64,7 +64,7 @@ export default async function Receivings() {
             <tbody>
               {openList.length === 0 && (
                 <EmptyRow columns={6} title="No hay recepciones abiertas">
-                  Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, tocá Nueva.
+                  Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, toca Nueva.
                 </EmptyRow>
               )}
               {openList.map(({ r, supplier, titles, expected, received }) => (

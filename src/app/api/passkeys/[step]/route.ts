@@ -49,9 +49,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
   if (step === "login-verify") {
     const challenge = await takeChallenge();
     const reply = await req.json();
-    if (!challenge) return failed("PKEY-01", "El intento venció. Probá de nuevo.");
+    if (!challenge) return failed("PKEY-01", "El intento venció. Prueba de nuevo.");
     const [row] = await db.select({ passkey: passkeys, user: users }).from(passkeys).innerJoin(users, eq(users.id, passkeys.userId)).where(eq(passkeys.id, String(reply.id)));
-    if (!row || !row.user.active) return failed("PKEY-02", "Esta llave no está registrada en miDepo. Entrá de otra forma y registrala en Mi cuenta.");
+    if (!row || !row.user.active) return failed("PKEY-02", "Esta llave no está registrada en miDepo. Entra de otra forma y regístrala en Mi cuenta.");
     try {
       const v = await verifyAuthenticationResponse({
         response: reply,
@@ -91,7 +91,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
   if (step === "register-verify") {
     const challenge = await takeChallenge();
     const { reply, name } = await req.json();
-    if (!challenge) return failed("PKEY-06", "El intento venció. Probá de nuevo.");
+    if (!challenge) return failed("PKEY-06", "El intento venció. Prueba de nuevo.");
     try {
       const v = await verifyRegistrationResponse({ response: reply, expectedChallenge: challenge, expectedOrigin: source, expectedRPID: rpID });
       if (!v.verified || !v.registrationInfo) return failed("PKEY-07", "No se pudo registrar la llave.");

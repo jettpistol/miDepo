@@ -16,7 +16,7 @@ export default async function LocationLabels({ searchParams }: { searchParams: P
   return (
     <>
       <p className="no-print mb-4 text-sm text-neutral-700">
-        {rows.length} etiquetas{prefix ? ` que empiezan con ${prefix}` : ""} ({Math.ceil(rows.length / 24)} hojas). {rows.length === 960 && "Se imprimen como máximo 960 por vez: filtrá por pasillo."}
+        {rows.length} etiquetas{prefix ? ` que empiezan con ${prefix}` : ""} ({Math.ceil(rows.length / 24)} hojas). {rows.length === 960 && "Se imprimen como máximo 960 por vez: filtra por pasillo."}
       </p>
       <Labels items={rows} />
     </>

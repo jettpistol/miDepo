@@ -43,7 +43,7 @@ export default async function Counts() {
       )}
       {rows.length === 0 ? (
         <EmptyState icon="count" title="No hay conteos">
-          {can(user.role, "supervisor") ? "Creá el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
+          {can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
         </EmptyState>
       ) : (
         <div className="table-wrap">

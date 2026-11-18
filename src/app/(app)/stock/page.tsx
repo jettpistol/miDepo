@@ -69,7 +69,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
             <tbody>
               {found.length === 0 && (
                 <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}>
-                  {q ? "Probá con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
+                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
                 </EmptyRow>
               )}
               {found.map((p) => (

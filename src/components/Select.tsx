@@ -20,11 +20,11 @@ export function Select({
   value: controlled,
   defaultValue = "",
   onChange,
-  placeholder = "Elegí una opción",
+  placeholder = "Elige una opción",
   label,
   id,
   required = false,
-  requiredMessage = "Elegí una opción de la lista.",
+  requiredMessage = "Elige una opción de la lista.",
   searchPlaceholder = "Buscar…",
   empty = "Nada coincide.",
   create,
@@ -238,7 +238,7 @@ export function Select({
             )}
             {total === 0 && <li className="px-3 py-2 text-sm text-muted">{empty}</li>}
           </ul>
-          {matches.length > VISIBLE && <p className="border-t border-line px-3 py-1.5 text-xs text-muted">Se muestran {VISIBLE} de {matches.length}. Escribí para achicar la lista.</p>}
+          {matches.length > VISIBLE && <p className="border-t border-line px-3 py-1.5 text-xs text-muted">Se muestran {VISIBLE} de {matches.length}. Escribe para achicar la lista.</p>}
           {error && (
             <p role="alert" className="border-t border-line px-3 py-2 text-sm font-medium text-danger">
               {error}

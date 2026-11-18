@@ -32,7 +32,7 @@ export function Photo({ action, has }: { action: Action; has: boolean }) {
       data.set("photo", await prepare(file));
       startTransition(() => submit(data));
     } catch {
-      setError(withCode("Ese archivo no es una imagen que pueda usar. Probá con una foto JPG o PNG.", "ACCT-10"));
+      setError(withCode("Ese archivo no es una imagen que pueda usar. Prueba con una foto JPG o PNG.", "ACCT-10"));
     } finally {
       if (inputOf.current) inputOf.current.value = "";
     }

@@ -54,7 +54,7 @@ export default async function Fierro() {
         <h2 className="section-title">
           Para cargar en Fierro <small>{pending.length}</small>
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock recién cuando lo marcás como cargado.</p>
+        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock recién cuando lo marcas como cargado.</p>
         {pending.length === 0 ? (
           <EmptyState title="Fierro está al día">No hay documentos del depósito sin informar.</EmptyState>
         ) : (

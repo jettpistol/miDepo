@@ -20,12 +20,12 @@ export default async function Help({ params, searchParams }: Props) {
         <p className="mt-1 mb-6 text-muted">{hits.length === 0 ? "No encontré nada con esas palabras." : hits.length === 1 ? "1 página del manual." : `${hits.length} páginas del manual.`}</p>
         {hits.length === 0 ? (
           <div className="border-y border-line py-5 leading-relaxed">
-            <p className="font-semibold">Probá así:</p>
+            <p className="font-semibold">Prueba así:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
-              <li>Usá una sola palabra: “faltante”, “PIN”, “etiquetas”.</li>
-              <li>Buscá por lo que querés hacer: “guardar”, “contar”, “devolución”.</li>
+              <li>Usa una sola palabra: “faltante”, “PIN”, “etiquetas”.</li>
+              <li>Busca por lo que quieres hacer: “guardar”, “contar”, “devolución”.</li>
               <li>
-                O empezá por el{" "}
+                O empieza por el{" "}
                 <Link href="/ayuda" className="link">
                   inicio del manual
                 </Link>

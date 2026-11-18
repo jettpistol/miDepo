@@ -17,7 +17,7 @@ Si un título o un pedido está mal, **se corrige en Fierro** y se vuelve a sinc
 
 ## Sincronizar
 
-En **Fierro**, tocá **Sincronizar ahora**. Trae:
+En **Fierro**, toca **Sincronizar ahora**. Trae:
 
 - títulos nuevos y cambios en los existentes;
 - clientes;
@@ -40,11 +40,11 @@ En **Para cargar en Fierro** aparece cada documento terminado:
 
 Para cada uno:
 
-1. Tocá **CSV** para descargar el archivo.
-2. Cargalo en Fierro.
-3. Volvé a miDepo y tocá **Marcar como cargado**.
+1. Toca **CSV** para descargar el archivo.
+2. Cárgalo en Fierro.
+3. Vuelve a miDepo y toca **Marcar como cargado**.
 
-> Un pedido **sale del stock del depósito recién cuando lo marcás como cargado**. Hasta entonces sus libros figuran en la zona "Pedidos preparados".
+> Un pedido **sale del stock del depósito recién cuando lo marcas como cargado**. Hasta entonces sus libros figuran en la zona "Pedidos preparados".
 
 ### Formato de los archivos
 
@@ -59,9 +59,9 @@ El código es el ISBN; si el artículo no tiene, el código interno.
 
 **Conciliar stock** lista los títulos donde el depósito y Fierro no coinciden.
 
-1. Primero cargá todo lo pendiente: muchas diferencias son documentos sin cargar.
-2. Para las que queden, contá el título en el depósito.
-3. Si el depósito tiene razón, corregí el stock en Fierro. Si no, corregilo con un [conteo](Conteos).
+1. Primero carga todo lo pendiente: muchas diferencias son documentos sin cargar.
+2. Para las que queden, cuenta el título en el depósito.
+3. Si el depósito tiene razón, corrige el stock en Fierro. Si no, corrígelo con un [conteo](Conteos).
 
 ## Modo de prueba
 

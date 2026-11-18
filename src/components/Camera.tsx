@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { withCode } from "@/lib/errors";
 
-const NO_PERMISSION = withCode("miDepo no tiene permiso para usar la cámara. Habilitalo en los ajustes del navegador y volvé a intentar.", "CAM-01");
-const NO_CAMERA = withCode("No pude abrir la cámara en este dispositivo. Podés escribir el código a mano.", "CAM-02");
+const NO_PERMISSION = withCode("miDepo no tiene permiso para usar la cámara. Habilítalo en los ajustes del navegador y vuelve a intentar.", "CAM-01");
+const NO_CAMERA = withCode("No pude abrir la cámara en este dispositivo. Puedes escribir el código a mano.", "CAM-02");
 
 type Detector = { detect(v: HTMLVideoElement): Promise<{ rawValue: string }[]> };
 const FORMATS = ["ean_13", "ean_8", "code_128", "code_39", "upc_a", "qr_code"];
@@ -68,7 +68,7 @@ export function Camera({ onRead, onClose }: { onRead: (code: string) => void; on
           </>
         )}
       </div>
-      <p className="mb-3 text-center text-sm text-white/80">Apuntá al código de barras. Se lee solo.</p>
+      <p className="mb-3 text-center text-sm text-white/80">Apunta al código de barras. Se lee solo.</p>
       <button type="button" onClick={onClose} className="btn-soft mx-auto w-full max-w-lg">
         Cerrar cámara
       </button>

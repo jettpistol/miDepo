@@ -46,7 +46,7 @@ export default async function Home() {
         <Link key={p.id} href={`/picking/${p.id}`} className="mb-6 flex items-center gap-4 rounded-control bg-accent px-4 py-3.5 text-on-accent transition-colors duration-150 hover:bg-accent-hover">
           {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
           <span className="min-w-0 flex-1">
-            <span className="block text-sm opacity-85">Tenés un pedido a medio preparar</span>
+            <span className="block text-sm opacity-85">Tienes un pedido a medio preparar</span>
             <span className="block text-lg lg:text-base leading-tight font-bold">Seguir con {p.number}</span>
           </span>
           <Icon name="arrow" className="size-6" />

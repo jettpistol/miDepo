@@ -245,7 +245,7 @@ export function ScanForm({
                 name={c.name}
                 defaultValue={c.value ?? ""}
                 className={`field font-mono font-bold placeholder:font-sans placeholder:font-normal ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}
-                placeholder={c.help ?? "Escaneá o escribí"}
+                placeholder={c.help ?? "Escanea o escribe"}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}

@@ -194,7 +194,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 ## Do's and Don'ts
 
 - Do lead a row with its shelf label when it has one.
-- Do keep the product's Spanish copy (voseo) and Fierro's vocabulary.
+- Do keep the product's Spanish copy (tú, never voseo) and Fierro's vocabulary.
 - Do use tokens for every colour so both themes and any user accent hold.
 - Don't build a screen from a grid of same-size cards or big-number tiles.
 - Don't use rounded corners above 6px, pills for containers, gradients, or coloured side stripes.

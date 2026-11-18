@@ -10,8 +10,8 @@ export const MAX_COUNT_LOCATIONS = 300;
 /** Creates a count for every shelf whose code starts with the given prefix. */
 export async function createCount(c: Ctx, name: string, prefix: string) {
   const pre = prefix.trim().toUpperCase();
-  if (!name.trim()) throw new UserError("CNT-01", "Ponele un nombre al conteo (por ejemplo: Pasillo A, noviembre).");
-  if (!pre) throw new UserError("CNT-02", "Escribí con qué empiezan las ubicaciones a contar (por ejemplo: A-01).");
+  if (!name.trim()) throw new UserError("CNT-01", "Ponle un nombre al conteo (por ejemplo: Pasillo A, noviembre).");
+  if (!pre) throw new UserError("CNT-02", "Escribe con qué empiezan las ubicaciones a contar (por ejemplo: A-01).");
   const us = await c.db
     .select({ id: locations.id })
     .from(locations)
@@ -19,7 +19,7 @@ export async function createCount(c: Ctx, name: string, prefix: string) {
     .orderBy(asc(locations.code))
     .limit(MAX_COUNT_LOCATIONS + 1);
   if (us.length === 0) throw new UserError("CNT-03", `No hay ubicaciones que empiecen con "${pre}".`);
-  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Partí el conteo en tramos más chicos.`);
+  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Parte el conteo en tramos más chicos.`);
   return c.db.transaction(async (tx) => {
     const [stockCount] = await tx.insert(counts).values({ companyId: c.companyId, name: name.trim() }).returning();
     await tx.insert(countLocations).values(us.map((u) => ({ countId: stockCount.id, locationId: u.id })));
@@ -52,12 +52,12 @@ export async function scanCount(c: Ctx, countId: number, locationId: number, cod
     .values({ countId, locationId, productId: p.id, countedQty: n })
     .onConflictDoUpdate({ target: [countLines.countId, countLines.locationId, countLines.productId], set: { countedQty: sql`${countLines.countedQty} + ${n}` } })
     .returning();
-  return `${p.title}: llevás ${l.countedQty}`;
+  return `${p.title}: llevas ${l.countedQty}`;
 }
 
 export async function setCounted(c: Ctx, countId: number, locationId: number, productId: number, countedQty: unknown) {
   const n = Number(countedQty);
-  if (!Number.isInteger(n) || n < 0) throw new UserError("CNT-09", "Escribí un número de cero para arriba.");
+  if (!Number.isInteger(n) || n < 0) throw new UserError("CNT-09", "Escribe un número de cero para arriba.");
   await isOpen(c, countId);
   await c.db.update(countLines).set({ countedQty: n }).where(and(eq(countLines.countId, countId), eq(countLines.locationId, locationId), eq(countLines.productId, productId)));
   return "Cantidad corregida.";
