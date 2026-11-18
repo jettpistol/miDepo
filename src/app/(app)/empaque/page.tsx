@@ -7,7 +7,7 @@ import { requerir } from "@/lib/sesion";
 export const metadata = { title: "Empaque" };
 
 export default async function Empaque() {
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "empaque");
   const filas = await db
     .select({
       p: pedidos,

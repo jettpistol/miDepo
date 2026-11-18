@@ -7,7 +7,7 @@ import { cerrarDevolucion, crearDevolucion, escanearDevolucion, quitarLineaDevol
 export const crear = accion("operario", async (c, f) => {
   const id = await crearDevolucion(c, num(f, "clienteId"));
   redirect(`/devoluciones/${id}`);
-});
-export const escanear = accion("operario", (c, f) => escanearDevolucion(c, num(f, "id"), txt(f, "producto"), txt(f, "estadoLibro"), f.get("cantidad")));
-export const quitar = accion("operario", (c, f) => quitarLineaDevolucion(c, num(f, "id"), num(f, "productoId"), txt(f, "estadoLibro")));
-export const cerrar = accion("operario", (c, f) => cerrarDevolucion(c, num(f, "id")));
+}, { modulo: "devoluciones" });
+export const escanear = accion("operario", (c, f) => escanearDevolucion(c, num(f, "id"), txt(f, "producto"), txt(f, "estadoLibro"), f.get("cantidad")), { modulo: "devoluciones", flujo: "devolucion" });
+export const quitar = accion("operario", (c, f) => quitarLineaDevolucion(c, num(f, "id"), num(f, "productoId"), txt(f, "estadoLibro")), { modulo: "devoluciones" });
+export const cerrar = accion("operario", (c, f) => cerrarDevolucion(c, num(f, "id")), { modulo: "devoluciones" });

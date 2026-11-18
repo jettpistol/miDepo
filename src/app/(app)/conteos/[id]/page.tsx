@@ -10,7 +10,7 @@ import { aprobar, reabrir } from "../acciones";
 
 export default async function Conteo({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa, usuario } = await requerir();
+  const { db, empresa, usuario } = await requerir("operario", "conteos");
   const [k] = await db.select().from(conteos).where(and(eq(conteos.id, id), eq(conteos.empresaId, empresa.id)));
   if (!k) notFound();
   const us = await db

@@ -16,12 +16,14 @@
 - [Conteos](Conteos)
 - [Mover](Mover)
 - [Stock](Stock)
+- [Stock comprometido y disponible](Stock-comprometido-y-disponible)
 
 ### Gestión
 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas)
 - [Trabajar con Fierro](Trabajar-con-Fierro)
 - [Usuarios y roles](Usuarios-y-roles)
+- [Ajustes y módulos](Ajustes-y-modulos)
 
 ### Ayuda
 

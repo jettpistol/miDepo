@@ -70,7 +70,7 @@ export async function buscarProducto(tx: Ejecutor, empresaId: number, codigo: st
       ),
     )
     .limit(1);
-  if (!p) throw new ErrorUsuario(`No conozco el código "${c}". Si es un título nuevo, pedí que sincronicen con Fierro.`);
+  if (!p) throw new ErrorUsuario(`No conozco el código "${c}". Si es un título nuevo, pedí que lo den de alta (o que sincronicen con el sistema de gestión).`, "codigo_desconocido");
   return p;
 }
 
@@ -82,7 +82,7 @@ export async function buscarUbicacion(tx: Ejecutor, empresaId: number, codigo: s
     .from(ubicaciones)
     .where(and(eq(ubicaciones.empresaId, empresaId), eq(ubicaciones.codigo, c)))
     .limit(1);
-  if (!u) throw new ErrorUsuario(`No existe la ubicación "${c}".`);
+  if (!u) throw new ErrorUsuario(`No existe la ubicación "${c}".`, "codigo_desconocido");
   if (!u.activa) throw new ErrorUsuario(`La ubicación "${c}" está dada de baja.`);
   return u;
 }

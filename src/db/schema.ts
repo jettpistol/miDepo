@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -30,8 +31,18 @@ export const empresas = pgTable("empresas", {
   simTitulos: integer("sim_titulos").notNull().default(500),
   simClientes: integer("sim_clientes").notNull().default(60),
   ultimaSync: timestamp("ultima_sync", { withTimezone: true }),
+  /**
+   * Cómo trabaja la empresa: "fierro" = Fierro (u otro ERP) lleva catálogo, pedidos y facturas y
+   * miDepo lleva el depósito; "independiente" = miDepo es todo el sistema de depósito, sin ERP.
+   * En los dos modos el stock físico es de miDepo.
+   */
+  modo: text("modo").$type<ModoEmpresa>().notNull().default("fierro"),
+  /** Módulos apagados para esta empresa. null o ausente = encendido. Ver src/lib/modulos.ts. */
+  modulos: jsonb("modulos").$type<Record<string, boolean>>(),
   creado: creado(),
 });
+
+export type ModoEmpresa = "fierro" | "independiente";
 
 export type Rol = "operario" | "supervisor" | "admin";
 
@@ -88,6 +99,8 @@ export const intentosLogin = pgTable("intentos_login", {
 
 // ───────────── Espejo de Fierro (solo lectura para miDepo) ─────────────
 
+export type Origen = "fierro" | "manual";
+
 export type TipoProducto = "libro" | "grapa" | "variante" | "pack";
 
 export const productos = pgTable(
@@ -95,7 +108,10 @@ export const productos = pgTable(
   {
     id: serial("id").primaryKey(),
     empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    fierroId: text("fierro_id").notNull(),
+    /** De dónde viene el registro: el ERP ("fierro") o cargado a mano ("manual"). */
+    origen: text("origen").$type<Origen>().notNull().default("fierro"),
+    /** Identificador en el sistema de origen. null para lo cargado a mano. */
+    idExterno: text("id_externo"),
     codigoInterno: text("codigo_interno").notNull(),
     isbn: text("isbn"),
     /** Lo que lee el lector: EAN/ISBN impreso, o el código interno si el artículo no tiene ISBN. */
@@ -109,7 +125,7 @@ export const productos = pgTable(
     activo: boolean("activo").notNull().default(true),
   },
   (t) => [
-    uniqueIndex("productos_fierro").on(t.empresaId, t.fierroId),
+    uniqueIndex("productos_origen").on(t.empresaId, t.origen, t.idExterno),
     index("productos_barras").on(t.empresaId, t.codigoBarras),
     index("productos_isbn").on(t.empresaId, t.isbn),
     index("productos_interno").on(t.empresaId, t.codigoInterno),
@@ -121,13 +137,14 @@ export const clientes = pgTable(
   {
     id: serial("id").primaryKey(),
     empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    fierroId: text("fierro_id").notNull(),
+    origen: text("origen").$type<Origen>().notNull().default("fierro"),
+    idExterno: text("id_externo"),
     nombre: text("nombre").notNull(),
     direccion: text("direccion"),
     localidad: text("localidad"),
     provincia: text("provincia"),
   },
-  (t) => [uniqueIndex("clientes_fierro").on(t.empresaId, t.fierroId)],
+  (t) => [uniqueIndex("clientes_origen").on(t.empresaId, t.origen, t.idExterno)],
 );
 
 /** Stock que Fierro cree tener, por producto. Se compara contra miDepo en la conciliación. */
@@ -197,23 +214,29 @@ export const movimientos = pgTable(
 
 // ───────────── Salidas: pedidos, picking y cajas ─────────────
 
-export type EstadoPedido = "pendiente" | "en_preparacion" | "preparado" | "empacado" | "despachado";
+export type EstadoPedido = "pendiente" | "en_preparacion" | "preparado" | "empacado" | "despachado" | "cancelado";
 
 export const pedidos = pgTable(
   "pedidos",
   {
     id: serial("id").primaryKey(),
     empresaId: integer("empresa_id").notNull().references(() => empresas.id),
-    fierroId: text("fierro_id").notNull(),
+    origen: text("origen").$type<Origen>().notNull().default("fierro"),
+    idExterno: text("id_externo"),
     numero: text("numero").notNull(),
     clienteId: integer("cliente_id").notNull().references(() => clientes.id),
     modalidad: text("modalidad").$type<"firme" | "consignacion">().notNull().default("firme"),
     estado: text("estado").$type<EstadoPedido>().notNull().default("pendiente"),
     fecha: timestamp("fecha", { withTimezone: true }).notNull().defaultNow(),
     tomadoPor: integer("tomado_por").references(() => usuarios.id),
+    /** Marcas de tiempo del recorrido del pedido: sirven para medir cuánto tarda cada etapa. */
+    tomadoEn: timestamp("tomado_en", { withTimezone: true }),
+    preparadoEn: timestamp("preparado_en", { withTimezone: true }),
+    empacadoEn: timestamp("empacado_en", { withTimezone: true }),
+    despachadoEn: timestamp("despachado_en", { withTimezone: true }),
     enviadoAFierro: timestamp("enviado_a_fierro", { withTimezone: true }),
   },
-  (t) => [uniqueIndex("pedidos_fierro").on(t.empresaId, t.fierroId), index("pedidos_estado").on(t.empresaId, t.estado)],
+  (t) => [uniqueIndex("pedidos_origen").on(t.empresaId, t.origen, t.idExterno), index("pedidos_estado").on(t.empresaId, t.estado)],
 );
 
 export const pedidoLineas = pgTable(
@@ -223,6 +246,11 @@ export const pedidoLineas = pgTable(
     pedidoId: integer("pedido_id").notNull().references(() => pedidos.id, { onDelete: "cascade" }),
     productoId: integer("producto_id").notNull().references(() => productos.id),
     cantidad: integer("cantidad").notNull(),
+    /**
+     * Unidades que hoy tienen stock apartado para esta línea y todavía no se tomaron del estante.
+     * Lo que falta (cantidad - pickeado - reservado) es saldo pendiente. Ver src/lib/reservas.ts.
+     */
+    reservado: integer("reservado").notNull().default(0),
     pickeado: integer("pickeado").notNull().default(0),
     empacado: integer("empacado").notNull().default(0),
   },
@@ -276,8 +304,9 @@ export const recepciones = pgTable(
   {
     id: serial("id").primaryKey(),
     empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    origen: text("origen").$type<Origen>().notNull().default("fierro"),
     /** null = recepción sin aviso, creada en el depósito. */
-    fierroId: text("fierro_id"),
+    idExterno: text("id_externo"),
     numero: text("numero").notNull(),
     proveedor: text("proveedor").notNull(),
     estado: text("estado").$type<"pendiente" | "en_curso" | "cerrada">().notNull().default("pendiente"),
@@ -355,6 +384,57 @@ export const conteoLineas = pgTable(
     sistema: integer("sistema"),
   },
   (t) => [primaryKey({ columns: [t.conteoId, t.ubicacionId, t.productoId] })],
+);
+
+// ───────────── Reservas, repetición de escaneos y errores ─────────────
+
+/**
+ * Unidades prometidas a pedidos que todavía no se tomaron del estante, por título.
+ * Disponible = stock vendible en estantería - comprometido. La fila se bloquea (FOR UPDATE)
+ * al reservar, para que dos pedidos no se queden con el último ejemplar a la vez.
+ */
+export const comprometido = pgTable(
+  "comprometido",
+  {
+    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    productoId: integer("producto_id").notNull().references(() => productos.id),
+    cantidad: integer("cantidad").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.empresaId, t.productoId] }), check("comprometido_no_negativo", sql`${t.cantidad} >= 0`)],
+);
+
+/**
+ * Cada escaneo manda una clave única. Si la misma clave llega dos veces (doble toque, reintento
+ * por mala señal), la segunda no vuelve a aplicarse y devuelve el mismo mensaje.
+ */
+export const clavesUnaVez = pgTable(
+  "claves_una_vez",
+  {
+    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    clave: text("clave").notNull(),
+    resultado: text("resultado"),
+    creado: creado(),
+  },
+  (t) => [primaryKey({ columns: [t.empresaId, t.clave] })],
+);
+
+export type TipoError = "codigo_desconocido" | "ubicacion_equivocada" | "titulo_equivocado" | "cantidad_excedida" | "otro";
+
+/** Escaneos rechazados. Es la base para medir cuántos libros equivocados se evitan y cuántos intentos fallan. */
+export const erroresEscaneo = pgTable(
+  "errores_escaneo",
+  {
+    id: serial("id").primaryKey(),
+    empresaId: integer("empresa_id").notNull().references(() => empresas.id),
+    usuarioId: integer("usuario_id").references(() => usuarios.id),
+    flujo: text("flujo").notNull(),
+    tipo: text("tipo").$type<TipoError>().notNull().default("otro"),
+    mensaje: text("mensaje").notNull(),
+    /** Lo que se escaneó o tipeó (códigos, ubicación, cantidad). */
+    detalle: jsonb("detalle").$type<Record<string, string>>(),
+    creado: creado(),
+  },
+  (t) => [index("errores_escaneo_empresa").on(t.empresaId, t.creado)],
 );
 
 export const ahora = sql`now()`;

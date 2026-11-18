@@ -3,13 +3,13 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { BotonAccion } from "@/components/Escaneo";
 import { Encabezado, fechaCorta, Insignia, plural, Vacio } from "@/components/ui";
 import { clientes, pedidoLineas, pedidos, usuarios } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
-import { tomar } from "./acciones";
+import { puede, requerir } from "@/lib/sesion";
+import { cancelar, tomar } from "./acciones";
 
 export const metadata = { title: "Picking" };
 
 export default async function Picking() {
-  const { db, empresa, usuario } = await requerir();
+  const { db, empresa, usuario } = await requerir("operario", "picking");
   const filas = await db
     .select({
       p: pedidos,
@@ -19,6 +19,7 @@ export default async function Picking() {
       lineas: sql<number>`count(${pedidoLineas.id})`.mapWith(Number),
       unidades: sql<number>`coalesce(sum(${pedidoLineas.cantidad}), 0)`.mapWith(Number),
       pickeado: sql<number>`coalesce(sum(${pedidoLineas.pickeado}), 0)`.mapWith(Number),
+      reservado: sql<number>`coalesce(sum(${pedidoLineas.reservado}), 0)`.mapWith(Number),
     })
     .from(pedidos)
     .innerJoin(clientes, eq(clientes.id, pedidos.clienteId))
@@ -60,21 +61,27 @@ export default async function Picking() {
 
       <h2 className="mb-2 text-sm font-semibold text-suave">Pendientes ({pendientes.length})</h2>
       {pendientes.length === 0 ? (
-        <Vacio titulo="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</Vacio>
+        <Vacio titulo="No hay pedidos pendientes">Los pedidos nuevos aparecen apenas entran al sistema.</Vacio>
       ) : (
         <ul className="space-y-2">
-          {pendientes.map(({ p, cliente, localidad, lineas, unidades }) => (
+          {pendientes.map(({ p, cliente, localidad, lineas, unidades, reservado }) => (
             <li key={p.id} className="tarjeta flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
               <span className="min-w-0 flex-1 basis-56">
                 <span className="flex flex-wrap items-center gap-2 font-semibold">
                   {p.numero}
                   {p.modalidad === "consignacion" && <Insignia>Consignación</Insignia>}
+                  {reservado >= unidades ? <Insignia tono="ok">Stock apartado</Insignia> : reservado > 0 ? <Insignia tono="alerta">Stock parcial: {reservado} de {unidades}</Insignia> : <Insignia tono="peligro">Sin stock apartado</Insignia>}
                 </span>
                 <span className="block truncate text-sm">{cliente}</span>
                 <span className="block text-sm text-suave">
                   {plural(lineas, "título", "títulos")} · {plural(unidades, "unidad", "unidades")} · {localidad} · {fechaCorta(p.fecha)}
                 </span>
               </span>
+              {puede(usuario.rol, "supervisor") && (
+                <BotonAccion accion={cancelar} ocultos={{ id: p.id }} clase="boton-suave" confirmar={`¿Cancelar el pedido ${p.numero}? El stock que tenía apartado queda libre.`} mostrarOk={false}>
+                  Cancelar
+                </BotonAccion>
+              )}
               <BotonAccion accion={tomar} ocultos={{ id: p.id }} mostrarOk={false}>
                 Preparar
               </BotonAccion>

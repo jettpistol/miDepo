@@ -11,7 +11,7 @@ export default async function ContarUbicacion({ params }: { params: Promise<{ id
   const { id: idTexto, ubicacion } = await params;
   const id = Number(idTexto);
   const ubicacionId = Number(ubicacion);
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "conteos");
   const [fila] = await db
     .select({ k: conteos, u: conteoUbicaciones, codigo: ubicaciones.codigo })
     .from(conteoUbicaciones)

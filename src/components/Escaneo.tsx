@@ -62,6 +62,11 @@ export function Escaneo({
   const [estado, enviar, enviando] = useActionState(accion, {});
   const form = useRef<HTMLFormElement>(null);
   const [camaraEn, setCamaraEn] = useState<string | null>(null);
+  /**
+   * Clave única del escaneo en curso. Se reutiliza si hay que reenviar (error de red, doble toque),
+   * para que el servidor no lo sume dos veces, y se renueva cuando el escaneo se aceptó.
+   */
+  const clave = useRef<string | null>(null);
 
   const entradas = useCallback(() => campos.map((c) => form.current?.elements.namedItem(c.nombre) as HTMLInputElement | null), [campos]);
 
@@ -75,6 +80,7 @@ export function Escaneo({
     sonar(estado.error ? "error" : "ok");
     const es = entradas();
     if (estado.ok) {
+      clave.current = null;
       es.forEach((e, i) => e && (e.value = campos[i].valor ?? ""));
       const cant = form.current?.elements.namedItem("cantidad") as HTMLInputElement | null;
       if (cant && cantidad != null) cant.value = String(cantidad);
@@ -120,6 +126,7 @@ export function Escaneo({
         // Se envía a mano para que, si hay un error, lo ya escaneado no se borre.
         e.preventDefault();
         const datos = new FormData(e.currentTarget);
+        datos.set("clave", (clave.current ??= crypto.randomUUID()));
         startTransition(() => enviar(datos));
       }}
     >

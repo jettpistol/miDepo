@@ -77,7 +77,7 @@ export async function marcarEnviado(c: Ctx, empresa: Empresa, tipo: TipoEnvio, i
     const doc: DocumentoFierro = { tipo: "recepcion", referencia: "", lineas: [] };
     const ahora = new Date();
     if (tipo === "pedido") {
-      const marcado = await tx.update(pedidos).set({ estado: "despachado", enviadoAFierro: ahora }).where(and(eq(pedidos.id, id), eq(pedidos.empresaId, c.empresaId), eq(pedidos.estado, "empacado"))).returning();
+      const marcado = await tx.update(pedidos).set({ estado: "despachado", despachadoEn: ahora, enviadoAFierro: ahora }).where(and(eq(pedidos.id, id), eq(pedidos.empresaId, c.empresaId), eq(pedidos.estado, "empacado"))).returning();
       if (marcado.length === 0) throw new ErrorUsuario("Ese pedido no está listo para documentar.");
       const prep = await zona(tx, c.empresaId, "preparacion");
       const lineas = await tx.select().from(pedidoLineas).where(eq(pedidoLineas.pedidoId, id));

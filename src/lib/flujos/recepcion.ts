@@ -2,7 +2,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { recepcionLineas, recepciones } from "@/db/schema";
 import { ErrorUsuario } from "../errores";
 import { buscarProducto, moverStock, zona } from "../stock";
-import { cantidadValida, type Ctx } from "./comun";
+import { cantidadValida, unaVez, type Ctx } from "./comun";
 
 async function abierta(c: Ctx, id: number) {
   const [r] = await c.db.select().from(recepciones).where(and(eq(recepciones.id, id), eq(recepciones.empresaId, c.empresaId)));
@@ -14,10 +14,10 @@ async function abierta(c: Ctx, id: number) {
 export async function crearRecepcionSinAviso(c: Ctx, proveedor: string) {
   const nombre = proveedor.trim();
   if (!nombre) throw new ErrorUsuario("Escribí de dónde viene la mercadería (imprenta, proveedor, feria…).");
-  const [{ n }] = await c.db.select({ n: count() }).from(recepciones).where(and(eq(recepciones.empresaId, c.empresaId), sql`${recepciones.fierroId} is null`));
+  const [{ n }] = await c.db.select({ n: count() }).from(recepciones).where(and(eq(recepciones.empresaId, c.empresaId), eq(recepciones.origen, "manual")));
   const [r] = await c.db
     .insert(recepciones)
-    .values({ empresaId: c.empresaId, numero: `REC-${String(n + 1).padStart(4, "0")}`, proveedor: nombre, estado: "en_curso" })
+    .values({ empresaId: c.empresaId, origen: "manual", numero: `REC-${String(n + 1).padStart(4, "0")}`, proveedor: nombre, estado: "en_curso" })
     .returning();
   return r.id;
 }
@@ -25,16 +25,18 @@ export async function crearRecepcionSinAviso(c: Ctx, proveedor: string) {
 /** Suma unidades recibidas de un título. Si el título no estaba en el aviso, lo agrega igual. */
 export async function escanearRecepcion(c: Ctx, recepcionId: number, codigo: string, cantidad: unknown) {
   const n = cantidadValida(cantidad);
-  const r = await abierta(c, recepcionId);
-  const p = await buscarProducto(c.db, c.empresaId, codigo);
-  const [linea] = await c.db
-    .insert(recepcionLineas)
-    .values({ recepcionId, productoId: p.id, esperado: 0, recibido: n })
-    .onConflictDoUpdate({ target: [recepcionLineas.recepcionId, recepcionLineas.productoId], set: { recibido: sql`${recepcionLineas.recibido} + ${n}` } })
-    .returning();
-  if (r.estado === "pendiente") await c.db.update(recepciones).set({ estado: "en_curso" }).where(eq(recepciones.id, recepcionId));
-  const aviso = linea.esperado === 0 ? " (no estaba en el aviso)" : linea.recibido > linea.esperado ? ` (¡van ${linea.recibido - linea.esperado} de más!)` : "";
-  return `${p.titulo}: ${linea.recibido} de ${linea.esperado}${aviso}`;
+  return unaVez(c, async (cx) => {
+    const r = await abierta(cx, recepcionId);
+    const p = await buscarProducto(cx.db, cx.empresaId, codigo);
+    const [linea] = await cx.db
+      .insert(recepcionLineas)
+      .values({ recepcionId, productoId: p.id, esperado: 0, recibido: n })
+      .onConflictDoUpdate({ target: [recepcionLineas.recepcionId, recepcionLineas.productoId], set: { recibido: sql`${recepcionLineas.recibido} + ${n}` } })
+      .returning();
+    if (r.estado === "pendiente") await cx.db.update(recepciones).set({ estado: "en_curso" }).where(eq(recepciones.id, recepcionId));
+    const aviso = linea.esperado === 0 ? " (no estaba en el aviso)" : linea.recibido > linea.esperado ? ` (¡van ${linea.recibido - linea.esperado} de más!)` : "";
+    return `${p.titulo}: ${linea.recibido} de ${linea.esperado}${aviso}`;
+  });
 }
 
 export async function fijarRecibido(c: Ctx, recepcionId: number, productoId: number, recibido: unknown) {

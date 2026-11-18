@@ -9,7 +9,7 @@ import { crear } from "./acciones";
 export const metadata = { title: "Recepción" };
 
 export default async function Recepciones() {
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "recepcion");
   const filas = await db
     .select({
       r: recepciones,
@@ -41,7 +41,7 @@ export default async function Recepciones() {
                     {r.numero} · {r.proveedor}
                   </span>
                   <span className="block text-sm text-suave">
-                    {plural(titulos, "título", "títulos")} · {r.fierroId ? `${esperado} unidades esperadas` : "sin aviso de Fierro"} · {fechaCorta(r.fecha)}
+                    {plural(titulos, "título", "títulos")} · {r.origen === "fierro" ? `${esperado} unidades esperadas` : "sin aviso de Fierro"} · {fechaCorta(r.fecha)}
                   </span>
                 </span>
                 {r.estado === "en_curso" ? <Insignia tono="acento">En curso · {recibido} contadas</Insignia> : <Insignia>Sin empezar</Insignia>}

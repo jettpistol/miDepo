@@ -10,7 +10,7 @@ import { enviar, simular, sincronizarAhora } from "./acciones";
 export const metadata = { title: "Fierro" };
 
 export default async function Fierro() {
-  const { db, empresa } = await requerir("supervisor");
+  const { db, empresa } = await requerir("supervisor", "fierro");
   const pendientes = await pendientesDeEnvio(db, empresa.id);
   const simulado = conector(db, empresa).modo === "simulado";
 

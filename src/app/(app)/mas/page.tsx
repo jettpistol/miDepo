@@ -3,6 +3,7 @@ import { Cuentas } from "@/components/Cuentas";
 import { Icono } from "@/components/Icono";
 import { Encabezado } from "@/components/ui";
 import { MENU } from "@/lib/menu";
+import { moduloActivo } from "@/lib/modulos";
 import { puede, requerir } from "@/lib/sesion";
 
 export const metadata = { title: "Menú" };
@@ -19,7 +20,7 @@ export default async function Mas() {
         </div>
       </section>
       {MENU.map((g) => {
-        const items = g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario"));
+        const items = g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario") && (!i.modulo || moduloActivo(empresa, i.modulo)));
         if (items.length === 0) return null;
         return (
           <section key={g.grupo} className="mb-6">

@@ -42,13 +42,14 @@ const BARRA: ItemMenu[] = [
   { href: "/mas", nombre: "Más", icono: "mas", ayuda: "" },
 ];
 
-export function BarraInferior() {
+export function BarraInferior({ ocultas = [] }: { ocultas?: string[] }) {
   const ruta = usePathname();
-  const enBarra = BARRA.slice(0, 4).some((i) => activo(ruta, i.href));
+  const items = BARRA.filter((i) => !ocultas.includes(i.href));
+  const enBarra = items.slice(0, -1).some((i) => activo(ruta, i.href));
   return (
     <nav className="no-imprimir fixed inset-x-0 bottom-0 z-30 border-t border-borde bg-superficie pb-[env(safe-area-inset-bottom)] lg:hidden" aria-label="Accesos rápidos">
-      <ul className="mx-auto grid max-w-lg grid-cols-5">
-        {BARRA.map((i) => {
+      <ul className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        {items.map((i) => {
           const on = i.href === "/mas" ? !enBarra : activo(ruta, i.href);
           return (
             <li key={i.href}>

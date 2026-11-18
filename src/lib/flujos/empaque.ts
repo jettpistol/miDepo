@@ -2,7 +2,7 @@ import { and, eq, max, sql } from "drizzle-orm";
 import { cajaItems, cajas, pedidoLineas, pedidos, productos } from "@/db/schema";
 import { ErrorUsuario } from "../errores";
 import { buscarProducto } from "../stock";
-import { cantidadValida, type Ctx } from "./comun";
+import { cantidadValida, unaVez, type Ctx } from "./comun";
 
 async function pedidoParaEmpacar(c: Ctx, id: number) {
   const [p] = await c.db.select().from(pedidos).where(and(eq(pedidos.id, id), eq(pedidos.empresaId, c.empresaId)));
@@ -15,18 +15,19 @@ async function pedidoParaEmpacar(c: Ctx, id: number) {
 /** Agrega unidades a la caja abierta del pedido (la abre si no hay ninguna). */
 export async function escanearEnCaja(c: Ctx, pedidoId: number, codigo: string, cantidad: unknown) {
   const n = cantidadValida(cantidad);
-  const pedido = await pedidoParaEmpacar(c, pedidoId);
-  const p = await buscarProducto(c.db, c.empresaId, codigo);
-  return c.db.transaction(async (tx) => {
+  return unaVez(c, async (cx) => {
+    const tx = cx.db;
+    const pedido = await pedidoParaEmpacar(cx, pedidoId);
+    const p = await buscarProducto(tx, cx.empresaId, codigo);
     const [linea] = await tx.select().from(pedidoLineas).where(and(eq(pedidoLineas.pedidoId, pedidoId), eq(pedidoLineas.productoId, p.id)));
-    if (!linea || linea.pickeado === 0) throw new ErrorUsuario(`"${p.titulo}" no está entre lo preparado para el pedido ${pedido.numero}.`);
+    if (!linea || linea.pickeado === 0) throw new ErrorUsuario(`"${p.titulo}" no está entre lo preparado para el pedido ${pedido.numero}.`, "titulo_equivocado");
     const resta = linea.pickeado - linea.empacado;
-    if (resta === 0) throw new ErrorUsuario(`Ya empacaste todas las unidades de "${p.titulo}".`);
-    if (n > resta) throw new ErrorUsuario(`De "${p.titulo}" quedan ${resta} por empacar, no ${n}.`);
+    if (resta === 0) throw new ErrorUsuario(`Ya empacaste todas las unidades de "${p.titulo}".`, "cantidad_excedida");
+    if (n > resta) throw new ErrorUsuario(`De "${p.titulo}" quedan ${resta} por empacar, no ${n}.`, "cantidad_excedida");
     let [caja] = await tx.select().from(cajas).where(and(eq(cajas.pedidoId, pedidoId), eq(cajas.estado, "abierta")));
     if (!caja) {
       const [{ ultimo }] = await tx.select({ ultimo: max(cajas.numero) }).from(cajas).where(eq(cajas.pedidoId, pedidoId));
-      [caja] = await tx.insert(cajas).values({ empresaId: c.empresaId, pedidoId, numero: (ultimo ?? 0) + 1 }).returning();
+      [caja] = await tx.insert(cajas).values({ empresaId: cx.empresaId, pedidoId, numero: (ultimo ?? 0) + 1 }).returning();
     }
     await tx
       .insert(cajaItems)
@@ -74,6 +75,6 @@ export async function finalizarEmpaque(c: Ctx, pedidoId: number) {
   const delPedido = await c.db.select().from(cajas).where(eq(cajas.pedidoId, pedidoId));
   if (delPedido.some((k) => k.estado === "abierta")) throw new ErrorUsuario("Cerrá la caja abierta antes de terminar.");
   if (delPedido.length === 0 && lineas.some((l) => l.pickeado > 0)) throw new ErrorUsuario("Todavía no armaste ninguna caja.");
-  await c.db.update(pedidos).set({ estado: "empacado" }).where(eq(pedidos.id, pedidoId));
+  await c.db.update(pedidos).set({ estado: "empacado", empacadoEn: new Date() }).where(eq(pedidos.id, pedidoId));
   return `Pedido ${pedido.numero} empacado en ${delPedido.length} caja${delPedido.length === 1 ? "" : "s"}. Ya se puede documentar en Fierro.`;
 }

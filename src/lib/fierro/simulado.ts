@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Ejecutor } from "@/db";
 import { fierroStock, productos } from "@/db/schema";
 import type { TipoProducto } from "@/db/schema";
@@ -155,11 +155,11 @@ export class FierroSimulado implements ConectorFierro {
   /** El "stock de Fierro" simulado vive en la tabla fierro_stock: es su única memoria. */
   async stock() {
     const filas = await this.db
-      .select({ fierroId: productos.fierroId, cantidad: fierroStock.cantidad })
+      .select({ idExterno: productos.idExterno, cantidad: fierroStock.cantidad })
       .from(fierroStock)
       .innerJoin(productos, eq(productos.id, fierroStock.productoId))
-      .where(eq(fierroStock.empresaId, this.e.id));
-    return new Map(filas.map((f) => [f.fierroId, f.cantidad]));
+      .where(and(eq(fierroStock.empresaId, this.e.id), eq(productos.origen, "fierro")));
+    return new Map(filas.flatMap((f) => (f.idExterno ? [[f.idExterno, f.cantidad] as [string, number]] : [])));
   }
   async enviar(doc: DocumentoFierro) {
     for (const l of doc.lineas) {

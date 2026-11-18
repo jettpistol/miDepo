@@ -4,6 +4,7 @@ import { Icono, type NombreIcono } from "@/components/Icono";
 import { Encabezado } from "@/components/ui";
 import { conteos, devoluciones, pedidos, recepciones, stock, ubicaciones } from "@/db/schema";
 import { pendientesDeEnvio } from "@/lib/flujos/envios";
+import { moduloActivo } from "@/lib/modulos";
 import { puede, requerir } from "@/lib/sesion";
 
 function Tarea({ href, icono, numero, titulo, detalle, destacada = false }: { href: string; icono: NombreIcono; numero: number; titulo: string; detalle: string; destacada?: boolean }) {
@@ -25,6 +26,7 @@ function Tarea({ href, icono, numero, titulo, detalle, destacada = false }: { hr
 export default async function Inicio() {
   const { db, usuario, empresa } = await requerir();
   const e = empresa.id;
+  const on = (m: string) => moduloActivo(empresa, m);
   const cuenta = async (tabla: typeof pedidos, estado: (typeof pedidos.$inferSelect)["estado"]) => (await db.select({ n: count() }).from(tabla).where(and(eq(tabla.empresaId, e), eq(tabla.estado, estado))))[0].n;
 
   const [pendientes, paraEmpacar, mios, recs, devs, conts, porGuardar, envios] = await Promise.all([
@@ -57,13 +59,13 @@ export default async function Inicio() {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Tarea href="/picking" icono="picking" numero={pendientes} titulo="Pedidos para preparar" detalle="Llegaron de Fierro y nadie los tomó" destacada />
-        <Tarea href="/empaque" icono="empaque" numero={paraEmpacar} titulo="Pedidos para empacar" detalle="Ya preparados, falta armar las cajas" />
-        <Tarea href="/recepcion" icono="recepcion" numero={recs[0].n} titulo="Recepciones abiertas" detalle="Mercadería por contar" />
-        <Tarea href="/guardar" icono="guardar" numero={porGuardar[0].n ?? 0} titulo="Unidades por guardar" detalle="Esperan en Recepción o Devoluciones" />
-        <Tarea href="/devoluciones" icono="devolucion" numero={devs[0].n} titulo="Devoluciones en curso" detalle="Libros que volvieron y hay que revisar" />
-        <Tarea href="/conteos" icono="conteo" numero={conts[0].n} titulo="Conteos abiertos" detalle="Ubicaciones por contar" />
-        {puede(usuario.rol, "supervisor") && <Tarea href="/fierro" icono="fierro" numero={envios.length} titulo="Para cargar en Fierro" detalle="Documentos terminados que Fierro todavía no tiene" />}
+        {on("picking") && <Tarea href="/picking" icono="picking" numero={pendientes} titulo="Pedidos para preparar" detalle="Llegaron de Fierro y nadie los tomó" destacada />}
+        {on("empaque") && <Tarea href="/empaque" icono="empaque" numero={paraEmpacar} titulo="Pedidos para empacar" detalle="Ya preparados, falta armar las cajas" />}
+        {on("recepcion") && <Tarea href="/recepcion" icono="recepcion" numero={recs[0].n} titulo="Recepciones abiertas" detalle="Mercadería por contar" />}
+        {on("guardar") && <Tarea href="/guardar" icono="guardar" numero={porGuardar[0].n ?? 0} titulo="Unidades por guardar" detalle="Esperan en Recepción o Devoluciones" />}
+        {on("devoluciones") && <Tarea href="/devoluciones" icono="devolucion" numero={devs[0].n} titulo="Devoluciones en curso" detalle="Libros que volvieron y hay que revisar" />}
+        {on("conteos") && <Tarea href="/conteos" icono="conteo" numero={conts[0].n} titulo="Conteos abiertos" detalle="Ubicaciones por contar" />}
+        {puede(usuario.rol, "supervisor") && on("fierro") && <Tarea href="/fierro" icono="fierro" numero={envios.length} titulo="Para cargar en Fierro" detalle="Documentos terminados que Fierro todavía no tiene" />}
       </div>
     </>
   );

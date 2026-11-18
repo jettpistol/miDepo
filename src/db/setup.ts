@@ -6,6 +6,7 @@ import { rmSync } from "node:fs";
 import { sql } from "drizzle-orm";
 import { conexion, migrar } from "./index";
 import { empresas } from "./schema";
+import { asignarReservas } from "@/lib/reservas";
 import { sembrar } from "./seed";
 
 async function main() {
@@ -25,6 +26,8 @@ async function main() {
     await sembrar(db, (m) => console.log("  " + m));
     console.log(`Datos de demostración cargados en ${((Date.now() - inicio) / 1000).toFixed(1)} s.`);
   }
+  // Pedidos que ya estaban pendientes antes de existir las reservas apartan lo que haya (no cambia nada si ya está al día).
+  for (const e of await db.select({ id: empresas.id }).from(empresas)) await db.transaction((tx) => asignarReservas(tx, e.id));
   console.log(`Base lista (${embebida ? "embebida en ./.data" : "Postgres"}).`);
   await cerrar();
 }

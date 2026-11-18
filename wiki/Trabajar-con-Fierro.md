@@ -10,7 +10,7 @@ miDepo no reemplaza a Fierro: trabaja a la par. Esta página es para supervisore
 | Clientes | Fierro | miDepo los copia |
 | Pedidos | Fierro | miDepo los prepara |
 | Remitos y facturas | Fierro | — |
-| En qué estante está cada libro | miDepo | — |
+| Cuántos libros hay, en qué estante y cuántos están apartados para pedidos | miDepo | — |
 | Recepciones, devoluciones, conteos | miDepo | Se informan a Fierro |
 
 Si un título o un pedido está mal, **se corrige en Fierro** y se vuelve a sincronizar.

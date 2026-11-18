@@ -7,11 +7,12 @@ import { Desplegable } from "@/components/Desplegable";
 import { Icono } from "@/components/Icono";
 import { Marca } from "@/components/Marca";
 import { MENU } from "@/lib/menu";
+import { moduloActivo } from "@/lib/modulos";
 import { puede, requerir } from "@/lib/sesion";
 
 export default async function Aplicacion({ children }: { children: ReactNode }) {
   const { usuario, empresa } = await requerir();
-  const grupos = MENU.map((g) => ({ ...g, items: g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario")) })).filter((g) => g.items.length > 0);
+  const grupos = MENU.map((g) => ({ ...g, items: g.items.filter((i) => puede(usuario.rol, i.minimo ?? "operario") && (!i.modulo || moduloActivo(empresa, i.modulo))) })).filter((g) => g.items.length > 0);
 
   return (
     <div className="lg:flex">
@@ -47,7 +48,7 @@ export default async function Aplicacion({ children }: { children: ReactNode }) 
       </header>
 
       <main className="mx-auto w-full max-w-5xl min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-10 lg:pt-9 lg:pb-12">{children}</main>
-      <BarraInferior />
+      <BarraInferior ocultas={["recepcion", "picking"].filter((m) => !moduloActivo(empresa, m)).map((m) => `/${m}`)} />
     </div>
   );
 }

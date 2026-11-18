@@ -10,7 +10,7 @@ import { Corregir } from "./Corregir";
 
 export default async function Recepcion({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "recepcion");
   const [r] = await db.select().from(recepciones).where(and(eq(recepciones.id, id), eq(recepciones.empresaId, empresa.id)));
   if (!r) notFound();
   const lineas = await db
@@ -26,7 +26,7 @@ export default async function Recepcion({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <Encabezado titulo={`${r.numero} · ${r.proveedor}`} volver={{ href: "/recepcion", texto: "Recepciones" }} bajada={r.fierroId ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
+      <Encabezado titulo={`${r.numero} · ${r.proveedor}`} volver={{ href: "/recepcion", texto: "Recepciones" }} bajada={r.origen === "fierro" ? "Ingreso avisado por Fierro" : "Recepción sin aviso"} />
 
       {abierta ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">

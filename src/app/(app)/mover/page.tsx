@@ -6,7 +6,7 @@ import { moverAccion } from "./acciones";
 export const metadata = { title: "Mover" };
 
 export default async function Mover() {
-  await requerir();
+  await requerir("operario", "mover");
   return (
     <>
       <Encabezado titulo="Mover" bajada="Para cambiar libros de un estante a otro: reordenar, juntar un título o liberar un lugar." />

@@ -2,8 +2,9 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Ejecutor } from "@/db";
 import { pedidoLineas, pedidos, stock, tareasPicking, ubicaciones } from "@/db/schema";
 import { ErrorUsuario } from "../errores";
+import { liberarReserva, reservarPedido } from "../reservas";
 import { buscarProducto, buscarUbicacion, moverStock, zona } from "../stock";
-import { cantidadValida, type Ctx } from "./comun";
+import { cantidadValida, unaVez, type Ctx } from "./comun";
 
 async function pedidoDe(c: Ctx, id: number) {
   const [p] = await c.db.select().from(pedidos).where(and(eq(pedidos.id, id), eq(pedidos.empresaId, c.empresaId)));
@@ -54,19 +55,28 @@ function repartir(lugares: { ubicacionId: number; libre: number }[], cantidad: n
   return { paradas, falta };
 }
 
-/** El operario toma un pedido pendiente: se arma el recorrido por las estanterías. */
+/**
+ * El operario toma un pedido pendiente: se arma el recorrido por las estanterías.
+ * El recorrido cubre lo que el pedido tiene reservado; lo que no se pudo reservar queda como
+ * faltante (saldo pendiente) y el pedido sigue con lo demás.
+ */
 export async function tomarPedido(c: Ctx, pedidoId: number) {
   const p = await pedidoDe(c, pedidoId);
   return c.db.transaction(async (tx) => {
     // El cambio de estado va primero y condicionado: si dos personas tocan a la vez, gana una sola.
-    const tomado = await tx.update(pedidos).set({ estado: "en_preparacion", tomadoPor: c.usuarioId }).where(and(eq(pedidos.id, pedidoId), eq(pedidos.estado, "pendiente"))).returning({ id: pedidos.id });
+    const tomado = await tx.update(pedidos).set({ estado: "en_preparacion", tomadoPor: c.usuarioId, tomadoEn: new Date() }).where(and(eq(pedidos.id, pedidoId), eq(pedidos.estado, "pendiente"))).returning({ id: pedidos.id });
     if (tomado.length === 0) throw new ErrorUsuario("Ese pedido ya lo tomó otra persona.");
+    // Si desde que entró apareció stock, se reserva ahora lo que le faltaba.
+    await reservarPedido(tx, c.empresaId, pedidoId);
     const lineas = await tx.select().from(pedidoLineas).where(eq(pedidoLineas.pedidoId, pedidoId));
     const libres = await disponible(tx, c.empresaId, lineas.map((l) => l.productoId));
     const tareas: (typeof tareasPicking.$inferInsert)[] = [];
     for (const l of lineas) {
-      const { paradas, falta } = repartir(libres.get(l.productoId) ?? [], l.cantidad);
+      const { paradas, falta: sinLugar } = repartir(libres.get(l.productoId) ?? [], l.reservado);
       for (const s of paradas) tareas.push({ pedidoId, lineaId: l.id, productoId: l.productoId, ubicacionId: s.ubicacionId, cantidad: s.cantidad });
+      // Reservado pero sin estante donde buscarlo: el sistema y el estante no coinciden. Se suelta la reserva.
+      if (sinLugar > 0) await liberarReserva(tx, c.empresaId, l.id, sinLugar);
+      const falta = l.cantidad - l.pickeado - l.reservado + sinLugar;
       if (falta > 0) tareas.push({ pedidoId, lineaId: l.id, productoId: l.productoId, ubicacionId: null, cantidad: falta, estado: "faltante" });
     }
     await tx.insert(tareasPicking).values(tareas);
@@ -77,7 +87,7 @@ export async function tomarPedido(c: Ctx, pedidoId: number) {
 
 async function revisarFin(tx: Ejecutor, pedidoId: number) {
   const [queda] = await tx.select({ id: tareasPicking.id }).from(tareasPicking).where(and(eq(tareasPicking.pedidoId, pedidoId), eq(tareasPicking.estado, "pendiente"))).limit(1);
-  if (!queda) await tx.update(pedidos).set({ estado: "preparado" }).where(and(eq(pedidos.id, pedidoId), eq(pedidos.estado, "en_preparacion")));
+  if (!queda) await tx.update(pedidos).set({ estado: "preparado", preparadoEn: new Date() }).where(and(eq(pedidos.id, pedidoId), eq(pedidos.estado, "en_preparacion")));
   return !queda;
 }
 
@@ -95,19 +105,22 @@ async function tareaDe(c: Ctx, tareaId: number) {
 /** Confirma una parada: valida que la ubicación y el título leídos sean los pedidos. */
 export async function confirmarPick(c: Ctx, d: { tareaId: number; ubicacion: string; producto: string; cantidad: unknown }) {
   const n = cantidadValida(d.cantidad);
-  const { tarea, pedido } = await tareaDe(c, d.tareaId);
-  const u = await buscarUbicacion(c.db, c.empresaId, d.ubicacion);
-  if (u.id !== tarea.ubicacionId) throw new ErrorUsuario(`Estás en ${u.codigo}, pero esta parada es en otra ubicación. Fijate el cartel.`);
-  const p = await buscarProducto(c.db, c.empresaId, d.producto);
-  if (p.id !== tarea.productoId) throw new ErrorUsuario(`Ese es "${p.titulo}". No es el título que pide esta parada.`);
-  const pendiente = tarea.cantidad - tarea.pickeado;
-  if (n > pendiente) throw new ErrorUsuario(`Esta parada pide ${pendiente}. Si tomaste de más, devolvé ${n - pendiente} al estante.`);
+  return unaVez(c, async (cx) => {
+    const { tarea, pedido } = await tareaDe(cx, d.tareaId);
+    const u = await buscarUbicacion(cx.db, cx.empresaId, d.ubicacion);
+    if (u.id !== tarea.ubicacionId) throw new ErrorUsuario(`Estás en ${u.codigo}, pero esta parada es en otra ubicación. Fijate el cartel.`, "ubicacion_equivocada");
+    const p = await buscarProducto(cx.db, cx.empresaId, d.producto);
+    if (p.id !== tarea.productoId) throw new ErrorUsuario(`Ese es "${p.titulo}". No es el título que pide esta parada.`, "titulo_equivocado");
+    const pendiente = tarea.cantidad - tarea.pickeado;
+    if (n > pendiente) throw new ErrorUsuario(`Esta parada pide ${pendiente}. Si tomaste de más, devolvé ${n - pendiente} al estante.`, "cantidad_excedida");
 
-  return c.db.transaction(async (tx) => {
-    const prep = await zona(tx, c.empresaId, "preparacion");
-    await moverStock(tx, { empresaId: c.empresaId, productoId: p.id, desdeId: u.id, haciaId: prep.id, cantidad: n, motivo: "picking", referencia: pedido.numero, usuarioId: c.usuarioId });
+    const tx = cx.db;
+    const prep = await zona(tx, cx.empresaId, "preparacion");
+    await moverStock(tx, { empresaId: cx.empresaId, productoId: p.id, desdeId: u.id, haciaId: prep.id, cantidad: n, motivo: "picking", referencia: pedido.numero, usuarioId: cx.usuarioId });
     await tx.update(tareasPicking).set({ pickeado: tarea.pickeado + n, estado: n === pendiente ? "hecha" : "pendiente" }).where(eq(tareasPicking.id, tarea.id));
     await tx.update(pedidoLineas).set({ pickeado: sql`${pedidoLineas.pickeado} + ${n}` }).where(eq(pedidoLineas.id, tarea.lineaId));
+    // El libro salió de la estantería: deja de estar "prometido" en el mismo paso, así lo disponible no cambia.
+    await liberarReserva(tx, cx.empresaId, tarea.lineaId, n);
     const fin = await revisarFin(tx, pedido.id);
     return fin ? `Pedido ${pedido.numero} completo. Llevalo a empaque.` : `${n} × ${p.titulo} ✓`;
   });
@@ -129,6 +142,8 @@ export async function marcarFaltante(c: Ctx, tareaId: number) {
     if (paradas.length > 0) {
       await tx.insert(tareasPicking).values(paradas.map((s) => ({ pedidoId: pedido.id, lineaId: tarea.lineaId, productoId: tarea.productoId, ubicacionId: s.ubicacionId, cantidad: s.cantidad })));
     }
+    // Lo que no se encontró en ningún estante deja de estar apartado: queda como saldo pendiente.
+    if (sinCubrir > 0) await liberarReserva(tx, c.empresaId, tarea.lineaId, sinCubrir);
     await revisarFin(tx, pedido.id);
     if (paradas.length > 0 && sinCubrir === 0) return "Anotado. Encontré el título en otra ubicación y lo sumé al recorrido.";
     if (paradas.length > 0) return `Anotado. Hay una parte en otra ubicación; ${sinCubrir} quedan como faltante.`;

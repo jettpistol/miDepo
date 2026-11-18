@@ -9,7 +9,7 @@ import { crear } from "./acciones";
 export const metadata = { title: "Devoluciones" };
 
 export default async function Devoluciones() {
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "devoluciones");
   const [lista, filas] = await Promise.all([
     db.select({ id: clientes.id, nombre: clientes.nombre }).from(clientes).where(eq(clientes.empresaId, empresa.id)).orderBy(asc(clientes.nombre)),
     db

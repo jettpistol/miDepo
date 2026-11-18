@@ -9,7 +9,7 @@ import { crear } from "./acciones";
 export const metadata = { title: "Conteos" };
 
 export default async function Conteos() {
-  const { db, empresa, usuario } = await requerir();
+  const { db, empresa, usuario } = await requerir("operario", "conteos");
   const filas = await db
     .select({
       k: conteos,

@@ -9,7 +9,7 @@ import { moverAccion } from "../mover/acciones";
 export const metadata = { title: "Guardar" };
 
 export default async function Guardar({ searchParams }: { searchParams: Promise<{ zona?: string }> }) {
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "guardar");
   const zona = (await searchParams).zona === "devoluciones" ? "devoluciones" : "recepcion";
   const zonas = await db.select().from(ubicaciones).where(and(eq(ubicaciones.empresaId, empresa.id), inArray(ubicaciones.tipo, ["recepcion", "devoluciones"])));
   const actual = zonas.find((z) => z.tipo === zona);

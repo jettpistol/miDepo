@@ -2,8 +2,9 @@ import { and, asc, eq, inArray, like, sql } from "drizzle-orm";
 import type { Ejecutor } from "@/db";
 import { conteoLineas, conteoUbicaciones, conteos, productos, stock, ubicaciones } from "@/db/schema";
 import { ErrorUsuario } from "../errores";
+import { asignarReservas } from "../reservas";
 import { buscarProducto, moverStock } from "../stock";
-import { cantidadValida, type Ctx } from "./comun";
+import { cantidadValida, unaVez, type Ctx } from "./comun";
 
 const MAXIMO = 300;
 
@@ -43,16 +44,18 @@ async function ubicacionDelConteo(c: Ctx, conteoId: number, ubicacionId: number)
 /** Conteo a ciegas: el operario no ve lo que dice el sistema, solo suma lo que encuentra. */
 export async function escanearConteo(c: Ctx, conteoId: number, ubicacionId: number, codigo: string, cantidad: unknown) {
   const n = cantidadValida(cantidad);
-  await abierto(c, conteoId);
-  const u = await ubicacionDelConteo(c, conteoId, ubicacionId);
-  if (u.estado === "contada") throw new ErrorUsuario("Esta ubicación ya se dio por contada.");
-  const p = await buscarProducto(c.db, c.empresaId, codigo);
-  const [l] = await c.db
-    .insert(conteoLineas)
-    .values({ conteoId, ubicacionId, productoId: p.id, contado: n })
-    .onConflictDoUpdate({ target: [conteoLineas.conteoId, conteoLineas.ubicacionId, conteoLineas.productoId], set: { contado: sql`${conteoLineas.contado} + ${n}` } })
-    .returning();
-  return `${p.titulo}: llevás ${l.contado}`;
+  return unaVez(c, async (cx) => {
+    await abierto(cx, conteoId);
+    const u = await ubicacionDelConteo(cx, conteoId, ubicacionId);
+    if (u.estado === "contada") throw new ErrorUsuario("Esta ubicación ya se dio por contada.");
+    const p = await buscarProducto(cx.db, cx.empresaId, codigo);
+    const [l] = await cx.db
+      .insert(conteoLineas)
+      .values({ conteoId, ubicacionId, productoId: p.id, contado: n })
+      .onConflictDoUpdate({ target: [conteoLineas.conteoId, conteoLineas.ubicacionId, conteoLineas.productoId], set: { contado: sql`${conteoLineas.contado} + ${n}` } })
+      .returning();
+    return `${p.titulo}: llevás ${l.contado}`;
+  });
 }
 
 export async function fijarContado(c: Ctx, conteoId: number, ubicacionId: number, productoId: number, contado: unknown) {
@@ -116,6 +119,8 @@ export async function cerrarConteo(c: Ctx, conteoId: number) {
       ajustes++;
       await moverStock(tx, { empresaId: c.empresaId, productoId: d.productoId, desdeId: delta < 0 ? d.ubicacionId : null, haciaId: delta > 0 ? d.ubicacionId : null, cantidad: Math.abs(delta), motivo: "ajuste_conteo", referencia: k.nombre, usuarioId: c.usuarioId });
     }
+    // Si el conteo encontró libros que el sistema no tenía, los pedidos que esperaban pueden apartarlos.
+    await asignarReservas(tx, c.empresaId, [...new Set(difs.filter((d) => d.contado > d.sistema).map((d) => d.productoId))]);
     // Las ubicaciones que quedaron sin contar se sacan del conteo: no se ajustan.
     await tx.delete(conteoUbicaciones).where(and(eq(conteoUbicaciones.conteoId, conteoId), eq(conteoUbicaciones.estado, "pendiente")));
     await tx.update(conteos).set({ estado: "cerrado" }).where(eq(conteos.id, conteoId));

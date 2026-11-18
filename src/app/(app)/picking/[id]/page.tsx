@@ -9,7 +9,7 @@ import { confirmar, faltante, tomar } from "../acciones";
 
 export default async function PickingPedido({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "picking");
   const [fila] = await db.select({ p: pedidos, cliente: clientes.nombre }).from(pedidos).innerJoin(clientes, eq(clientes.id, pedidos.clienteId)).where(and(eq(pedidos.id, id), eq(pedidos.empresaId, empresa.id)));
   if (!fila) notFound();
   const { p, cliente } = fila;

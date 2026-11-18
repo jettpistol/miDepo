@@ -1,6 +1,11 @@
 # miDepo
 
-A warehouse tool for small book warehouses, built to sit **on top of [Fierro](https://www.fierro.com.ar)** rather than replace it. Fierro keeps the catalogue, customers, orders, remitos and invoices; miDepo owns what Fierro does not track: which shelf every copy is on, and the scan-by-scan work of the warehouse floor.
+A warehouse management system (WMS) for small book warehouses. **miDepo owns the physical stock**: which shelf every copy is on, what is promised to orders, and the scan-by-scan work of the warehouse floor.
+
+It works in two modes, chosen per company:
+
+- **With [Fierro](https://www.fierro.com.ar)** (the first integration): for companies that already run Fierro for everything and are not ready to migrate. Fierro keeps the catalogue, customers, orders, remitos and invoices; miDepo adds the warehouse functions Fierro lacks.
+- **Independent**: miDepo is the whole warehouse system. Catalogue, customers and orders are entered in miDepo (see [What is not done](#what-is-not-done) for the screens still missing).
 
 The interface is entirely in Spanish (Argentina). Code comments and domain names are in Spanish too, because they match Fierro's vocabulary (`pedido`, `remito`, `ubicación`).
 
@@ -61,7 +66,13 @@ npm run db:reset
 | Packing | Scan into boxes, real or estimated weight, A4 box labels and packing list. |
 | Returns | Grade each copy as *vendible*, *saldo* or *dañado*; each grade goes to its own zone. |
 | Cycle counts | Blind counts by shelf range, supervisor review of differences, stock adjusted on approval. |
-| Stock | Search by title, author, ISBN, internal code or shelf; per-shelf quantities and movement history. |
+| Stock | Search by title, author, ISBN, internal code or shelf; per-shelf quantities and movement history. Each title shows physical, **committed** and **available** stock. |
+| Reservations | An order sets stock aside the moment it arrives, under a database lock, so two orders cannot take the last copy. What cannot be covered becomes a pending balance (*saldo pendiente*). Stock that appears later is assigned to waiting orders, oldest first. Supervisors can cancel an order nobody has started. |
+| Safe rescans | Every scan carries a one-time key. A double tap or a retry over bad wifi is applied once. |
+| Scan error log | Rejected scans (wrong book, wrong shelf, unknown code, over-quantity) are recorded with who, where and what was scanned (`errores_escaneo`). This is the basis for measuring wrong-item picks. |
+| Order timings | Each order records when it was taken, picked, packed and dispatched. |
+| Movement ledger | `movimientos` is append-only, enforced by the database: no update, delete or truncate. Corrections are compensating movements. |
+| Settings | Per company: work mode (with Fierro / independent) and which modules are on, so a warehouse can start with receiving and counts only. |
 | Locations | Four naming templates plus a custom builder; printable Code 128 shelf labels (24 per A4 sheet). |
 | Fierro | Sync, CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
 | Accounts | Three roles; login by password, 6-digit PIN, or passkey (fingerprint, face, device PIN). Up to five accounts stay logged in per device, with one-tap switching. Profile photos, with initials as the fallback. |
@@ -76,6 +87,8 @@ npm run db:reset
 Fierro ──(catalogue, customers, orders, expected receipts, its stock)──▶ miDepo
 Fierro ◀──(packed orders, receipts, returns, count adjustments)──────── miDepo
 ```
+
+Fierro does not own stock quantities: miDepo does. The only Fierro stock number kept is the one used for reconciliation. Records carry an `origen` (`fierro` or `manual`) and an external id, so entries made by hand are never overwritten by a sync.
 
 Everything that touches Fierro goes through one interface, `ConectorFierro` in [`src/lib/fierro/tipos.ts`](src/lib/fierro/tipos.ts). Today the only implementation is `FierroSimulado`. A real connector implements the same six methods and nothing else in the app changes.
 
@@ -95,6 +108,9 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 
 - **No real Fierro connection.** The connector is simulated. The CSV layouts for orders, receipts and returns are a reasonable guess; only the count export follows a format Fierro documents. They need checking against a real Fierro account.
 - **No offline mode.** The warehouse needs working wifi.
+- **No screens yet for entering catalogue, customers or orders by hand.** The rules exist and are tested (`src/lib/flujos/pedidos.ts`: create title with ISBN check and duplicate-code guard, create customer, create order that reserves stock, cancel order) but nothing in the interface calls them except cancelling an order. An independent company cannot yet be set up without a developer. CSV import is also missing.
+- **No Mercado Libre or Tiendanube connection.** Orders still arrive from Fierro or by hand.
+- **Reservation covers titles, not shelves.** Which shelf a book is taken from is decided when a picker takes the order. If stock already promised to an order is moved off the shelves (a damaged copy, for example), available goes negative and the title is flagged; nothing is un-reserved automatically.
 - **No new-company screen.** Companies are created with a command (below).
 - **Spanish only.** Text lives in the pages, not in a translation file.
 - **No password reset by email.** An administrator sets a new password or PIN.
@@ -107,6 +123,7 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 |---|---|
 | `npm run dev` | Prepares the database and starts the app at `localhost:3000`. |
 | `npm test` | Runs the workflow tests against an in-memory database. |
+| `TEST_DATABASE_URL=postgres://… npx vitest run tests/concurrencia.pg.test.ts` | Concurrency tests against a real Postgres (the in-memory database runs one query at a time and cannot prove the locks work). Skipped when the variable is not set. |
 | `npm run typecheck` | Checks types. |
 | `npm run db:setup` | Creates or updates tables; loads demo data if the database is empty. |
 | `npm run db:reset` | Deletes everything and starts again. |
@@ -119,7 +136,9 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 ```
 src/db/schema.ts        Every table, with comments
 src/lib/flujos/         The warehouse rules: receiving, picking, packing, returns, counts
-src/lib/stock.ts        The only place stock quantities change
+src/lib/stock.ts        The only place physical stock quantities change
+src/lib/reservas.ts     Committed / available stock and order reservations
+src/lib/modulos.ts      Company modules and work mode
 src/lib/fierro/         The Fierro boundary and the simulator
 src/lib/ubicaciones.ts  Location naming templates
 src/lib/color.ts        Accent colour and contrast handling

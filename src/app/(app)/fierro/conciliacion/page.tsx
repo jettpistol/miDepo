@@ -8,7 +8,7 @@ import { requerir } from "@/lib/sesion";
 export const metadata = { title: "Conciliación con Fierro" };
 
 export default async function Conciliacion() {
-  const { db, empresa } = await requerir("supervisor");
+  const { db, empresa } = await requerir("supervisor", "fierro");
   const fisico = db.select({ productoId: stock.productoId, total: sql<number>`sum(${stock.cantidad})`.as("total") }).from(stock).where(eq(stock.empresaId, empresa.id)).groupBy(stock.productoId).as("fisico");
   const enDeposito = sql<number>`coalesce(${fisico.total}, 0)`;
   const enFierro = sql<number>`coalesce(${fierroStock.cantidad}, 0)`;

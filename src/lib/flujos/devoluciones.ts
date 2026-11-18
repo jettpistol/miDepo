@@ -2,7 +2,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { clientes, devolucionLineas, devoluciones, type EstadoLibro } from "@/db/schema";
 import { ErrorUsuario } from "../errores";
 import { buscarProducto, moverStock, zona } from "../stock";
-import { cantidadValida, type Ctx } from "./comun";
+import { cantidadValida, unaVez, type Ctx } from "./comun";
 
 export const ESTADOS_LIBRO: { id: EstadoLibro; nombre: string; ayuda: string }[] = [
   { id: "vendible", nombre: "Vendible", ayuda: "Como nuevo. Vuelve a la estantería." },
@@ -29,13 +29,15 @@ export async function escanearDevolucion(c: Ctx, devolucionId: number, codigo: s
   const n = cantidadValida(cantidad);
   const estado = ESTADOS_LIBRO.find((e) => e.id === estadoLibro);
   if (!estado) throw new ErrorUsuario("Elegí en qué estado está el libro.");
-  await abierta(c, devolucionId);
-  const p = await buscarProducto(c.db, c.empresaId, codigo);
-  await c.db
-    .insert(devolucionLineas)
-    .values({ devolucionId, productoId: p.id, estadoLibro: estado.id, cantidad: n })
-    .onConflictDoUpdate({ target: [devolucionLineas.devolucionId, devolucionLineas.productoId, devolucionLineas.estadoLibro], set: { cantidad: sql`${devolucionLineas.cantidad} + ${n}` } });
-  return `${n} × ${p.titulo} → ${estado.nombre}`;
+  return unaVez(c, async (cx) => {
+    await abierta(cx, devolucionId);
+    const p = await buscarProducto(cx.db, cx.empresaId, codigo);
+    await cx.db
+      .insert(devolucionLineas)
+      .values({ devolucionId, productoId: p.id, estadoLibro: estado.id, cantidad: n })
+      .onConflictDoUpdate({ target: [devolucionLineas.devolucionId, devolucionLineas.productoId, devolucionLineas.estadoLibro], set: { cantidad: sql`${devolucionLineas.cantidad} + ${n}` } });
+    return `${n} × ${p.titulo} → ${estado.nombre}`;
+  });
 }
 
 export async function quitarLineaDevolucion(c: Ctx, devolucionId: number, productoId: number, estadoLibro: string) {

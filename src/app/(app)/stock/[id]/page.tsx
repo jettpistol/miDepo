@@ -4,6 +4,8 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Codigo, Encabezado, fechaCorta, Insignia } from "@/components/ui";
 import { fierroStock, movimientos, productos, stock, ubicaciones, usuarios } from "@/db/schema";
+import { moduloActivo } from "@/lib/modulos";
+import { resumenStock } from "@/lib/reservas";
 import { requerir } from "@/lib/sesion";
 import { nombreUbicacion } from "@/lib/stock";
 
@@ -30,18 +32,22 @@ export default async function Producto({ params }: { params: Promise<{ id: strin
       .limit(30),
   ]);
   const total = donde.reduce((s, d) => s + d.s.cantidad, 0);
+  const r = (await resumenStock(db, empresa.id, [id])).get(id)!;
+  const sobrecomprometido = r.disponible < 0;
 
   return (
     <>
       <Encabezado titulo={p.titulo} volver={{ href: "/stock", texto: "Stock" }} bajada={[p.autor, p.sello].filter(Boolean).join(" · ")} />
       <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          ["En el depósito", total],
-          ["Según Fierro", fierro?.cantidad ?? 0],
-        ].map(([k, v]) => (
-          <div key={k} className="tarjeta p-4">
+          ["En el depósito", total, "Todo lo que hay en el edificio"],
+          ["Comprometido", r.comprometido, "Apartado para pedidos sin preparar"],
+          ["Disponible", r.disponible, "En estantería, sin apartar: lo que se puede prometer"],
+          ...(moduloActivo(empresa, "fierro") ? [["Según Fierro", fierro?.cantidad ?? 0, "Lo que cree Fierro"] as const] : []),
+        ].map(([k, v, ayuda]) => (
+          <div key={k} className="tarjeta p-4" title={ayuda as string}>
             <dt className="text-sm text-suave">{k}</dt>
-            <dd className="text-3xl font-bold tabular-nums">{v}</dd>
+            <dd className={`text-3xl font-bold tabular-nums ${k === "Disponible" && sobrecomprometido ? "text-peligro" : ""}`}>{v}</dd>
           </div>
         ))}
         <div className="tarjeta col-span-2 p-4 text-sm">
@@ -53,6 +59,12 @@ export default async function Producto({ params }: { params: Promise<{ id: strin
           </dd>
         </div>
       </dl>
+
+      {sobrecomprometido && (
+        <p className="mb-5 rounded-xl bg-peligro-suave px-4 py-3 text-sm font-semibold text-peligro">
+          Hay {r.comprometido} unidades apartadas para pedidos y solo {r.vendible} en estantería. Alguien sacó stock que estaba prometido (por ejemplo, un libro dañado). Conviene contar este título.
+        </p>
+      )}
 
       <h2 className="mb-2 text-sm font-semibold text-suave">Dónde está</h2>
       {donde.length === 0 ? (

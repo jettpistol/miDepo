@@ -50,3 +50,7 @@ Cuando no quedan paradas, miDepo avisa **Picking terminado**. Llevá todo a la m
 **¿Qué es "Consignación"?** El cliente recibe los libros y paga lo que vende. Para el picking no cambia nada.
 
 **Tomé de más.** Devolvé la diferencia al mismo estante. miDepo no deja confirmar más de lo que pide la parada.
+
+## Stock apartado
+
+En la lista de pedidos pendientes, cada pedido muestra si tiene el stock apartado (**Stock apartado**, **Stock parcial** o **Sin stock apartado**). Lo que no se pudo apartar queda como faltante y el resto del pedido se prepara igual. Ver [Stock comprometido y disponible](Stock-comprometido-y-disponible).

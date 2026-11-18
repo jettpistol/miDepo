@@ -12,7 +12,7 @@ const TONO: Record<string, Tono> = { vendible: "ok", danado: "peligro", saldo: "
 
 export default async function Devolucion({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "devoluciones");
   const [fila] = await db.select({ d: devoluciones, cliente: clientes.nombre }).from(devoluciones).innerJoin(clientes, eq(clientes.id, devoluciones.clienteId)).where(and(eq(devoluciones.id, id), eq(devoluciones.empresaId, empresa.id)));
   if (!fila) notFound();
   const { d, cliente } = fila;

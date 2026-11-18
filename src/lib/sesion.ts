@@ -6,6 +6,7 @@ import { getDb } from "@/db";
 import { empresas, sesiones, usuarios, type Rol } from "@/db/schema";
 import { hashToken, nuevoToken } from "./claves";
 import { ErrorUsuario } from "./errores";
+import { moduloActivo } from "./modulos";
 
 /**
  * Un dispositivo puede tener varias cuentas abiertas a la vez. `ACTIVA` guarda la sesión en uso
@@ -95,18 +96,21 @@ export async function cerrarSesion(todasLasCuentas = false) {
 const NIVEL: Record<Rol, number> = { operario: 1, supervisor: 2, admin: 3 };
 export const puede = (rol: Rol, minimo: Rol) => NIVEL[rol] >= NIVEL[minimo];
 
-/** Para páginas: sin sesión manda al ingreso; sin permiso, al inicio. */
-export async function requerir(minimo: Rol = "operario") {
+/** Para páginas: sin sesión manda al ingreso; sin permiso, o con el módulo apagado, al inicio. */
+export async function requerir(minimo: Rol = "operario", modulo?: string | string[]) {
   const s = await sesionActual();
   if (!s) redirect("/ingresar");
   if (!puede(s.usuario.rol, minimo)) redirect("/");
+  if (modulo && ![modulo].flat().some((m) => moduloActivo(s.empresa, m))) redirect("/");
   return { ...s, db: await getDb() };
 }
 
 /** Para acciones: igual que requerir, pero la falta de permiso es un mensaje y no un salto. */
-export async function requerirEnAccion(minimo: Rol = "operario") {
+/** `modulo` puede ser una lista: alcanza con que uno esté encendido (por ejemplo, Guardar usa la acción de Mover). */
+export async function requerirEnAccion(minimo: Rol = "operario", modulo?: string | string[]) {
   const s = await sesionActual();
   if (!s) redirect("/ingresar");
   if (!puede(s.usuario.rol, minimo)) throw new ErrorUsuario("Tu usuario no tiene permiso para hacer esto.");
+  if (modulo && ![modulo].flat().some((m) => moduloActivo(s.empresa, m))) throw new ErrorUsuario("Esta parte de miDepo no está activa en tu empresa.");
   return { ...s, db: await getDb() };
 }

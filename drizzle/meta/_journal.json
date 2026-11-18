@@ -15,6 +15,13 @@
       "when": 1794866862907,
       "tag": "0001_groovy_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794870462907,
+      "tag": "0002_deposito_propio",
+      "breakpoints": true
     }
   ]
 }

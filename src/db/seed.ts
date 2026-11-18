@@ -3,6 +3,7 @@ import type { DB } from "./index";
 import { empresas, fierroStock, productos, stock, ubicaciones, usuarios, type Rol } from "./schema";
 import { hashPassword, pinHmac } from "@/lib/claves";
 import { sincronizar } from "@/lib/fierro";
+import { asignarReservas } from "@/lib/reservas";
 import { stockInicial } from "@/lib/fierro/simulado";
 import { ZONAS } from "@/lib/stock";
 import { generarCodigos, MODELOS, type Esquema } from "@/lib/ubicaciones";
@@ -101,8 +102,8 @@ export async function sembrar(db: DB, log: (m: string) => void = () => {}) {
       .sort((a, b) => codigos.indexOf(a.codigo) - codigos.indexOf(b.codigo));
 
     await sincronizar(db, empresa);
-    const prods = (await db.select({ id: productos.id, fierroId: productos.fierroId }).from(productos).where(eq(productos.empresaId, empresa.id)))
-      .map((p) => ({ id: p.id, i: Number(p.fierroId.split("-L")[1]) - 1 }))
+    const prods = (await db.select({ id: productos.id, idExterno: productos.idExterno }).from(productos).where(eq(productos.empresaId, empresa.id)))
+      .map((p) => ({ id: p.id, i: Number((p.idExterno ?? "").split("-L")[1]) - 1 }))
       .sort((a, b) => a.i - b.i);
 
     // Stock físico inicial: las series quedan juntas; lo que no entra va a un segundo lugar.
@@ -126,5 +127,7 @@ export async function sembrar(db: DB, log: (m: string) => void = () => {}) {
     for (const t of tandas(filasFierro, 1000)) {
       await db.insert(fierroStock).values(t).onConflictDoUpdate({ target: [fierroStock.empresaId, fierroStock.productoId], set: { cantidad: sql`excluded.cantidad` } });
     }
+    // Los pedidos llegaron antes que el stock: ahora que hay libros en los estantes, los apartan.
+    await db.transaction((tx) => asignarReservas(tx, empresa.id));
   }
 }

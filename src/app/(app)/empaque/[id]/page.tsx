@@ -12,7 +12,7 @@ const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDi
 
 export default async function EmpaquePedido({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, empresa } = await requerir();
+  const { db, empresa } = await requerir("operario", "empaque");
   const [fila] = await db.select({ p: pedidos, cliente: clientes.nombre }).from(pedidos).innerJoin(clientes, eq(clientes.id, pedidos.clienteId)).where(and(eq(pedidos.id, id), eq(pedidos.empresaId, empresa.id)));
   if (!fila) notFound();
   const { p, cliente } = fila;

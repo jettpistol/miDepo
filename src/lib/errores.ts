@@ -1,5 +1,17 @@
-/** Error con un mensaje pensado para mostrarle al usuario tal cual. */
-export class ErrorUsuario extends Error {}
+import type { TipoError } from "@/db/schema";
+
+/**
+ * Error con un mensaje pensado para mostrarle al usuario tal cual. El `tipo` distingue los
+ * escaneos equivocados (libro o estante que no era) del resto, para poder medirlos.
+ */
+export class ErrorUsuario extends Error {
+  constructor(
+    mensaje: string,
+    readonly tipo: TipoError = "otro",
+  ) {
+    super(mensaje);
+  }
+}
 
 export type Resultado = { ok?: string; error?: string; sonido?: "ok" | "error" };
 
