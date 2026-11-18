@@ -29,6 +29,20 @@
       "when": 1794952502442,
       "tag": "0003_user_font",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795016800725,
+      "tag": "0004_product_cover",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795036037119,
+      "tag": "0005_stock_adjustments",
+      "breakpoints": true
     }
   ]
 }

@@ -8,7 +8,7 @@ Todo lo demás sigue en Fierro: el catálogo, los clientes, los pedidos, los rem
 
 ## La pantalla de Inicio
 
-Al entrar ves una tarjeta por cada tipo de trabajo, con un número grande: cuánto hay pendiente. Tocá una tarjeta para ir a ese trabajo.
+Al entrar ves una tarjeta por cada tipo de trabajo, con un número grande: cuánto hay pendiente. Toca una tarjeta para ir a ese trabajo.
 
 Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir con PED-…** para retomarlo.
 
@@ -23,9 +23,9 @@ Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir
 
 ## Tres reglas que evitan casi todos los problemas
 
-1. **Siempre escaneá.** No confirmes de memoria: el estante y el libro se leen con el lector o la cámara.
-2. **Si no está, decilo.** En picking, tocá **No está en el estante**. No busques por tu cuenta en otro lado sin avisarle a miDepo.
-3. **No muevas libros sin registrarlo.** Si cambiás algo de lugar, usá [Mover](Mover). Un libro movido "a mano" es un libro perdido.
+1. **Siempre escanea.** No confirmes de memoria: el estante y el libro se leen con el lector o la cámara.
+2. **Si no está, dilo.** En picking, toca **No está en el estante**. No busques por tu cuenta en otro lado sin avisarle a miDepo.
+3. **No muevas libros sin registrarlo.** Si cambias algo de lugar, usa [Mover](Mover). Un libro movido "a mano" es un libro perdido.
 
 ## Roles
 

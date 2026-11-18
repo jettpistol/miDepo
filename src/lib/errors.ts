@@ -1,5 +1,21 @@
-/** An error whose message is meant to be shown to the user as is. */
-export class UserError extends Error {}
+/**
+ * Every message miDepo shows when something fails carries a code (`AREA-NN`), listed in
+ * docs/ERRORS.md. tests/errors.test.ts fails if a code is missing there, repeated or unused.
+ */
+
+/** An error whose message is meant to be shown to the user as is, with its code. */
+export class UserError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "UserError";
+  }
+}
+
+/** The text the user sees: the message, then the code to quote to a supervisor. */
+export const withCode = (message: string, code: string) => `${message} · ${code}`;
 
 export type Result = { ok?: string; error?: string; sound?: "ok" | "error" };
 
@@ -9,10 +25,10 @@ export async function attempt(fn: () => Promise<string | void>): Promise<Result>
     const ok = await fn();
     return { ok: ok ?? "Listo", sound: "ok" };
   } catch (e) {
-    if (e instanceof UserError) return { error: e.message, sound: "error" };
+    if (e instanceof UserError) return { error: withCode(e.message, e.code), sound: "error" };
     // Next's redirect() and notFound() propagate as exceptions: they have to be let through.
     if (e && typeof e === "object" && "digest" in e) throw e;
-    console.error(e);
-    return { error: "Algo salió mal. Probá de nuevo; si sigue, avisá a tu supervisor.", sound: "error" };
+    console.error("[SYS-01]", e);
+    return { error: withCode("Algo salió mal. Prueba de nuevo; si sigue, avisa a tu supervisor.", "SYS-01"), sound: "error" };
   }
 }

@@ -87,10 +87,10 @@ export default async function Returns() {
                 id="customer"
                 options={list.map((c) => ({ value: String(c.id), label: c.name, detail: c.city ?? undefined }))}
                 required
-                requiredMessage="Elegí el cliente de la lista."
-                placeholder="Elegí el cliente"
+                requiredMessage="Elige el cliente de la lista."
+                placeholder="Elige el cliente"
                 searchPlaceholder="Buscar cliente o localidad…"
-                empty="Ningún cliente coincide. Los clientes vienen de Fierro: si falta uno, sincronizá."
+                empty="Ningún cliente coincide. Los clientes vienen de Fierro: si falta uno, sincroniza."
               />
             </div>
           </ActionForm>
@@ -101,7 +101,7 @@ export default async function Returns() {
         <h2 className="section-title">
           En curso <small>{inProgress.length}</small>
         </h2>
-        <ReturnsTable rows={inProgress} empty={{ title: "No hay devoluciones en curso", text: "Cuando llegue una, tocá Nueva y elegí el cliente." }} />
+        <ReturnsTable rows={inProgress} empty={{ title: "No hay devoluciones en curso", text: "Cuando llegue una, toca Nueva y elige el cliente." }} />
       </section>
 
       {closed.length > 0 && (

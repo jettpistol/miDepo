@@ -68,7 +68,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
             ))}
           </div>
           {lines.length === 0 ? (
-            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay libros. Escaneá el primero.</p>
+            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay libros. Escanea el primero.</p>
           ) : (
             <ul className="ruled-list framed">
               {lines.map(({ l, title, code }) => (

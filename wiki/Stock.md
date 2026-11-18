@@ -4,9 +4,9 @@
 
 ## Buscar un título
 
-1. Andá a **Stock**.
-2. Escribí parte del título, el autor, o escaneá el código.
-3. Tocá el título en la lista.
+1. Ve a **Stock**.
+2. Escribe parte del título, el autor, o escanea el código.
+3. Toca el título en la lista.
 
 La ficha muestra:
 
@@ -17,11 +17,11 @@ La ficha muestra:
 
 ## Ver qué hay en un estante
 
-Escribí o escaneá el código del estante en el buscador (por ejemplo `A-03-2`) y tocá **Ver qué hay**.
+Escribe o escanea el código del estante en el buscador (por ejemplo `A-03-2`) y toca **Ver qué hay**.
 
 ## Las zonas especiales
 
-Además de los estantes, hay cinco zonas:
+Además de los estantes, hay seis zonas:
 
 | Zona | Qué hay ahí |
 |---|---|
@@ -30,6 +30,7 @@ Además de los estantes, hay cinco zonas:
 | Saldos | Libros con detalles, para vender con descuento. |
 | Dañados | Libros que no se pueden vender. |
 | Pedidos preparados | Lo que ya se sacó del estante para un pedido y todavía no salió. |
+| Faltantes | Lo que no estaba en el estante durante un picking. Sigue siendo del depósito hasta que aparece o se da de baja. Ver [Bajas y faltantes](Bajas-y-faltantes). |
 
 ## Artículos sin ISBN
 

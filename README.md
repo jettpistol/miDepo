@@ -2,7 +2,7 @@
 
 A warehouse tool for small book warehouses, built to sit **on top of [Fierro](https://www.fierro.com.ar)** rather than replace it. Fierro keeps the catalogue, customers, orders, remitos and invoices; miDepo owns what Fierro does not track: which shelf every copy is on, and the scan-by-scan work of the warehouse floor.
 
-The interface is entirely in Spanish (Argentina). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/reposicion`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
+The interface is entirely in Spanish, addressing the user as tú (never voseo). The code, comments, database and configuration are in English. Two things stay Spanish on purpose: the page addresses (`/recepcion`, `/reposicion`), because users see them, and the CSV files sent to Fierro, because that is the format Fierro's users load.
 
 > **Status: MVP for testing.** It runs against a **simulated Fierro** with invented data. No real Fierro connection exists yet. See [What is not done](#what-is-not-done).
 
@@ -32,7 +32,7 @@ All demo passwords are `midepo1234`.
 | Librería Demo | Administrator | `admin@demo.test` | — |
 | Librería Demo | Operator | `operario@demo.test` | `demo` + `200001` |
 
-Ovnipress is seeded with 6,000 titles, 300 customers, 80 pending orders, 6 expected receipts and 800 shelf locations. Librería Demo is a second, smaller company that uses a different location naming scheme; it is there to show that companies are isolated from each other.
+Ovnipress is seeded with the 118 real titles scraped from its shop (`scripts/scrape-ovnipress.mjs`), 300 customers, 80 pending orders, 6 expected receipts and 800 shelf locations. Librería Demo is a second, smaller company that uses a different location naming scheme; it is there to show that companies are isolated from each other.
 
 ### A good first test
 
@@ -57,10 +57,11 @@ npm run db:reset
 |---|---|
 | Receiving | Count against a receipt announced by Fierro, or start an unannounced one with **+ Nueva**, choosing the supplier from the list. Over, short and unannounced titles are flagged. |
 | Put-away | Move received or returned stock to shelves, with a suggestion of where the title already lives. |
-| Picking | One picker per order, a route sorted by shelf, validation of shelf and title on every stop, shortages re-routed to another shelf or recorded. |
+| Picking | One picker per order, a route sorted by shelf, validation of shelf and title on every stop, shortages re-routed to another shelf or moved to the FALTANTES zone. |
 | Packing | Scan into boxes, real or estimated weight, A4 box labels and packing list. |
 | Returns | Start with **+ Nueva** and a customer from the list; grade each copy as *vendible*, *saldo* or *dañado*; each grade goes to its own zone. |
-| Cycle counts | Blind counts by shelf range, supervisor review of differences, stock adjusted on approval. |
+| Cycle counts | Blind counts by shelf range, supervisor review of differences, a recount by another person for large differences (5+ units or 20%+). On approval, misplaced units move between shelves, found units come back from FALTANTES or enter as found, and losses are written off with a cause. |
+| Write-offs | **Bajas**: write off what sits in FALTANTES or DANADOS with a cause (theft or loss, damage, entry error, internal use…). Every adjustment is a numbered document with its approver, sent to Fierro as a stock write-off, never as a fake order. Units in and out by cause over 90 days, misplaced units shown apart. |
 | Stock | The whole catalogue, 50 titles per page; search by title, author, ISBN, internal code or shelf as you type; per-shelf quantities and movement history. |
 | Locations | Four naming templates plus a custom builder; printable Code 128 shelf labels (24 per A4 sheet). |
 | Fierro | Sync (catalogue, customers, suppliers, orders, expected receipts), CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
@@ -75,7 +76,7 @@ npm run db:reset
 
 ```
 Fierro ──(catalogue, customers, orders, expected receipts, its stock)──▶ miDepo
-Fierro ◀──(packed orders, receipts, returns, count adjustments)──────── miDepo
+Fierro ◀──(packed orders, receipts, returns, counts, write-offs)──────── miDepo
 ```
 
 Everything that touches Fierro goes through one interface, `FierroConnector` in [`src/lib/fierro/types.ts`](src/lib/fierro/types.ts). Today the only implementation is `SimulatedFierro`. A real connector implements the same six methods and nothing else in the app changes.
@@ -94,7 +95,7 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 
 ## What is not done
 
-- **No real Fierro connection.** The connector is simulated. The CSV layouts for orders, receipts and returns are a reasonable guess; only the count export follows a format Fierro documents. They need checking against a real Fierro account.
+- **No real Fierro connection.** The connector is simulated. The CSV layouts for orders, receipts, returns and write-offs are a reasonable guess; only the count export follows a format Fierro documents. They need checking against a real Fierro account.
 - **No offline mode.** The warehouse needs working wifi.
 - **No new-company screen.** Companies are created with a command (below).
 - **Spanish only.** Text lives in the pages, not in a translation file.

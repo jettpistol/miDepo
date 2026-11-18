@@ -3,7 +3,7 @@
 import { action, num, txt } from "@/lib/action";
 import { UserError } from "@/lib/errors";
 import { sync } from "@/lib/fierro";
-import { markSent, simulateNews, type ExportType } from "@/lib/flows/exports";
+import { isExportType, markSent, simulateNews } from "@/lib/flows/exports";
 
 export const syncNow = action("supervisor", async (c) => {
   const r = await sync(c.db, c.company);
@@ -18,7 +18,7 @@ export const simulate = action("supervisor", async (c, f) => {
 });
 
 export const submit = action("supervisor", (c, f) => {
-  const type = txt(f, "type") as ExportType;
-  if (!["order", "receiving", "return", "count"].includes(type)) throw new UserError("Documento desconocido.");
+  const type = txt(f, "type");
+  if (!isExportType(type)) throw new UserError("EXP-09", "Documento desconocido.");
   return markSent(c, c.company, type, num(f, "id"));
 });

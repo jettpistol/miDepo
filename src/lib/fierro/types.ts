@@ -12,6 +12,7 @@ export type FierroBook = {
   type: ProductType;
   price: number;
   weightGrams: number;
+  coverUrl?: string | null;
 };
 export type FierroCustomer = { id: string; name: string; address: string; city: string; province: string };
 export type FierroLine = { bookId: string; quantity: number };
@@ -27,7 +28,7 @@ export type FierroReceipt = { id: string; number: string; supplier: string; date
 
 /** What miDepo gives back to Fierro: how much each title's stock changed and why. */
 export type FierroDocument = {
-  type: "shipment" | "receiving" | "return" | "count";
+  type: "shipment" | "receiving" | "return" | "count" | "adjustment";
   reference: string;
   lines: { productId: number; delta: number }[];
 };

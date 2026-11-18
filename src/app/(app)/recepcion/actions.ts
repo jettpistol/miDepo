@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { action, num, txt } from "@/lib/action";
-import { attempt } from "@/lib/errors";
+import { attempt, withCode } from "@/lib/errors";
 import { requireSessionInAction } from "@/lib/session";
 import { closeReceiving, createSupplier, createUnannouncedReceiving, scanReceiving, setReceived } from "@/lib/flows/receiving";
 
@@ -21,5 +21,5 @@ export async function addSupplier(name: string): Promise<{ value: string; label:
     const s = await requireSessionInAction("operator");
     created = await createSupplier({ db: s.db, companyId: s.company.id, userId: s.user.id }, name);
   });
-  return created ? { value: String(created.id), label: created.name } : { error: r.error ?? "No se pudo crear el proveedor." };
+  return created ? { value: String(created.id), label: created.name } : { error: r.error ?? withCode("No se pudo crear el proveedor.", "RCV-11") };
 }

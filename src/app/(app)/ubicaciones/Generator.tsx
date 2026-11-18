@@ -11,7 +11,7 @@ const copy = (e: Scheme): Scheme => ({ ...e, segments: e.segments.map((t) => ({ 
 /** Pick a naming template, adjust it and preview the codes before creating them. */
 export function Generator({ action, initial }: { action: Action; initial: Scheme | null }) {
   const [scheme, setScheme] = useState<Scheme>(copy(initial ?? TEMPLATES[0].scheme));
-  const problem = validateScheme(scheme);
+  const problem = validateScheme(scheme)?.message ?? null;
   const total = locationTotal(scheme);
   const sample = useMemo(() => (problem ? [] : generateCodes(scheme, 5)), [scheme, problem]);
   const last = useMemo(() => (problem ? "" : (generateCodes(scheme).at(-1) ?? "")), [scheme, problem]);
@@ -21,7 +21,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
   return (
     <div className="space-y-7 lg:space-y-5">
       <fieldset>
-        <legend className="field-label">1. Elegí el modelo que más se parece a tu depósito</legend>
+        <legend className="field-label">1. Elige el modelo que más se parece a tu depósito</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {TEMPLATES.map((m) => (
             <button key={m.id} type="button" onClick={() => setScheme(copy(m.scheme))} aria-pressed={scheme.id === m.id} className={`cursor-pointer rounded-control border p-3.5 text-left transition-colors duration-150 ${scheme.id === m.id ? "border-accent-text bg-accent-soft" : "border-line hover:border-line-strong hover:bg-sunken"}`}>
@@ -37,7 +37,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
       </fieldset>
 
       <fieldset>
-        <legend className="field-label">2. Ajustalo a tus medidas</legend>
+        <legend className="field-label">2. Ajústalo a tus medidas</legend>
         <div className="border-y border-line">
           {scheme.segments.map((t, i) => (
             <div key={i} className={`grid grid-cols-2 gap-2 py-3 lg:py-2 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.8fr_auto] sm:items-end ${i > 0 ? "border-t border-line" : ""}`}>

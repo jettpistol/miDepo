@@ -16,6 +16,7 @@ const PATHS = {
   more: "M5 12h.01M12 12h.01M19 12h.01",
   camera: "M4 8h3l1.500-2.500h7L17 8h3v11H4V8Zm8 8.500a3.250 3.250 0 1 0 0-6.500 3.250 3.250 0 0 0 0 6.500Z",
   print: "M7 8V3.500h10V8M7 17H4V9h16v8h-3M7 14h10v6.500H7V14Z",
+  writeoff: "M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
   download: "M12 4v11m0 0-4-4m4 4 4-4M5 20h14",
   logout: "M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9",
   arrow: "m9 6 6 6-6 6",

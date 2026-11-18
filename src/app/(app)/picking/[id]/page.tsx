@@ -59,7 +59,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   <p className="mt-4 text-lg lg:text-base leading-snug font-semibold">{nextStop.title}</p>
                   <p className="font-mono text-sm font-bold opacity-85">{nextStop.code}</p>
                   <p className="mt-3 text-base">
-                    Tomá <span className="text-3xl lg:text-2xl font-bold">{nextStop.t.quantity - nextStop.t.picked}</span>
+                    Toma <span className="text-3xl lg:text-2xl font-bold">{nextStop.t.quantity - nextStop.t.picked}</span>
                   </p>
                 </div>
                 <ScanForm
@@ -67,7 +67,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   context="picking"
                   hiddenFields={{ taskId: nextStop.t.id }}
                   fields={[
-                    { name: "location", label: "Estante", help: "Escaneá el cartel" },
+                    { name: "location", label: "Estante", help: "Escanea el cartel" },
                     { name: "product", label: "Libro" },
                   ]}
                   quantity={nextStop.t.quantity - nextStop.t.picked}

@@ -29,7 +29,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
           </Link>
         )}
         {isShelf && supervisor && (
-          <ActionButton action={toggle} hiddenFields={{ id }} className="btn-soft" reason={u.active && contents.length > 0 ? "Para darla de baja, primero mové los libros." : undefined}>
+          <ActionButton action={toggle} hiddenFields={{ id }} className="btn-soft" reason={u.active && contents.length > 0 ? "Para darla de baja, primero mueve los libros." : undefined}>
             {u.active ? "Dar de baja" : "Reactivar"}
           </ActionButton>
         )}

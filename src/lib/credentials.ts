@@ -3,7 +3,7 @@ import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from
 function secret() {
   if (process.env.SECRET) return process.env.SECRET;
   // With a real database the default secret is not allowed: anyone could compute the PINs.
-  if (process.env.DATABASE_URL) throw new Error("The SECRET variable is missing. Generate one with: openssl rand -hex 32");
+  if (process.env.DATABASE_URL) throw new Error("[CFG-01] Falta la variable SECRET. Genera una con: openssl rand -hex 32");
   return "local-testing-only";
 }
 

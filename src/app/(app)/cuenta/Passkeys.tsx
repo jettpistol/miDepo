@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { startRegistration } from "@simplewebauthn/browser";
 import { Message } from "@/components/ScanForm";
-import type { Result } from "@/lib/errors";
+import { withCode, type Result } from "@/lib/errors";
 
 /** Registers a passkey on this device: fingerprint, face or the device's own PIN. */
 export function AddPasskey() {
@@ -22,19 +22,19 @@ export function AddPasskey() {
       const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
       const r = await fetch("/api/passkeys/register-verify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reply, name: isPhone ? "Teléfono" : "Computadora" }) });
       if (!r.ok) throw new Error((await r.json()).error);
-      setStatus({ ok: "Listo. La próxima vez podés entrar con huella, rostro o llave." });
+      setStatus({ ok: "Listo. La próxima vez puedes entrar con huella, rostro o llave." });
       router.refresh();
     } catch (e) {
       const name = e instanceof Error ? e.name : "";
       setStatus({
         error:
           name === "NotAllowedError" || name === "AbortError"
-            ? "Se canceló el registro."
+            ? withCode("Se canceló el registro.", "PKEY-12")
             : name === "InvalidStateError"
-              ? "Este dispositivo ya tiene una llave registrada para tu usuario."
+              ? withCode("Este dispositivo ya tiene una llave registrada para tu usuario.", "PKEY-13")
               : e instanceof Error && e.message
                 ? e.message
-                : "Este dispositivo no permite registrar una llave.",
+                : withCode("Este dispositivo no permite registrar una llave.", "PKEY-14"),
       });
     } finally {
       setBusy(false);

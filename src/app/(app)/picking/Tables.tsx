@@ -71,10 +71,10 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
                 </Link>
                 <span className="block max-w-40 truncate text-muted sm:max-w-64">{customer}</span>
                 <span className="block text-muted sm:hidden">
-                  {picked} de {units} · {p.takenBy === userId ? "vos" : (takenBy ?? "otra persona")}
+                  {picked} de {units} · {p.takenBy === userId ? "tú" : (takenBy ?? "otra persona")}
                 </span>
               </td>
-              <td className="hidden sm:table-cell">{p.takenBy === userId ? <strong>Vos</strong> : (takenBy ?? "Otra persona")}</td>
+              <td className="hidden sm:table-cell">{p.takenBy === userId ? <strong>Tú</strong> : (takenBy ?? "Otra persona")}</td>
               <td className="hidden sm:table-cell">
                 <Progress done={picked} total={units} />
               </td>

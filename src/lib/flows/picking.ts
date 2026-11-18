@@ -7,7 +7,7 @@ import { validQuantity, type Ctx } from "./common";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
-  if (!p) throw new UserError("No encuentro ese pedido.");
+  if (!p) throw new UserError("PICK-01", "No se encontró ese pedido.");
   return p;
 }
 
@@ -60,7 +60,7 @@ export async function takeOrder(c: Ctx, orderId: number) {
   return c.db.transaction(async (tx) => {
     // The status change goes first and is conditional: if two people act at once, only one wins.
     const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
-    if (taken.length === 0) throw new UserError("Ese pedido ya lo tomó otra persona.");
+    if (taken.length === 0) throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
     const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
     const freeOnes = await available(tx, c.companyId, lines.map((l) => l.productId));
     const tasks: (typeof pickTasks.$inferInsert)[] = [];
@@ -87,8 +87,8 @@ async function taskOf(c: Ctx, taskId: number) {
     .from(pickTasks)
     .innerJoin(orders, eq(orders.id, pickTasks.orderId))
     .where(and(eq(pickTasks.id, taskId), eq(orders.companyId, c.companyId)));
-  if (!t) throw new UserError("No encuentro esa parada del recorrido.");
-  if (t.task.status !== "pending") throw new UserError("Esa parada ya está resuelta.");
+  if (!t) throw new UserError("PICK-03", "No se encontró esa parada del recorrido.");
+  if (t.task.status !== "pending") throw new UserError("PICK-04", "Esa parada ya está resuelta.");
   return t;
 }
 
@@ -97,11 +97,11 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
   const n = validQuantity(d.quantity);
   const { task, order } = await taskOf(c, d.taskId);
   const u = await findLocation(c.db, c.companyId, d.location);
-  if (u.id !== task.locationId) throw new UserError(`Estás en ${u.code}, pero esta parada es en otra ubicación. Fijate el cartel.`);
+  if (u.id !== task.locationId) throw new UserError("PICK-05", `Estás en ${u.code}, pero esta parada es en otra ubicación. Fíjate el cartel.`);
   const p = await findProduct(c.db, c.companyId, d.product);
-  if (p.id !== task.productId) throw new UserError(`Ese es "${p.title}". No es el título que pide esta parada.`);
+  if (p.id !== task.productId) throw new UserError("PICK-06", `Ese es "${p.title}". No es el título que pide esta parada.`);
   const remaining = task.quantity - task.picked;
-  if (n > remaining) throw new UserError(`Esta parada pide ${remaining}. Si tomaste de más, devolvé ${n - remaining} al estante.`);
+  if (n > remaining) throw new UserError("PICK-07", `Esta parada pide ${remaining}. Si tomaste de más, devuelve ${n - remaining} al estante.`);
 
   return c.db.transaction(async (tx) => {
     const prep = await zone(tx, c.companyId, "staging");
@@ -109,19 +109,28 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
     const end = await checkEnd(tx, order.id);
-    return end ? `Pedido ${order.number} completo. Llevalo a empaque.` : `${n} × ${p.title} ✓`;
+    return end ? `Pedido ${order.number} completo. Llévalo a empaque.` : `${n} × ${p.title} ✓`;
   });
 }
 
 /**
- * The operator reports that what is missing is not at the location. miDepo looks for the title
- * elsewhere; if there is none, the stop is left as a shortage and the order carries on.
+ * The operator reports that what is missing is not at the location. Those units move from the shelf
+ * to FALTANTES (still owned, not written off: a count may find them, a supervisor may write them off).
+ * miDepo looks for the title elsewhere; if there is none, the stop is left as a shortage.
  */
 export async function markShort(c: Ctx, taskId: number) {
   const { task, order } = await taskOf(c, taskId);
   const missing = task.quantity - task.picked;
   return c.db.transaction(async (tx) => {
     await tx.update(pickTasks).set({ status: "short" }).where(eq(pickTasks.id, task.id));
+    if (task.locationId != null) {
+      const [onShelf] = await tx.select({ n: stock.quantity }).from(stock).where(and(eq(stock.productId, task.productId), eq(stock.locationId, task.locationId)));
+      const gone = Math.min(onShelf?.n ?? 0, missing);
+      if (gone > 0) {
+        const missingZone = await zone(tx, c.companyId, "missing");
+        await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: task.locationId, toId: missingZone.id, quantity: gone, reason: "missing", reference: order.number, userId: c.userId });
+      }
+    }
     // The operator is not sent back to a place where they already reported this title was missing.
     const alreadyFailed = await tx.select({ u: pickTasks.locationId }).from(pickTasks).where(and(eq(pickTasks.lineId, task.lineId), eq(pickTasks.status, "short")));
     const freeOnes = await available(tx, c.companyId, [task.productId], new Set(alreadyFailed.map((f) => f.u)));
@@ -130,7 +139,7 @@ export async function markShort(c: Ctx, taskId: number) {
       await tx.insert(pickTasks).values(stops.map((s) => ({ orderId: order.id, lineId: task.lineId, productId: task.productId, locationId: s.locationId, quantity: s.quantity })));
     }
     await checkEnd(tx, order.id);
-    if (stops.length > 0 && uncovered === 0) return "Anotado. Encontré el título en otra ubicación y lo sumé al recorrido.";
+    if (stops.length > 0 && uncovered === 0) return "Anotado. El título está en otra ubicación y se sumó al recorrido.";
     if (stops.length > 0) return `Anotado. Hay una parte en otra ubicación; ${uncovered} quedan como faltante.`;
     return `Anotado: ${missing} quedan como faltante. Conviene contar esa ubicación.`;
   });

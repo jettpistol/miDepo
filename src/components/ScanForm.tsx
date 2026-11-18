@@ -260,7 +260,7 @@ export function ScanForm({
                 data-scan-field
                 defaultValue={c.value ?? ""}
                 className={`field font-mono font-bold placeholder:font-sans placeholder:font-normal ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}
-                placeholder={c.help ?? "Escaneá o escribí"}
+                placeholder={c.help ?? "Escanea o escribe"}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
@@ -448,6 +448,9 @@ export function ActionForm({
   resetOnOk = true,
   anyOf,
   hotkey: key,
+  confirm,
+  reason,
+  buttonClassName = "btn",
 }: {
   action: Action;
   children: ReactNode;
@@ -458,9 +461,15 @@ export function ActionForm({
   anyOf?: { fields: string[]; message: string };
   /** The F-key that submits it (see src/lib/hotkeys.ts). */
   hotkey?: HotkeyName;
+  /** Asked before sending. */
+  confirm?: string;
+  /** If the form cannot be sent yet, why: the button is disabled and says so. */
+  reason?: string;
+  buttonClassName?: string;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const form = useRef<HTMLFormElement>(null);
+  const reasonId = useId();
   useEffect(() => {
     if (status.ok && resetOnOk) form.current?.reset();
   }, [status, resetOnOk]);
@@ -472,16 +481,24 @@ export function ActionForm({
       onInput={() => anyOf?.fields.forEach((n) => (form.current?.elements.namedItem(n) as HTMLInputElement | null)?.setCustomValidity(""))}
       onSubmit={(e) => {
         const inputs = (anyOf?.fields ?? []).map((n) => e.currentTarget.elements.namedItem(n) as HTMLInputElement | null);
-        if (inputs.length === 0 || inputs.some((x) => x?.value.trim())) return;
+        if (inputs.length === 0 || inputs.some((x) => x?.value.trim())) {
+          if (confirm && !window.confirm(confirm)) e.preventDefault();
+          return;
+        }
         e.preventDefault();
         inputs[0]?.setCustomValidity(anyOf!.message);
         inputs[0]?.reportValidity();
       }}
     >
       {children}
-      <button className="btn" disabled={submitting} {...(key ? hotkey(key, button) : {})}>
+      <button className={buttonClassName} disabled={submitting || Boolean(reason)} aria-describedby={reason ? reasonId : undefined} {...(key ? hotkey(key, button) : {})}>
         {submitting ? "Un momento…" : button}
       </button>
+      {reason && (
+        <p id={reasonId} className="basis-full text-sm text-muted">
+          {reason}
+        </p>
+      )}
       <Message status={status} />
     </form>
   );

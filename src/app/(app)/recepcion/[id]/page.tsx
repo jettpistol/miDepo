@@ -59,7 +59,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 }
 
 function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLines.$inferSelect; title: string; code: string }[]; id: number; editable?: boolean }) {
-  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay títulos. Escaneá el primero.</p>;
+  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay títulos. Escanea el primero.</p>;
   return (
     <div className="table-wrap">
       <table className="data-table">

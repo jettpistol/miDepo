@@ -108,6 +108,8 @@ export const products = pgTable(
     type: text("type").$type<ProductType>().notNull().default("book"),
     price: integer("price").notNull().default(0),
     weightGrams: integer("weight_grams").notNull().default(300),
+    /** Cover picture (a path under /public or a URL); null when Fierro has none. */
+    coverUrl: text("cover_url"),
     active: boolean("active").notNull().default(true),
   },
   (t) => [
@@ -145,7 +147,8 @@ export const fierroStock = pgTable(
 
 // ───────────── What miDepo owns: locations and physical stock ─────────────
 
-export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging";
+/** "missing" (FALTANTES) holds units a picker could not find: still owned, not yet written off. */
+export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging" | "missing";
 
 export const locations = pgTable(
   "locations",
@@ -178,7 +181,16 @@ export type MovementReason =
   | "picking"
   | "shipment"
   | "return"
-  | "count_adjustment";
+  /** Before adjustment documents existed, a count changed stock with this reason. */
+  | "count_adjustment"
+  /** A count found a title short on one shelf and over on another: moved, not lost. */
+  | "count_relocation"
+  /** A picker could not find units: shelf → FALTANTES. */
+  | "missing"
+  /** Units turned up: FALTANTES → shelf, or enter from outside when a count finds more. */
+  | "found"
+  /** Units leave the warehouse with no customer: damaged, lost, stolen… Always has an adjustment. */
+  | "write_off";
 
 export const movements = pgTable(
   "movements",
@@ -358,6 +370,8 @@ export const countLocations = pgTable(
     locationId: integer("location_id").notNull().references(() => locations.id),
     status: text("status").$type<"pending" | "counted">().notNull().default("pending"),
     countedBy: integer("counted_by").references(() => users.id),
+    /** Set when a recount was asked for: who counted first. Someone else has to recount. */
+    firstCountedBy: integer("first_counted_by").references(() => users.id),
   },
   (t) => [primaryKey({ columns: [t.countId, t.locationId] })],
 );
@@ -373,6 +387,45 @@ export const countLines = pgTable(
     system: integer("system"),
   },
   (t) => [primaryKey({ columns: [t.countId, t.locationId, t.productId] })],
+);
+
+// ───────────── Stock adjustments (write-offs and found stock) ─────────────
+
+/** Why stock changed with no customer or supplier on the other side. */
+export type AdjustmentCause = "count_difference" | "damage" | "theft_or_loss" | "entry_error" | "internal_use" | "found";
+
+/**
+ * A stock change with nobody on the other side, approved by a supervisor: a count's losses and
+ * finds, or a write-off from FALTANTES or DANADOS. It is what Fierro is told, never a fake order.
+ */
+export const adjustments = pgTable(
+  "adjustments",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    number: text("number").notNull(),
+    /** Set when the adjustment comes from closing a count; it then reaches Fierro with the count. */
+    countId: integer("count_id").references(() => counts.id),
+    approvedBy: integer("approved_by").notNull().references(() => users.id),
+    createdAt: createdAt(),
+    sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("adjustments_company_id_number_idx").on(t.companyId, t.number), index("adjustments_company_id_created_at_idx").on(t.companyId, t.createdAt)],
+);
+
+export const adjustmentLines = pgTable(
+  "adjustment_lines",
+  {
+    id: serial("id").primaryKey(),
+    adjustmentId: integer("adjustment_id").notNull().references(() => adjustments.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    /** Where the units left from or arrived at. */
+    locationId: integer("location_id").notNull().references(() => locations.id),
+    /** Change in the warehouse's total stock: negative = written off, positive = found. */
+    quantity: integer("quantity").notNull(),
+    cause: text("cause").$type<AdjustmentCause>().notNull(),
+  },
+  (t) => [index("adjustment_lines_adjustment_id_idx").on(t.adjustmentId)],
 );
 
 export const now = sql`now()`;

@@ -57,7 +57,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
             </div>
           )}
           <h2 className="mb-1 text-xl font-bold tracking-[-0.02em]">{accounts.length > 0 ? "Agregar otra cuenta" : "Ingresar"}</h2>
-          {full && <p className="mb-4 text-sm text-muted">{`Este dispositivo ya tiene ${MAX_ACCOUNTS} cuentas abiertas. Si entrás con otra, se cierra la que hace más tiempo no se usa.`}</p>}
+          {full && <p className="mb-4 text-sm text-muted">{`Este dispositivo ya tiene ${MAX_ACCOUNTS} cuentas abiertas. Si entras con otra, se cierra la que hace más tiempo no se usa.`}</p>}
           <div className={accounts.length > 0 ? "" : "mt-4"}>
             <LoginForm />
           </div>

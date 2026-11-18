@@ -110,15 +110,16 @@ export function generateCodes(e: Scheme, limit = MAX_LOCATIONS): string[] {
   return output;
 }
 
-/** Validates a scheme coming from a form. Returns the clean scheme or a message. */
-export function validateScheme(e: Scheme): string | null {
-  if (e.segments.length < 1 || e.segments.length > 5) return "El esquema necesita entre 1 y 5 tramos.";
-  if (!/^[-._/ ]?$/.test(e.separator)) return "El separador puede ser guion, punto, barra, guion bajo o nada.";
+/** Validates a scheme coming from a form. Returns null, or the problem with its error code. */
+export function validateScheme(e: Scheme): { code: string; message: string } | null {
+  const problem = (code: string, message: string) => ({ code, message });
+  if (e.segments.length < 1 || e.segments.length > 5) return problem("LOC-06", "El esquema necesita entre 1 y 5 tramos.");
+  if (!/^[-._/ ]?$/.test(e.separator)) return problem("LOC-07", "El separador puede ser guion, punto, barra, guion bajo o nada.");
   for (const t of e.segments) {
-    if (!t.name.trim()) return "Cada tramo necesita un nombre.";
-    if (!Number.isInteger(t.quantity) || t.quantity < 1 || t.quantity > 999) return `"${t.name}": la cantidad va de 1 a 999.`;
-    if (t.prefix && !/^[A-Za-z0-9]{0,4}$/.test(t.prefix)) return `"${t.name}": el prefijo admite hasta 4 letras o números.`;
+    if (!t.name.trim()) return problem("LOC-08", "Cada tramo necesita un nombre.");
+    if (!Number.isInteger(t.quantity) || t.quantity < 1 || t.quantity > 999) return problem("LOC-09", `"${t.name}": la cantidad va de 1 a 999.`);
+    if (t.prefix && !/^[A-Za-z0-9]{0,4}$/.test(t.prefix)) return problem("LOC-10", `"${t.name}": el prefijo admite hasta 4 letras o números.`);
   }
-  if (locationTotal(e) > MAX_LOCATIONS) return `Son demasiadas ubicaciones (máximo ${MAX_LOCATIONS}).`;
+  if (locationTotal(e) > MAX_LOCATIONS) return problem("LOC-11", `Son demasiadas ubicaciones (máximo ${MAX_LOCATIONS}).`);
   return null;
 }

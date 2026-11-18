@@ -60,7 +60,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
               hiddenFields={{ source: current!.code }}
               fields={[
                 { name: "product", label: "Libro" },
-                { name: "destination", label: "Estante", help: "Escaneá el cartel" },
+                { name: "destination", label: "Estante", help: "Escanea el cartel" },
               ]}
               quantity={1}
               button="Guardar"
@@ -90,7 +90,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
                         <Code>{p.code}</Code>
                       </td>
                       <td className="text-right text-base font-bold">{p.quantity}</td>
-                      <td>{suggestions.has(p.productId) ? <ShelfMark code={suggestions.get(p.productId)} size="md" /> : <span className="text-muted">Título nuevo: elegí un estante libre</span>}</td>
+                      <td>{suggestions.has(p.productId) ? <ShelfMark code={suggestions.get(p.productId)} size="md" /> : <span className="text-muted">Título nuevo: elige un estante libre</span>}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -4,11 +4,11 @@ Recepción es contar lo que llega **antes** de guardarlo. Así se sabe si vino l
 
 ## Recibir un ingreso avisado por Fierro
 
-1. Andá a **Recepción**. Vas a ver los ingresos abiertos, con el proveedor y cuántas unidades se esperan.
-2. Tocá el que corresponde a lo que llegó.
-3. Escaneá cada libro. Si hay una pila del mismo título, escribí la cantidad y escaneá uno.
-4. Mirá la tabla: cada título muestra **Esperado**, **Recibido** y su estado.
-5. Cuando terminaste con todas las cajas, tocá **Cerrar recepción**.
+1. Ve a **Recepción**. Vas a ver los ingresos abiertos, con el proveedor y cuántas unidades se esperan.
+2. Toca el que corresponde a lo que llegó.
+3. Escanea cada libro. Si hay una pila del mismo título, escribe la cantidad y escanea uno.
+4. Mira la tabla: cada título muestra **Esperado**, **Recibido** y su estado.
+5. Cuando terminaste con todas las cajas, toca **Cerrar recepción**.
 
 ### Qué significan los estados
 
@@ -24,22 +24,22 @@ Si hay diferencias, miDepo te avisa antes de cerrar. **Se puede cerrar igual**: 
 
 ## Corregir una cantidad
 
-Si contaste mal, tocá el número en la columna **Recibido**, escribí el correcto y apretá Enter.
+Si contaste mal, toca el número en la columna **Recibido**, escribe el correcto y aprieta Enter.
 
 ## Recibir algo sin aviso
 
 Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que no figure:
 
-1. En **Recepción**, tocá **Nueva**.
-2. Abrí **Proveedor** y elegilo de la lista. Podés escribir parte del nombre para encontrarlo.
-3. Tocá **Crear recepción**, escaneá todo y cerrá.
+1. En **Recepción**, toca **Nueva**.
+2. Abre **Proveedor** y elígelo de la lista. Puedes escribir parte del nombre para encontrarlo.
+3. Toca **Crear recepción**, escanea todo y cierra.
 
-**Si el proveedor no está en la lista:** escribí el nombre completo. Si no coincide con ninguno, aparece **Crear proveedor**; tocalo y confirmá. Antes fijate bien: si el nombre se parece mucho a uno que ya existe, miDepo no lo deja crear y te muestra cuál es. Los proveedores que manda Fierro aparecen solos.
+**Si el proveedor no está en la lista:** escribe el nombre completo. Si no coincide con ninguno, aparece **Crear proveedor**; tócalo y confirma. Antes fíjate bien: si el nombre se parece mucho a uno que ya existe, miDepo no lo deja crear y te muestra cuál es. Los proveedores que manda Fierro aparecen solos.
 
 ## Qué pasa al cerrar
 
 - Lo recibido entra al stock en la zona **Recepción**. Todavía no está en un estante.
 - Aparece en [Reposición](Reposicion) para llevarlo a su lugar.
-- La recepción cerrada **no se puede volver a abrir**. Si te equivocaste, avisá a tu supervisor: se corrige con un [conteo](Conteos).
+- La recepción cerrada **no se puede volver a abrir**. Si te equivocaste, avisa a tu supervisor: se corrige con un [conteo](Conteos).
 
 > Los libros que vuelven de un cliente **no** van por Recepción: van por [Devoluciones](Devoluciones), porque hay que revisar en qué estado están.

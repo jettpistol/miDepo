@@ -45,7 +45,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         rows.length === 0
           ? { tone: "danger", text: `Ninguna ubicación empieza con "${pre}".` }
           : rows.length > MAX_COUNT_LOCATIONS
-            ? { tone: "danger", text: `Son más de ${MAX_COUNT_LOCATIONS}. Partí el conteo en tramos más chicos.` }
+            ? { tone: "danger", text: `Son más de ${MAX_COUNT_LOCATIONS}. Parte el conteo en tramos más chicos.` }
             : { tone: "ok", text: rows.length === 1 ? "1 ubicación" : `${rows.length} ubicaciones` };
     }
     return { statuses, suggestions, shortcuts };
@@ -99,7 +99,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
   async function flagUnknown(text: string) {
     if (text.length < 3) return;
     const [similar] = await db.select({ id: products.id }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(text))).limit(1);
-    if (!similar) statuses.product = { tone: "danger", text: `No conozco "${text}". Si es un título nuevo, sincronizá con Fierro.` };
+    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un título nuevo, sincroniza con Fierro.` };
   }
 
   const n = Number(v("quantity"));
@@ -117,6 +117,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     for (const [field, u] of [["source", source], ["destination", destination]] as const) {
       if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven a mano." };
     }
+    if (destination?.active && destination.type === "missing") statuses.destination = { tone: "danger", text: "Nada pasa a Faltantes a mano." };
     if (source && destination && source.id === destination.id) statuses.destination = { tone: "danger", text: "Es el mismo lugar que el origen." };
 
     if (book) {
@@ -205,7 +206,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         }
       }
       if (pre) {
-        const rows = await db.select({ code: locations.code }).from(locations).where(and(eq(locations.companyId, companyId), eq(locations.active, true), ne(locations.type, "staging"), like(locations.code, `${pre}%`))).orderBy(asc(locations.code)).limit(8);
+        const rows = await db.select({ code: locations.code }).from(locations).where(and(eq(locations.companyId, companyId), eq(locations.active, true), ne(locations.type, "staging"), field === "destination" ? ne(locations.type, "missing") : undefined, like(locations.code, `${pre}%`))).orderBy(asc(locations.code)).limit(8);
         for (const f of rows) if (!seen.has(f.code)) suggestions.push({ value: f.code, type: "location", title: f.code });
       }
     } else if (field === "product") {
