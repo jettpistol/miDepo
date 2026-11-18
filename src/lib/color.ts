@@ -1,61 +1,61 @@
-/** Color de acento por usuario. El azul Klein es el de fábrica. */
-export const ACENTO_DE_FABRICA = "#002FA7";
+/** Per-user accent colour. Klein blue is the default. */
+export const DEFAULT_ACCENT = "#002FA7";
 
-export const PALETA: { nombre: string; hex: string }[] = [
-  { nombre: "Azul Klein", hex: "#002FA7" },
-  { nombre: "Violeta", hex: "#6D28D9" },
-  { nombre: "Magenta", hex: "#BE185D" },
-  { nombre: "Rojo", hex: "#C81E1E" },
-  { nombre: "Naranja", hex: "#C2410C" },
-  { nombre: "Ámbar", hex: "#B45309" },
-  { nombre: "Verde", hex: "#15803D" },
-  { nombre: "Turquesa", hex: "#0F766E" },
-  { nombre: "Celeste", hex: "#0369A1" },
-  { nombre: "Grafito", hex: "#374151" },
+export const PALETTE: { name: string; hex: string }[] = [
+  { name: "Azul Klein", hex: "#002FA7" },
+  { name: "Violeta", hex: "#6D28D9" },
+  { name: "Magenta", hex: "#BE185D" },
+  { name: "Rojo", hex: "#C81E1E" },
+  { name: "Naranja", hex: "#C2410C" },
+  { name: "Ámbar", hex: "#B45309" },
+  { name: "Verde", hex: "#15803D" },
+  { name: "Turquesa", hex: "#0F766E" },
+  { name: "Celeste", hex: "#0369A1" },
+  { name: "Grafito", hex: "#374151" },
 ];
 
-export const HEX_VALIDO = /^#[0-9a-fA-F]{6}$/;
+export const VALID_HEX = /^#[0-9a-fA-F]{6}$/;
 
 type RGB = [number, number, number];
-const aRgb = (hex: string): RGB => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as RGB;
-const aHex = (c: RGB) => "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
-const mezclar = (a: RGB, b: RGB, t: number): RGB => [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t) as RGB;
+const toRgb = (hex: string): RGB => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as RGB;
+const toHex = (c: RGB) => "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+const mix = (a: RGB, b: RGB, t: number): RGB => [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t) as RGB;
 
-function luminancia(c: RGB) {
+function luminance(c: RGB) {
   const [r, g, b] = c.map((v) => {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
-const contraste = (a: RGB, b: RGB) => {
-  const [l1, l2] = [luminancia(a), luminancia(b)].sort((x, y) => y - x);
+const contrast = (a: RGB, b: RGB) => {
+  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (l1 + 0.05) / (l2 + 0.05);
 };
 
-const BLANCO: RGB = [255, 255, 255];
-const NEGRO: RGB = [11, 14, 26];
-const SUPERFICIE_OSCURA: RGB = [20, 24, 41];
+const WHITE: RGB = [255, 255, 255];
+const BLACK: RGB = [10, 15, 36];
+const DARK_SURFACE: RGB = [22, 28, 58];
 
-/** Acerca el color al blanco o al negro hasta que se lea bien sobre el fondo dado. */
-function legible(color: RGB, fondo: RGB, hacia: RGB) {
+/** Moves the colour toward white or black until it reads well on the given backdrop. */
+function readable(color: RGB, backdrop: RGB, toLoc: RGB) {
   for (let t = 0; t <= 1; t += 0.05) {
-    const c = mezclar(color, hacia, t);
-    if (contraste(c, fondo) >= 4.5) return aHex(c);
+    const c = mix(color, toLoc, t);
+    if (contrast(c, backdrop) >= 4.5) return toHex(c);
   }
-  return aHex(hacia);
+  return toHex(toLoc);
 }
 
 /**
- * Variables CSS que dependen del acento elegido. Cualquier color sirve: el texto encima del
- * acento y el acento usado como texto se ajustan solos para que siempre se puedan leer.
+ * CSS variables that depend on the chosen accent. Any colour works: the text on top of the
+ * accent and the accent used as text adjust themselves so they can always be read.
  */
-export function variablesDeAcento(hex: string): Record<string, string> {
-  const acento = aRgb(HEX_VALIDO.test(hex) ? hex : ACENTO_DE_FABRICA);
+export function accentVariables(hex: string): Record<string, string> {
+  const accent = toRgb(VALID_HEX.test(hex) ? hex : DEFAULT_ACCENT);
   return {
-    "--acento": aHex(acento),
-    "--sobre-acento": contraste(acento, BLANCO) >= 4.5 ? "#ffffff" : aHex(NEGRO),
-    "--acento-texto-claro": legible(acento, BLANCO, NEGRO),
-    "--acento-texto-oscuro": legible(acento, SUPERFICIE_OSCURA, BLANCO),
+    "--accent": toHex(accent),
+    "--on-accent": contrast(accent, WHITE) >= 4.5 ? "#ffffff" : toHex(BLACK),
+    "--accent-text-light": readable(accent, WHITE, BLACK),
+    "--accent-text-dark": readable(accent, DARK_SURFACE, WHITE),
   };
 }

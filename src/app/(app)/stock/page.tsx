@@ -1,74 +1,133 @@
 import Link from "next/link";
-import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
-import { Icono } from "@/components/Icono";
-import { Codigo, Encabezado, Insignia, Vacio } from "@/components/ui";
-import { productos, stock, ubicaciones } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
+import { and, asc, count, eq, inArray, or, sql } from "drizzle-orm";
+import { Icon } from "@/components/Icon";
+import { Code, PageHeader, Badge, ShelfMark, EmptyRow } from "@/components/ui";
+import { products, stock, locations } from "@/db/schema";
+import { containsText } from "@/lib/lookup";
+import { requireSession } from "@/lib/session";
+import { StockSearch } from "./StockSearch";
 
 export const metadata = { title: "Stock" };
 
-const TIPO = { libro: "Libro", grapa: "Grapa", variante: "Variante", pack: "Pack" } as const;
+const TYPE_LABEL = { book: "Libro", floppy: "Grapa", variant: "Variante", pack: "Pack" } as const;
+const PAGE = 50;
+const fmt = (n: number) => n.toLocaleString("es-AR");
 
-export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { db, empresa } = await requerir();
-  const q = ((await searchParams).q ?? "").trim();
-  const patron = `%${q.replace(/[%_\\]/g, "").split(/\s+/).join("%")}%`;
+export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
+  const { db, company } = await requireSession();
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
 
-  const [ubicacion] = q ? await db.select().from(ubicaciones).where(and(eq(ubicaciones.empresaId, empresa.id), eq(ubicaciones.codigo, q.toUpperCase()))) : [];
-  const encontrados = q
-    ? await db
-        .select()
-        .from(productos)
-        .where(and(eq(productos.empresaId, empresa.id), or(eq(productos.codigoBarras, q), eq(productos.isbn, q), eq(productos.codigoInterno, q.toUpperCase()), ilike(productos.titulo, patron), ilike(productos.autor, patron))))
-        .orderBy(asc(productos.titulo))
-        .limit(50)
-    : [];
-  const totales = new Map<number, number>();
-  if (encontrados.length > 0) {
-    const sumas = await db.select({ productoId: stock.productoId, n: sql<number>`sum(${stock.cantidad})`.mapWith(Number) }).from(stock).where(inArray(stock.productoId, encontrados.map((p) => p.id))).groupBy(stock.productoId);
-    for (const s of sumas) totales.set(s.productoId, s.n);
+  const [location] = q ? await db.select().from(locations).where(and(eq(locations.companyId, company.id), eq(locations.code, q.toUpperCase()))) : [];
+  // Without a search the whole catalogue is listed, a page at a time; a search narrows it.
+  const filter = and(eq(products.companyId, company.id), q ? or(eq(products.barcode, q), eq(products.isbn, q), eq(products.internalCode, q.toUpperCase()), containsText(products.title, q), containsText(products.author, q)) : undefined);
+  const [{ n: total }] = await db.select({ n: count() }).from(products).where(filter);
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const page = Math.min(pages, Math.max(1, Math.floor(Number(sp.pagina)) || 1));
+  const found = await db
+    .select()
+    .from(products)
+    .where(filter)
+    .orderBy(asc(products.title))
+    .limit(PAGE)
+    .offset((page - 1) * PAGE);
+  const pageHref = (n: number) => `/stock?${new URLSearchParams({ ...(q ? { q } : {}), ...(n > 1 ? { pagina: String(n) } : {}) })}`;
+  const totals = new Map<number, number>();
+  if (found.length > 0) {
+    const sums = await db.select({ productId: stock.productId, n: sql<number>`sum(${stock.quantity})`.mapWith(Number) }).from(stock).where(inArray(stock.productId, found.map((p) => p.id))).groupBy(stock.productId);
+    for (const s of sums) totals.set(s.productId, s.n);
   }
 
   return (
     <>
-      <Encabezado titulo="Stock" bajada="Buscá un título para saber dónde está, o escaneá un estante para ver qué tiene." />
-      <form className="mb-5 flex max-w-xl gap-2" role="search">
-        <input name="q" defaultValue={q} className="campo" placeholder="Título, autor, ISBN, código o ubicación" aria-label="Buscar" autoFocus />
-        <button className="boton px-4" aria-label="Buscar">
-          <Icono nombre="stock" />
-        </button>
-      </form>
+      <PageHeader title="Stock" />
+      <StockSearch initial={q} />
 
-      {ubicacion && (
-        <Link href={`/ubicaciones/${ubicacion.id}`} className="tarjeta mb-4 flex items-center justify-between gap-3 border-acento-texto/40 bg-acento-suave p-4">
-          <span>
-            <span className="block text-sm text-suave">Es una ubicación</span>
-            <span className="font-mono text-xl font-bold">{ubicacion.codigo}</span>
+      {location && (
+        <Link href={`/ubicaciones/${location.id}`} className="group mb-6 flex max-w-xl items-center gap-4 rounded-control border border-accent-text/30 bg-accent-soft px-3 py-3 lg:py-2 transition-colors duration-150 hover:border-accent-text">
+          <ShelfMark code={location.code} size="md" />
+          <span className="min-w-0 flex-1 text-sm text-muted">Es una ubicación</span>
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent-text">
+            Ver qué hay <Icon name="arrow" className="size-4" />
           </span>
-          <span className="enlace">Ver qué hay</span>
         </Link>
       )}
 
-      {q && encontrados.length === 0 && !ubicacion && <Vacio icono="stock" titulo={`Nada coincide con "${q}"`}>Probá con menos palabras o con el código de barras completo.</Vacio>}
-
-      {encontrados.length > 0 && (
-        <ul className="tarjeta divide-y divide-borde/70">
-          {encontrados.map((p) => (
-            <li key={p.id}>
-              <Link href={`/stock/${p.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-hundido">
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{p.titulo}</span>
-                  <span className="flex flex-wrap items-center gap-2 text-sm text-suave">
-                    <Codigo>{p.codigoBarras}</Codigo> {p.autor} {p.tipo !== "libro" && <Insignia>{TIPO[p.tipo]}</Insignia>}
-                  </span>
-                </span>
-                <span className={`text-xl font-bold tabular-nums ${totales.get(p.id) ? "" : "text-suave/50"}`}>{totales.get(p.id) ?? 0}</span>
+      <h2 className="section-title">
+        {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
+      </h2>
+      <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th className="hidden md:table-cell">Autor</th>
+                <th className="hidden sm:table-cell">Código</th>
+                <th className="text-right">Unidades</th>
+              </tr>
+            </thead>
+            <tbody>
+              {found.length === 0 && (
+                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}>
+                  {q ? "Probá con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
+                </EmptyRow>
+              )}
+              {found.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <Link href={`/stock/${p.id}`} className="link">
+                      {p.title}
+                    </Link>
+                    {p.type !== "book" && (
+                      <>
+                        {" "}
+                        <Badge>{TYPE_LABEL[p.type]}</Badge>
+                      </>
+                    )}
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted md:hidden">
+                      <span className="sm:hidden">
+                        <Code>{p.barcode}</Code>
+                      </span>
+                      {p.author}
+                    </span>
+                  </td>
+                  <td className="hidden text-muted md:table-cell">{p.author}</td>
+                  <td className="hidden sm:table-cell">
+                    <Code>{p.barcode}</Code>
+                  </td>
+                  <td className={`text-right text-base font-bold tabular-nums ${totals.get(p.id) ? "" : "text-muted/60"}`}>{totals.get(p.id) ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      {total > PAGE && (
+        <nav aria-label="Páginas" className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
+          <span>
+            {fmt((page - 1) * PAGE + 1)}–{fmt(Math.min(page * PAGE, total))} de {fmt(total)}
+          </span>
+          <span className="flex gap-2">
+            {page > 1 ? (
+              <Link href={pageHref(page - 1)} className="btn-sm" scroll={false}>
+                <Icon name="arrow" className="size-4 rotate-180" /> Anterior
               </Link>
-            </li>
-          ))}
-        </ul>
+            ) : (
+              <span className="btn-sm pointer-events-none opacity-55" aria-disabled="true">
+                <Icon name="arrow" className="size-4 rotate-180" /> Anterior
+              </span>
+            )}
+            {page < pages ? (
+              <Link href={pageHref(page + 1)} className="btn-sm" scroll={false}>
+                Siguiente <Icon name="arrow" className="size-4" />
+              </Link>
+            ) : (
+              <span className="btn-sm pointer-events-none opacity-55" aria-disabled="true">
+                Siguiente <Icon name="arrow" className="size-4" />
+              </span>
+            )}
+          </span>
+        </nav>
       )}
-      {encontrados.length === 50 && <p className="mt-2 text-sm text-suave">Se muestran los primeros 50. Afiná la búsqueda para ver menos.</p>}
     </>
   );
 }

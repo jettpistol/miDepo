@@ -3,51 +3,51 @@ import path from "node:path";
 import { Marked } from "marked";
 
 /**
- * El manual vive en la carpeta /wiki con formato de wiki de GitHub (Home.md, _Sidebar.md,
- * una página por archivo). Acá se lee para mostrarlo dentro de miDepo en /ayuda.
+ * The manual lives in the /wiki folder in GitHub wiki format (Home.md, _Sidebar.md,
+ * one page per file). It is read here to show it inside miDepo at /ayuda.
  */
-const CARPETA = path.join(process.cwd(), "wiki");
+const FOLDER = path.join(process.cwd(), "wiki");
 
-export function paginas() {
-  return readdirSync(CARPETA).filter((f) => f.endsWith(".md") && !f.startsWith("_")).map((f) => f.slice(0, -3));
+export function pages() {
+  return readdirSync(FOLDER).filter((f) => f.endsWith(".md") && !f.startsWith("_")).map((f) => f.slice(0, -3));
 }
 
-const esInterno = (href: string) => !/^([a-z]+:|\/|#)/i.test(href);
+const isInternal = (href: string) => !/^([a-z]+:|\/|#)/i.test(href);
 
 function render(md: string) {
   const marked = new Marked({ gfm: true });
   marked.use({
     renderer: {
-      // Los enlaces entre páginas del wiki ("Picking") pasan a ser /ayuda/Picking.
+      // Links between wiki pages ("Picking") become /ayuda/Picking.
       link({ href, tokens }) {
-        const destino = esInterno(href) ? `/ayuda/${href}` : href;
-        const externo = /^https?:/i.test(destino) ? ' target="_blank" rel="noreferrer"' : "";
-        return `<a href="${destino}"${externo}>${this.parser.parseInline(tokens)}</a>`;
+        const destination = isInternal(href) ? `/ayuda/${href}` : href;
+        const external = /^https?:/i.test(destination) ? ' target="_blank" rel="noreferrer"' : "";
+        return `<a href="${destination}"${external}>${this.parser.parseInline(tokens)}</a>`;
       },
     },
   });
   return marked.parse(md, { async: false });
 }
 
-export function leerPagina(nombre: string) {
-  if (!/^[\w-]+$/.test(nombre) || !paginas().includes(nombre)) return null;
-  const md = readFileSync(path.join(CARPETA, `${nombre}.md`), "utf8");
-  const titulo = md.match(/^#\s+(.+)$/m)?.[1] ?? nombre.replace(/-/g, " ");
-  return { titulo, html: render(md) };
+export function readPage(name: string) {
+  if (!/^[\w-]+$/.test(name) || !pages().includes(name)) return null;
+  const md = readFileSync(path.join(FOLDER, `${name}.md`), "utf8");
+  const title = md.match(/^#\s+(.+)$/m)?.[1] ?? name.replace(/-/g, " ");
+  return { title, html: render(md) };
 }
 
-export function leerIndice() {
-  return render(readFileSync(path.join(CARPETA, "_Sidebar.md"), "utf8"));
+export function readIndex() {
+  return render(readFileSync(path.join(FOLDER, "_Sidebar.md"), "utf8"));
 }
 
-// ───────────── Búsqueda ─────────────
+// ───────────── Search ─────────────
 
-/** Sin acentos ni mayúsculas, para que "recepcion" encuentre "Recepción". */
-const plano = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const escapar = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+/** No accents or capitals, so "recepcion" finds "Recepción". */
+const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const escapeText = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-/** Quita el formato Markdown y deja solo el texto que lee una persona. */
-function soloTexto(md: string) {
+/** Strips the Markdown formatting and leaves only the text a person reads. */
+function textOnly(md: string) {
   return md
     .replace(/^#\s+.+$/m, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
@@ -59,39 +59,39 @@ function soloTexto(md: string) {
     .trim();
 }
 
-export type Hallazgo = { pagina: string; titulo: string; extractoHtml: string };
+export type SearchHit = { page: string; title: string; excerptHtml: string };
 
-/** Busca en todo el manual. Todas las palabras tienen que aparecer en la página. */
-export function buscar(consulta: string): Hallazgo[] {
-  const palabras = plano(consulta).split(/\s+/).filter((p) => p.length > 1).slice(0, 6);
-  if (palabras.length === 0) return [];
-  const resultados: (Hallazgo & { puntos: number })[] = [];
-  for (const pagina of paginas()) {
-    const md = readFileSync(path.join(CARPETA, `${pagina}.md`), "utf8");
-    const titulo = md.match(/^#\s+(.+)$/m)?.[1] ?? pagina.replace(/-/g, " ");
-    const texto = soloTexto(md);
-    const [tituloPlano, textoPlano] = [plano(titulo), plano(texto)];
-    if (!palabras.every((p) => tituloPlano.includes(p) || textoPlano.includes(p))) continue;
-    // Una coincidencia en el título vale mucho más que una en el cuerpo.
-    const puntos = palabras.reduce((s, p) => s + (tituloPlano.includes(p) ? 20 : 0) + Math.min(10, textoPlano.split(p).length - 1), 0);
-    const donde = Math.max(0, ...palabras.map((p) => textoPlano.indexOf(p)).filter((i) => i >= 0).slice(0, 1));
-    const desde = Math.max(0, texto.lastIndexOf(" ", Math.max(0, donde - 70)));
-    const trozo = (desde > 0 ? "… " : "") + texto.slice(desde, desde + 210).trim() + (desde + 210 < texto.length ? " …" : "");
-    // El resaltado se hace sobre el texto ya escapado, comparando sin acentos letra por letra.
+/** Searches the whole manual. Every word has to appear on the page. */
+export function search(lookup: string): SearchHit[] {
+  const words = plain(lookup).split(/\s+/).filter((p) => p.length > 1).slice(0, 6);
+  if (words.length === 0) return [];
+  const results: (SearchHit & { points: number })[] = [];
+  for (const page of pages()) {
+    const md = readFileSync(path.join(FOLDER, `${page}.md`), "utf8");
+    const title = md.match(/^#\s+(.+)$/m)?.[1] ?? page.replace(/-/g, " ");
+    const text = textOnly(md);
+    const [plainTitle, plainText] = [plain(title), plain(text)];
+    if (!words.every((p) => plainTitle.includes(p) || plainText.includes(p))) continue;
+    // A match in the title is worth far more than one in the body.
+    const points = words.reduce((s, p) => s + (plainTitle.includes(p) ? 20 : 0) + Math.min(10, plainText.split(p).length - 1), 0);
+    const whereabouts = Math.max(0, ...words.map((p) => plainText.indexOf(p)).filter((i) => i >= 0).slice(0, 1));
+    const fromLoc = Math.max(0, text.lastIndexOf(" ", Math.max(0, whereabouts - 70)));
+    const chunk = (fromLoc > 0 ? "… " : "") + text.slice(fromLoc, fromLoc + 210).trim() + (fromLoc + 210 < text.length ? " …" : "");
+    // Highlighting runs on the already-escaped text, comparing without accents letter by letter.
     let html = "";
-    const trozoPlano = plano(trozo);
-    for (let i = 0; i < trozo.length; ) {
-      const p = trozoPlano.length === trozo.length ? palabras.find((w) => trozoPlano.startsWith(w, i)) : undefined;
+    const plainChunk = plain(chunk);
+    for (let i = 0; i < chunk.length; ) {
+      const p = plainChunk.length === chunk.length ? words.find((w) => plainChunk.startsWith(w, i)) : undefined;
       if (p) {
-        html += `<mark>${escapar(trozo.slice(i, i + p.length))}</mark>`;
+        html += `<mark>${escapeText(chunk.slice(i, i + p.length))}</mark>`;
         i += p.length;
-      } else html += escapar(trozo[i++]);
+      } else html += escapeText(chunk[i++]);
     }
-    resultados.push({ pagina, titulo, extractoHtml: html, puntos });
+    results.push({ page, title, excerptHtml: html, points });
   }
-  return resultados.sort((a, b) => b.puntos - a.puntos || a.titulo.localeCompare(b.titulo));
+  return results.sort((a, b) => b.points - a.points || a.title.localeCompare(b.title));
 }
 
-export function leerPie() {
-  return render(readFileSync(path.join(CARPETA, "_Footer.md"), "utf8"));
+export function readFooter() {
+  return render(readFileSync(path.join(FOLDER, "_Footer.md"), "utf8"));
 }

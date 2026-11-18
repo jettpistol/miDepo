@@ -1,69 +1,102 @@
 import Link from "next/link";
 import { and, count, eq, inArray, sum } from "drizzle-orm";
-import { Icono, type NombreIcono } from "@/components/Icono";
-import { Encabezado } from "@/components/ui";
-import { conteos, devoluciones, pedidos, recepciones, stock, ubicaciones } from "@/db/schema";
-import { pendientesDeEnvio } from "@/lib/flujos/envios";
-import { puede, requerir } from "@/lib/sesion";
+import { Icon } from "@/components/Icon";
+import { PageHeader, ShelfMark, EmptyState } from "@/components/ui";
+import { counts, returns, orders, receivings, stock, locations } from "@/db/schema";
+import { pendingExports } from "@/lib/flows/exports";
+import { can, requireSession } from "@/lib/session";
+import { InProgressTable, loadOpenOrders, PendingTable } from "./picking/Tables";
 
-function Tarea({ href, icono, numero, titulo, detalle, destacada = false }: { href: string; icono: NombreIcono; numero: number; titulo: string; detalle: string; destacada?: boolean }) {
-  const hay = numero > 0;
+/** A work queue: what it is, how much there is, and where to go. */
+function Queue({ href, number, title }: { href: string; number: number; title: string }) {
   return (
-    <Link href={href} className={`tarjeta group flex items-center gap-4 p-4 transition hover:border-acento-texto/50 ${destacada && hay ? "border-acento-texto/40 bg-acento-suave" : ""}`}>
-      <span className={`grid size-12 shrink-0 place-items-center rounded-xl ${hay ? "bg-acento text-sobre-acento" : "bg-hundido text-suave"}`}>
-        <Icono nombre={icono} className="size-6" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-semibold">{titulo}</span>
-        <span className="block truncate text-sm text-suave">{detalle}</span>
-      </span>
-      <span className={`text-3xl font-bold tabular-nums ${hay ? "" : "text-suave/50"}`}>{numero}</span>
-    </Link>
+    <li>
+      <Link href={href} className="row group">
+        <span className="min-w-0 flex-1 font-semibold">{title}</span>
+        <span className={`text-xl lg:text-base font-bold tabular-nums ${number > 0 ? "" : "text-muted/60"}`}>{number}</span>
+        <Icon name="arrow" className="size-4 text-muted transition-transform duration-150 group-hover:translate-x-0.5" />
+      </Link>
+    </li>
   );
 }
 
-export default async function Inicio() {
-  const { db, usuario, empresa } = await requerir();
-  const e = empresa.id;
-  const cuenta = async (tabla: typeof pedidos, estado: (typeof pedidos.$inferSelect)["estado"]) => (await db.select({ n: count() }).from(tabla).where(and(eq(tabla.empresaId, e), eq(tabla.estado, estado))))[0].n;
+const FIRST_N = 8;
 
-  const [pendientes, paraEmpacar, mios, recs, devs, conts, porGuardar, envios] = await Promise.all([
-    cuenta(pedidos, "pendiente"),
-    cuenta(pedidos, "preparado"),
-    db.select({ id: pedidos.id, numero: pedidos.numero }).from(pedidos).where(and(eq(pedidos.empresaId, e), eq(pedidos.estado, "en_preparacion"), eq(pedidos.tomadoPor, usuario.id))),
-    db.select({ n: count() }).from(recepciones).where(and(eq(recepciones.empresaId, e), inArray(recepciones.estado, ["pendiente", "en_curso"]))),
-    db.select({ n: count() }).from(devoluciones).where(and(eq(devoluciones.empresaId, e), eq(devoluciones.estado, "en_curso"))),
-    db.select({ n: count() }).from(conteos).where(and(eq(conteos.empresaId, e), eq(conteos.estado, "abierto"))),
-    db.select({ n: sum(stock.cantidad).mapWith(Number) }).from(stock).innerJoin(ubicaciones, eq(ubicaciones.id, stock.ubicacionId)).where(and(eq(stock.empresaId, e), inArray(ubicaciones.tipo, ["recepcion", "devoluciones"]))),
-    puede(usuario.rol, "supervisor") ? pendientesDeEnvio(db, e) : Promise.resolve([]),
+export default async function Home() {
+  const { db, user, company } = await requireSession();
+  const e = company.id;
+
+  const [openOrders, toPack, openReceivings, openReturns, openCounts, toPutAway, exports] = await Promise.all([
+    loadOpenOrders(db, e),
+    db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, e), eq(orders.status, "picked"))),
+    db.select({ n: count() }).from(receivings).where(and(eq(receivings.companyId, e), inArray(receivings.status, ["pending", "in_progress"]))),
+    db.select({ n: count() }).from(returns).where(and(eq(returns.companyId, e), eq(returns.status, "in_progress"))),
+    db.select({ n: count() }).from(counts).where(and(eq(counts.companyId, e), eq(counts.status, "open"))),
+    db.select({ n: sum(stock.quantity).mapWith(Number) }).from(stock).innerJoin(locations, eq(locations.id, stock.locationId)).where(and(eq(stock.companyId, e), inArray(locations.type, ["receiving", "returns"]))),
+    can(user.role, "supervisor") ? pendingExports(db, e) : Promise.resolve([]),
   ]);
+  const { inProgress, pending } = openOrders;
+  const myOrders = inProgress.filter((f) => f.p.takenBy === user.id);
 
   return (
     <>
-      <Encabezado titulo={`Hola, ${usuario.nombre.split(" ")[0]}`} bajada="Esto es lo que hay para hacer en el depósito ahora." />
+      <PageHeader title={`Hola, ${user.name.split(" ")[0]}`} />
 
-      {mios.length > 0 && (
-        <div className="mb-5 space-y-2">
-          {mios.map((p) => (
-            <Link key={p.id} href={`/picking/${p.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-acento px-5 py-4 text-sobre-acento">
-              <span>
-                <span className="block text-sm opacity-80">Tenés un pedido a medio preparar</span>
-                <span className="block text-lg font-bold">Seguir con {p.numero}</span>
-              </span>
-              <Icono nombre="flecha" className="size-6" />
-            </Link>
-          ))}
+      {myOrders.map(({ p, nextShelf }) => (
+        <Link key={p.id} href={`/picking/${p.id}`} className="mb-6 flex items-center gap-4 rounded-control bg-accent px-4 py-3.5 text-on-accent transition-colors duration-150 hover:bg-accent-hover">
+          {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm opacity-85">Tenés un pedido a medio preparar</span>
+            <span className="block text-lg lg:text-base leading-tight font-bold">Seguir con {p.number}</span>
+          </span>
+          <Icon name="arrow" className="size-6" />
+        </Link>
+      ))}
+
+      <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="min-w-0 space-y-8 lg:space-y-6">
+          {inProgress.length > 0 && (
+            <section>
+              <h2 className="section-title">
+                Pedidos en preparación <small>{inProgress.length}</small>
+              </h2>
+              <InProgressTable rows={inProgress} userId={user.id} />
+            </section>
+          )}
+
+          <section>
+            <h2 className="section-title">
+              Pedidos para preparar <small>{pending.length}</small>
+            </h2>
+            {pending.length === 0 ? (
+              <EmptyState title="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</EmptyState>
+            ) : (
+              <>
+                <PendingTable rows={pending.slice(0, FIRST_N)} />
+                {pending.length > FIRST_N && (
+                  <p className="mt-3 text-sm text-muted">
+                    Los {FIRST_N} más viejos de {pending.length}.{" "}
+                    <Link href="/picking" className="link">
+                      Ver todos en Picking
+                    </Link>
+                  </p>
+                )}
+              </>
+            )}
+          </section>
         </div>
-      )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Tarea href="/picking" icono="picking" numero={pendientes} titulo="Pedidos para preparar" detalle="Llegaron de Fierro y nadie los tomó" destacada />
-        <Tarea href="/empaque" icono="empaque" numero={paraEmpacar} titulo="Pedidos para empacar" detalle="Ya preparados, falta armar las cajas" />
-        <Tarea href="/recepcion" icono="recepcion" numero={recs[0].n} titulo="Recepciones abiertas" detalle="Mercadería por contar" />
-        <Tarea href="/guardar" icono="guardar" numero={porGuardar[0].n ?? 0} titulo="Unidades por guardar" detalle="Esperan en Recepción o Devoluciones" />
-        <Tarea href="/devoluciones" icono="devolucion" numero={devs[0].n} titulo="Devoluciones en curso" detalle="Libros que volvieron y hay que revisar" />
-        <Tarea href="/conteos" icono="conteo" numero={conts[0].n} titulo="Conteos abiertos" detalle="Ubicaciones por contar" />
-        {puede(usuario.rol, "supervisor") && <Tarea href="/fierro" icono="fierro" numero={envios.length} titulo="Para cargar en Fierro" detalle="Documentos terminados que Fierro todavía no tiene" />}
+        <section>
+          <h2 className="section-title">El resto del depósito</h2>
+          <ul className="ruled-list framed">
+            <Queue href="/empaque" number={toPack[0].n} title="Pedidos para empacar" />
+            <Queue href="/recepcion" number={openReceivings[0].n} title="Recepciones abiertas" />
+            <Queue href="/guardar" number={toPutAway[0].n ?? 0} title="Unidades por guardar" />
+            <Queue href="/devoluciones" number={openReturns[0].n} title="Devoluciones en curso" />
+            <Queue href="/conteos" number={openCounts[0].n} title="Conteos abiertos" />
+            {can(user.role, "supervisor") && <Queue href="/fierro" number={exports.length} title="Para cargar en Fierro" />}
+          </ul>
+        </section>
       </div>
     </>
   );

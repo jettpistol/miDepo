@@ -1,25 +1,26 @@
-import { Escaneo } from "@/components/Escaneo";
-import { Encabezado } from "@/components/ui";
-import { requerir } from "@/lib/sesion";
-import { moverAccion } from "./acciones";
+import { ScanForm } from "@/components/ScanForm";
+import { PageHeader } from "@/components/ui";
+import { requireSession } from "@/lib/session";
+import { moveAction } from "./actions";
 
 export const metadata = { title: "Mover" };
 
-export default async function Mover() {
-  await requerir();
+export default async function Move() {
+  await requireSession();
   return (
     <>
-      <Encabezado titulo="Mover" bajada="Para cambiar libros de un estante a otro: reordenar, juntar un título o liberar un lugar." />
+      <PageHeader title="Mover" />
       <div className="max-w-md">
-        <Escaneo
-          accion={moverAccion}
-          campos={[
-            { nombre: "origen", etiqueta: "Desde", ayuda: "Ubicación de donde sacás" },
-            { nombre: "producto", etiqueta: "Libro" },
-            { nombre: "destino", etiqueta: "Hacia", ayuda: "Ubicación donde lo dejás" },
+        <ScanForm
+          action={moveAction}
+          context="move"
+          fields={[
+            { name: "source", label: "Desde", help: "Estante o zona" },
+            { name: "product", label: "Libro", help: "Código, título o autor" },
+            { name: "destination", label: "Hacia", help: "Estante o zona" },
           ]}
-          cantidad={1}
-          boton="Mover"
+          quantity={1}
+          button="Mover"
         />
       </div>
     </>

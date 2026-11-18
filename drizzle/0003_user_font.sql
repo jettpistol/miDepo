@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "font" text DEFAULT 'libre-franklin' NOT NULL;

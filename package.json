@@ -10,7 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "db:setup": "tsx src/db/setup.ts",
     "db:reset": "tsx src/db/setup.ts --reset",
-    "empresa:crear": "tsx src/db/crear-empresa.ts",
+    "company:create": "tsx src/db/create-company.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

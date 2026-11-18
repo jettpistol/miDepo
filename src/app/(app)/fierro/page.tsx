@@ -1,79 +1,104 @@
 import Link from "next/link";
-import { BotonAccion } from "@/components/Escaneo";
-import { Icono } from "@/components/Icono";
-import { Aviso, Encabezado, fechaCorta, Insignia, Vacio } from "@/components/ui";
-import { conector } from "@/lib/fierro";
-import { NOMBRE_ENVIO, pendientesDeEnvio } from "@/lib/flujos/envios";
-import { requerir } from "@/lib/sesion";
-import { enviar, simular, sincronizarAhora } from "./acciones";
+import { ActionButton } from "@/components/ScanForm";
+import { Icon } from "@/components/Icon";
+import { Notice, PageHeader, shortDate, Badge, EmptyState } from "@/components/ui";
+import { connector } from "@/lib/fierro";
+import { EXPORT_NAME, pendingExports } from "@/lib/flows/exports";
+import { requireSession } from "@/lib/session";
+import { submit, simulate, syncNow } from "./actions";
 
 export const metadata = { title: "Fierro" };
 
 export default async function Fierro() {
-  const { db, empresa } = await requerir("supervisor");
-  const pendientes = await pendientesDeEnvio(db, empresa.id);
-  const simulado = conector(db, empresa).modo === "simulado";
+  const { db, company } = await requireSession("supervisor");
+  const pending = await pendingExports(db, company.id);
+  const simulated = connector(db, company).mode === "simulated";
 
   return (
     <>
-      <Encabezado titulo="Fierro" bajada="Fierro manda en catálogo, clientes y pedidos. miDepo le devuelve lo que pasó en el depósito.">
-        <Link href="/fierro/conciliacion" className="boton-suave">
+      <PageHeader title="Fierro">
+        <Link href="/fierro/conciliacion" className="btn-soft">
           Conciliar stock
         </Link>
-      </Encabezado>
+      </PageHeader>
 
-      {simulado && (
-        <div className="mb-5">
-          <Aviso tono="alerta">
+      {simulated && (
+        <div className="mb-6">
+          <Notice tone="warn">
             <strong>Modo de prueba:</strong> este depósito está conectado a un Fierro simulado con datos inventados. Nada de lo que hagas acá llega a un Fierro real.
-          </Aviso>
+          </Notice>
         </div>
       )}
 
-      <section className="tarjeta mb-5 p-5">
-        <h2 className="font-semibold">Traer novedades de Fierro</h2>
-        <p className="mb-3 text-sm text-suave">Última sincronización: {empresa.ultimaSync ? fechaCorta(empresa.ultimaSync) : "nunca"}. Trae títulos nuevos, clientes, pedidos pendientes e ingresos avisados.</p>
+      <section className="mb-8 lg:mb-6">
+        <h2 className="section-title">Traer novedades de Fierro</h2>
+        <p className="mb-3 max-w-[70ch] text-sm text-muted">Última sincronización: {company.lastSync ? shortDate(company.lastSync) : "nunca"}</p>
         <div className="flex flex-wrap gap-2">
-          <BotonAccion accion={sincronizarAhora}>
-            <Icono nombre="fierro" /> Sincronizar ahora
-          </BotonAccion>
-          {simulado && (
+          <ActionButton action={syncNow}>
+            <Icon name="fierro" /> Sincronizar ahora
+          </ActionButton>
+          {simulated && (
             <>
-              <BotonAccion accion={simular} ocultos={{ que: "pedidos", cuantos: 10 }} clase="boton-suave">
+              <ActionButton action={simulate} hiddenFields={{ what: "orders", howManyOf: 10 }} className="btn-soft">
                 Simular 10 pedidos nuevos
-              </BotonAccion>
-              <BotonAccion accion={simular} ocultos={{ que: "ingresos", cuantos: 1 }} clase="boton-suave">
+              </ActionButton>
+              <ActionButton action={simulate} hiddenFields={{ what: "receipts", howManyOf: 1 }} className="btn-soft">
                 Simular un ingreso avisado
-              </BotonAccion>
+              </ActionButton>
             </>
           )}
         </div>
       </section>
 
-      <h2 className="mb-1 font-semibold">Para cargar en Fierro ({pendientes.length})</h2>
-      <p className="mb-3 text-sm text-suave">Descargá el archivo, cargalo en Fierro y después marcalo como cargado. Un pedido sale del stock del depósito recién en ese momento.</p>
-      {pendientes.length === 0 ? (
-        <Vacio titulo="Fierro está al día">No hay documentos del depósito sin informar.</Vacio>
-      ) : (
-        <ul className="space-y-2">
-          {pendientes.map((p) => (
-            <li key={`${p.tipo}-${p.id}`} className="tarjeta flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
-              <span className="min-w-0 flex-1 basis-56">
-                <span className="flex flex-wrap items-center gap-2 font-semibold">
-                  <Insignia tono="acento">{NOMBRE_ENVIO[p.tipo]}</Insignia> {p.numero}
-                </span>
-                <span className="block truncate text-sm text-suave">{p.detalle}</span>
-              </span>
-              <a href={`/api/exportar/${p.tipo}/${p.id}`} className="boton-suave" download>
-                <Icono nombre="descargar" /> CSV
-              </a>
-              <BotonAccion accion={enviar} ocultos={{ tipo: p.tipo, id: p.id }} confirmar={`¿Ya cargaste ${p.numero} en Fierro?`}>
-                Marcar como cargado
-              </BotonAccion>
-            </li>
-          ))}
-        </ul>
-      )}
+      <section>
+        <h2 className="section-title">
+          Para cargar en Fierro <small>{pending.length}</small>
+        </h2>
+        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock recién cuando lo marcás como cargado.</p>
+        {pending.length === 0 ? (
+          <EmptyState title="Fierro está al día">No hay documentos del depósito sin informar.</EmptyState>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th className="hidden sm:table-cell">Tipo</th>
+                  <th className="hidden md:table-cell">Detalle</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((p) => (
+                  <tr key={`${p.type}-${p.id}`}>
+                    <td>
+                      <span className="doc-number">{p.number}</span>
+                      <span className="mt-1 block sm:hidden">
+                        <Badge tone="accent">{EXPORT_NAME[p.type]}</Badge>
+                      </span>
+                      <span className="block max-w-44 truncate text-muted sm:max-w-64 md:hidden">{p.detail}</span>
+                    </td>
+                    <td className="hidden sm:table-cell">
+                      <Badge tone="accent">{EXPORT_NAME[p.type]}</Badge>
+                    </td>
+                    <td className="hidden text-muted md:table-cell">{p.detail}</td>
+                    <td className="w-px">
+                      <span className="flex flex-col items-stretch gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                        <a href={`/api/export/${p.type}/${p.id}`} className="btn-sm" download>
+                          <Icon name="download" className="size-4" /> CSV
+                        </a>
+                        <ActionButton action={submit} hiddenFields={{ type: p.type, id: p.id }} className="btn-sm" confirm={`¿Ya cargaste ${p.number} en Fierro?`}>
+                          Marcar como cargado
+                        </ActionButton>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   );
 }

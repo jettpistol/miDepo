@@ -4,7 +4,7 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 
 ## Product
 
-**D1. miDepo is a layer on top of Fierro, not a replacement.** Owner asked first for a standalone WMS and then for one that switches to "layer mode" if Fierro is in use. Recommendation, accepted: design for both, build layer mode first. A standalone mode is as much work again (catalogue, customers, orders, remitos, consignment) and would compete with Fierro; "works with the Fierro you already have" is the easier sale to Fierro's roughly 300 clients. The boundary is `ConectorFierro`; a standalone source of orders and catalogue would implement the same interface.
+**D1. miDepo is a layer on top of Fierro, not a replacement.** Owner asked first for a standalone WMS and then for one that switches to "layer mode" if Fierro is in use. Recommendation, accepted: design for both, build layer mode first. A standalone mode is as much work again (catalogue, customers, orders, remitos, consignment) and would compete with Fierro; "works with the Fierro you already have" is the easier sale to Fierro's roughly 300 clients. The boundary is `FierroConnector`; a standalone source of orders and catalogue would implement the same interface.
 
 **D2. Small warehouses only.** No 3PL, wave planning, slotting, lots/serials/expiry, labour metrics, carrier integrations or billing.
 
@@ -14,7 +14,7 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 
 **D5. The MVP talks to a simulated Fierro and hands documents over as CSV.** Owner has no Fierro access. No documented way to push orders or receipts into Fierro in real time was found.
 
-**D6. Returns are graded `vendible` / `saldo` / `dañado`**, each going to its own zone; only `vendible` goes back to a shelf (owner accepted the default).
+**D6. Returns are graded sellable, clearance or damaged** (shown in Spanish in the interface), each going to its own zone; only sellable copies go back to a shelf (owner accepted the default).
 
 **D7. Counts are blind and by shelf range**, approved by a supervisor, adjusting only shelves marked as counted.
 
@@ -24,9 +24,9 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 
 ## Follow-up requests
 
-**D8. Several accounts logged in per device, switching without re-authenticating** (up to five). Owner request. The convenience costs security on shared devices; mitigated by always showing the active person's photo or initials and a "sign out of all" action. Assumed the owner is happy with that trade; flagged as an open question in STATUS.
+**D8. Several accounts logged in per device, switching without re-authenticating** (up to five). Owner request. The convenience costs security on shared devices; mitigated by always showing the active person's photo or initials and a "sign out of all" action. Assumed the owner is happy with that trade; flagged as an open question in [ROADMAP.md](ROADMAP.md).
 
-**D9. Profile photos** are cropped square and shrunk to 256 px JPEG in the browser, stored in the database (table `usuario_fotos`, separate from `usuarios` so it is not loaded on every query), served only to users of the same company. Chosen so no file storage service is needed.
+**D9. Profile photos** are cropped square and shrunk to 256 px JPEG in the browser, stored in the database (table `user_photos`, separate from `users` so it is not loaded on every query), served only to users of the same company. Chosen so no file storage service is needed.
 
 **D10. The manual is its own site** at `/ayuda` (black header, search, index), readable without logging in, built from the `wiki/` folder so the same files can be published as a real GitHub wiki.
 
@@ -44,8 +44,6 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 
 **D16. The app is an installable web app (PWA), not a native app.** Cheaper to maintain; camera needs HTTPS.
 
-**D17. Login protections:** passwords with scrypt; PINs are 6 digits hashed with an HMAC keyed by `SECRETO` so a PIN identifies someone within a company; after 6 failures the key is blocked 5 minutes; session tokens are random and stored hashed.
+**D17. Login protections:** passwords with scrypt; PINs are 6 digits hashed with an HMAC keyed by `SECRET` so a PIN identifies someone within a company; after 6 failures the key is blocked 5 minutes; session tokens are random and stored hashed.
 
 **D18. Hosting guide targets Vercel + Neon.** Fewest decisions for a first-time host. Vercel's free tier is non-commercial.
-
-**D19. Repository branches.** Work on `claude/practical-hawking-djbfe9`; the owner asked for pushes to `main` explicitly each time.

@@ -5,7 +5,8 @@ Cuando una librería devuelve libros, hay que revisar **uno por uno** y decidir 
 ## Paso a paso
 
 1. Andá a **Devoluciones**.
-2. En **Llegó una devolución**, elegí quién devuelve y tocá **Empezar a revisar**.
+2. Tocá **Nueva**, abrí **Cliente que devuelve** y elegilo de la lista (podés buscar por nombre o localidad). Tocá **Empezar a revisar**.
+   Los clientes vienen de Fierro: si falta uno, pedí que sincronicen.
 3. Tomá un libro, miralo y elegí su **estado**.
 4. Escanealo. Si tenés varios iguales en el mismo estado, escribí la cantidad.
 5. Repetí con todos.

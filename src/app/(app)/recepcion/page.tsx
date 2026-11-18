@@ -1,75 +1,110 @@
 import Link from "next/link";
-import { and, desc, eq, sql } from "drizzle-orm";
-import { Formulario } from "@/components/Escaneo";
-import { Encabezado, fechaCorta, Insignia, plural, Vacio } from "@/components/ui";
-import { recepcionLineas, recepciones } from "@/db/schema";
-import { requerir } from "@/lib/sesion";
-import { crear } from "./acciones";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { ActionForm } from "@/components/ScanForm";
+import { NewButton } from "@/components/NewButton";
+import { PageHeader, shortDate, Badge, plural, EmptyRow } from "@/components/ui";
+import { receivingLines, receivings, suppliers } from "@/db/schema";
+import { requireSession } from "@/lib/session";
+import { create } from "./actions";
+import { SupplierSelect } from "./SupplierSelect";
 
 export const metadata = { title: "Recepción" };
 
-export default async function Recepciones() {
-  const { db, empresa } = await requerir();
-  const filas = await db
+export default async function Receivings() {
+  const { db, company } = await requireSession();
+  const supplierList = await db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, company.id)).orderBy(asc(suppliers.name));
+  const rows = await db
     .select({
-      r: recepciones,
-      titulos: sql<number>`count(${recepcionLineas.id})`.mapWith(Number),
-      esperado: sql<number>`coalesce(sum(${recepcionLineas.esperado}), 0)`.mapWith(Number),
-      recibido: sql<number>`coalesce(sum(${recepcionLineas.recibido}), 0)`.mapWith(Number),
+      r: receivings,
+      supplier: suppliers.name,
+      titles: sql<number>`count(${receivingLines.id})`.mapWith(Number),
+      expected: sql<number>`coalesce(sum(${receivingLines.expected}), 0)`.mapWith(Number),
+      received: sql<number>`coalesce(sum(${receivingLines.received}), 0)`.mapWith(Number),
     })
-    .from(recepciones)
-    .leftJoin(recepcionLineas, eq(recepcionLineas.recepcionId, recepciones.id))
-    .where(and(eq(recepciones.empresaId, empresa.id)))
-    .groupBy(recepciones.id)
-    .orderBy(desc(recepciones.fecha))
+    .from(receivings)
+    .innerJoin(suppliers, eq(suppliers.id, receivings.supplierId))
+    .leftJoin(receivingLines, eq(receivingLines.receivingId, receivings.id))
+    .where(and(eq(receivings.companyId, company.id)))
+    .groupBy(receivings.id, suppliers.name)
+    .orderBy(desc(receivings.date))
     .limit(60);
-  const abiertas = filas.filter((f) => f.r.estado !== "cerrada").reverse();
-  const cerradas = filas.filter((f) => f.r.estado === "cerrada").slice(0, 8);
+  const openList = rows.filter((f) => f.r.status !== "closed").reverse();
+  const closedList = rows.filter((f) => f.r.status === "closed").slice(0, 8);
 
   return (
     <>
-      <Encabezado titulo="Recepción" bajada="Contá lo que llega. Lo que cierres queda esperando en la zona de Recepción para guardar." />
-      {abiertas.length === 0 ? (
-        <Vacio titulo="No hay recepciones abiertas">Cuando Fierro avise un ingreso va a aparecer acá. Si llegó algo sin aviso, creá la recepción abajo.</Vacio>
-      ) : (
-        <ul className="space-y-2">
-          {abiertas.map(({ r, titulos, esperado, recibido }) => (
-            <li key={r.id}>
-              <Link href={`/recepcion/${r.id}`} className="tarjeta flex flex-wrap items-center justify-between gap-x-4 gap-y-1 p-4 hover:border-acento-texto/50">
-                <span className="min-w-0">
-                  <span className="block font-semibold">
-                    {r.numero} · {r.proveedor}
-                  </span>
-                  <span className="block text-sm text-suave">
-                    {plural(titulos, "título", "títulos")} · {r.fierroId ? `${esperado} unidades esperadas` : "sin aviso de Fierro"} · {fechaCorta(r.fecha)}
-                  </span>
-                </span>
-                {r.estado === "en_curso" ? <Insignia tono="acento">En curso · {recibido} contadas</Insignia> : <Insignia>Sin empezar</Insignia>}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <section className="tarjeta mt-6 p-4">
-        <h2 className="font-semibold">Llegó algo sin aviso</h2>
-        <p className="mb-3 text-sm text-suave">Creá una recepción vacía y escaneá lo que haya en las cajas.</p>
-        <Formulario accion={crear} boton="Crear recepción" clase="flex flex-wrap items-start gap-3">
-          <input name="proveedor" className="campo max-w-sm flex-1" placeholder="¿De dónde viene? (imprenta, feria, proveedor…)" aria-label="Origen de la mercadería" required />
-        </Formulario>
+      <PageHeader title="Recepción">
+        <NewButton title="Nueva recepción sin aviso">
+          <ActionForm action={create} button="Crear recepción" className="space-y-3 [&>button]:w-full">
+            <div>
+              <label htmlFor="supplier" className="field-label">
+                Proveedor
+              </label>
+              <SupplierSelect options={supplierList.map((x) => ({ value: String(x.id), label: x.name }))} />
+            </div>
+          </ActionForm>
+        </NewButton>
+      </PageHeader>
+      <section>
+        <h2 className="section-title">
+          Abiertas <small>{openList.length}</small>
+        </h2>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Recepción</th>
+                <th>Origen</th>
+                <th className="hidden text-right sm:table-cell">Títulos</th>
+                <th className="hidden text-right sm:table-cell">Esperadas</th>
+                <th className="hidden md:table-cell">Fecha</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {openList.length === 0 && (
+                <EmptyRow columns={6} title="No hay recepciones abiertas">
+                  Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, tocá Nueva.
+                </EmptyRow>
+              )}
+              {openList.map(({ r, supplier, titles, expected, received }) => (
+                <tr key={r.id}>
+                  <td>
+                    <Link href={`/recepcion/${r.id}`} className="link doc-number">
+                      {r.number}
+                    </Link>
+                  </td>
+                  <td>
+                    <span className="font-medium">{supplier}</span>
+                    <span className="block text-muted md:hidden">
+                      <span className="sm:hidden">
+                        {plural(titles, "título", "títulos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
+                      </span>
+                      {shortDate(r.date)}
+                    </span>
+                  </td>
+                  <td className="hidden text-right sm:table-cell">{titles}</td>
+                  <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{expected}</span> : <span className="text-muted">sin aviso de Fierro</span>}</td>
+                  <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(r.date)}</td>
+                  <td>{r.status === "in_progress" ? <Badge tone="accent">En curso · {received} contadas</Badge> : <Badge>Sin empezar</Badge>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
-      {cerradas.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-2 text-sm font-semibold text-suave">Últimas cerradas</h2>
-          <ul className="tarjeta divide-y divide-borde/70 text-sm">
-            {cerradas.map(({ r, recibido }) => (
+      {closedList.length > 0 && (
+        <section className="mt-8 lg:mt-6">
+          <h2 className="section-title">Últimas cerradas</h2>
+          <ul className="ruled-list framed">
+            {closedList.map(({ r, supplier, received }) => (
               <li key={r.id}>
-                <Link href={`/recepcion/${r.id}`} className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-hundido">
-                  <span>
-                    {r.numero} · {r.proveedor}
+                <Link href={`/recepcion/${r.id}`} className="row justify-between">
+                  <span className="min-w-0">
+                    <span className="doc-number">{r.number}</span> · {supplier}
                   </span>
-                  <span className="text-suave">{recibido} unidades</span>
+                  <span className="text-sm whitespace-nowrap text-muted">{received} unidades</span>
                 </Link>
               </li>
             ))}

@@ -54,10 +54,10 @@ Nothing here was tested against a real Fierro account. **No Fierro access exists
 
 | miDepo | Fierro |
 |---|---|
-| `pendiente` | Pendiente |
-| `en_preparacion`, `preparado` | En Elaboración |
-| `empacado` | (boxes exist; waiting to be documented) |
-| `despachado` (marked loaded) | Documentado en Cajas / dispatched |
+| `pending` | Pendiente |
+| `in_picking`, `picked` | En Elaboración |
+| `packed` | (boxes exist; waiting to be documented) |
+| `shipped` (marked as loaded in Fierro) | Documentado en Cajas / dispatched |
 
 ## Not known
 

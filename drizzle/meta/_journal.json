@@ -5,15 +5,29 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1794864066066,
-      "tag": "0000_lazy_terror",
+      "when": 1794887741386,
+      "tag": "0000_initial",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1794866862907,
-      "tag": "0001_groovy_nighthawk",
+      "when": 1794951443331,
+      "tag": "0001_suppliers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794951450115,
+      "tag": "0002_receivings_require_supplier",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794952502442,
+      "tag": "0003_user_font",
       "breakpoints": true
     }
   ]

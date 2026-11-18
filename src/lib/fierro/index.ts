@@ -1,80 +1,84 @@
 import { eq, sql } from "drizzle-orm";
-import type { DB, Ejecutor } from "@/db";
-import { clientes, empresas, fierroStock, pedidoLineas, pedidos, productos, recepcionLineas, recepciones } from "@/db/schema";
-import { FierroSimulado } from "./simulado";
-import type { ConectorFierro } from "./tipos";
+import type { DB, Executor } from "@/db";
+import { customers, companies, fierroStock, orderLines, orders, products, receivingLines, receivings, suppliers } from "@/db/schema";
+import { SimulatedFierro } from "./simulated";
+import type { FierroConnector } from "./types";
 
-export type Empresa = typeof empresas.$inferSelect;
+export type Company = typeof companies.$inferSelect;
 
-/** Cuando exista el conector real, se elige acá según la configuración de la empresa. */
-export function conector(db: Ejecutor, empresa: Empresa): ConectorFierro {
-  return new FierroSimulado(db, empresa);
+/** When the real connector exists, it is chosen here from the company's configuration. */
+export function connector(db: Executor, company: Company): FierroConnector {
+  return new SimulatedFierro(db, company);
 }
 
-const enTandas = <T,>(lista: T[], n = 400) => Array.from({ length: Math.ceil(lista.length / n) }, (_, i) => lista.slice(i * n, i * n + n));
+const inBatches = <T,>(list: T[], n = 400) => Array.from({ length: Math.ceil(list.length / n) }, (_, i) => list.slice(i * n, i * n + n));
 
 /**
- * Trae de Fierro catálogo, clientes, pedidos e ingresos esperados. Fierro manda: lo que
- * cambió allá pisa lo de acá. Lo único que miDepo no toca son los pedidos ya empezados.
+ * Brings catalogue, customers, orders and expected receipts from Fierro. Fierro rules: what
+ * changed there overwrites what is here. The only thing miDepo leaves alone is orders already started.
  */
-export async function sincronizar(db: DB, empresa: Empresa) {
-  const fierro = conector(db, empresa);
-  const [libros, clis, peds, ings] = await Promise.all([fierro.libros(), fierro.clientes(), fierro.pedidosPendientes(), fierro.ingresosEsperados()]);
-  // Se lee antes de abrir la transacción: adentro solo se puede usar `tx`.
-  const stockFierro = await fierro.stock();
-  const resumen = { titulos: libros.length, clientes: clis.length, pedidosNuevos: 0, ingresosNuevos: 0 };
+export async function sync(db: DB, company: Company) {
+  const fierro = connector(db, company);
+  const [books, custs, ords, rcpts] = await Promise.all([fierro.books(), fierro.customers(), fierro.pendingOrders(), fierro.expectedReceipts()]);
+  // Read before the transaction opens: inside it only `tx` may be used.
+  const fierroQty = await fierro.stock();
+  const summary = { titles: books.length, customers: custs.length, newOrders: 0, newReceipts: 0 };
 
   await db.transaction(async (tx) => {
-    for (const tanda of enTandas(libros)) {
+    for (const batch of inBatches(books)) {
       await tx
-        .insert(productos)
-        .values(tanda.map((l) => ({ empresaId: empresa.id, fierroId: l.id, codigoInterno: l.codigoInterno, isbn: l.isbn, codigoBarras: l.codigoBarras, titulo: l.titulo, autor: l.autor, sello: l.sello, tipo: l.tipo, precio: l.precio, pesoGramos: l.pesoGramos })))
+        .insert(products)
+        .values(batch.map((l) => ({ companyId: company.id, fierroId: l.id, internalCode: l.internalCode, isbn: l.isbn, barcode: l.barcode, title: l.title, author: l.author, imprint: l.imprint, type: l.type, price: l.price, weightGrams: l.weightGrams })))
         .onConflictDoUpdate({
-          target: [productos.empresaId, productos.fierroId],
-          set: { codigoInterno: sql`excluded.codigo_interno`, isbn: sql`excluded.isbn`, codigoBarras: sql`excluded.codigo_barras`, titulo: sql`excluded.titulo`, autor: sql`excluded.autor`, sello: sql`excluded.sello`, tipo: sql`excluded.tipo`, precio: sql`excluded.precio`, pesoGramos: sql`excluded.peso_gramos` },
+          target: [products.companyId, products.fierroId],
+          set: { internalCode: sql`excluded.internal_code`, isbn: sql`excluded.isbn`, barcode: sql`excluded.barcode`, title: sql`excluded.title`, author: sql`excluded.author`, imprint: sql`excluded.imprint`, type: sql`excluded.type`, price: sql`excluded.price`, weightGrams: sql`excluded.weight_grams` },
         });
     }
-    for (const tanda of enTandas(clis)) {
+    for (const batch of inBatches(custs)) {
       await tx
-        .insert(clientes)
-        .values(tanda.map((c) => ({ empresaId: empresa.id, fierroId: c.id, nombre: c.nombre, direccion: c.direccion, localidad: c.localidad, provincia: c.provincia })))
+        .insert(customers)
+        .values(batch.map((c) => ({ companyId: company.id, fierroId: c.id, name: c.name, address: c.address, city: c.city, province: c.province })))
         .onConflictDoUpdate({
-          target: [clientes.empresaId, clientes.fierroId],
-          set: { nombre: sql`excluded.nombre`, direccion: sql`excluded.direccion`, localidad: sql`excluded.localidad`, provincia: sql`excluded.provincia` },
+          target: [customers.companyId, customers.fierroId],
+          set: { name: sql`excluded.name`, address: sql`excluded.address`, city: sql`excluded.city`, province: sql`excluded.province` },
         });
     }
 
-    const idProducto = new Map((await tx.select({ id: productos.id, f: productos.fierroId }).from(productos).where(eq(productos.empresaId, empresa.id))).map((p) => [p.f, p.id]));
-    const idCliente = new Map((await tx.select({ id: clientes.id, f: clientes.fierroId }).from(clientes).where(eq(clientes.empresaId, empresa.id))).map((c) => [c.f, c.id]));
+    const productRef = new Map((await tx.select({ id: products.id, f: products.fierroId }).from(products).where(eq(products.companyId, company.id))).map((p) => [p.f, p.id]));
+    const customerRef = new Map((await tx.select({ id: customers.id, f: customers.fierroId }).from(customers).where(eq(customers.companyId, company.id))).map((c) => [c.f, c.id]));
 
-    const yaPedidos = new Set((await tx.select({ f: pedidos.fierroId }).from(pedidos).where(eq(pedidos.empresaId, empresa.id))).map((p) => p.f));
-    for (const p of peds) {
-      if (yaPedidos.has(p.id)) continue;
-      const clienteId = idCliente.get(p.clienteId);
-      const ls = p.lineas.flatMap((l) => (idProducto.has(l.libroId) ? [{ productoId: idProducto.get(l.libroId)!, cantidad: l.cantidad }] : []));
-      if (!clienteId || ls.length === 0) continue;
-      const [nuevo] = await tx.insert(pedidos).values({ empresaId: empresa.id, fierroId: p.id, numero: p.numero, clienteId, modalidad: p.modalidad, fecha: p.fecha }).returning({ id: pedidos.id });
-      await tx.insert(pedidoLineas).values(ls.map((l) => ({ pedidoId: nuevo.id, ...l })));
-      resumen.pedidosNuevos++;
+    const existingOrders = new Set((await tx.select({ f: orders.fierroId }).from(orders).where(eq(orders.companyId, company.id))).map((p) => p.f));
+    for (const p of ords) {
+      if (existingOrders.has(p.id)) continue;
+      const customerId = customerRef.get(p.customerId);
+      const ls = p.lines.flatMap((l) => (productRef.has(l.bookId) ? [{ productId: productRef.get(l.bookId)!, quantity: l.quantity }] : []));
+      if (!customerId || ls.length === 0) continue;
+      const [fresh] = await tx.insert(orders).values({ companyId: company.id, fierroId: p.id, number: p.number, customerId, saleMode: p.saleMode, date: p.date }).returning({ id: orders.id });
+      await tx.insert(orderLines).values(ls.map((l) => ({ orderId: fresh.id, ...l })));
+      summary.newOrders++;
     }
 
-    const yaIngresos = new Set((await tx.select({ f: recepciones.fierroId }).from(recepciones).where(eq(recepciones.empresaId, empresa.id))).map((r) => r.f));
-    for (const i of ings) {
-      if (yaIngresos.has(i.id)) continue;
-      const ls = i.lineas.flatMap((l) => (idProducto.has(l.libroId) ? [{ productoId: idProducto.get(l.libroId)!, esperado: l.cantidad }] : []));
+    const existingReceipts = new Set((await tx.select({ f: receivings.fierroId }).from(receivings).where(eq(receivings.companyId, company.id))).map((r) => r.f));
+    // Suppliers named on Fierro's receipts join the supplier list (matched by name, case-insensitively).
+    const names = [...new Set(rcpts.filter((i) => !existingReceipts.has(i.id)).map((i) => i.supplier.trim()))];
+    if (names.length > 0) await tx.insert(suppliers).values(names.map((name) => ({ companyId: company.id, name }))).onConflictDoNothing();
+    const supplierId = new Map((await tx.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, company.id))).map((s) => [s.name.toLowerCase(), s.id]));
+    for (const i of rcpts) {
+      if (existingReceipts.has(i.id)) continue;
+      const ls = i.lines.flatMap((l) => (productRef.has(l.bookId) ? [{ productId: productRef.get(l.bookId)!, expected: l.quantity }] : []));
       if (ls.length === 0) continue;
-      const [nueva] = await tx.insert(recepciones).values({ empresaId: empresa.id, fierroId: i.id, numero: i.numero, proveedor: i.proveedor, fecha: i.fecha }).returning({ id: recepciones.id });
-      await tx.insert(recepcionLineas).values(ls.map((l) => ({ recepcionId: nueva.id, ...l })));
-      resumen.ingresosNuevos++;
+      const [receiving] = await tx.insert(receivings).values({ companyId: company.id, fierroId: i.id, number: i.number, supplierId: supplierId.get(i.supplier.trim().toLowerCase())!, date: i.date }).returning({ id: receivings.id });
+      await tx.insert(receivingLines).values(ls.map((l) => ({ receivingId: receiving.id, ...l })));
+      summary.newReceipts++;
     }
 
-    // Foto del stock según Fierro, para la conciliación.
-    const filas = [...stockFierro].flatMap(([f, cantidad]) => (idProducto.has(f) ? [{ empresaId: empresa.id, productoId: idProducto.get(f)!, cantidad }] : []));
-    for (const tanda of enTandas(filas, 1000)) {
-      await tx.insert(fierroStock).values(tanda).onConflictDoUpdate({ target: [fierroStock.empresaId, fierroStock.productoId], set: { cantidad: sql`excluded.cantidad` } });
+    // Snapshot of stock according to Fierro, for the reconciliation.
+    const rows = [...fierroQty].flatMap(([f, quantity]) => (productRef.has(f) ? [{ companyId: company.id, productId: productRef.get(f)!, quantity }] : []));
+    for (const batch of inBatches(rows, 1000)) {
+      await tx.insert(fierroStock).values(batch).onConflictDoUpdate({ target: [fierroStock.companyId, fierroStock.productId], set: { quantity: sql`excluded.quantity` } });
     }
-    await tx.update(empresas).set({ ultimaSync: new Date() }).where(eq(empresas.id, empresa.id));
+    await tx.update(companies).set({ lastSync: new Date() }).where(eq(companies.id, company.id));
   });
-  return resumen;
+  return summary;
 }
 
