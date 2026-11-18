@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useRef, useState } from "react";
 import { Message, type Action } from "@/components/ScanForm";
+import { withCode } from "@/lib/errors";
 
 const SIDE = 256;
 
@@ -31,7 +32,7 @@ export function Photo({ action, has }: { action: Action; has: boolean }) {
       data.set("photo", await prepare(file));
       startTransition(() => submit(data));
     } catch {
-      setError("Ese archivo no es una imagen que pueda usar. Probá con una foto JPG o PNG.");
+      setError(withCode("Ese archivo no es una imagen que pueda usar. Probá con una foto JPG o PNG.", "ACCT-10"));
     } finally {
       if (inputOf.current) inputOf.current.value = "";
     }

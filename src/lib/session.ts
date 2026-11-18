@@ -107,6 +107,6 @@ export async function requireSession(minRole: Role = "operator") {
 export async function requireSessionInAction(minRole: Role = "operator") {
   const s = await currentSession();
   if (!s) redirect("/ingresar");
-  if (!can(s.user.role, minRole)) throw new UserError("Tu usuario no tiene permiso para hacer esto.");
+  if (!can(s.user.role, minRole)) throw new UserError("AUTH-06", "Tu usuario no tiene permiso para hacer esto.");
   return { ...s, db: await getDb() };
 }

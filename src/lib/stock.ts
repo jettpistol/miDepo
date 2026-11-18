@@ -21,8 +21,8 @@ export type Movement = {
  * and never leaves a location negative.
  */
 export async function moveStock(tx: Executor, m: Movement) {
-  if (!Number.isInteger(m.quantity) || m.quantity <= 0) throw new UserError("La cantidad tiene que ser un número mayor que cero.");
-  if (m.fromId != null && m.fromId === m.toId) throw new UserError("El origen y el destino son la misma ubicación.");
+  if (!Number.isInteger(m.quantity) || m.quantity <= 0) throw new UserError("STK-01", "La cantidad tiene que ser un número mayor que cero.");
+  if (m.fromId != null && m.fromId === m.toId) throw new UserError("STK-02", "El origen y el destino son la misma ubicación.");
 
   if (m.fromId != null) {
     const rows = await tx
@@ -30,7 +30,7 @@ export async function moveStock(tx: Executor, m: Movement) {
       .set({ quantity: sql`${stock.quantity} - ${m.quantity}` })
       .where(and(eq(stock.productId, m.productId), eq(stock.locationId, m.fromId), gte(stock.quantity, m.quantity)))
       .returning({ quantity: stock.quantity });
-    if (rows.length === 0) throw new UserError("No hay tantas unidades de ese título en la ubicación de origen.");
+    if (rows.length === 0) throw new UserError("STK-03", "No hay tantas unidades de ese título en la ubicación de origen.");
     if (rows[0].quantity === 0) {
       await tx.delete(stock).where(and(eq(stock.productId, m.productId), eq(stock.locationId, m.fromId)));
     }
@@ -59,7 +59,7 @@ export async function moveStock(tx: Executor, m: Movement) {
 /** Looks up whatever the scanner read: barcode, ISBN or internal code. */
 export async function findProduct(tx: Executor, companyId: number, code: string) {
   const c = code.trim();
-  if (!c) throw new UserError("Escaneá o escribí el código del libro.");
+  if (!c) throw new UserError("STK-04", "Escaneá o escribí el código del libro.");
   const [p] = await tx
     .select()
     .from(products)
@@ -70,20 +70,20 @@ export async function findProduct(tx: Executor, companyId: number, code: string)
       ),
     )
     .limit(1);
-  if (!p) throw new UserError(`No conozco el código "${c}". Si es un título nuevo, pedí que sincronicen con Fierro.`);
+  if (!p) throw new UserError("STK-05", `No conozco el código "${c}". Si es un título nuevo, pedí que sincronicen con Fierro.`);
   return p;
 }
 
 export async function findLocation(tx: Executor, companyId: number, code: string) {
   const c = code.trim().toUpperCase();
-  if (!c) throw new UserError("Escaneá o escribí la ubicación.");
+  if (!c) throw new UserError("STK-06", "Escaneá o escribí la ubicación.");
   const [u] = await tx
     .select()
     .from(locations)
     .where(and(eq(locations.companyId, companyId), eq(locations.code, c)))
     .limit(1);
-  if (!u) throw new UserError(`No existe la ubicación "${c}".`);
-  if (!u.active) throw new UserError(`La ubicación "${c}" está dada de baja.`);
+  if (!u) throw new UserError("STK-07", `No existe la ubicación "${c}".`);
+  if (!u.active) throw new UserError("STK-08", `La ubicación "${c}" está dada de baja.`);
   return u;
 }
 

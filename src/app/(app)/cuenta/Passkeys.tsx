@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { startRegistration } from "@simplewebauthn/browser";
 import { Message } from "@/components/ScanForm";
-import type { Result } from "@/lib/errors";
+import { withCode, type Result } from "@/lib/errors";
 
 /** Registers a passkey on this device: fingerprint, face or the device's own PIN. */
 export function AddPasskey() {
@@ -29,12 +29,12 @@ export function AddPasskey() {
       setStatus({
         error:
           name === "NotAllowedError" || name === "AbortError"
-            ? "Se canceló el registro."
+            ? withCode("Se canceló el registro.", "PKEY-12")
             : name === "InvalidStateError"
-              ? "Este dispositivo ya tiene una llave registrada para tu usuario."
+              ? withCode("Este dispositivo ya tiene una llave registrada para tu usuario.", "PKEY-13")
               : e instanceof Error && e.message
                 ? e.message
-                : "Este dispositivo no permite registrar una llave.",
+                : withCode("Este dispositivo no permite registrar una llave.", "PKEY-14"),
       });
     } finally {
       setBusy(false);

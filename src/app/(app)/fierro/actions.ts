@@ -19,6 +19,6 @@ export const simulate = action("supervisor", async (c, f) => {
 
 export const submit = action("supervisor", (c, f) => {
   const type = txt(f, "type") as ExportType;
-  if (!["order", "receiving", "return", "count"].includes(type)) throw new UserError("Documento desconocido.");
+  if (!["order", "receiving", "return", "count"].includes(type)) throw new UserError("EXP-09", "Documento desconocido.");
   return markSent(c, c.company, type, num(f, "id"));
 });

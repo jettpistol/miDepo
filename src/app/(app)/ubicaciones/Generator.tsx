@@ -11,7 +11,7 @@ const copy = (e: Scheme): Scheme => ({ ...e, segments: e.segments.map((t) => ({ 
 /** Pick a naming template, adjust it and preview the codes before creating them. */
 export function Generator({ action, initial }: { action: Action; initial: Scheme | null }) {
   const [scheme, setScheme] = useState<Scheme>(copy(initial ?? TEMPLATES[0].scheme));
-  const problem = validateScheme(scheme);
+  const problem = validateScheme(scheme)?.message ?? null;
   const total = locationTotal(scheme);
   const sample = useMemo(() => (problem ? [] : generateCodes(scheme, 5)), [scheme, problem]);
   const last = useMemo(() => (problem ? "" : (generateCodes(scheme).at(-1) ?? "")), [scheme, problem]);

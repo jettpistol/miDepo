@@ -9,7 +9,7 @@ export async function move(c: Ctx, d: { source: string; product: string; destina
   const p = await findProduct(c.db, c.companyId, d.product);
   const destination = await findLocation(c.db, c.companyId, d.destination);
   if (source.type === "staging" || destination.type === "staging") {
-    throw new UserError("Los pedidos preparados no se mueven a mano: salen cuando se despacha el pedido.");
+    throw new UserError("STK-09", "Los pedidos preparados no se mueven a mano: salen cuando se despacha el pedido.");
   }
   const putaway = source.type === "receiving" || source.type === "returns";
   await c.db.transaction((tx) =>

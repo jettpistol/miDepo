@@ -5,6 +5,7 @@ import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthe
 import { getDb } from "@/db";
 import { passkeys, users } from "@/db/schema";
 import { sign } from "@/lib/credentials";
+import { withCode } from "@/lib/errors";
 import { startSession, currentSession } from "@/lib/session";
 
 /**
@@ -32,7 +33,7 @@ async function takeChallenge() {
   return challenge && signature === sign(challenge) ? challenge : null;
 }
 
-const failed = (error: string, status = 400) => NextResponse.json({ error }, { status });
+const failed = (code: string, error: string, status = 400) => NextResponse.json({ error: withCode(error, code) }, { status });
 
 export async function POST(req: Request, { params }: { params: Promise<{ step: string }> }) {
   const { step } = await params;
@@ -48,9 +49,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
   if (step === "login-verify") {
     const challenge = await takeChallenge();
     const reply = await req.json();
-    if (!challenge) return failed("El intento venció. Probá de nuevo.");
+    if (!challenge) return failed("PKEY-01", "El intento venció. Probá de nuevo.");
     const [row] = await db.select({ passkey: passkeys, user: users }).from(passkeys).innerJoin(users, eq(users.id, passkeys.userId)).where(eq(passkeys.id, String(reply.id)));
-    if (!row || !row.user.active) return failed("Esta llave no está registrada en miDepo. Entrá de otra forma y registrala en Mi cuenta.");
+    if (!row || !row.user.active) return failed("PKEY-02", "Esta llave no está registrada en miDepo. Entrá de otra forma y registrala en Mi cuenta.");
     try {
       const v = await verifyAuthenticationResponse({
         response: reply,
@@ -59,17 +60,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
         expectedRPID: rpID,
         credential: { id: row.passkey.id, publicKey: Buffer.from(row.passkey.publicKeyData, "base64url"), counter: row.passkey.sequence },
       });
-      if (!v.verified) return failed("No se pudo verificar la llave.");
+      if (!v.verified) return failed("PKEY-03", "No se pudo verificar la llave.");
       await db.update(passkeys).set({ sequence: v.authenticationInfo.newCounter }).where(eq(passkeys.id, row.passkey.id));
     } catch {
-      return failed("No se pudo verificar la llave.");
+      return failed("PKEY-04", "No se pudo verificar la llave.");
     }
     await startSession(row.user.id);
     return NextResponse.json({ ok: true });
   }
 
   const s = await currentSession();
-  if (!s) return failed("Primero hay que ingresar.", 401);
+  if (!s) return failed("PKEY-05", "Primero hay que ingresar.", 401);
 
   if (step === "register-options") {
     const existing = await db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, s.user.id));
@@ -90,17 +91,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
   if (step === "register-verify") {
     const challenge = await takeChallenge();
     const { reply, name } = await req.json();
-    if (!challenge) return failed("El intento venció. Probá de nuevo.");
+    if (!challenge) return failed("PKEY-06", "El intento venció. Probá de nuevo.");
     try {
       const v = await verifyRegistrationResponse({ response: reply, expectedChallenge: challenge, expectedOrigin: source, expectedRPID: rpID });
-      if (!v.verified || !v.registrationInfo) return failed("No se pudo registrar la llave.");
+      if (!v.verified || !v.registrationInfo) return failed("PKEY-07", "No se pudo registrar la llave.");
       const { credential } = v.registrationInfo;
       await db.insert(passkeys).values({ id: credential.id, userId: s.user.id, publicKeyData: b64(credential.publicKey), sequence: credential.counter, carriers: credential.transports?.join(",") ?? null, name: String(name || "Llave de acceso").slice(0, 40) });
     } catch {
-      return failed("No se pudo registrar la llave.");
+      return failed("PKEY-08", "No se pudo registrar la llave.");
     }
     return NextResponse.json({ ok: true });
   }
 
-  return failed("Paso desconocido.", 404);
+  return failed("PKEY-09", "Paso desconocido.", 404);
 }

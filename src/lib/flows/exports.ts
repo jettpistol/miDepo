@@ -36,7 +36,7 @@ export async function pendingExports(db: DB, companyId: number): Promise<Pending
 export async function fileFor(db: DB, companyId: number, type: ExportType, id: number): Promise<{ name: string; contents: string }> {
   if (type === "order") {
     const [p] = await db.select({ number: orders.number, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, companyId)));
-    if (!p) throw new UserError("No encuentro ese pedido.");
+    if (!p) throw new UserError("EXP-01", "No encuentro ese pedido.");
     const rows = await db
       .select({ box: boxes.number, weight: boxes.weightGrams, isbn: products.isbn, internalCode: products.internalCode, title: products.title, quantity: boxItems.quantity })
       .from(boxItems)
@@ -48,18 +48,18 @@ export async function fileFor(db: DB, companyId: number, type: ExportType, id: n
   }
   if (type === "receiving") {
     const [r] = await db.select({ number: receivings.number, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, companyId)));
-    if (!r) throw new UserError("No encuentro esa recepción.");
+    if (!r) throw new UserError("EXP-02", "No encuentro esa recepción.");
     const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
     return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido"]) };
   }
   if (type === "return") {
     const [d] = await db.select({ number: returns.number, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, companyId)));
-    if (!d) throw new UserError("No encuentro esa devolución.");
+    if (!d) throw new UserError("EXP-03", "No encuentro esa devolución.");
     const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, status: returnLines.bookCondition, quantity: returnLines.quantity }).from(returnLines).innerJoin(products, eq(products.id, returnLines.productId)).where(eq(returnLines.returnId, id)).orderBy(asc(products.title));
     return { name: `devolucion-${d.number}.csv`, contents: csv(rows.map((f) => [d.number, d.customer, fierroCode(f), f.title, CONDITION_FOR_FIERRO[f.status], f.quantity]), ["devolucion", "cliente", "codigo", "titulo", "estado", "cantidad"]) };
   }
   const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, companyId)));
-  if (!k) throw new UserError("No encuentro ese conteo.");
+  if (!k) throw new UserError("EXP-04", "No encuentro ese conteo.");
   const rows = await db
     .select({ isbn: products.isbn, internalCode: products.internalCode, countedQty: countLines.countedQty, location: locations.code })
     .from(countLines)
@@ -81,7 +81,7 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
     const now = new Date();
     if (type === "order") {
       const flagged = await tx.update(orders).set({ status: "shipped", sentToFierro: now }).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId), eq(orders.status, "packed"))).returning();
-      if (flagged.length === 0) throw new UserError("Ese pedido no está listo para documentar.");
+      if (flagged.length === 0) throw new UserError("EXP-05", "Ese pedido no está listo para documentar.");
       const prep = await zone(tx, c.companyId, "staging");
       const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, id));
       for (const l of lines) {
@@ -93,18 +93,18 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
       doc.reference = flagged[0].number;
     } else if (type === "receiving") {
       const flagged = await tx.update(receivings).set({ sentToFierro: now }).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("Esa recepción no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-06", "Esa recepción no está pendiente de envío.");
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(receivingLines).where(eq(receivingLines.receivingId, id))).map((l) => ({ productId: l.productId, delta: l.received }));
     } else if (type === "return") {
       const flagged = await tx.update(returns).set({ sentToFierro: now }).where(and(eq(returns.id, id), eq(returns.companyId, c.companyId), eq(returns.status, "closed"), isNull(returns.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("Esa devolución no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-07", "Esa devolución no está pendiente de envío.");
       doc.type = "return";
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(returnLines).where(eq(returnLines.returnId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
     } else {
       const flagged = await tx.update(counts).set({ sentToFierro: now }).where(and(eq(counts.id, id), eq(counts.companyId, c.companyId), eq(counts.status, "closed"), isNull(counts.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("Ese conteo no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-08", "Ese conteo no está pendiente de envío.");
       doc.type = "count";
       doc.reference = flagged[0].name;
       doc.lines = (await tx.select().from(countLines).where(eq(countLines.countId, id))).map((l) => ({ productId: l.productId, delta: l.countedQty - (l.system ?? l.countedQty) }));

@@ -7,7 +7,7 @@ import { validQuantity, type Ctx } from "./common";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
-  if (!p) throw new UserError("No encuentro ese pedido.");
+  if (!p) throw new UserError("PICK-01", "No encuentro ese pedido.");
   return p;
 }
 
@@ -60,7 +60,7 @@ export async function takeOrder(c: Ctx, orderId: number) {
   return c.db.transaction(async (tx) => {
     // The status change goes first and is conditional: if two people act at once, only one wins.
     const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
-    if (taken.length === 0) throw new UserError("Ese pedido ya lo tomó otra persona.");
+    if (taken.length === 0) throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
     const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
     const freeOnes = await available(tx, c.companyId, lines.map((l) => l.productId));
     const tasks: (typeof pickTasks.$inferInsert)[] = [];
@@ -87,8 +87,8 @@ async function taskOf(c: Ctx, taskId: number) {
     .from(pickTasks)
     .innerJoin(orders, eq(orders.id, pickTasks.orderId))
     .where(and(eq(pickTasks.id, taskId), eq(orders.companyId, c.companyId)));
-  if (!t) throw new UserError("No encuentro esa parada del recorrido.");
-  if (t.task.status !== "pending") throw new UserError("Esa parada ya está resuelta.");
+  if (!t) throw new UserError("PICK-03", "No encuentro esa parada del recorrido.");
+  if (t.task.status !== "pending") throw new UserError("PICK-04", "Esa parada ya está resuelta.");
   return t;
 }
 
@@ -97,11 +97,11 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
   const n = validQuantity(d.quantity);
   const { task, order } = await taskOf(c, d.taskId);
   const u = await findLocation(c.db, c.companyId, d.location);
-  if (u.id !== task.locationId) throw new UserError(`Estás en ${u.code}, pero esta parada es en otra ubicación. Fijate el cartel.`);
+  if (u.id !== task.locationId) throw new UserError("PICK-05", `Estás en ${u.code}, pero esta parada es en otra ubicación. Fijate el cartel.`);
   const p = await findProduct(c.db, c.companyId, d.product);
-  if (p.id !== task.productId) throw new UserError(`Ese es "${p.title}". No es el título que pide esta parada.`);
+  if (p.id !== task.productId) throw new UserError("PICK-06", `Ese es "${p.title}". No es el título que pide esta parada.`);
   const remaining = task.quantity - task.picked;
-  if (n > remaining) throw new UserError(`Esta parada pide ${remaining}. Si tomaste de más, devolvé ${n - remaining} al estante.`);
+  if (n > remaining) throw new UserError("PICK-07", `Esta parada pide ${remaining}. Si tomaste de más, devolvé ${n - remaining} al estante.`);
 
   return c.db.transaction(async (tx) => {
     const prep = await zone(tx, c.companyId, "staging");

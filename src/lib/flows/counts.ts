@@ -10,16 +10,16 @@ export const MAX_COUNT_LOCATIONS = 300;
 /** Creates a count for every shelf whose code starts with the given prefix. */
 export async function createCount(c: Ctx, name: string, prefix: string) {
   const pre = prefix.trim().toUpperCase();
-  if (!name.trim()) throw new UserError("Ponele un nombre al conteo (por ejemplo: Pasillo A, noviembre).");
-  if (!pre) throw new UserError("Escribí con qué empiezan las ubicaciones a contar (por ejemplo: A-01).");
+  if (!name.trim()) throw new UserError("CNT-01", "Ponele un nombre al conteo (por ejemplo: Pasillo A, noviembre).");
+  if (!pre) throw new UserError("CNT-02", "Escribí con qué empiezan las ubicaciones a contar (por ejemplo: A-01).");
   const us = await c.db
     .select({ id: locations.id })
     .from(locations)
     .where(and(eq(locations.companyId, c.companyId), eq(locations.type, "shelf"), eq(locations.active, true), like(locations.code, `${pre.replace(/[%_]/g, "")}%`)))
     .orderBy(asc(locations.code))
     .limit(MAX_COUNT_LOCATIONS + 1);
-  if (us.length === 0) throw new UserError(`No hay ubicaciones que empiecen con "${pre}".`);
-  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError(`Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Partí el conteo en tramos más chicos.`);
+  if (us.length === 0) throw new UserError("CNT-03", `No hay ubicaciones que empiecen con "${pre}".`);
+  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Partí el conteo en tramos más chicos.`);
   return c.db.transaction(async (tx) => {
     const [stockCount] = await tx.insert(counts).values({ companyId: c.companyId, name: name.trim() }).returning();
     await tx.insert(countLocations).values(us.map((u) => ({ countId: stockCount.id, locationId: u.id })));
@@ -29,14 +29,14 @@ export async function createCount(c: Ctx, name: string, prefix: string) {
 
 async function isOpen(c: Ctx, countId: number) {
   const [k] = await c.db.select().from(counts).where(and(eq(counts.id, countId), eq(counts.companyId, c.companyId)));
-  if (!k) throw new UserError("No encuentro ese conteo.");
-  if (k.status === "closed") throw new UserError("Este conteo ya está cerrado.");
+  if (!k) throw new UserError("CNT-05", "No encuentro ese conteo.");
+  if (k.status === "closed") throw new UserError("CNT-06", "Este conteo ya está cerrado.");
   return k;
 }
 
 async function countLocation(c: Ctx, countId: number, locationId: number) {
   const [u] = await c.db.select().from(countLocations).where(and(eq(countLocations.countId, countId), eq(countLocations.locationId, locationId)));
-  if (!u) throw new UserError("Esa ubicación no es parte de este conteo.");
+  if (!u) throw new UserError("CNT-07", "Esa ubicación no es parte de este conteo.");
   return u;
 }
 
@@ -45,7 +45,7 @@ export async function scanCount(c: Ctx, countId: number, locationId: number, cod
   const n = validQuantity(quantity);
   await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
-  if (u.status === "counted") throw new UserError("Esta ubicación ya se dio por contada.");
+  if (u.status === "counted") throw new UserError("CNT-08", "Esta ubicación ya se dio por contada.");
   const p = await findProduct(c.db, c.companyId, code);
   const [l] = await c.db
     .insert(countLines)
@@ -57,7 +57,7 @@ export async function scanCount(c: Ctx, countId: number, locationId: number, cod
 
 export async function setCounted(c: Ctx, countId: number, locationId: number, productId: number, countedQty: unknown) {
   const n = Number(countedQty);
-  if (!Number.isInteger(n) || n < 0) throw new UserError("Escribí un número de cero para arriba.");
+  if (!Number.isInteger(n) || n < 0) throw new UserError("CNT-09", "Escribí un número de cero para arriba.");
   await isOpen(c, countId);
   await c.db.update(countLines).set({ countedQty: n }).where(and(eq(countLines.countId, countId), eq(countLines.locationId, locationId), eq(countLines.productId, productId)));
   return "Cantidad corregida.";
@@ -104,7 +104,7 @@ export async function closeCount(c: Ctx, countId: number) {
   return c.db.transaction(async (tx) => {
     const diffs = await differences(tx, countId);
     const [counted] = await tx.select().from(countLocations).where(and(eq(countLocations.countId, countId), eq(countLocations.status, "counted"))).limit(1);
-    if (!counted) throw new UserError("Todavía no hay ninguna ubicación contada.");
+    if (!counted) throw new UserError("CNT-10", "Todavía no hay ninguna ubicación contada.");
     let adjustments = 0;
     for (const d of diffs) {
       await tx

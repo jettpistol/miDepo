@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { Message } from "@/components/ScanForm";
+import { withCode } from "@/lib/errors";
 import { loginWithPassword, loginWithPin } from "./actions";
 
 type Mode = "pin" | "password";
@@ -35,7 +36,7 @@ export function LoginForm() {
       window.location.href = "/";
     } catch (e) {
       const cancelled = e instanceof Error && (e.name === "NotAllowedError" || e.name === "AbortError");
-      setPasskey(cancelled ? "Se canceló el ingreso con huella o llave." : e instanceof Error && e.message ? e.message : "No se pudo entrar con huella o llave.");
+      setPasskey(cancelled ? withCode("Se canceló el ingreso con huella o llave.", "PKEY-10") : e instanceof Error && e.message ? e.message : withCode("No se pudo entrar con huella o llave.", "PKEY-11"));
     }
   }
 

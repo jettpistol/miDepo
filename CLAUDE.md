@@ -1,6 +1,6 @@
 # Working on miDepo
 
-Read this first, then `README.md` (what the product does and how to run it), `PRODUCT.md` (users and product rules) and `DESIGN.md` (the design system). The user manual is in `wiki/` (Spanish) and is served at `/ayuda`. Why things were decided as they are: `docs/DECISIONS.md`. Next steps and questions for the owner: `docs/ROADMAP.md`. Everything learned about Fierro, with its B2B API schema and the questions to ask them: `docs/fierro/README.md`.
+Read this first, then `README.md` (what the product does and how to run it), `PRODUCT.md` (users and product rules) and `DESIGN.md` (the design system). The user manual is in `wiki/` (Spanish) and is served at `/ayuda`. Why things were decided as they are: `docs/DECISIONS.md`. Next steps and questions for the owner: `docs/ROADMAP.md`. Everything learned about Fierro, with its B2B API schema and the questions to ask them: `docs/fierro/README.md`. Every error message and its code: `docs/ERRORS.md`.
 
 ## Next.js 16 is not the Next.js you know
 
@@ -57,6 +57,18 @@ src/app/globals.css       Design tokens and component classes (btn, field, data-
 ```
 
 Adding a feature usually means: rule in `src/lib/flows/`, test in `tests/`, action in the screen's `actions.ts`, UI in the screen's `page.tsx`, and, if it is a scan form, the matching check in `src/lib/lookup.ts`.
+
+## Error codes
+
+Every error message the user can see has a code (`RCV-02`), shown after the message (`Esta recepción ya está cerrada. · RCV-02`) and listed in `docs/ERRORS.md`. Keep that file current in the same commit as the code change:
+
+- New message: `throw new UserError("AREA-NN", "…")` with the next free number in its area (browser-side or API messages use `withCode(message, code)`; scripts write `[AREA-NN]` at the start). Add its row to `docs/ERRORS.md`: code, message, file · function, and when it happens.
+- Changed wording, same meaning: keep the code, update the row. Moved to another file: update the row's file.
+- Removed message: move its row to "Retired codes". Never reuse a number.
+- New area: add it to the area table in `docs/ERRORS.md` and to `AREAS` in `tests/errors.test.ts`.
+- As-you-type warnings (`src/lib/lookup.ts`) get no code.
+
+`tests/errors.test.ts` fails if a code is undocumented, documented in the wrong file, used in two files, retired but back, or if a `UserError` or a thrown `Error` has no code.
 
 Migrations that change existing data: generate with `npm run db:generate`, then append the data backfill to the generated SQL (separated by `--> statement-breakpoint`). See `drizzle/0001_suppliers.sql`. Never rewrite a migration that has shipped; the owner's local database and any deployed one have applied it.
 

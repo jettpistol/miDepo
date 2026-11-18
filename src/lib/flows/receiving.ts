@@ -7,15 +7,15 @@ import { validQuantity, type Ctx } from "./common";
 
 async function open(c: Ctx, id: number) {
   const [r] = await c.db.select().from(receivings).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId)));
-  if (!r) throw new UserError("No encuentro esa recepción.");
-  if (r.status === "closed") throw new UserError("Esta recepción ya está cerrada.");
+  if (!r) throw new UserError("RCV-01", "No encuentro esa recepción.");
+  if (r.status === "closed") throw new UserError("RCV-02", "Esta recepción ya está cerrada.");
   return r;
 }
 
 /** A receiving that Fierro did not announce. The supplier has to be one already on the list. */
 export async function createUnannouncedReceiving(c: Ctx, supplierId: number) {
   const [supplier] = Number.isInteger(supplierId) ? await c.db.select({ id: suppliers.id }).from(suppliers).where(and(eq(suppliers.id, supplierId), eq(suppliers.companyId, c.companyId))) : [];
-  if (!supplier) throw new UserError("Elegí un proveedor de la lista.");
+  if (!supplier) throw new UserError("RCV-03", "Elegí un proveedor de la lista.");
   const [{ n }] = await c.db.select({ n: count() }).from(receivings).where(and(eq(receivings.companyId, c.companyId), sql`${receivings.fierroId} is null`));
   const [r] = await c.db
     .insert(receivings)
@@ -30,15 +30,15 @@ export async function createUnannouncedReceiving(c: Ctx, supplierId: number) {
  */
 export async function createSupplier(c: Ctx, name: string) {
   const clean = name.replace(/\s+/g, " ").trim();
-  if (clean.length < 2) throw new UserError("Escribí el nombre del proveedor.");
-  if (clean.length > 80) throw new UserError("El nombre es demasiado largo.");
-  if (!/\p{L}/u.test(clean)) throw new UserError("El nombre tiene que tener letras.");
+  if (clean.length < 2) throw new UserError("RCV-04", "Escribí el nombre del proveedor.");
+  if (clean.length > 80) throw new UserError("RCV-05", "El nombre es demasiado largo.");
+  if (!/\p{L}/u.test(clean)) throw new UserError("RCV-06", "El nombre tiene que tener letras.");
   const existing = await c.db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, c.companyId));
   const same = existing.find((s) => plain(s.name) === plain(clean));
-  if (same) throw new UserError(`Ya existe: ${same.name}. Elegilo de la lista.`);
+  if (same) throw new UserError("RCV-07", `Ya existe: ${same.name}. Elegilo de la lista.`);
   // One or two letters off an existing name is almost always a typo of it.
   const near = existing.find((s) => Math.min(plain(s.name).length, plain(clean).length) >= 6 && distance(plain(s.name), plain(clean)) <= 2);
-  if (near) throw new UserError(`¿Es ${near.name}? Ya existe un proveedor casi igual. Elegilo de la lista.`);
+  if (near) throw new UserError("RCV-08", `¿Es ${near.name}? Ya existe un proveedor casi igual. Elegilo de la lista.`);
   const [created] = await c.db.insert(suppliers).values({ companyId: c.companyId, name: clean, createdBy: c.userId }).returning({ id: suppliers.id, name: suppliers.name });
   return created;
 }
@@ -60,7 +60,7 @@ export async function scanReceiving(c: Ctx, receivingId: number, code: string, q
 
 export async function setReceived(c: Ctx, receivingId: number, productId: number, received: unknown) {
   const n = Number(received);
-  if (!Number.isInteger(n) || n < 0) throw new UserError("Escribí un número de cero para arriba.");
+  if (!Number.isInteger(n) || n < 0) throw new UserError("RCV-09", "Escribí un número de cero para arriba.");
   await open(c, receivingId);
   await c.db.update(receivingLines).set({ received: n }).where(and(eq(receivingLines.receivingId, receivingId), eq(receivingLines.productId, productId)));
   return "Cantidad corregida.";
@@ -72,7 +72,7 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
   return c.db.transaction(async (tx) => {
     const lines = await tx.select().from(receivingLines).where(eq(receivingLines.receivingId, receivingId));
     const total = lines.reduce((s, l) => s + l.received, 0);
-    if (total === 0) throw new UserError("Todavía no escaneaste nada en esta recepción.");
+    if (total === 0) throw new UserError("RCV-10", "Todavía no escaneaste nada en esta recepción.");
     const destination = await zone(tx, c.companyId, "receiving");
     for (const l of lines) {
       if (l.received > 0) {

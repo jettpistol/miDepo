@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { withCode } from "@/lib/errors";
+
+const NO_PERMISSION = withCode("miDepo no tiene permiso para usar la cámara. Habilitalo en los ajustes del navegador y volvé a intentar.", "CAM-01");
+const NO_CAMERA = withCode("No pude abrir la cámara en este dispositivo. Podés escribir el código a mano.", "CAM-02");
+
 type Detector = { detect(v: HTMLVideoElement): Promise<{ rawValue: string }[]> };
 const FORMATS = ["ean_13", "ean_8", "code_128", "code_39", "upc_a", "qr_code"];
 
@@ -25,7 +30,7 @@ export function Camera({ onRead, onClose }: { onRead: (code: string) => void; on
     let timer: ReturnType<typeof setInterval> | undefined;
     (async () => {
       try {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error("no-camera");
+        if (!navigator.mediaDevices?.getUserMedia) return setError(NO_CAMERA);
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
         if (!active || !video.current) return stream.getTracks().forEach((t) => t.stop());
         video.current.srcObject = stream;
@@ -41,11 +46,7 @@ export function Camera({ onRead, onClose }: { onRead: (code: string) => void; on
         }, 180);
       } catch (e) {
         const name = e instanceof Error ? e.name : "";
-        setError(
-          name === "NotAllowedError"
-            ? "miDepo no tiene permiso para usar la cámara. Habilitalo en los ajustes del navegador y volvé a intentar."
-            : "No pude abrir la cámara en este dispositivo. Podés escribir el código a mano.",
-        );
+        setError(name === "NotAllowedError" ? NO_PERMISSION : NO_CAMERA);
       }
     })();
     return () => {
