@@ -107,12 +107,17 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 |---|---|
 | `npm run dev` | Prepares the database and starts the app at `localhost:3000`. |
 | `npm test` | Runs the workflow tests against an in-memory database. |
+| `BASE_URL=http://localhost:3100 node tests/recorrido.e2e.js` | Browser walkthrough of every flow (needs Playwright; see docs/STATUS.md). Also `cuentas.e2e.js` and `manual.e2e.js`. |
 | `npm run typecheck` | Checks types. |
 | `npm run db:setup` | Creates or updates tables; loads demo data if the database is empty. |
 | `npm run db:reset` | Deletes everything and starts again. |
 | `npm run db:generate` | After editing `src/db/schema.ts`, writes the migration into `drizzle/`. |
 | `npm run build:prod` | What the host runs: `db:setup`, then the production build. |
 | `npm run empresa:crear -- "Name" code admin@mail.com "password"` | Creates a company and its administrator. |
+
+## For developers and agents
+
+Start with [CLAUDE.md](CLAUDE.md), then [docs/STATUS.md](docs/STATUS.md) (what is done, verified and next), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/fierro/README.md](docs/fierro/README.md) (everything learned about Fierro, with its B2B API schema).
 
 ## Where things are
 
@@ -127,8 +132,9 @@ src/app/(app)/          One folder per screen
 src/app/(imprimir)/     A4 print layouts
 src/components/         Scan form, camera reader, navigation
 wiki/                   User manual (GitHub wiki format)
-tests/                  Workflow tests
-docs/HOSTING.md         How to put it online
+tests/                  Workflow tests (vitest) and browser walkthroughs (*.e2e.js)
+docs/                   STATUS, ARCHITECTURE, DECISIONS, HOSTING, fierro/ research
+CLAUDE.md               Instructions for agents working on the repo
 ```
 
 Stack: Next.js, TypeScript, Postgres through Drizzle, Tailwind CSS. Chosen because it is one codebase, one language and one database, with a large pool of developers who know it.

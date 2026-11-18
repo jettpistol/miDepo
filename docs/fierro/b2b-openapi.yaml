@@ -1,0 +1,4227 @@
+openapi: 3.0.3
+info:
+  title: Fierro B2B API Docs
+  version: 0.1.17
+  description: Documentación del API Rest del proyecto Fierro B2B.
+paths:
+  /api/token/:
+    post:
+      operationId: api_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: api_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /availabilities/{isbn}/:
+    post:
+      operationId: add_availability
+      description: "\n        Endpoint para la creación asíncrona de disponibilidades.\n\
+        \n        Flujo de operación:\n            1. Recibe los datos de la disponibilidad\
+        \ en el cuerpo de la petición.\n            2. Valida los datos y encola la\
+        \ tarea de creación.\n            3. Retorna inmediatamente el ID de la tarea.\n\
+        \        "
+      parameters:
+      - in: query
+        name: allow_consign
+        schema:
+          type: boolean
+        description: Permitido en consignación.
+      - in: query
+        name: allow_firme
+        schema:
+          type: boolean
+        description: Permitido en firme.
+      - in: query
+        name: availability
+        schema:
+          type: string
+        description: Código del tipo de disponibilidad (ver [/availability_types/](#/availability_types/)).
+        required: true
+      - in: query
+        name: availability_target
+        schema:
+          type: string
+        description: Clave del tipo de destinatario.
+        required: true
+      - in: query
+        name: days_to_deliver
+        schema:
+          type: integer
+        description: Días para la entrega.
+      - in: path
+        name: isbn
+        schema:
+          type: string
+          pattern: ^[0-9Xx-]+$
+        required: true
+      - in: query
+        name: stock
+        schema:
+          type: integer
+        description: Stock del libro (Solo para disponibilidad "En Stock").
+      - in: query
+        name: sucursal
+        schema:
+          type: string
+        description: Clave de la sucursal origen.
+        required: true
+      tags:
+      - availabilities
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+            examples:
+              BodyExample:
+                value:
+                  availability: string
+                  stock: 1234
+                  availability_target: string
+                  allow_firme: true
+                  allow_consign: true
+                  days_to_deliver: string
+                  sucursal: string
+                summary: Body example
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploÉxito:
+                  value:
+                    detail: Tarea encolada <task id>.
+                  summary: Ejemplo éxito
+          description: Tarea creación de disponibilidad encolada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: El usuario que hizo la request no tiene una empresa asociada.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /availabilities/{isbn}/{availability_target_key}/{sucursal_key}/:
+    put:
+      operationId: put_availability
+      description: "\n        Endpoint para la actualización asíncrona de disponibilidades.\n\
+        \n        Flujo de operación:\n            1. Recibe los datos de la disponibilidad\
+        \ en el cuerpo de la petición.\n            2. Valida los datos y encola la\
+        \ tarea de actualización.\n            3. Retorna inmediatamente el ID de\
+        \ la tarea.\n        "
+      parameters:
+      - in: query
+        name: allow_consign
+        schema:
+          type: boolean
+        description: Permitido en consignación.
+      - in: query
+        name: allow_firme
+        schema:
+          type: boolean
+        description: Permitido en firme.
+      - in: query
+        name: availability
+        schema:
+          type: string
+        description: Código del tipo de disponibilidad (ver [/availability_types/](#/availability_types/)).
+      - in: path
+        name: availability_target_key
+        schema:
+          type: string
+        description: Destinatario
+        required: true
+      - in: query
+        name: days_to_deliver
+        schema:
+          type: integer
+        description: Días para la entrega.
+      - in: path
+        name: isbn
+        schema:
+          type: string
+        description: ISBN del libro
+        required: true
+      - in: query
+        name: stock
+        schema:
+          type: integer
+        description: Stock del libro (Solo para disponibilidad "En Stock").
+      - in: path
+        name: sucursal_key
+        schema:
+          type: string
+        description: Sucursal
+        required: true
+      tags:
+      - availabilities
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+            examples:
+              BodyExample:
+                value:
+                  availability: string
+                  stock: 1234
+                  availability_target: string
+                  allow_firme: true
+                  allow_consign: true
+                  days_to_deliver: string
+                  sucursal: string
+                summary: Body example
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploÉxito:
+                  value:
+                    detail: Tarea encolada <task id>.
+                  summary: Ejemplo éxito
+          description: Tarea actualización de disponibilidad encolada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: El usuario no tiene una empresa asociada.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+    delete:
+      operationId: delete_availability
+      description: Elimina la disponibibilidad en base a los valores enviados en los
+        parametros de la URL.
+      parameters:
+      - in: path
+        name: availability_target_key
+        schema:
+          type: string
+        description: Destinatario
+        required: true
+      - in: path
+        name: isbn
+        schema:
+          type: string
+        description: ISBN del libro
+        required: true
+      - in: path
+        name: sucursal_key
+        schema:
+          type: string
+        description: Sucursal
+        required: true
+      tags:
+      - availabilities
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Disponibilidad eliminada exitosamente.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: Error de integridad en la DB.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /availability_types/:
+    get:
+      operationId: get_availabilities_types
+      description: Lista de tipos de disponibilidad soportadas en el sistema. [Listado
+        ONIX 65](https://www.editeur.org/files/ONIX%20for%20books%20-%20code%20lists/ONIX_BookProduct_Codelists_Issue_65.html)
+        (list 65)
+      tags:
+      - availability_types
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodeName'
+          description: ''
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /books/:
+    get:
+      operationId: get_books
+      description: Obtener una lista paginada de libros basada en filtros. Para formato
+        de fechas ver [ISO 8601](https://www.w3.org/QA/Tips/iso-date.html.es)
+      parameters:
+      - in: query
+        name: author
+        schema:
+          type: string
+        description: Nombre o apellido del autor. La búsqueda se realiza por palabras
+          completas, sin distinguir mayúsculas ni tildes.
+      - in: query
+        name: av_end_datetime
+        schema:
+          type: string
+        description: Limite de fecha creación de disponibilidad.
+      - in: query
+        name: av_end_datetime_modification
+        schema:
+          type: string
+        description: Limite de fecha modificación de la disponibilidad.
+      - in: query
+        name: av_start_datetime
+        schema:
+          type: string
+        description: Inicio de fecha creación de disponibilidad.
+      - in: query
+        name: av_start_datetime_modification
+        schema:
+          type: string
+        description: Inicio de fecha modificación de la disponibilidad.
+      - in: query
+        name: collection
+        schema:
+          type: string
+        description: Colección del libro
+      - in: query
+        name: creation_company
+        schema:
+          type: string
+        description: ID legal, nombre o razón social de la compañía que creó el libro.
+          El ID legal exacto normalizado tiene prioridad; de lo contrario se incluyen
+          todas las compañías coincidentes por nombre o razón social, sin tildes.
+          Sin coincidencias se devuelven cero libros.
+      - in: query
+        name: editorial
+        schema:
+          type: string
+        description: Editorial del libro
+      - in: query
+        name: end_creation_date
+        schema:
+          type: string
+        description: Limite de fecha de creación.
+      - in: query
+        name: end_modification_date
+        schema:
+          type: string
+        description: Limite fecha de modificación.
+      - in: query
+        name: isbn
+        schema:
+          type: string
+        description: ISBN del libro
+      - in: query
+        name: owner_company
+        schema:
+          type: string
+        description: Nombre, razón social o ID legal del propietario. El ID legal
+          exacto normalizado tiene prioridad; de lo contrario se incluyen todas las
+          compañías coincidentes por nombre o razón social, sin tildes. Sin coincidencias
+          se devuelven cero libros.
+      - in: query
+        name: owner_or_creator
+        schema:
+          type: string
+        description: ID legal, nombre o razón social del propietario o creador. El
+          ID legal exacto normalizado tiene prioridad; de lo contrario se incluyen
+          todas las compañías coincidentes por nombre o razón social, sin tildes.
+          Sin coincidencias se devuelven cero libros.
+      - in: query
+        name: owner_or_provider
+        schema:
+          type: string
+        description: ID legal, nombre o razón social del propietario o proveedor.
+          El ID legal exacto normalizado tiene prioridad; de lo contrario se incluyen
+          todas las compañías coincidentes por nombre o razón social, sin tildes.
+          Sin coincidencias se devuelven cero libros. Se conservan los permisos de
+          visibilidad de disponibilidades.
+      - in: query
+        name: provider
+        schema:
+          type: string
+        description: Nombre, razón social o ID legal del proveedor. El ID legal exacto
+          normalizado tiene prioridad; de lo contrario se incluyen todas las compañías
+          coincidentes por nombre o razón social, sin tildes. Sin coincidencias se
+          devuelven cero libros. Se conservan los permisos de visibilidad de disponibilidades.
+      - in: query
+        name: representation
+        schema:
+          type: string
+          enum:
+          - full
+          - summary
+          default: full
+        description: summary conserva bibliografía, precios y disponibilidades visibles,
+          omite review e isbn_owner y reduce las compañías anidadas. Sólo afecta GET
+          /books/; la ficha individual siempre es completa.
+      - in: query
+        name: start_creation_date
+        schema:
+          type: string
+        description: Inicio de fecha de creación.
+      - in: query
+        name: start_modification_date
+        schema:
+          type: string
+        description: Inicio de fecha de modificación.
+      - in: query
+        name: subtitle
+        schema:
+          type: string
+        description: Subtítulo del libro
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Título del libro
+      tags:
+      - books
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookSearch'
+          description: Lista de libros paginada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: Revisar sintaxis de las fechas, por favor seguir el estandar
+            [ISO 8601](https://www.w3.org/QA/Tips/iso-date.html.es)
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+    post:
+      operationId: post_books
+      description: "\n        Endpoint para la creación asíncrona de libros.\n\n \
+        \       Flujo de operación:\n            1. Recibe los datos del libro en\
+        \ el cuerpo de la petición.\n            2. Valida los datos y encola la tarea\
+        \ de creación.\n            3. Retorna inmediatamente el ID de la tarea.\n\
+        \        "
+      parameters:
+      - in: query
+        name: Barcode
+        schema:
+          type: string
+        description: Código de barras
+      - in: query
+        name: authors
+        schema:
+          $ref: '#/components/schemas/BookAuthor'
+        description: Lista de autores del libro. El rol del autor se toma del [Código
+          ONIX de roles](https://www.editeur.org/files/ONIX%20for%20books%20-%20code%20lists/ONIX_BookProduct_Codelists_Issue_65.html),
+          lista 17.
+      - in: query
+        name: bookbinding
+        schema:
+          type: string
+        description: Encuadernación
+      - in: query
+        name: categories
+        schema:
+          $ref: '#/components/schemas/BookCategoryDocumentation'
+        description: Lista de materias del libro identificadas por código y estándar.
+          Estándares actuales IBIC, ILHSA y THEMA
+      - in: query
+        name: collection
+        schema:
+          type: string
+        description: Colección del libro
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: País de origen. Ver [ISO 3166-1](https://es.wikipedia.org/wiki/ISO_3166-1)
+      - in: query
+        name: edition
+        schema:
+          type: string
+        description: Edición
+      - in: query
+        name: edition_date
+        schema:
+          type: string
+        description: Fecha de edición. Ver [ISO 8601](https://www.w3.org/QA/Tips/iso-date.html.es)
+      - in: query
+        name: editorial
+        schema:
+          type: string
+        description: Editorial del libro
+        required: true
+      - in: query
+        name: high
+        schema:
+          type: number
+          format: double
+        description: Altura en cm
+      - in: query
+        name: isbn
+        schema:
+          type: string
+        description: ISBN del libro
+        required: true
+      - in: query
+        name: language
+        schema:
+          type: string
+        description: Idioma del libro siguiendo el estandar [ISO-639](https://altalingua.es/codigos-lenguas/)
+      - in: query
+        name: pages
+        schema:
+          type: integer
+        description: Páginas
+      - in: query
+        name: review
+        schema:
+          type: string
+        description: Reseña
+      - in: query
+        name: spine
+        schema:
+          type: number
+          format: double
+        description: Lomo en cm
+      - in: query
+        name: subtitle
+        schema:
+          type: string
+        description: Subtítulo del libro
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Título del libro
+        required: true
+      - in: query
+        name: weight
+        schema:
+          type: number
+          format: double
+        description: Peso en kg
+      - in: query
+        name: width
+        schema:
+          type: number
+          format: double
+        description: Ancho en cm
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookDocumentation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookDocumentation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookDocumentation'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploÉxito:
+                  value:
+                    detail: Tarea encolada <task id>.
+                  summary: Ejemplo éxito
+          description: Tarea creación de libros encolada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: Se devuelve diccionario con detalle del error.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /books/{isbn}/:
+    get:
+      operationId: get_book
+      description: Obtener un único libro por isbn.
+      parameters:
+      - in: path
+        name: isbn
+        schema:
+          type: string
+          pattern: ^[0-9Xx-]+$
+        required: true
+      tags:
+      - books
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDocumentation'
+          description: Un único libro
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: Se debe proporcionar un isbn.
+        '404':
+          description: Libro no encontrado.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+    put:
+      operationId: put_book
+      description: "\n        Endpoint para la actualización asíncrona de libros.\n\
+        \n        Flujo de operación:\n            1. Recibe los datos del libro en\
+        \ el cuerpo de la petición.\n            2. Valida los datos y encola la tarea\
+        \ de actualización.\n            3. Retorna inmediatamente el ID de la tarea.\n\
+        \        "
+      parameters:
+      - in: query
+        name: Barcode
+        schema:
+          type: string
+        description: Código de barras
+      - in: query
+        name: authors
+        schema:
+          $ref: '#/components/schemas/BookAuthor'
+        description: Lista de autores del libro. El rol del autor se toma del [Código
+          ONIX de roles](https://www.editeur.org/files/ONIX%20for%20books%20-%20code%20lists/ONIX_BookProduct_Codelists_Issue_65.html),
+          lista 17.
+      - in: query
+        name: bookbinding
+        schema:
+          type: string
+        description: Encuadernación
+      - in: query
+        name: categories
+        schema:
+          $ref: '#/components/schemas/BookCategoryDocumentation'
+        description: Lista de materias del libro identificadas por código y estándar.
+          Estándares actuales IBIC, ILHSA y THEMA
+      - in: query
+        name: collection
+        schema:
+          type: string
+        description: Colección del libro
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: País de origen. Ver [ISO 3166-1](https://es.wikipedia.org/wiki/ISO_3166-1)
+      - in: query
+        name: edition
+        schema:
+          type: string
+        description: Edición
+      - in: query
+        name: edition_date
+        schema:
+          type: string
+        description: Fecha de edición. Ver [ISO 8601](https://www.w3.org/QA/Tips/iso-date.html.es)
+      - in: query
+        name: editorial
+        schema:
+          type: string
+        description: Editorial del libro
+        required: true
+      - in: query
+        name: high
+        schema:
+          type: number
+          format: double
+        description: Altura en cm
+      - in: path
+        name: isbn
+        schema:
+          type: string
+        description: ISBN del libro
+        required: true
+      - in: query
+        name: language
+        schema:
+          type: string
+        description: Idioma del libro siguiendo el estandar [ISO-639](https://altalingua.es/codigos-lenguas/)
+      - in: query
+        name: pages
+        schema:
+          type: integer
+        description: Páginas
+      - in: query
+        name: review
+        schema:
+          type: string
+        description: Reseña
+      - in: query
+        name: spine
+        schema:
+          type: number
+          format: double
+        description: Lomo en cm
+      - in: query
+        name: subtitle
+        schema:
+          type: string
+        description: Subtítulo del libro
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Título del libro
+      - in: query
+        name: weight
+        schema:
+          type: number
+          format: double
+        description: Peso en kg
+      - in: query
+        name: width
+        schema:
+          type: number
+          format: double
+        description: Ancho en cm
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookDocumentation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookDocumentation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookDocumentation'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploÉxito:
+                  value:
+                    detail: Tarea encolada <task id>.
+                  summary: Ejemplo éxito
+          description: Tarea actualización de libros encolada.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: Se debe proporcionar un isbn.
+        '404':
+          description: Libro no encontrado.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+    delete:
+      operationId: delete_book
+      description: Elimina el libro correspondiente al ISBN recibido.
+      parameters:
+      - in: path
+        name: isbn
+        schema:
+          type: string
+        description: ISBN del libro.
+        required: true
+      tags:
+      - books
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Libro borrado exitosamente.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: El libro tiene disponibilidades existentes ó se genero un error
+            de integridad en la DB.
+        '404':
+          description: Libro no encontrado.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /company/:
+    get:
+      operationId: get_companies
+      description: Obtiene la lista de empresas
+      tags:
+      - company
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompanyList'
+          description: Lista paginada con el detalle de cada compañia.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /company/{legal_id}/:
+    get:
+      operationId: get_company
+      description: Obtiene los datos de una empresa.
+      parameters:
+      - in: path
+        name: legal_id
+        schema:
+          type: string
+          pattern: ^[0-9-a-zA-Z]+$
+        required: true
+      tags:
+      - company
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: Lista paginada con el detalle de la compañia.
+        '404':
+          description: No se encontró la compañía solicitada.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /isbns/:
+    post:
+      operationId: post_book
+      description: Se recibe una lista de ISBNs y se devuelve una lista paginada con
+        los libros correspondientes.
+      tags:
+      - isbns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isbns:
+                  type: array
+                  items:
+                    type: string
+              example:
+                isbns:
+                - '9781234567897'
+                - '9781234567898'
+                - '9781234567899'
+      security:
+      - jwtAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomError'
+          description: Los ISBNs no fueron enviados como una lista de valores.
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+  /prices/:
+    post:
+      operationId: post_prices
+      description: "\n        Endpoint para la creación asíncrona de precios.\n\n\
+        \        Flujo de operación:\n            1. Recibe los datos del precio en\
+        \ el cuerpo de la petición.\n            2. Valida los datos y encola la tarea\
+        \ de creación.\n            3. Retorna inmediatamente el ID de la tarea.\n\
+        \        "
+      tags:
+      - prices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prices'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Prices'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Prices'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploÉxito:
+                  value:
+                    detail: Tarea encolada <task id>.
+                  summary: Ejemplo éxito
+          description: Tarea creación de precios encolada.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploError:
+                  value:
+                    detail: No se acepto la tarea.
+                  summary: Ejemplo error
+          description: Ocurrio un error durante la validación de datos
+    put:
+      operationId: put_prices
+      description: "\n        Endpoint para la actualización asíncrona de precios.\n\
+        \n        Flujo de operación:\n            1. Recibe los datos del precio\
+        \ en el cuerpo de la petición.\n            2. Valida los datos y encola la\
+        \ tarea de actualización.\n            3. Retorna inmediatamente el ID de\
+        \ la tarea.\n        "
+      tags:
+      - prices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prices'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Prices'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Prices'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploÉxito:
+                  value:
+                    detail: Tarea encolada <task id>.
+                  summary: Ejemplo éxito
+          description: Tarea actualización de precios encolada.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                EjemploError:
+                  value:
+                    detail: No se acepto la tarea.
+                  summary: Ejemplo error
+          description: Ocurrio un error durante la validación de datos
+  /prices/{price_list_key}/{book_isbn}/:
+    delete:
+      operationId: delete_prices
+      description: Elimina el precio de un libro en una lista de precios específica.
+      parameters:
+      - in: path
+        name: book_isbn
+        schema:
+          type: string
+        description: ISBN del libro.
+        required: true
+      - in: path
+        name: price_list_key
+        schema:
+          type: string
+        description: Clave de la lista de precios.
+        required: true
+      tags:
+      - prices
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '202':
+          description: Tarea para borrado de precios encolada.
+        '404':
+          description: Precio no encontrado para la combinación de lista de precios
+            y libro.
+  /user/me/:
+    get:
+      operationId: user_me_retrieve
+      description: Obtiene los datos del usuario de acceso.
+      tags:
+      - user
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+          description: ''
+        '401':
+          description: No autorizado. El token JWT es inválido o no está presente.
+components:
+  schemas:
+    Availability:
+      type: object
+      properties:
+        availability:
+          type: string
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        availability_target:
+          type: string
+          title: Clave
+        company:
+          allOf:
+          - $ref: '#/components/schemas/CompanyNested'
+          readOnly: true
+        book:
+          allOf:
+          - $ref: '#/components/schemas/SimpleBook'
+          readOnly: true
+        book_key:
+          type: string
+          writeOnly: true
+        allow_firme:
+          type: boolean
+          title: Permitido en firme
+        allow_consign:
+          type: boolean
+          title: Permitido en consignación
+        days_to_deliver:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Días para el envío
+        sucursal:
+          type: string
+          title: Clave de la sucursal
+        creation_date:
+          type: string
+          format: date-time
+          readOnly: true
+        modification_date:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - availability
+      - availability_target
+      - book
+      - book_key
+      - company
+      - creation_date
+      - modification_date
+      - sucursal
+    AvailabilityCompanySummary:
+      type: object
+      properties:
+        legal_id:
+          type: string
+          title: ID legal
+          description: Identificador tributario de la empresa (CUIT, RUT, NIT, etc.).
+            Este valor identifica a la empresa en el sistema.
+          maxLength: 20
+        name:
+          type: string
+          title: Nombre de la empresa
+          maxLength: 200
+        legalname:
+          type: string
+          title: Razón social
+          maxLength: 200
+      required:
+      - legalname
+      - name
+    AvailabilitySummary:
+      type: object
+      properties:
+        availability:
+          allOf:
+          - $ref: '#/components/schemas/CodeName'
+          readOnly: true
+        company:
+          allOf:
+          - $ref: '#/components/schemas/AvailabilityCompanySummary'
+          readOnly: true
+      required:
+      - availability
+      - company
+    AvailabilityTarget:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Nombre
+          maxLength: 100
+        key:
+          type: string
+          title: Clave
+          maxLength: 50
+      required:
+      - key
+      - name
+    BlankEnum:
+      enum:
+      - ''
+    BookAuthor:
+      type: object
+      properties:
+        first_name:
+          type: string
+          title: Nombre del autor
+          maxLength: 100
+        last_name:
+          type: string
+          title: Apellido del autor
+          maxLength: 100
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          title: Rol del autor
+          description: |-
+            Rol de la persona en el libro. Código ONIX de roles, lista 17.
+
+            * `A01` - Por (autor)
+            * `A02` - Con
+            * `A03` - Guión por
+            * `A04` - Libreto de
+            * `A05` - Letras de
+            * `A06` - Por (compositor)
+            * `A07` - Por (artista)
+            * `A08` - Por (fotógrafo)
+            * `A09` - Creado por
+            * `A10` - De una idea de
+            * `A11` - Diseñada por
+            * `A12` - Ilustrado por
+            * `A13` - Fotografías de
+            * `A14` - Texto por
+            * `A15` - Prefacio de
+            * `A16` - Prólogo de
+            * `A17` - Resumen por
+            * `A18` - Suplemento por
+            * `A19` - Epílogo de
+            * `A20` - Notas de
+            * `A21` - Comentarios de
+            * `A22` - Epílogo de
+            * `A23` - Prefacio por
+            * `A24` - Introducción por
+            * `A25` - Notas a pie de página de
+            * `A26` - Memorias de
+            * `A27` - Experimentos de
+            * `A28` - Interpretado a través de
+            * `A29` - Introducción y notas de
+            * `A30` - Software escrito por
+            * `A31` - Libro y letra de
+            * `A32` - Contribuciones de
+            * `A33` - Apéndice por
+            * `A34` - Índice por
+            * `A35` - Dibujos de
+            * `A36` - Diseño de portada o arte de
+            * `A37` - Trabajo preliminar de
+            * `A38` - Autor original
+            * `A39` - Mapas por
+            * `A40` - Entintado o coloreado por
+            * `A41` - Ingeniería del papel por
+            * `A42` - Continuado por
+            * `A43` - Entrevistador
+            * `A44` - Entrevistado
+            * `A45` - Guión cómico de
+            * `A46` - entintador
+            * `A47` - colorista
+            * `A48` - rotulador
+            * `A49` - Entintador de portadas
+            * `A50` - Colorista de portada
+            * `A51` - Investigación por
+            * `A52` - Diseño de personajes originales.
+            * `A99` - Otro creador principal
+            * `B01` - Editado por
+            * `B02` - Revisado por
+            * `B03` - Contada por
+            * `B04` - abreviado por
+            * `B05` - Adaptado por
+            * `B06` - Traducido por
+            * `B07` - según lo dicho por
+            * `B08` - Traducido con comentario de
+            * `B09` - Serie editada por
+            * `B10` - Editado y traducido por
+            * `B11` - Editor en jefe
+            * `B12` - Editor invitado
+            * `B13` - editor de volumen
+            * `B14` - Miembro del consejo editorial
+            * `B15` - Coordinación editorial por
+            * `B16` - Jefe de redacción
+            * `B17` - Fundado por
+            * `B18` - Preparado para publicación por
+            * `B19` - Editor asociado
+            * `B20` - Editor consultor
+            * `B21` - redactor general
+            * `B22` - Dramatizado por
+            * `B23` - relator general
+            * `B24` - editor literario
+            * `B25` - Arreglado por (música)
+            * `B26` - editor técnico
+            * `B27` - Asesor o supervisor de tesis
+            * `B28` - examinador de tesis
+            * `B29` - editor científico
+            * `B30` - Asesor histórico
+            * `B31` - Editor original
+            * `B32` - Traducción revisada por
+            * `B33` - Transcrito por
+            * `B99` - Otra adaptación por
+            * `C01` - Compilado por
+            * `C02` - Seleccionado por
+            * `C03` - Material no textual seleccionado por
+            * `C04` - Comisariada por
+            * `C99` - Otra recopilación de
+            * `D01` - Productor
+            * `D02` - Director
+            * `D03` - Conductor
+            * `D04` - Coreógrafo
+            * `D99` - Otra dirección por
+            * `E01` - Actor
+            * `E02` - Bailarín
+            * `E03` - Narrador
+            * `E04` - Comentarista
+            * `E05` - solista vocal
+            * `E06` - solista instrumental
+            * `E07` - Leído por
+            * `E08` - Interpretada por (orquesta, banda, conjunto)
+            * `E09` - Vocero
+            * `E10` - Presentador
+            * `E11` - Introducción leída por
+            * `E99` - Interpretado por
+            * `F01` - Filmado/fotografiado por
+            * `F02` - Editor (película o vídeo)
+            * `F99` - Otra grabación de
+            * `Z01` - Asistido por
+            * `Z02` - Honrado/dedicado a
+            * `Z03` - Jurisdicción promulgadora
+            * `Z04` - Revisado por pares
+            * `Z05` - Completado póstumamente por
+            * `Z98` - (Varios roles)
+            * `Z99` - Otro
+      required:
+      - last_name
+      - role
+    BookCategoryDocumentation:
+      type: object
+      properties:
+        code:
+          type: string
+        standard:
+          type: string
+        name:
+          type: string
+          readOnly: true
+        full_hierarchy:
+          type: string
+          readOnly: true
+      required:
+      - code
+      - full_hierarchy
+      - name
+      - standard
+    BookDocumentation:
+      type: object
+      properties:
+        isbn:
+          type: string
+          description: ISBN 10 o 13.
+          maxLength: 20
+        isbn_normalized:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          title: Título
+          maxLength: 250
+        availabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Availability'
+          readOnly: true
+        owner_price:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        prices:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        barcode:
+          type: string
+          nullable: true
+          title: Código de barras
+          maxLength: 25
+        subtitle:
+          type: string
+          nullable: true
+          title: Subtítulo
+          maxLength: 200
+        editorial:
+          type: string
+          maxLength: 100
+        collection:
+          type: string
+          nullable: true
+          title: Colección
+          maxLength: 100
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookAuthor'
+        edition_date:
+          type: string
+          format: date
+          nullable: true
+          title: Fecha de edición
+        edition:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Edición
+        bookbinding:
+          type: string
+          nullable: true
+          title: Encuadernación
+          maxLength: 100
+        language:
+          nullable: true
+          title: Idioma
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        country:
+          nullable: true
+          title: País de origen
+          description: |-
+            País donde fue editado el libro. Código de país ISO 3166-1.
+
+            * `AF` - Afganistán
+            * `AX` - Åland, Islas
+            * `AL` - Albania
+            * `DE` - Alemania
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguila
+            * `AQ` - Antártida
+            * `AG` - Antigua y Barbuda
+            * `SA` - Arabia Saudita
+            * `DZ` - Argelia
+            * `AR` - Argentina
+            * `AM` - Armenia
+            * `AW` - Aruba
+            * `AU` - Australia
+            * `AT` - Austria
+            * `AZ` - Azerbaiyán
+            * `BS` - Bahamas (las)
+            * `BD` - Bangladés
+            * `BB` - Barbados
+            * `BH` - Baréin
+            * `BE` - Bélgica
+            * `BZ` - Belice
+            * `BJ` - Benín
+            * `BM` - Bermudas
+            * `BY` - Belarús
+            * `BO` - Bolivia (Estado Plurinacional de)
+            * `BQ` - Bonaire, San Eustaquio y Saba
+            * `BA` - Bosnia y Herzegovina
+            * `BW` - Botsuana
+            * `BR` - Brasil
+            * `BN` - Brunéi Darussalam
+            * `BG` - Bulgaria
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `BT` - Bhután
+            * `CV` - Cabo Verde
+            * `KH` - Camboya
+            * `CM` - Camerún
+            * `CA` - Canadá
+            * `QA` - Catar
+            * `TD` - Chad
+            * `CL` - Chile
+            * `CN` - China
+            * `CY` - Chipre
+            * `CO` - Colombia
+            * `KM` - Comoras (las)
+            * `KP` - Corea (la República Popular Democrática de)
+            * `KR` - Corea (la República de)
+            * `C` - I
+            * `CR` - Costa Rica
+            * `HR` - Croacia
+            * `CU` - Cuba
+            * `CW` - Curaçao
+            * `DK` - Dinamarca
+            * `DM` - Dominica
+            * `EC` - Ecuador
+            * `EG` - Egipto
+            * `SV` - El Salvador
+            * `AE` - Emiratos Árabes Unidos (los)
+            * `ER` - Eritrea
+            * `SK` - Eslovaquia
+            * `SI` - Eslovenia
+            * `ES` - España
+            * `US` - Estados Unidos de América (los)
+            * `EE` - Estonia
+            * `ET` - Etiopía
+            * `PH` - Filipinas (las)
+            * `FI` - Finlandia
+            * `FJ` - Fiyi
+            * `FR` - Francia
+            * `GA` - Gabón
+            * `GM` - Gambia (la)
+            * `GE` - Georgia
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GD` - Granada
+            * `GR` - Grecia
+            * `GL` - Groenlandia
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GF` - Guayana Francesa
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea Bissau
+            * `GQ` - Guinea Ecuatorial
+            * `GY` - Guyana
+            * `HT` - Haití
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `HU` - Hungría
+            * `IN` - India
+            * `ID` - Indonesia
+            * `IQ` - Irak
+            * `IR` - Irán (República Islámica de)
+            * `IE` - Irlanda
+            * `BV` - Bouvet, Isla
+            * `IM` - Isla de Man
+            * `CX` - Navidad, Isla de
+            * `IS` - Islandia
+            * `KY` - Caimán, (las) Islas
+            * `CC` - Cocos / Keeling, (las) Islas
+            * `CK` - Cook, (las) Islas
+            * `FO` - Feroe, (las) Islas
+            * `GS` - Georgia del Sur (la) y las Islas Sandwich del Sur
+            * `HM` - Heard (Isla) e Islas McDonald
+            * `FK` - Malvinas [Falkland], (las) Islas
+            * `MP` - Marianas del Norte, (las) Islas
+            * `MH` - Marshall, (las) Islas
+            * `PN` - Pitcairn
+            * `SB` - Salomón, Islas
+            * `TC` - Turcas y Caicos, (las) Islas
+            * `UM` - Islas Ultramarinas Menores de los Estados Unidos (las)
+            * `VG` - Vírgenes británicas, Islas
+            * `VI` - Vírgenes de los Estados Unidos, Islas
+            * `IL` - Israel
+            * `IT` - Italia
+            * `JM` - Jamaica
+            * `JP` - Japón
+            * `JE` - Jersey
+            * `JO` - Jordania
+            * `KZ` - Kazajistán
+            * `KE` - Kenia
+            * `KG` - Kirguistán
+            * `KI` - Kiribati
+            * `KW` - Kuwait
+            * `LA` - Lao, (la) República Democrática Popular
+            * `LS` - Lesoto
+            * `LV` - Letonia
+            * `LB` - Líbano
+            * `LR` - Liberia
+            * `LY` - Libia
+            * `LI` - Liechtenstein
+            * `LT` - Lituania
+            * `LU` - Luxemburgo
+            * `MO` - Macao
+            * `MK` - Macedonia del Norte
+            * `MG` - Madagascar
+            * `MY` - Malasia
+            * `MW` - Malawi
+            * `MV` - Maldivas
+            * `ML` - Malí
+            * `MT` - Malta
+            * `MA` - Marruecos
+            * `MQ` - Martinique
+            * `MU` - Mauricio
+            * `MR` - Mauritania
+            * `YT` - Mayotte
+            * `MX` - México
+            * `FM` - Micronesia (Estados Federados de)
+            * `MD` - Moldavia (la República de)
+            * `MC` - Mónaco
+            * `MN` - Mongolia
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NI` - Nicaragua
+            * `NE` - Níger (el)
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `NF` - Norfolk, Isla
+            * `NO` - Noruega
+            * `NC` - Nueva Caledonia
+            * `NZ` - Nueva Zelandia
+            * `OM` - Omán
+            * `NL` - Países Bajos (los)
+            * `PK` - Pakistán
+            * `PW` - Palaos
+            * `PS` - Palestina, Estado de
+            * `PA` - Panamá
+            * `PG` - Papúa Nueva Guinea
+            * `PY` - Paraguay
+            * `PE` - Perú
+            * `PF` - Polinesia Francesa
+            * `PL` - Polonia
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `GB` - Reino Unido de Gran Bretaña e Irlanda del Norte (el)
+            * `EH` - Sahara Occidental
+            * `CF` - República Centroafricana (la)
+            * `CZ` - Chequia
+            * `CG` - Congo (el)
+            * `CD` - Congo (la República Democrática del)
+            * `DO` - Dominicana, (la) República
+            * `RE` - Reunión
+            * `RW` - Ruanda
+            * `RO` - Rumania
+            * `RU` - Rusia, (la) Federación de
+            * `WS` - Samoa
+            * `AS` - Samoa Americana
+            * `BL` - Saint Barthélemy
+            * `KN` - San Cristóbal y Nieves
+            * `SM` - San Marino
+            * `MF` - Saint Martin (parte francesa)
+            * `PM` - San Pedro y Miquelón
+            * `VC` - San Vicente y las Granadinas
+            * `SH` - Santa Helena, Ascensión y Tristán de Acuña
+            * `LC` - Santa Lucía
+            * `ST` - Santo Tomé y Príncipe
+            * `SN` - Senegal
+            * `RS` - Serbia
+            * `SC` - Seychelles
+            * `SL` - Sierra leona
+            * `SG` - Singapur
+            * `SX` - Sint Maarten (parte neerlandesa)
+            * `SY` - República Árabe Siria
+            * `SO` - Somalia
+            * `LK` - Sri Lanka
+            * `SZ` - Suazilandia
+            * `ZA` - Sudáfrica
+            * `SD` - Sudán (el)
+            * `SS` - Sudán del Sur
+            * `SE` - Suecia
+            * `CH` - Suiza
+            * `SR` - Suriname
+            * `SJ` - Svalbard y Jan Mayen
+            * `TH` - Tailandia
+            * `TW` - Taiwán (Provincia de China)
+            * `TZ` - Tanzania, República Unida de
+            * `TJ` - Tayikistán
+            * `IO` - Territorio Británico del Océano Índico (el)
+            * `TF` - Tierras Australes Francesas (las)
+            * `TL` - Timor-Leste
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad y Tobago
+            * `TN` - Túnez
+            * `TM` - Turkmenistán
+            * `TR` - Turquía
+            * `TV` - Tuvalu
+            * `UA` - Ucrania
+            * `UG` - Uganda
+            * `UY` - Uruguay
+            * `UZ` - Uzbekistán
+            * `VU` - Vanuatu
+            * `VA` - Santa Sede (la)
+            * `VE` - Venezuela (República Bolivariana de)
+            * `VN` - Viet Nam
+            * `WF` - Wallis y Futuna
+            * `YE` - Yemen
+            * `DJ` - Yibuti
+            * `ZM` - Zambia
+            * `ZW` - Zimbabue
+          oneOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        high:
+          type: number
+          format: double
+          nullable: true
+          title: Alto
+          description: Altura en cm.
+        width:
+          type: number
+          format: double
+          nullable: true
+          title: Ancho
+          description: Ancho en cm.
+        spine:
+          type: number
+          format: double
+          nullable: true
+          title: Lomo
+          description: Lomo en cm.
+        weight:
+          type: number
+          format: double
+          nullable: true
+          title: Peso
+          description: Peso en kg.
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Páginas
+        review:
+          type: string
+          nullable: true
+          title: Reseña
+          maxLength: 20000
+        creation_date:
+          type: string
+          format: date-time
+          readOnly: true
+        modification_date:
+          type: string
+          format: date-time
+          readOnly: true
+        creation_company:
+          allOf:
+          - $ref: '#/components/schemas/CompanyNested'
+          readOnly: true
+        owner_company:
+          allOf:
+          - $ref: '#/components/schemas/CompanyNested'
+          readOnly: true
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookCategoryDocumentation'
+        isbn_owner:
+          type: string
+          description: Obtiene el propietario del ISBN del libro.
+          readOnly: true
+      required:
+      - availabilities
+      - creation_company
+      - creation_date
+      - editorial
+      - isbn
+      - isbn_normalized
+      - isbn_owner
+      - modification_date
+      - owner_company
+      - owner_price
+      - prices
+      - title
+    BookSearchResult:
+      oneOf:
+      - $ref: '#/components/schemas/BookDocumentation'
+      - $ref: '#/components/schemas/BookSummary'
+    BookSummary:
+      type: object
+      properties:
+        isbn:
+          type: string
+          description: ISBN 10 o 13.
+          maxLength: 20
+        isbn_normalized:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          title: Título
+          maxLength: 250
+        availabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilitySummary'
+          readOnly: true
+        owner_price:
+          allOf:
+          - $ref: '#/components/schemas/PriceSummary'
+          readOnly: true
+          nullable: true
+        prices:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceSummary'
+          readOnly: true
+        barcode:
+          type: string
+          nullable: true
+          title: Código de barras
+          maxLength: 25
+        subtitle:
+          type: string
+          nullable: true
+          title: Subtítulo
+          maxLength: 200
+        editorial:
+          type: string
+          maxLength: 100
+        collection:
+          type: string
+          nullable: true
+          title: Colección
+          maxLength: 100
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookAuthor'
+        edition_date:
+          type: string
+          format: date
+          nullable: true
+          title: Fecha de edición
+        edition:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Edición
+        bookbinding:
+          type: string
+          nullable: true
+          title: Encuadernación
+          maxLength: 100
+        language:
+          nullable: true
+          title: Idioma
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        country:
+          nullable: true
+          title: País de origen
+          description: |-
+            País donde fue editado el libro. Código de país ISO 3166-1.
+
+            * `AF` - Afganistán
+            * `AX` - Åland, Islas
+            * `AL` - Albania
+            * `DE` - Alemania
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguila
+            * `AQ` - Antártida
+            * `AG` - Antigua y Barbuda
+            * `SA` - Arabia Saudita
+            * `DZ` - Argelia
+            * `AR` - Argentina
+            * `AM` - Armenia
+            * `AW` - Aruba
+            * `AU` - Australia
+            * `AT` - Austria
+            * `AZ` - Azerbaiyán
+            * `BS` - Bahamas (las)
+            * `BD` - Bangladés
+            * `BB` - Barbados
+            * `BH` - Baréin
+            * `BE` - Bélgica
+            * `BZ` - Belice
+            * `BJ` - Benín
+            * `BM` - Bermudas
+            * `BY` - Belarús
+            * `BO` - Bolivia (Estado Plurinacional de)
+            * `BQ` - Bonaire, San Eustaquio y Saba
+            * `BA` - Bosnia y Herzegovina
+            * `BW` - Botsuana
+            * `BR` - Brasil
+            * `BN` - Brunéi Darussalam
+            * `BG` - Bulgaria
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `BT` - Bhután
+            * `CV` - Cabo Verde
+            * `KH` - Camboya
+            * `CM` - Camerún
+            * `CA` - Canadá
+            * `QA` - Catar
+            * `TD` - Chad
+            * `CL` - Chile
+            * `CN` - China
+            * `CY` - Chipre
+            * `CO` - Colombia
+            * `KM` - Comoras (las)
+            * `KP` - Corea (la República Popular Democrática de)
+            * `KR` - Corea (la República de)
+            * `C` - I
+            * `CR` - Costa Rica
+            * `HR` - Croacia
+            * `CU` - Cuba
+            * `CW` - Curaçao
+            * `DK` - Dinamarca
+            * `DM` - Dominica
+            * `EC` - Ecuador
+            * `EG` - Egipto
+            * `SV` - El Salvador
+            * `AE` - Emiratos Árabes Unidos (los)
+            * `ER` - Eritrea
+            * `SK` - Eslovaquia
+            * `SI` - Eslovenia
+            * `ES` - España
+            * `US` - Estados Unidos de América (los)
+            * `EE` - Estonia
+            * `ET` - Etiopía
+            * `PH` - Filipinas (las)
+            * `FI` - Finlandia
+            * `FJ` - Fiyi
+            * `FR` - Francia
+            * `GA` - Gabón
+            * `GM` - Gambia (la)
+            * `GE` - Georgia
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GD` - Granada
+            * `GR` - Grecia
+            * `GL` - Groenlandia
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GF` - Guayana Francesa
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea Bissau
+            * `GQ` - Guinea Ecuatorial
+            * `GY` - Guyana
+            * `HT` - Haití
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `HU` - Hungría
+            * `IN` - India
+            * `ID` - Indonesia
+            * `IQ` - Irak
+            * `IR` - Irán (República Islámica de)
+            * `IE` - Irlanda
+            * `BV` - Bouvet, Isla
+            * `IM` - Isla de Man
+            * `CX` - Navidad, Isla de
+            * `IS` - Islandia
+            * `KY` - Caimán, (las) Islas
+            * `CC` - Cocos / Keeling, (las) Islas
+            * `CK` - Cook, (las) Islas
+            * `FO` - Feroe, (las) Islas
+            * `GS` - Georgia del Sur (la) y las Islas Sandwich del Sur
+            * `HM` - Heard (Isla) e Islas McDonald
+            * `FK` - Malvinas [Falkland], (las) Islas
+            * `MP` - Marianas del Norte, (las) Islas
+            * `MH` - Marshall, (las) Islas
+            * `PN` - Pitcairn
+            * `SB` - Salomón, Islas
+            * `TC` - Turcas y Caicos, (las) Islas
+            * `UM` - Islas Ultramarinas Menores de los Estados Unidos (las)
+            * `VG` - Vírgenes británicas, Islas
+            * `VI` - Vírgenes de los Estados Unidos, Islas
+            * `IL` - Israel
+            * `IT` - Italia
+            * `JM` - Jamaica
+            * `JP` - Japón
+            * `JE` - Jersey
+            * `JO` - Jordania
+            * `KZ` - Kazajistán
+            * `KE` - Kenia
+            * `KG` - Kirguistán
+            * `KI` - Kiribati
+            * `KW` - Kuwait
+            * `LA` - Lao, (la) República Democrática Popular
+            * `LS` - Lesoto
+            * `LV` - Letonia
+            * `LB` - Líbano
+            * `LR` - Liberia
+            * `LY` - Libia
+            * `LI` - Liechtenstein
+            * `LT` - Lituania
+            * `LU` - Luxemburgo
+            * `MO` - Macao
+            * `MK` - Macedonia del Norte
+            * `MG` - Madagascar
+            * `MY` - Malasia
+            * `MW` - Malawi
+            * `MV` - Maldivas
+            * `ML` - Malí
+            * `MT` - Malta
+            * `MA` - Marruecos
+            * `MQ` - Martinique
+            * `MU` - Mauricio
+            * `MR` - Mauritania
+            * `YT` - Mayotte
+            * `MX` - México
+            * `FM` - Micronesia (Estados Federados de)
+            * `MD` - Moldavia (la República de)
+            * `MC` - Mónaco
+            * `MN` - Mongolia
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NI` - Nicaragua
+            * `NE` - Níger (el)
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `NF` - Norfolk, Isla
+            * `NO` - Noruega
+            * `NC` - Nueva Caledonia
+            * `NZ` - Nueva Zelandia
+            * `OM` - Omán
+            * `NL` - Países Bajos (los)
+            * `PK` - Pakistán
+            * `PW` - Palaos
+            * `PS` - Palestina, Estado de
+            * `PA` - Panamá
+            * `PG` - Papúa Nueva Guinea
+            * `PY` - Paraguay
+            * `PE` - Perú
+            * `PF` - Polinesia Francesa
+            * `PL` - Polonia
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `GB` - Reino Unido de Gran Bretaña e Irlanda del Norte (el)
+            * `EH` - Sahara Occidental
+            * `CF` - República Centroafricana (la)
+            * `CZ` - Chequia
+            * `CG` - Congo (el)
+            * `CD` - Congo (la República Democrática del)
+            * `DO` - Dominicana, (la) República
+            * `RE` - Reunión
+            * `RW` - Ruanda
+            * `RO` - Rumania
+            * `RU` - Rusia, (la) Federación de
+            * `WS` - Samoa
+            * `AS` - Samoa Americana
+            * `BL` - Saint Barthélemy
+            * `KN` - San Cristóbal y Nieves
+            * `SM` - San Marino
+            * `MF` - Saint Martin (parte francesa)
+            * `PM` - San Pedro y Miquelón
+            * `VC` - San Vicente y las Granadinas
+            * `SH` - Santa Helena, Ascensión y Tristán de Acuña
+            * `LC` - Santa Lucía
+            * `ST` - Santo Tomé y Príncipe
+            * `SN` - Senegal
+            * `RS` - Serbia
+            * `SC` - Seychelles
+            * `SL` - Sierra leona
+            * `SG` - Singapur
+            * `SX` - Sint Maarten (parte neerlandesa)
+            * `SY` - República Árabe Siria
+            * `SO` - Somalia
+            * `LK` - Sri Lanka
+            * `SZ` - Suazilandia
+            * `ZA` - Sudáfrica
+            * `SD` - Sudán (el)
+            * `SS` - Sudán del Sur
+            * `SE` - Suecia
+            * `CH` - Suiza
+            * `SR` - Suriname
+            * `SJ` - Svalbard y Jan Mayen
+            * `TH` - Tailandia
+            * `TW` - Taiwán (Provincia de China)
+            * `TZ` - Tanzania, República Unida de
+            * `TJ` - Tayikistán
+            * `IO` - Territorio Británico del Océano Índico (el)
+            * `TF` - Tierras Australes Francesas (las)
+            * `TL` - Timor-Leste
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad y Tobago
+            * `TN` - Túnez
+            * `TM` - Turkmenistán
+            * `TR` - Turquía
+            * `TV` - Tuvalu
+            * `UA` - Ucrania
+            * `UG` - Uganda
+            * `UY` - Uruguay
+            * `UZ` - Uzbekistán
+            * `VU` - Vanuatu
+            * `VA` - Santa Sede (la)
+            * `VE` - Venezuela (República Bolivariana de)
+            * `VN` - Viet Nam
+            * `WF` - Wallis y Futuna
+            * `YE` - Yemen
+            * `DJ` - Yibuti
+            * `ZM` - Zambia
+            * `ZW` - Zimbabue
+          oneOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        high:
+          type: number
+          format: double
+          nullable: true
+          title: Alto
+          description: Altura en cm.
+        width:
+          type: number
+          format: double
+          nullable: true
+          title: Ancho
+          description: Ancho en cm.
+        spine:
+          type: number
+          format: double
+          nullable: true
+          title: Lomo
+          description: Lomo en cm.
+        weight:
+          type: number
+          format: double
+          nullable: true
+          title: Peso
+          description: Peso en kg.
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: Páginas
+        creation_date:
+          type: string
+          format: date-time
+          readOnly: true
+        modification_date:
+          type: string
+          format: date-time
+          readOnly: true
+        creation_company:
+          allOf:
+          - $ref: '#/components/schemas/CompanySummary'
+          readOnly: true
+        owner_company:
+          allOf:
+          - $ref: '#/components/schemas/CompanySummary'
+          readOnly: true
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookCategoryDocumentation'
+      required:
+      - availabilities
+      - creation_company
+      - creation_date
+      - editorial
+      - isbn
+      - isbn_normalized
+      - modification_date
+      - owner_company
+      - owner_price
+      - prices
+      - title
+    CapitalizationModeEnum:
+      enum:
+      - UPPERCASE
+      - LOWERCASE
+      - TITLECASE
+      type: string
+      description: |-
+        * `UPPERCASE` - TODO MAYÚSCULA
+        * `LOWERCASE` - todo minúscula
+        * `TITLECASE` - Modo Título
+    CodeName:
+      type: object
+      description: Clase para manejar constantes de estándares ISO y ONIX (países,
+        monedas, disponibilidades, etc.)
+      properties:
+        code:
+          type: string
+          title: Código
+        name:
+          type: string
+          title: Valor
+      required:
+      - code
+      - name
+    Company:
+      type: object
+      properties:
+        legal_id:
+          type: string
+          title: ID legal
+          description: Identificador tributario de la empresa (CUIT, RUT, NIT, etc.).
+            Este valor identifica a la empresa en el sistema.
+          maxLength: 20
+        name:
+          type: string
+          title: Nombre de la empresa
+          maxLength: 200
+        contact:
+          type: string
+          nullable: true
+          title: Nombre del contacto
+          maxLength: 200
+        legalname:
+          type: string
+          title: Razón social
+          maxLength: 200
+        isbn_prefixes:
+          nullable: true
+          title: Prefijos ISBN
+          description: Ingrese solo los dígitos del prefijo ISBN dentro de los corchetes.
+            En caso de contar con más de un prefijo, el separador es la coma (,).
+        sucursals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sucursal'
+        availability_targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityTarget'
+        is_bookshop:
+          type: boolean
+          title: Es librería
+        is_publisher:
+          type: boolean
+          title: Es editorial
+        is_distributor:
+          type: boolean
+          title: Es distribuidora
+        email:
+          type: string
+          format: email
+          nullable: true
+          title: Correo electrónico
+          maxLength: 254
+        publish_availabilities:
+          type: boolean
+          title: Publica disponibilidades
+        publish_prices:
+          type: boolean
+          title: Publica precios
+        publish_books:
+          type: boolean
+          title: Publica libros
+        presentation:
+          type: string
+          nullable: true
+          title: Presentación
+          maxLength: 2000
+        share_to_all:
+          type: boolean
+          title: Compartir con todas las empresas (sin relaciones agregadas)
+        availability_relation_from_this:
+          type: boolean
+          readOnly: true
+        availability_relation_to_this:
+          type: boolean
+          readOnly: true
+        creation_date:
+          type: string
+          format: date-time
+          readOnly: true
+        country:
+          nullable: true
+          title: País
+          description: |-
+            País donde reside la empresa. Código de país ISO 3166-1.
+
+            * `AF` - Afganistán
+            * `AX` - Åland, Islas
+            * `AL` - Albania
+            * `DE` - Alemania
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguila
+            * `AQ` - Antártida
+            * `AG` - Antigua y Barbuda
+            * `SA` - Arabia Saudita
+            * `DZ` - Argelia
+            * `AR` - Argentina
+            * `AM` - Armenia
+            * `AW` - Aruba
+            * `AU` - Australia
+            * `AT` - Austria
+            * `AZ` - Azerbaiyán
+            * `BS` - Bahamas (las)
+            * `BD` - Bangladés
+            * `BB` - Barbados
+            * `BH` - Baréin
+            * `BE` - Bélgica
+            * `BZ` - Belice
+            * `BJ` - Benín
+            * `BM` - Bermudas
+            * `BY` - Belarús
+            * `BO` - Bolivia (Estado Plurinacional de)
+            * `BQ` - Bonaire, San Eustaquio y Saba
+            * `BA` - Bosnia y Herzegovina
+            * `BW` - Botsuana
+            * `BR` - Brasil
+            * `BN` - Brunéi Darussalam
+            * `BG` - Bulgaria
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `BT` - Bhután
+            * `CV` - Cabo Verde
+            * `KH` - Camboya
+            * `CM` - Camerún
+            * `CA` - Canadá
+            * `QA` - Catar
+            * `TD` - Chad
+            * `CL` - Chile
+            * `CN` - China
+            * `CY` - Chipre
+            * `CO` - Colombia
+            * `KM` - Comoras (las)
+            * `KP` - Corea (la República Popular Democrática de)
+            * `KR` - Corea (la República de)
+            * `C` - I
+            * `CR` - Costa Rica
+            * `HR` - Croacia
+            * `CU` - Cuba
+            * `CW` - Curaçao
+            * `DK` - Dinamarca
+            * `DM` - Dominica
+            * `EC` - Ecuador
+            * `EG` - Egipto
+            * `SV` - El Salvador
+            * `AE` - Emiratos Árabes Unidos (los)
+            * `ER` - Eritrea
+            * `SK` - Eslovaquia
+            * `SI` - Eslovenia
+            * `ES` - España
+            * `US` - Estados Unidos de América (los)
+            * `EE` - Estonia
+            * `ET` - Etiopía
+            * `PH` - Filipinas (las)
+            * `FI` - Finlandia
+            * `FJ` - Fiyi
+            * `FR` - Francia
+            * `GA` - Gabón
+            * `GM` - Gambia (la)
+            * `GE` - Georgia
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GD` - Granada
+            * `GR` - Grecia
+            * `GL` - Groenlandia
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GF` - Guayana Francesa
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea Bissau
+            * `GQ` - Guinea Ecuatorial
+            * `GY` - Guyana
+            * `HT` - Haití
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `HU` - Hungría
+            * `IN` - India
+            * `ID` - Indonesia
+            * `IQ` - Irak
+            * `IR` - Irán (República Islámica de)
+            * `IE` - Irlanda
+            * `BV` - Bouvet, Isla
+            * `IM` - Isla de Man
+            * `CX` - Navidad, Isla de
+            * `IS` - Islandia
+            * `KY` - Caimán, (las) Islas
+            * `CC` - Cocos / Keeling, (las) Islas
+            * `CK` - Cook, (las) Islas
+            * `FO` - Feroe, (las) Islas
+            * `GS` - Georgia del Sur (la) y las Islas Sandwich del Sur
+            * `HM` - Heard (Isla) e Islas McDonald
+            * `FK` - Malvinas [Falkland], (las) Islas
+            * `MP` - Marianas del Norte, (las) Islas
+            * `MH` - Marshall, (las) Islas
+            * `PN` - Pitcairn
+            * `SB` - Salomón, Islas
+            * `TC` - Turcas y Caicos, (las) Islas
+            * `UM` - Islas Ultramarinas Menores de los Estados Unidos (las)
+            * `VG` - Vírgenes británicas, Islas
+            * `VI` - Vírgenes de los Estados Unidos, Islas
+            * `IL` - Israel
+            * `IT` - Italia
+            * `JM` - Jamaica
+            * `JP` - Japón
+            * `JE` - Jersey
+            * `JO` - Jordania
+            * `KZ` - Kazajistán
+            * `KE` - Kenia
+            * `KG` - Kirguistán
+            * `KI` - Kiribati
+            * `KW` - Kuwait
+            * `LA` - Lao, (la) República Democrática Popular
+            * `LS` - Lesoto
+            * `LV` - Letonia
+            * `LB` - Líbano
+            * `LR` - Liberia
+            * `LY` - Libia
+            * `LI` - Liechtenstein
+            * `LT` - Lituania
+            * `LU` - Luxemburgo
+            * `MO` - Macao
+            * `MK` - Macedonia del Norte
+            * `MG` - Madagascar
+            * `MY` - Malasia
+            * `MW` - Malawi
+            * `MV` - Maldivas
+            * `ML` - Malí
+            * `MT` - Malta
+            * `MA` - Marruecos
+            * `MQ` - Martinique
+            * `MU` - Mauricio
+            * `MR` - Mauritania
+            * `YT` - Mayotte
+            * `MX` - México
+            * `FM` - Micronesia (Estados Federados de)
+            * `MD` - Moldavia (la República de)
+            * `MC` - Mónaco
+            * `MN` - Mongolia
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NI` - Nicaragua
+            * `NE` - Níger (el)
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `NF` - Norfolk, Isla
+            * `NO` - Noruega
+            * `NC` - Nueva Caledonia
+            * `NZ` - Nueva Zelandia
+            * `OM` - Omán
+            * `NL` - Países Bajos (los)
+            * `PK` - Pakistán
+            * `PW` - Palaos
+            * `PS` - Palestina, Estado de
+            * `PA` - Panamá
+            * `PG` - Papúa Nueva Guinea
+            * `PY` - Paraguay
+            * `PE` - Perú
+            * `PF` - Polinesia Francesa
+            * `PL` - Polonia
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `GB` - Reino Unido de Gran Bretaña e Irlanda del Norte (el)
+            * `EH` - Sahara Occidental
+            * `CF` - República Centroafricana (la)
+            * `CZ` - Chequia
+            * `CG` - Congo (el)
+            * `CD` - Congo (la República Democrática del)
+            * `DO` - Dominicana, (la) República
+            * `RE` - Reunión
+            * `RW` - Ruanda
+            * `RO` - Rumania
+            * `RU` - Rusia, (la) Federación de
+            * `WS` - Samoa
+            * `AS` - Samoa Americana
+            * `BL` - Saint Barthélemy
+            * `KN` - San Cristóbal y Nieves
+            * `SM` - San Marino
+            * `MF` - Saint Martin (parte francesa)
+            * `PM` - San Pedro y Miquelón
+            * `VC` - San Vicente y las Granadinas
+            * `SH` - Santa Helena, Ascensión y Tristán de Acuña
+            * `LC` - Santa Lucía
+            * `ST` - Santo Tomé y Príncipe
+            * `SN` - Senegal
+            * `RS` - Serbia
+            * `SC` - Seychelles
+            * `SL` - Sierra leona
+            * `SG` - Singapur
+            * `SX` - Sint Maarten (parte neerlandesa)
+            * `SY` - República Árabe Siria
+            * `SO` - Somalia
+            * `LK` - Sri Lanka
+            * `SZ` - Suazilandia
+            * `ZA` - Sudáfrica
+            * `SD` - Sudán (el)
+            * `SS` - Sudán del Sur
+            * `SE` - Suecia
+            * `CH` - Suiza
+            * `SR` - Suriname
+            * `SJ` - Svalbard y Jan Mayen
+            * `TH` - Tailandia
+            * `TW` - Taiwán (Provincia de China)
+            * `TZ` - Tanzania, República Unida de
+            * `TJ` - Tayikistán
+            * `IO` - Territorio Británico del Océano Índico (el)
+            * `TF` - Tierras Australes Francesas (las)
+            * `TL` - Timor-Leste
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad y Tobago
+            * `TN` - Túnez
+            * `TM` - Turkmenistán
+            * `TR` - Turquía
+            * `TV` - Tuvalu
+            * `UA` - Ucrania
+            * `UG` - Uganda
+            * `UY` - Uruguay
+            * `UZ` - Uzbekistán
+            * `VU` - Vanuatu
+            * `VA` - Santa Sede (la)
+            * `VE` - Venezuela (República Bolivariana de)
+            * `VN` - Viet Nam
+            * `WF` - Wallis y Futuna
+            * `YE` - Yemen
+            * `DJ` - Yibuti
+            * `ZM` - Zambia
+            * `ZW` - Zimbabue
+          oneOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        capitalization_mode:
+          nullable: true
+          title: Modo de capitalización
+          description: |-
+            Modo de capitalización para títulos y biografías.
+
+            * `UPPERCASE` - TODO MAYÚSCULA
+            * `LOWERCASE` - todo minúscula
+            * `TITLECASE` - Modo Título
+          oneOf:
+          - $ref: '#/components/schemas/CapitalizationModeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - availability_relation_from_this
+      - availability_relation_to_this
+      - availability_targets
+      - creation_date
+      - legalname
+      - name
+      - sucursals
+    CompanyNested:
+      type: object
+      properties:
+        legal_id:
+          type: string
+          title: ID legal
+          description: Identificador tributario de la empresa (CUIT, RUT, NIT, etc.).
+            Este valor identifica a la empresa en el sistema.
+          maxLength: 20
+        name:
+          type: string
+          title: Nombre de la empresa
+          maxLength: 200
+        contact:
+          type: string
+          nullable: true
+          title: Nombre del contacto
+          maxLength: 200
+        legalname:
+          type: string
+          title: Razón social
+          maxLength: 200
+        isbn_prefixes:
+          nullable: true
+          title: Prefijos ISBN
+          description: Ingrese solo los dígitos del prefijo ISBN dentro de los corchetes.
+            En caso de contar con más de un prefijo, el separador es la coma (,).
+      required:
+      - legalname
+      - name
+    CompanySummary:
+      type: object
+      properties:
+        legal_id:
+          type: string
+          title: ID legal
+          description: Identificador tributario de la empresa (CUIT, RUT, NIT, etc.).
+            Este valor identifica a la empresa en el sistema.
+          maxLength: 20
+        name:
+          type: string
+          title: Nombre de la empresa
+          maxLength: 200
+      required:
+      - name
+    CountryEnum:
+      enum:
+      - AF
+      - AX
+      - AL
+      - DE
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - SA
+      - DZ
+      - AR
+      - AM
+      - AW
+      - AU
+      - AT
+      - AZ
+      - BS
+      - BD
+      - BB
+      - BH
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BY
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BR
+      - BN
+      - BG
+      - BF
+      - BI
+      - BT
+      - CV
+      - KH
+      - CM
+      - CA
+      - QA
+      - TD
+      - CL
+      - CN
+      - CY
+      - CO
+      - KM
+      - KP
+      - KR
+      - C
+      - CR
+      - HR
+      - CU
+      - CW
+      - DK
+      - DM
+      - EC
+      - EG
+      - SV
+      - AE
+      - ER
+      - SK
+      - SI
+      - ES
+      - US
+      - EE
+      - ET
+      - PH
+      - FI
+      - FJ
+      - FR
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GF
+      - GG
+      - GN
+      - GW
+      - GQ
+      - GY
+      - HT
+      - HN
+      - HK
+      - HU
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - BV
+      - IM
+      - CX
+      - IS
+      - KY
+      - CC
+      - CK
+      - FO
+      - GS
+      - HM
+      - FK
+      - MP
+      - MH
+      - PN
+      - SB
+      - TC
+      - UM
+      - VG
+      - VI
+      - IL
+      - IT
+      - JM
+      - JP
+      - JE
+      - JO
+      - KZ
+      - KE
+      - KG
+      - KI
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MK
+      - MG
+      - MY
+      - MW
+      - MV
+      - ML
+      - MT
+      - MA
+      - MQ
+      - MU
+      - MR
+      - YT
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NP
+      - NI
+      - NE
+      - NG
+      - NU
+      - NF
+      - 'NO'
+      - NC
+      - NZ
+      - OM
+      - NL
+      - PK
+      - PW
+      - PS
+      - PA
+      - PG
+      - PY
+      - PE
+      - PF
+      - PL
+      - PT
+      - PR
+      - GB
+      - EH
+      - CF
+      - CZ
+      - CG
+      - CD
+      - DO
+      - RE
+      - RW
+      - RO
+      - RU
+      - WS
+      - AS
+      - BL
+      - KN
+      - SM
+      - MF
+      - PM
+      - VC
+      - SH
+      - LC
+      - ST
+      - SN
+      - RS
+      - SC
+      - SL
+      - SG
+      - SX
+      - SY
+      - SO
+      - LK
+      - SZ
+      - ZA
+      - SD
+      - SS
+      - SE
+      - CH
+      - SR
+      - SJ
+      - TH
+      - TW
+      - TZ
+      - TJ
+      - IO
+      - TF
+      - TL
+      - TG
+      - TK
+      - TO
+      - TT
+      - TN
+      - TM
+      - TR
+      - TV
+      - UA
+      - UG
+      - UY
+      - UZ
+      - VU
+      - VA
+      - VE
+      - VN
+      - WF
+      - YE
+      - DJ
+      - ZM
+      - ZW
+      type: string
+      description: |-
+        * `AF` - Afganistán
+        * `AX` - Åland, Islas
+        * `AL` - Albania
+        * `DE` - Alemania
+        * `AD` - Andorra
+        * `AO` - Angola
+        * `AI` - Anguila
+        * `AQ` - Antártida
+        * `AG` - Antigua y Barbuda
+        * `SA` - Arabia Saudita
+        * `DZ` - Argelia
+        * `AR` - Argentina
+        * `AM` - Armenia
+        * `AW` - Aruba
+        * `AU` - Australia
+        * `AT` - Austria
+        * `AZ` - Azerbaiyán
+        * `BS` - Bahamas (las)
+        * `BD` - Bangladés
+        * `BB` - Barbados
+        * `BH` - Baréin
+        * `BE` - Bélgica
+        * `BZ` - Belice
+        * `BJ` - Benín
+        * `BM` - Bermudas
+        * `BY` - Belarús
+        * `BO` - Bolivia (Estado Plurinacional de)
+        * `BQ` - Bonaire, San Eustaquio y Saba
+        * `BA` - Bosnia y Herzegovina
+        * `BW` - Botsuana
+        * `BR` - Brasil
+        * `BN` - Brunéi Darussalam
+        * `BG` - Bulgaria
+        * `BF` - Burkina Faso
+        * `BI` - Burundi
+        * `BT` - Bhután
+        * `CV` - Cabo Verde
+        * `KH` - Camboya
+        * `CM` - Camerún
+        * `CA` - Canadá
+        * `QA` - Catar
+        * `TD` - Chad
+        * `CL` - Chile
+        * `CN` - China
+        * `CY` - Chipre
+        * `CO` - Colombia
+        * `KM` - Comoras (las)
+        * `KP` - Corea (la República Popular Democrática de)
+        * `KR` - Corea (la República de)
+        * `C` - I
+        * `CR` - Costa Rica
+        * `HR` - Croacia
+        * `CU` - Cuba
+        * `CW` - Curaçao
+        * `DK` - Dinamarca
+        * `DM` - Dominica
+        * `EC` - Ecuador
+        * `EG` - Egipto
+        * `SV` - El Salvador
+        * `AE` - Emiratos Árabes Unidos (los)
+        * `ER` - Eritrea
+        * `SK` - Eslovaquia
+        * `SI` - Eslovenia
+        * `ES` - España
+        * `US` - Estados Unidos de América (los)
+        * `EE` - Estonia
+        * `ET` - Etiopía
+        * `PH` - Filipinas (las)
+        * `FI` - Finlandia
+        * `FJ` - Fiyi
+        * `FR` - Francia
+        * `GA` - Gabón
+        * `GM` - Gambia (la)
+        * `GE` - Georgia
+        * `GH` - Ghana
+        * `GI` - Gibraltar
+        * `GD` - Granada
+        * `GR` - Grecia
+        * `GL` - Groenlandia
+        * `GP` - Guadeloupe
+        * `GU` - Guam
+        * `GT` - Guatemala
+        * `GF` - Guayana Francesa
+        * `GG` - Guernsey
+        * `GN` - Guinea
+        * `GW` - Guinea Bissau
+        * `GQ` - Guinea Ecuatorial
+        * `GY` - Guyana
+        * `HT` - Haití
+        * `HN` - Honduras
+        * `HK` - Hong Kong
+        * `HU` - Hungría
+        * `IN` - India
+        * `ID` - Indonesia
+        * `IQ` - Irak
+        * `IR` - Irán (República Islámica de)
+        * `IE` - Irlanda
+        * `BV` - Bouvet, Isla
+        * `IM` - Isla de Man
+        * `CX` - Navidad, Isla de
+        * `IS` - Islandia
+        * `KY` - Caimán, (las) Islas
+        * `CC` - Cocos / Keeling, (las) Islas
+        * `CK` - Cook, (las) Islas
+        * `FO` - Feroe, (las) Islas
+        * `GS` - Georgia del Sur (la) y las Islas Sandwich del Sur
+        * `HM` - Heard (Isla) e Islas McDonald
+        * `FK` - Malvinas [Falkland], (las) Islas
+        * `MP` - Marianas del Norte, (las) Islas
+        * `MH` - Marshall, (las) Islas
+        * `PN` - Pitcairn
+        * `SB` - Salomón, Islas
+        * `TC` - Turcas y Caicos, (las) Islas
+        * `UM` - Islas Ultramarinas Menores de los Estados Unidos (las)
+        * `VG` - Vírgenes británicas, Islas
+        * `VI` - Vírgenes de los Estados Unidos, Islas
+        * `IL` - Israel
+        * `IT` - Italia
+        * `JM` - Jamaica
+        * `JP` - Japón
+        * `JE` - Jersey
+        * `JO` - Jordania
+        * `KZ` - Kazajistán
+        * `KE` - Kenia
+        * `KG` - Kirguistán
+        * `KI` - Kiribati
+        * `KW` - Kuwait
+        * `LA` - Lao, (la) República Democrática Popular
+        * `LS` - Lesoto
+        * `LV` - Letonia
+        * `LB` - Líbano
+        * `LR` - Liberia
+        * `LY` - Libia
+        * `LI` - Liechtenstein
+        * `LT` - Lituania
+        * `LU` - Luxemburgo
+        * `MO` - Macao
+        * `MK` - Macedonia del Norte
+        * `MG` - Madagascar
+        * `MY` - Malasia
+        * `MW` - Malawi
+        * `MV` - Maldivas
+        * `ML` - Malí
+        * `MT` - Malta
+        * `MA` - Marruecos
+        * `MQ` - Martinique
+        * `MU` - Mauricio
+        * `MR` - Mauritania
+        * `YT` - Mayotte
+        * `MX` - México
+        * `FM` - Micronesia (Estados Federados de)
+        * `MD` - Moldavia (la República de)
+        * `MC` - Mónaco
+        * `MN` - Mongolia
+        * `ME` - Montenegro
+        * `MS` - Montserrat
+        * `MZ` - Mozambique
+        * `MM` - Myanmar
+        * `NA` - Namibia
+        * `NR` - Nauru
+        * `NP` - Nepal
+        * `NI` - Nicaragua
+        * `NE` - Níger (el)
+        * `NG` - Nigeria
+        * `NU` - Niue
+        * `NF` - Norfolk, Isla
+        * `NO` - Noruega
+        * `NC` - Nueva Caledonia
+        * `NZ` - Nueva Zelandia
+        * `OM` - Omán
+        * `NL` - Países Bajos (los)
+        * `PK` - Pakistán
+        * `PW` - Palaos
+        * `PS` - Palestina, Estado de
+        * `PA` - Panamá
+        * `PG` - Papúa Nueva Guinea
+        * `PY` - Paraguay
+        * `PE` - Perú
+        * `PF` - Polinesia Francesa
+        * `PL` - Polonia
+        * `PT` - Portugal
+        * `PR` - Puerto Rico
+        * `GB` - Reino Unido de Gran Bretaña e Irlanda del Norte (el)
+        * `EH` - Sahara Occidental
+        * `CF` - República Centroafricana (la)
+        * `CZ` - Chequia
+        * `CG` - Congo (el)
+        * `CD` - Congo (la República Democrática del)
+        * `DO` - Dominicana, (la) República
+        * `RE` - Reunión
+        * `RW` - Ruanda
+        * `RO` - Rumania
+        * `RU` - Rusia, (la) Federación de
+        * `WS` - Samoa
+        * `AS` - Samoa Americana
+        * `BL` - Saint Barthélemy
+        * `KN` - San Cristóbal y Nieves
+        * `SM` - San Marino
+        * `MF` - Saint Martin (parte francesa)
+        * `PM` - San Pedro y Miquelón
+        * `VC` - San Vicente y las Granadinas
+        * `SH` - Santa Helena, Ascensión y Tristán de Acuña
+        * `LC` - Santa Lucía
+        * `ST` - Santo Tomé y Príncipe
+        * `SN` - Senegal
+        * `RS` - Serbia
+        * `SC` - Seychelles
+        * `SL` - Sierra leona
+        * `SG` - Singapur
+        * `SX` - Sint Maarten (parte neerlandesa)
+        * `SY` - República Árabe Siria
+        * `SO` - Somalia
+        * `LK` - Sri Lanka
+        * `SZ` - Suazilandia
+        * `ZA` - Sudáfrica
+        * `SD` - Sudán (el)
+        * `SS` - Sudán del Sur
+        * `SE` - Suecia
+        * `CH` - Suiza
+        * `SR` - Suriname
+        * `SJ` - Svalbard y Jan Mayen
+        * `TH` - Tailandia
+        * `TW` - Taiwán (Provincia de China)
+        * `TZ` - Tanzania, República Unida de
+        * `TJ` - Tayikistán
+        * `IO` - Territorio Británico del Océano Índico (el)
+        * `TF` - Tierras Australes Francesas (las)
+        * `TL` - Timor-Leste
+        * `TG` - Togo
+        * `TK` - Tokelau
+        * `TO` - Tonga
+        * `TT` - Trinidad y Tobago
+        * `TN` - Túnez
+        * `TM` - Turkmenistán
+        * `TR` - Turquía
+        * `TV` - Tuvalu
+        * `UA` - Ucrania
+        * `UG` - Uganda
+        * `UY` - Uruguay
+        * `UZ` - Uzbekistán
+        * `VU` - Vanuatu
+        * `VA` - Santa Sede (la)
+        * `VE` - Venezuela (República Bolivariana de)
+        * `VN` - Viet Nam
+        * `WF` - Wallis y Futuna
+        * `YE` - Yemen
+        * `DJ` - Yibuti
+        * `ZM` - Zambia
+        * `ZW` - Zimbabue
+    CurrencyEnum:
+      enum:
+      - AFN
+      - MGA
+      - THB
+      - PAB
+      - ETB
+      - BOB
+      - VED
+      - GHS
+      - KES
+      - SOS
+      - TZS
+      - UGX
+      - SVC
+      - CRC
+      - CZK
+      - DKK
+      - ISK
+      - NOK
+      - SEK
+      - NIO
+      - GMD
+      - MKD
+      - XDR
+      - DZD
+      - BHD
+      - IQD
+      - JOD
+      - KWD
+      - LYD
+      - RSD
+      - TND
+      - STN
+      - VND
+      - AMD
+      - AED
+      - MAD
+      - AUD
+      - BSD
+      - BBD
+      - BZD
+      - BMD
+      - CAD
+      - BND
+      - HKD
+      - SGD
+      - TTD
+      - KYD
+      - SBD
+      - XCD
+      - USD
+      - USN
+      - FJD
+      - GYD
+      - JMD
+      - LRD
+      - NAD
+      - NZD
+      - SRD
+      - ZWL
+      - CVE
+      - EUR
+      - CHE
+      - ANG
+      - AWG
+      - HUF
+      - XAF
+      - XOF
+      - XPF
+      - CHW
+      - KMF
+      - CDF
+      - BIF
+      - GNF
+      - RWF
+      - CHF
+      - DJF
+      - HTG
+      - UAH
+      - PYG
+      - PGK
+      - LAK
+      - MWK
+      - ZMW
+      - AOA
+      - MMK
+      - GEL
+      - ALL
+      - HNL
+      - MDL
+      - RON
+      - BGN
+      - GIP
+      - SHP
+      - EGP
+      - GBP
+      - LBP
+      - FKP
+      - SYP
+      - SDG
+      - SSP
+      - SZL
+      - TRY
+      - LSL
+      - BOV
+      - AZN
+      - TMT
+      - BAM
+      - MZN
+      - NGN
+      - ERN
+      - BTN
+      - TWD
+      - ILS
+      - XAU
+      - XPD
+      - MOP
+      - TOP
+      - ARS
+      - CLP
+      - COP
+      - CUP
+      - DOP
+      - UYI
+      - PHP
+      - MXN
+      - UYU
+      - XAG
+      - XPT
+      - BWP
+      - GTQ
+      - ZAR
+      - BRL
+      - XTS
+      - QAR
+      - IRR
+      - OMR
+      - SAR
+      - YER
+      - KHR
+      - MYR
+      - BYN
+      - RUB
+      - MVR
+      - MUR
+      - LKR
+      - INR
+      - IDR
+      - NPR
+      - PKR
+      - SCR
+      - XSU
+      - XXX
+      - PEN
+      - KGS
+      - UZS
+      - TJS
+      - BDT
+      - WST
+      - KZT
+      - MNT
+      - MRU
+      - XBA
+      - XBD
+      - XBC
+      - XBB
+      - UYW
+      - MXV
+      - XUA
+      - CLF
+      - COU
+      - VUV
+      - KRW
+      - KPW
+      - JPY
+      - CNY
+      - PLN
+      type: string
+      description: |-
+        * `AFN` - Afgani
+        * `MGA` - Ariary malgache
+        * `THB` - Baht
+        * `PAB` - Balboa
+        * `ETB` - Birr etíope
+        * `BOB` - Boliviano
+        * `VED` - Bolívar
+        * `GHS` - Cedi ghanés
+        * `KES` - Chelín keniano
+        * `SOS` - Chelín somalí
+        * `TZS` - Chelín tanzano
+        * `UGX` - Chelín ugandés
+        * `SVC` - Colón Salvadoreño
+        * `CRC` - Colón costarricense
+        * `CZK` - Corona checa
+        * `DKK` - Corona danesa
+        * `ISK` - Corona islandesa
+        * `NOK` - Corona noruega
+        * `SEK` - Corona sueca
+        * `NIO` - Córdoba
+        * `GMD` - Dalasi
+        * `MKD` - Denar
+        * `XDR` - Derechos especiales de giro
+        * `DZD` - Dinar argelino
+        * `BHD` - Dinar bareiní
+        * `IQD` - Dinar iraquí
+        * `JOD` - Dinar jordano
+        * `KWD` - Dinar kuwaití
+        * `LYD` - Dinar libio
+        * `RSD` - Dinar serbio
+        * `TND` - Dinar tunecino
+        * `STN` - Dobra
+        * `VND` - Dong vietnamita
+        * `AMD` - Dram armenio
+        * `AED` - Dírham de los Emiratos Árabes Unidos
+        * `MAD` - Dírham marroquí
+        * `AUD` - Dólar australiano
+        * `BSD` - Dólar bahameño
+        * `BBD` - Dólar barbadense
+        * `BZD` - Dólar beliceño
+        * `BMD` - Dólar bermudeño
+        * `CAD` - Dólar canadiense
+        * `BND` - Dólar de Brunéi
+        * `HKD` - Dólar de Hong Kong
+        * `SGD` - Dólar de Singapur
+        * `TTD` - Dólar de Trinidad y Tobago
+        * `KYD` - Dólar de las Islas Caimán
+        * `SBD` - Dólar de las Islas Salomón
+        * `XCD` - Dólar del Caribe Oriental
+        * `USD` - Dólar estadounidense
+        * `USN` - Dólar estadounidense (Siguiente día)
+        * `FJD` - Dólar fiyiano
+        * `GYD` - Dólar guyanés
+        * `JMD` - Dólar jamaiquino
+        * `LRD` - Dólar liberiano
+        * `NAD` - Dólar namibio
+        * `NZD` - Dólar neozelandés
+        * `SRD` - Dólar surinamés
+        * `ZWL` - Dólar zimbabuense
+        * `CVE` - Escudo caboverdiano
+        * `EUR` - Euro
+        * `CHE` - Euro WIR
+        * `ANG` - Florín antillano neerlandés
+        * `AWG` - Florín arubeño
+        * `HUF` - Forinto
+        * `XAF` - Franco CFA de África Central
+        * `XOF` - Franco CFA de África Occidental
+        * `XPF` - Franco CFP
+        * `CHW` - Franco WIR
+        * `KMF` - Franco comorense
+        * `CDF` - Franco congoleño
+        * `BIF` - Franco de Burundi
+        * `GNF` - Franco guineano
+        * `RWF` - Franco ruandés
+        * `CHF` - Franco suizo
+        * `DJF` - Franco yibutiano
+        * `HTG` - Gourde
+        * `UAH` - Grivna
+        * `PYG` - Guaraní
+        * `PGK` - Kina
+        * `LAK` - Kip
+        * `MWK` - Kwacha
+        * `ZMW` - Kwacha zambiano
+        * `AOA` - Kwanza angoleño
+        * `MMK` - Kyat
+        * `GEL` - Lari
+        * `ALL` - Lek
+        * `HNL` - Lempira
+        * `MDL` - Leu moldavo
+        * `RON` - Leu rumano
+        * `BGN` - Lev búlgaro
+        * `GIP` - Libra de Gibraltar
+        * `SHP` - Libra de Santa Elena
+        * `EGP` - Libra egipcia
+        * `GBP` - Libra esterlina
+        * `LBP` - Libra libanesa
+        * `FKP` - Libra malvinense
+        * `SYP` - Libra siria
+        * `SDG` - Libra sudanesa
+        * `SSP` - Libra sursudanesa
+        * `SZL` - Lilangeni
+        * `TRY` - Lira turca
+        * `LSL` - Loti
+        * `BOV` - MVDOL
+        * `AZN` - Manat azerbaiyano
+        * `TMT` - Manat turcomano
+        * `BAM` - Marco convertible
+        * `MZN` - Metical mozambiqueño
+        * `NGN` - Naira
+        * `ERN` - Nakfa
+        * `BTN` - Ngultrum
+        * `TWD` - Nuevo dólar taiwanés
+        * `ILS` - Nuevo séquel israelí
+        * `XAU` - Oro
+        * `XPD` - Paladio
+        * `MOP` - Pataca
+        * `TOP` - Paʻanga
+        * `ARS` - Peso argentino
+        * `CLP` - Peso chileno
+        * `COP` - Peso colombiano
+        * `CUP` - Peso cubano
+        * `DOP` - Peso dominicano
+        * `UYI` - Peso en Unidades Indexadas (Uruguay)
+        * `PHP` - Peso filipino
+        * `MXN` - Peso mexicano
+        * `UYU` - Peso uruguayo
+        * `XAG` - Plata
+        * `XPT` - Platino
+        * `BWP` - Pula
+        * `GTQ` - Quetzal
+        * `ZAR` - Rand
+        * `BRL` - Real brasileño
+        * `XTS` - Reservado para pruebas
+        * `QAR` - Rial catarí
+        * `IRR` - Rial iraní
+        * `OMR` - Rial omaní
+        * `SAR` - Rial saudí
+        * `YER` - Rial yemení
+        * `KHR` - Riel
+        * `MYR` - Ringgit malayo
+        * `BYN` - Rublo bielorruso
+        * `RUB` - Rublo ruso
+        * `MVR` - Rufiyaa
+        * `MUR` - Rupia de Mauricio
+        * `LKR` - Rupia de Sri Lanka
+        * `INR` - Rupia india
+        * `IDR` - Rupia indonesia
+        * `NPR` - Rupia nepalí
+        * `PKR` - Rupia pakistaní
+        * `SCR` - Rupia seychelense
+        * `XSU` - SUCRE
+        * `XXX` - Sin divisa
+        * `PEN` - Sol
+        * `KGS` - Som
+        * `UZS` - Som uzbeko
+        * `TJS` - Somoni tayiko
+        * `BDT` - Taka
+        * `WST` - Tala
+        * `KZT` - Tenge
+        * `MNT` - Tugrik
+        * `MRU` - Uguiya
+        * `XBA` - Unidad Compuesta Europea (EURCO)
+        * `XBD` - Unidad Europea de Cuenta 17 (E.U.A.-17)
+        * `XBC` - Unidad Europea de Cuenta 9 (E.U.A.-9)
+        * `XBB` - Unidad Monetaria Europea (E.M.U.-6)
+        * `UYW` - Unidad Previsional
+        * `MXV` - Unidad de Inversión (UDI) mexicana
+        * `XUA` - Unidad de cuenta BAD
+        * `CLF` - Unidad de fomento
+        * `COU` - Unidad de valor real
+        * `VUV` - Vatu
+        * `KRW` - Won
+        * `KPW` - Won norcoreano
+        * `JPY` - Yen
+        * `CNY` - Yuan chino
+        * `PLN` - Zloty
+    CustomError:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - errors
+    LanguageEnum:
+      enum:
+      - AB
+      - AA
+      - AF
+      - AY
+      - AK
+      - SQ
+      - DE
+      - AM
+      - AN
+      - HY
+      - AS
+      - AV
+      - AE
+      - AZ
+      - BM
+      - BA
+      - BN
+      - BH
+      - BE
+      - MY
+      - BI
+      - BS
+      - BR
+      - BG
+      - KS
+      - KM
+      - KN
+      - CA
+      - CH
+      - CE
+      - CS
+      - NY
+      - ZH
+      - ZA
+      - CV
+      - SI
+      - KO
+      - CO
+      - CR
+      - HR
+      - KW
+      - DA
+      - DZ
+      - CU
+      - SK
+      - SL
+      - ES
+      - EO
+      - ET
+      - EU
+      - EE
+      - FO
+      - FI
+      - FJ
+      - FR
+      - FY
+      - FF
+      - GL
+      - CY
+      - GD
+      - KA
+      - EL
+      - KL
+      - GN
+      - GU
+      - HT
+      - HA
+      - HE
+      - HZ
+      - HI
+      - HO
+      - HU
+      - IO
+      - IG
+      - ID
+      - EN
+      - IA
+      - IU
+      - GA
+      - IS
+      - IT
+      - IK
+      - JA
+      - JV
+      - KR
+      - KK
+      - KI
+      - KY
+      - RN
+      - KV
+      - KG
+      - KJ
+      - KU
+      - LO
+      - LA
+      - LV
+      - LI
+      - LN
+      - LT
+      - LU
+      - LG
+      - LB
+      - MK
+      - ML
+      - MS
+      - DV
+      - MG
+      - MT
+      - GV
+      - MI
+      - MR
+      - MH
+      - MN
+      - NA
+      - NV
+      - ND
+      - NR
+      - NG
+      - NL
+      - NE
+      - 'NO'
+      - NB
+      - NN
+      - IE
+      - OC
+      - OJ
+      - OR
+      - OM
+      - OS
+      - PI
+      - PA
+      - PS
+      - FA
+      - PL
+      - PT
+      - QU
+      - RM
+      - RW
+      - RO
+      - RU
+      - SE
+      - SM
+      - SG
+      - SC
+      - SR
+      - ST
+      - TN
+      - SN
+      - SD
+      - SO
+      - SW
+      - SS
+      - SV
+      - SU
+      - SA
+      - TL
+      - TY
+      - TH
+      - TA
+      - TG
+      - BO
+      - TI
+      - TO
+      - TS
+      - TR
+      - TK
+      - TW
+      - TT
+      - TE
+      - UK
+      - UG
+      - UR
+      - UZ
+      - WA
+      - VE
+      - VI
+      - VO
+      - WO
+      - XH
+      - II
+      - YO
+      - YI
+      - ZU
+      - AR
+      type: string
+      description: |-
+        * `AB` - abjasio (o abjasiano)
+        * `AA` - afar
+        * `AF` - afrikáans
+        * `AY` - aimara
+        * `AK` - akano
+        * `SQ` - albanés
+        * `DE` - alemán
+        * `AM` - amhárico
+        * `AN` - aragonés
+        * `HY` - armenio
+        * `AS` - asamés
+        * `AV` - avar (o ávaro)
+        * `AE` - avéstico
+        * `AZ` - azerí
+        * `BM` - bambara
+        * `BA` - baskir
+        * `BN` - bengalí
+        * `BH` - bhoyapurí
+        * `BE` - bielorruso
+        * `MY` - birmano
+        * `BI` - bislama
+        * `BS` - bosnio
+        * `BR` - bretón
+        * `BG` - búlgaro
+        * `KS` - cachemiro (o cachemir)
+        * `KM` - camboyano (o jemer)
+        * `KN` - canarés
+        * `CA` - catalán
+        * `CH` - chamorro
+        * `CE` - checheno
+        * `CS` - checo
+        * `NY` - chichewa
+        * `ZH` - chino
+        * `ZA` - chuan, chuang o zhuang
+        * `CV` - chuvasio
+        * `SI` - cingalés
+        * `KO` - coreano
+        * `CO` - corso
+        * `CR` - cree
+        * `HR` - croata
+        * `KW` - córnico
+        * `DA` - danés
+        * `DZ` - dzongkha
+        * `CU` - eslavo eclesiástico antiguo
+        * `SK` - eslovaco
+        * `SL` - esloveno
+        * `ES` - español (o castellano)
+        * `EO` - esperanto
+        * `ET` - estonio
+        * `EU` - euskera
+        * `EE` - ewé
+        * `FO` - feroés
+        * `FI` - finés (o finlandés)
+        * `FJ` - fiyiano (o fiyi)
+        * `FR` - francés
+        * `FY` - frisón (o frisio)
+        * `FF` - fula
+        * `GL` - gallego
+        * `CY` - galés
+        * `GD` - gaélico escocés
+        * `KA` - georgiano
+        * `EL` - griego (moderno)
+        * `KL` - groenlandés (o kalaallisut)
+        * `GN` - guaraní
+        * `GU` - guyaratí (o guyaratí)
+        * `HT` - haitiano
+        * `HA` - hausa
+        * `HE` - hebreo
+        * `HZ` - herero
+        * `HI` - hindi (o hindú)
+        * `HO` - hiri motu
+        * `HU` - húngaro
+        * `IO` - ido
+        * `IG` - igbo
+        * `ID` - indonesio
+        * `EN` - inglés
+        * `IA` - interlingua
+        * `IU` - inuktitut (o inuit)
+        * `GA` - irlandés (o gaélico)
+        * `IS` - islandés
+        * `IT` - italiano
+        * `IK` - iñupiaq
+        * `JA` - japonés
+        * `JV` - javanés
+        * `KR` - kanuri
+        * `KK` - kazajo
+        * `KI` - kikuyu
+        * `KY` - kirguís
+        * `RN` - kirundi
+        * `KV` - komi
+        * `KG` - kongo
+        * `KJ` - kuanyama
+        * `KU` - kurdo
+        * `LO` - lao
+        * `LA` - latín
+        * `LV` - letón
+        * `LI` - limburgués
+        * `LN` - lingala
+        * `LT` - lituano
+        * `LU` - luba-katanga (o chiluba)
+        * `LG` - luganda
+        * `LB` - luxemburgués
+        * `MK` - macedonio
+        * `ML` - malayalam
+        * `MS` - malayo
+        * `DV` - maldivo (o dhivehi)
+        * `MG` - malgache (o malagasy)
+        * `MT` - maltés
+        * `GV` - manés (gaélico manés o de Isla de Man)
+        * `MI` - maorí
+        * `MR` - maratí
+        * `MH` - marshalés
+        * `MN` - mongol
+        * `NA` - nauruano
+        * `NV` - navajo
+        * `ND` - ndebele del norte
+        * `NR` - ndebele del sur
+        * `NG` - ndonga
+        * `NL` - neerlandés (u holandés)
+        * `NE` - nepalí
+        * `NO` - noruego
+        * `NB` - noruego bokmål
+        * `NN` - nynorsk
+        * `IE` - occidental
+        * `OC` - occitano
+        * `OJ` - ojibwa
+        * `OR` - oriya
+        * `OM` - oromo
+        * `OS` - osético
+        * `PI` - pali
+        * `PA` - panyabí
+        * `PS` - pastú
+        * `FA` - persa
+        * `PL` - polaco
+        * `PT` - portugués
+        * `QU` - quechua
+        * `RM` - romanche
+        * `RW` - ruandés (o kiñaruanda)
+        * `RO` - rumano
+        * `RU` - ruso
+        * `SE` - sami septentrional
+        * `SM` - samoano
+        * `SG` - sango
+        * `SC` - sardo
+        * `SR` - serbio
+        * `ST` - sesotho
+        * `TN` - setsuana
+        * `SN` - shona
+        * `SD` - sindhi
+        * `SO` - somalí
+        * `SW` - suajili
+        * `SS` - suazi, swati, o siSwati
+        * `SV` - sueco
+        * `SU` - sundanés o sondanés
+        * `SA` - sánscrito
+        * `TL` - tagalo
+        * `TY` - tahitiano
+        * `TH` - tailandés
+        * `TA` - tamil
+        * `TG` - tayiko
+        * `BO` - tibetano
+        * `TI` - tigriña
+        * `TO` - tongano
+        * `TS` - tsonga
+        * `TR` - turco
+        * `TK` - turcomano
+        * `TW` - twi
+        * `TT` - tártaro
+        * `TE` - télugu
+        * `UK` - ucraniano
+        * `UG` - uigur
+        * `UR` - urdu
+        * `UZ` - uzbeko
+        * `WA` - valón
+        * `VE` - venda
+        * `VI` - vietnamita
+        * `VO` - volapük
+        * `WO` - wolof
+        * `XH` - xhosa
+        * `II` - yi de Sichuán
+        * `YO` - yoruba
+        * `YI` - yídish
+        * `ZU` - zulú
+        * `AR` - árabe
+    NullEnum:
+      enum:
+      - null
+    PaginatedBookSearch:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookSearchResult'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    PaginatedCompanyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Company'
+    PriceListSummary:
+      type: object
+      properties:
+        company:
+          allOf:
+          - $ref: '#/components/schemas/CompanySummary'
+          readOnly: true
+      required:
+      - company
+    PriceSummary:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          readOnly: true
+        currency:
+          nullable: true
+          title: Moneda
+          oneOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        modification_date:
+          type: string
+          format: date-time
+          readOnly: true
+        price_list:
+          allOf:
+          - $ref: '#/components/schemas/PriceListSummary'
+          readOnly: true
+      required:
+      - amount
+      - modification_date
+      - price_list
+    Prices:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          nullable: true
+          title: Moneda
+          oneOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        price_list:
+          type: string
+          title: Clave de la lista de precios
+        book:
+          allOf:
+          - $ref: '#/components/schemas/SimpleBook'
+          readOnly: true
+        book_key:
+          type: string
+          writeOnly: true
+        creation_date:
+          type: string
+          format: date-time
+          readOnly: true
+        modification_date:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - book
+      - book_key
+      - creation_date
+      - modification_date
+      - price_list
+    RoleEnum:
+      enum:
+      - A01
+      - A02
+      - A03
+      - A04
+      - A05
+      - A06
+      - A07
+      - A08
+      - A09
+      - A10
+      - A11
+      - A12
+      - A13
+      - A14
+      - A15
+      - A16
+      - A17
+      - A18
+      - A19
+      - A20
+      - A21
+      - A22
+      - A23
+      - A24
+      - A25
+      - A26
+      - A27
+      - A28
+      - A29
+      - A30
+      - A31
+      - A32
+      - A33
+      - A34
+      - A35
+      - A36
+      - A37
+      - A38
+      - A39
+      - A40
+      - A41
+      - A42
+      - A43
+      - A44
+      - A45
+      - A46
+      - A47
+      - A48
+      - A49
+      - A50
+      - A51
+      - A52
+      - A99
+      - B01
+      - B02
+      - B03
+      - B04
+      - B05
+      - B06
+      - B07
+      - B08
+      - B09
+      - B10
+      - B11
+      - B12
+      - B13
+      - B14
+      - B15
+      - B16
+      - B17
+      - B18
+      - B19
+      - B20
+      - B21
+      - B22
+      - B23
+      - B24
+      - B25
+      - B26
+      - B27
+      - B28
+      - B29
+      - B30
+      - B31
+      - B32
+      - B33
+      - B99
+      - C01
+      - C02
+      - C03
+      - C04
+      - C99
+      - D01
+      - D02
+      - D03
+      - D04
+      - D99
+      - E01
+      - E02
+      - E03
+      - E04
+      - E05
+      - E06
+      - E07
+      - E08
+      - E09
+      - E10
+      - E11
+      - E99
+      - F01
+      - F02
+      - F99
+      - Z01
+      - Z02
+      - Z03
+      - Z04
+      - Z05
+      - Z98
+      - Z99
+      type: string
+      description: |-
+        * `A01` - Por (autor)
+        * `A02` - Con
+        * `A03` - Guión por
+        * `A04` - Libreto de
+        * `A05` - Letras de
+        * `A06` - Por (compositor)
+        * `A07` - Por (artista)
+        * `A08` - Por (fotógrafo)
+        * `A09` - Creado por
+        * `A10` - De una idea de
+        * `A11` - Diseñada por
+        * `A12` - Ilustrado por
+        * `A13` - Fotografías de
+        * `A14` - Texto por
+        * `A15` - Prefacio de
+        * `A16` - Prólogo de
+        * `A17` - Resumen por
+        * `A18` - Suplemento por
+        * `A19` - Epílogo de
+        * `A20` - Notas de
+        * `A21` - Comentarios de
+        * `A22` - Epílogo de
+        * `A23` - Prefacio por
+        * `A24` - Introducción por
+        * `A25` - Notas a pie de página de
+        * `A26` - Memorias de
+        * `A27` - Experimentos de
+        * `A28` - Interpretado a través de
+        * `A29` - Introducción y notas de
+        * `A30` - Software escrito por
+        * `A31` - Libro y letra de
+        * `A32` - Contribuciones de
+        * `A33` - Apéndice por
+        * `A34` - Índice por
+        * `A35` - Dibujos de
+        * `A36` - Diseño de portada o arte de
+        * `A37` - Trabajo preliminar de
+        * `A38` - Autor original
+        * `A39` - Mapas por
+        * `A40` - Entintado o coloreado por
+        * `A41` - Ingeniería del papel por
+        * `A42` - Continuado por
+        * `A43` - Entrevistador
+        * `A44` - Entrevistado
+        * `A45` - Guión cómico de
+        * `A46` - entintador
+        * `A47` - colorista
+        * `A48` - rotulador
+        * `A49` - Entintador de portadas
+        * `A50` - Colorista de portada
+        * `A51` - Investigación por
+        * `A52` - Diseño de personajes originales.
+        * `A99` - Otro creador principal
+        * `B01` - Editado por
+        * `B02` - Revisado por
+        * `B03` - Contada por
+        * `B04` - abreviado por
+        * `B05` - Adaptado por
+        * `B06` - Traducido por
+        * `B07` - según lo dicho por
+        * `B08` - Traducido con comentario de
+        * `B09` - Serie editada por
+        * `B10` - Editado y traducido por
+        * `B11` - Editor en jefe
+        * `B12` - Editor invitado
+        * `B13` - editor de volumen
+        * `B14` - Miembro del consejo editorial
+        * `B15` - Coordinación editorial por
+        * `B16` - Jefe de redacción
+        * `B17` - Fundado por
+        * `B18` - Preparado para publicación por
+        * `B19` - Editor asociado
+        * `B20` - Editor consultor
+        * `B21` - redactor general
+        * `B22` - Dramatizado por
+        * `B23` - relator general
+        * `B24` - editor literario
+        * `B25` - Arreglado por (música)
+        * `B26` - editor técnico
+        * `B27` - Asesor o supervisor de tesis
+        * `B28` - examinador de tesis
+        * `B29` - editor científico
+        * `B30` - Asesor histórico
+        * `B31` - Editor original
+        * `B32` - Traducción revisada por
+        * `B33` - Transcrito por
+        * `B99` - Otra adaptación por
+        * `C01` - Compilado por
+        * `C02` - Seleccionado por
+        * `C03` - Material no textual seleccionado por
+        * `C04` - Comisariada por
+        * `C99` - Otra recopilación de
+        * `D01` - Productor
+        * `D02` - Director
+        * `D03` - Conductor
+        * `D04` - Coreógrafo
+        * `D99` - Otra dirección por
+        * `E01` - Actor
+        * `E02` - Bailarín
+        * `E03` - Narrador
+        * `E04` - Comentarista
+        * `E05` - solista vocal
+        * `E06` - solista instrumental
+        * `E07` - Leído por
+        * `E08` - Interpretada por (orquesta, banda, conjunto)
+        * `E09` - Vocero
+        * `E10` - Presentador
+        * `E11` - Introducción leída por
+        * `E99` - Interpretado por
+        * `F01` - Filmado/fotografiado por
+        * `F02` - Editor (película o vídeo)
+        * `F99` - Otra grabación de
+        * `Z01` - Asistido por
+        * `Z02` - Honrado/dedicado a
+        * `Z03` - Jurisdicción promulgadora
+        * `Z04` - Revisado por pares
+        * `Z05` - Completado póstumamente por
+        * `Z98` - (Varios roles)
+        * `Z99` - Otro
+    SimpleBook:
+      type: object
+      properties:
+        isbn:
+          type: string
+          description: ISBN 10 o 13.
+          maxLength: 20
+        title:
+          type: string
+          title: Título
+          maxLength: 250
+      required:
+      - isbn
+      - title
+    Sucursal:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Nombre de la sucursal
+          maxLength: 100
+        key:
+          type: string
+          title: Clave de la sucursal
+          maxLength: 50
+      required:
+      - key
+      - name
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

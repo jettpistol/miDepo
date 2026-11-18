@@ -1,12 +1,12 @@
 /**
  * Recorrido completo en un navegador real: recepción, guardado, picking, empaque, devolución,
  * conteo, Fierro, colores, teléfono con PIN y separación entre empresas.
- * Requiere Playwright y miDepo corriendo en localhost:3000 con los datos de demostración recién cargados:
+ * Requiere Playwright y miDepo corriendo (BASE_URL, por defecto localhost:3000) con los datos de demostración recién cargados:
  *   npm run db:reset && npm run dev        (en otra terminal)
  *   node tests/recorrido.e2e.js [carpeta-para-capturas]
  */
 const { chromium, devices } = require('playwright');
-const B = 'http://localhost:3000', OUT = process.argv[2] ?? require('node:os').tmpdir();
+const B = process.env.BASE_URL ?? 'http://localhost:3000', OUT = process.argv[2] ?? require('node:os').tmpdir();
 const errores = [];
 const paso = (m) => console.log('·', m);
 async function escanear(p, valores, cantidad) {
@@ -27,7 +27,8 @@ async function escanear(p, valores, cantidad) {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
   const p = await ctx.newPage();
-  p.on('console', m => m.type() === 'error' && errores.push('console @' + p.url() + ': ' + m.text().slice(0, 90) + ' || ' + m.text().split('\n').filter(l => /^\s*[+-]\s/.test(l)).slice(0, 6).join(' | ')));
+  // Los screenshots de Playwright agregan caret-color al <input> enfocado y React avisa de un desajuste de hidratación: es ruido de la prueba, no de la app.
+  p.on('console', m => m.type() === 'error' && !m.text().includes('caret-color') && errores.push('console @' + p.url() + ': ' + m.text().slice(0, 90) + ' || ' + m.text().split('\n').filter(l => /^\s*[+-]\s/.test(l)).slice(0, 6).join(' | ')));
   p.on('pageerror', e => errores.push('pageerror: ' + e.message.slice(0, 300)));
   p.on('response', r => r.status() >= 500 && errores.push(`HTTP ${r.status()} ${r.url()}`));
   p.on('dialog', d => d.accept());
