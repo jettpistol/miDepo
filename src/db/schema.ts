@@ -108,6 +108,8 @@ export const products = pgTable(
     type: text("type").$type<ProductType>().notNull().default("book"),
     price: integer("price").notNull().default(0),
     weightGrams: integer("weight_grams").notNull().default(300),
+    /** Cover picture (a path under /public or a URL); null when Fierro has none. */
+    coverUrl: text("cover_url"),
     active: boolean("active").notNull().default(true),
   },
   (t) => [

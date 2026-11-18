@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
 import { fierroStock, products } from "@/db/schema";
 import type { ProductType } from "@/db/schema";
+import ovnipressCatalog from "./ovnipress-catalog.json";
 import type { FierroCustomer, FierroConnector, FierroDocument, FierroReceipt, FierroBook, FierroOrder } from "./types";
 
 /**
@@ -131,6 +132,31 @@ export function generateReceipt(seedNum: number, i: number, bookCount: number): 
   };
 }
 
+/**
+ * Real titles for demo companies, scraped from the client's public shop (scripts/scrape-ovnipress.mjs).
+ * They take the first positions of the simulated catalogue; the rest stays generated, so the demo
+ * keeps its volume. Prices are in ARS pesos in the file and cents here, like everywhere in miDepo.
+ */
+type CatalogEntry = { title: string; author: string | null; imprint: string | null; isbn: string | null; price: number; weightGrams: number; cover: string | null };
+const CATALOGS: Record<string, CatalogEntry[]> = { ovnipress: ovnipressCatalog };
+
+function catalogBook(entry: CatalogEntry, seedNum: number, i: number, prefix: string): FierroBook {
+  const internalCode = `${prefix}-${String(i + 1).padStart(6, "0")}`;
+  return {
+    id: `F${seedNum}-L${i + 1}`,
+    internalCode,
+    isbn: entry.isbn,
+    barcode: entry.isbn ?? internalCode,
+    title: entry.title,
+    author: entry.author ?? "",
+    imprint: entry.imprint ?? "",
+    type: "book",
+    price: entry.price * 100,
+    weightGrams: entry.weightGrams,
+    coverUrl: entry.cover,
+  };
+}
+
 export type SimCompany = { id: number; slug: string; simSeed: number; simTitles: number; simCustomers: number; simOrders: number; simReceipts: number };
 
 export class SimulatedFierro implements FierroConnector {
@@ -141,7 +167,8 @@ export class SimulatedFierro implements FierroConnector {
     return this.e.slug.slice(0, 3).toUpperCase();
   }
   async books() {
-    return Array.from({ length: this.e.simTitles }, (_, i) => generateBook(this.e.simSeed, i, this.prefix));
+    const real = CATALOGS[this.e.slug] ?? [];
+    return Array.from({ length: this.e.simTitles }, (_, i) => (i < real.length ? catalogBook(real[i], this.e.simSeed, i, this.prefix) : generateBook(this.e.simSeed, i, this.prefix)));
   }
   async customers() {
     return Array.from({ length: this.e.simCustomers }, (_, i) => generateCustomer(this.e.simSeed, i));

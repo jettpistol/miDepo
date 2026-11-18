@@ -28,10 +28,10 @@ export async function sync(db: DB, company: Company) {
     for (const batch of inBatches(books)) {
       await tx
         .insert(products)
-        .values(batch.map((l) => ({ companyId: company.id, fierroId: l.id, internalCode: l.internalCode, isbn: l.isbn, barcode: l.barcode, title: l.title, author: l.author, imprint: l.imprint, type: l.type, price: l.price, weightGrams: l.weightGrams })))
+        .values(batch.map((l) => ({ companyId: company.id, fierroId: l.id, internalCode: l.internalCode, isbn: l.isbn, barcode: l.barcode, title: l.title, author: l.author, imprint: l.imprint, type: l.type, price: l.price, weightGrams: l.weightGrams, coverUrl: l.coverUrl ?? null })))
         .onConflictDoUpdate({
           target: [products.companyId, products.fierroId],
-          set: { internalCode: sql`excluded.internal_code`, isbn: sql`excluded.isbn`, barcode: sql`excluded.barcode`, title: sql`excluded.title`, author: sql`excluded.author`, imprint: sql`excluded.imprint`, type: sql`excluded.type`, price: sql`excluded.price`, weightGrams: sql`excluded.weight_grams` },
+          set: { internalCode: sql`excluded.internal_code`, isbn: sql`excluded.isbn`, barcode: sql`excluded.barcode`, title: sql`excluded.title`, author: sql`excluded.author`, imprint: sql`excluded.imprint`, type: sql`excluded.type`, price: sql`excluded.price`, weightGrams: sql`excluded.weight_grams`, coverUrl: sql`excluded.cover_url` },
         });
     }
     for (const batch of inBatches(custs)) {

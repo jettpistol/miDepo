@@ -12,6 +12,7 @@ export type FierroBook = {
   type: ProductType;
   price: number;
   weightGrams: number;
+  coverUrl?: string | null;
 };
 export type FierroCustomer = { id: string; name: string; address: string; city: string; province: string };
 export type FierroLine = { bookId: string; quantity: number };
