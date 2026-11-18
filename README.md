@@ -42,7 +42,7 @@ Ovnipress is seeded with 6,000 titles, 300 customers, 80 pending orders, 6 expec
 4. **Picking** → *Preparar* the first order and follow the stops. The shelf code and book code to scan are shown on screen.
 5. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
 6. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.
-7. **Mi cuenta** → change your accent colour.
+7. **Mi cuenta** → change your accent colour and font (14 to choose from).
 8. On a phone (or a narrow browser window), log in with a PIN.
 
 To start again from clean demo data:
@@ -55,20 +55,21 @@ npm run db:reset
 
 | Area | What is in the MVP |
 |---|---|
-| Receiving | Count against a receipt announced by Fierro, or a blind receipt. Over, short and unannounced titles are flagged. |
+| Receiving | Count against a receipt announced by Fierro, or start an unannounced one with **+ Nueva**, choosing the supplier from the list. Over, short and unannounced titles are flagged. |
 | Put-away | Move received or returned stock to shelves, with a suggestion of where the title already lives. |
 | Picking | One picker per order, a route sorted by shelf, validation of shelf and title on every stop, shortages re-routed to another shelf or recorded. |
 | Packing | Scan into boxes, real or estimated weight, A4 box labels and packing list. |
-| Returns | Grade each copy as *vendible*, *saldo* or *dañado*; each grade goes to its own zone. |
+| Returns | Start with **+ Nueva** and a customer from the list; grade each copy as *vendible*, *saldo* or *dañado*; each grade goes to its own zone. |
 | Cycle counts | Blind counts by shelf range, supervisor review of differences, stock adjusted on approval. |
-| Stock | Search by title, author, ISBN, internal code or shelf; per-shelf quantities and movement history. |
+| Stock | The whole catalogue, 50 titles per page; search by title, author, ISBN, internal code or shelf as you type; per-shelf quantities and movement history. |
 | Locations | Four naming templates plus a custom builder; printable Code 128 shelf labels (24 per A4 sheet). |
-| Fierro | Sync, CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
+| Fierro | Sync (catalogue, customers, suppliers, orders, expected receipts), CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
+| Data rules | Suppliers, customers, products, stock and locations come from the database and are picked from lists, never typed freely. Scan fields check codes as you type and block what would fail. A new supplier is created only on purpose, with confirmation, and near-duplicates are refused. |
 | Accounts | Three roles; login by password, 6-digit PIN, or passkey (fingerprint, face, device PIN). Up to five accounts stay logged in per device, with one-tap switching. Profile photos, with initials as the fallback. |
-| Appearance | The Tejuelo design system (see `DESIGN.md`): Klein blue by default, shelf codes shown as spine labels. **Each user picks their own accent colour** and light/dark theme; it follows them to every device. |
+| Appearance | The Tejuelo design system (see `DESIGN.md`) at the density of a work tool like Jira on desktop: left sidebar with a count beside each queue, compact tables and controls. Phones keep touch-size controls. **Each user picks their own accent colour, light/dark theme and font**; it follows them to every device. |
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
-| Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (blue header, search bar, readable without logging in). |
+| Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (search bar, readable without logging in). |
 
 ## How it fits with Fierro
 
@@ -99,6 +100,7 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 - **Spanish only.** Text lives in the pages, not in a translation file.
 - **No password reset by email.** An administrator sets a new password or PIN.
 - **Camera scanning and app installation were not tested on physical phones**, only in an emulated mobile browser. Passkeys were tested with a virtual authenticator.
+- **Suppliers can be created by any operator.** Restricting it to supervisors is a one-line change if wanted.
 - **The demo data ships with known passwords.** Do not load it on a public site that holds real data: set `DEMO_DATA=no`.
 
 ## Commands
@@ -107,6 +109,7 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 |---|---|
 | `npm run dev` | Prepares the database and starts the app at `localhost:3000`. |
 | `npm test` | Runs the workflow tests against an in-memory database. |
+| `node tests/walkthrough.e2e.js` | Drives every flow in a real browser (needs Playwright, and `npm run dev` on fresh demo data). |
 | `npm run typecheck` | Checks types. |
 | `npm run db:setup` | Creates or updates tables; loads demo data if the database is empty. |
 | `npm run db:reset` | Deletes everything and starts again. |
@@ -118,6 +121,7 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 
 ```
 src/db/schema.ts        Every table, with comments
+drizzle/                Migrations, applied on setup and on every deploy
 src/lib/flows/          The warehouse rules: receiving, picking, packing, returns, counts
 src/lib/stock.ts        The only place stock quantities change
 src/lib/fierro/         The Fierro boundary and the simulator
@@ -126,7 +130,7 @@ src/lib/lookup.ts       Checks a scan form as you type (behind /api/lookup)
 src/lib/color.ts        Accent colour and contrast handling
 src/app/(app)/          One folder per screen
 src/app/(print)/        A4 print layouts
-src/components/         Scan form, camera reader, navigation
+src/components/         Scan form, dropdown (Select), New button, camera reader, navigation
 wiki/                   User manual (GitHub wiki format)
 tests/                  Workflow tests
 docs/HOSTING.md         How to put it online
@@ -148,6 +152,10 @@ git clone https://github.com/jettpistol/miDepo.wiki.git
 ```bash
 cp wiki/*.md miDepo.wiki/ && cd miDepo.wiki && git add . && git commit -m "Manual de miDepo" && git push
 ```
+
+## For developers and agents
+
+`CLAUDE.md` has the conventions, the code map, how to verify a change, the owner's standing preferences and the open items.
 
 ## Hosting
 

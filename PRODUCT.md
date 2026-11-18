@@ -33,7 +33,8 @@ A warehouse layer built for one ERP (Fierro) and one trade (books): it speaks Fi
 - Next.js App Router, React server components and server actions, Tailwind CSS v4, Drizzle on Postgres (embedded PGlite in development).
 - Several companies in one deployment, fully separated.
 - Login by password, 6-digit PIN or passkey. Up to five accounts stay logged in per device, with one-tap switching. Profile photos with initials as fallback.
-- Each user chooses a light, dark or system theme; the choice follows them to every device.
+- Each user chooses a light, dark or system theme and one of 14 interface fonts; the choice follows them to every device.
+- Suppliers, customers, products and locations are master data. Customers and products come only from Fierro. Suppliers come from Fierro and can be added in miDepo on purpose (confirmed, near-duplicates refused).
 - Each user can currently pick their own accent colour. The owner did not list this as a commitment the redesign must keep (see Brand Commitments).
 - The Fierro connector is simulated; only demo data exists.
 
@@ -57,3 +58,5 @@ A warehouse layer built for one ERP (Fierro) and one trade (books): it speaks Fi
 3. Speak Fierro's and the book trade's language; never rename what the trade already names.
 4. Numbers and codes are the content: quantities, shelf codes and ISBNs must be easy to read and compare.
 5. Nothing on screen claims more than the system knows (simulated Fierro, demo data).
+6. The database is the source of truth: users pick existing records; free text never stands in for something that should already exist.
+7. Problems are shown before the user commits an action, not after.
