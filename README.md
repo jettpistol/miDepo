@@ -32,7 +32,7 @@ All demo passwords are `midepo1234`.
 | Librería Demo | Administrator | `admin@demo.test` | — |
 | Librería Demo | Operator | `operario@demo.test` | `demo` + `200001` |
 
-Ovnipress is seeded with 6,000 titles, 300 customers, 80 pending orders, 6 expected receipts and 800 shelf locations. Librería Demo is a second, smaller company that uses a different location naming scheme; it is there to show that companies are isolated from each other.
+Ovnipress is seeded with the 118 real titles scraped from its shop (`scripts/scrape-ovnipress.mjs`), 300 customers, 80 pending orders, 6 expected receipts and 800 shelf locations. Librería Demo is a second, smaller company that uses a different location naming scheme; it is there to show that companies are isolated from each other.
 
 ### A good first test
 

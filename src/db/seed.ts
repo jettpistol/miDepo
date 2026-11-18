@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { DB } from "./index";
 import { companies, fierroStock, products, stock, locations, users, type Role } from "./schema";
+import ovnipressCatalog from "@/lib/fierro/ovnipress-catalog.json";
 import { hashPassword, pinHmac } from "@/lib/credentials";
 import { sync } from "@/lib/fierro";
 import { initialStock } from "@/lib/fierro/simulated";
@@ -28,7 +29,7 @@ const DEMOS: Demo[] = [
     name: "Ovnipress",
     slug: "ovnipress",
     seedNum: 7,
-    titles: 6000,
+    titles: ovnipressCatalog.length, // only the real scraped titles: a small catalogue is enough for testing
     customers: 300,
     orders: 80,
     receipts: 6,
