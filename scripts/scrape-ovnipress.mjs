@@ -18,7 +18,7 @@ const WITH_COVERS = process.argv.includes("--covers");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const get = async (url) => {
   const res = await fetch(url, { headers: { "user-agent": UA } });
-  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  if (!res.ok) throw new Error(`[CLI-06] HTTP ${res.status} ${url}`);
   return res;
 };
 const decode = (s) =>
@@ -86,7 +86,7 @@ for (const [i, c] of candidates.entries()) {
       summary: body.split("\n").find((l) => l.length > 80 && !/^(Autor|Formato|ISBN|Peso)/i.test(l))?.slice(0, 600) ?? null,
     });
   } catch (e) {
-    console.warn(`\nskipped ${c.url}: ${e.message}`);
+    console.warn(`\n[CLI-07] Skipped ${c.url}: ${e.message}`);
   }
   await sleep(1000);
 }

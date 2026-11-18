@@ -1,7 +1,7 @@
 # Error codes
 
 Every message miDepo shows when something fails has a code. This file lists all of them.
-`tests/errors.test.ts` keeps this file in step with the code: `npm test` fails if a code in `src/` is missing here, if a code here no longer exists in `src/` (or is not in the file named in its row), or if two places use the same code.
+`tests/errors.test.ts` keeps this file in step with the code: `npm test` fails if a code in `src/` or `scripts/` is missing here, if a code here no longer exists there (or is not in the file named in its row), or if two places use the same code.
 
 ## How codes work
 
@@ -29,7 +29,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
 | `CFG` | Server configuration (environment variables) |
-| `CLI` | `npm run` scripts (`db:setup`, `company:create`) |
+| `CLI` | Developer scripts: `npm run db:setup`, `company:create`, `scripts/` |
 
 Placeholders in messages are written `{like this}`; the app fills them in.
 
@@ -247,6 +247,8 @@ The CSV download route also returns `EXP-01` to `EXP-04` as plain text with HTTP
 | `CLI-03` | The password needs at least 8 characters. | `src/db/create-company.ts` · `main` | The administrator password is too short. |
 | `CLI-04` | Could not create the company: {error} | `src/db/create-company.ts` · `main` | Anything else failed: the company code is taken, the email is in use, the database is unreachable. |
 | `CLI-05` | Database setup failed: {error} | `src/db/setup.ts` · `main` | `db:setup` or `db:reset` failed: the database is unreachable or a migration failed. |
+| `CLI-06` | HTTP {status} {url} | `scripts/scrape-ovnipress.mjs` · `get` | The Ovnipress store answered a request with an error. On a category page the script stops; on a product page it becomes `CLI-07`. |
+| `CLI-07` | Skipped {url}: {error} | `scripts/scrape-ovnipress.mjs` · product loop | A product page could not be fetched or read; the script skips it and carries on. |
 
 ## Not coded on purpose
 

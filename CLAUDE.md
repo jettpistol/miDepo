@@ -68,7 +68,7 @@ Every error message the user can see has a code (`RCV-02`), shown after the mess
 - New area: add it to the area table in `docs/ERRORS.md` and to `AREAS` in `tests/errors.test.ts`.
 - As-you-type warnings (`src/lib/lookup.ts`) get no code.
 
-`tests/errors.test.ts` fails if a code is undocumented, documented in the wrong file, used in two files, retired but back, or if a `UserError` or a thrown `Error` has no code.
+`tests/errors.test.ts` (which scans `src/` and `scripts/`) fails if a code is undocumented, documented in the wrong file, used in two files, retired but back, or if a `UserError` or a thrown `Error` has no code.
 
 Migrations that change existing data: generate with `npm run db:generate`, then append the data backfill to the generated SQL (separated by `--> statement-breakpoint`). See `drizzle/0001_suppliers.sql`. Never rewrite a migration that has shipped; the owner's local database and any deployed one have applied it.
 

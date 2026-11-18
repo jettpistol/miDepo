@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { UserError, attempt, withCode } from "@/lib/errors";
 
 /**
- * Keeps docs/ERRORS.md and the code in step: every error code used in src/ is documented,
+ * Keeps docs/ERRORS.md and the code in step: every error code used in src/ or scripts/ is documented,
  * every documented code is used in the file its row names, no code is used in two files,
  * and retired codes stay retired.
  */
@@ -17,11 +17,11 @@ function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = path.join(dir, name);
     if (statSync(full).isDirectory()) return sourceFiles(full);
-    return /\.(ts|tsx)$/.test(name) ? [full] : [];
+    return /\.(ts|tsx|js|mjs)$/.test(name) ? [full] : [];
   });
 }
 
-const sources = sourceFiles(path.join(ROOT, "src")).map((file) => ({ file: path.relative(ROOT, file), text: readFileSync(file, "utf8") }));
+const sources = [...sourceFiles(path.join(ROOT, "src")), ...sourceFiles(path.join(ROOT, "scripts"))].map((file) => ({ file: path.relative(ROOT, file), text: readFileSync(file, "utf8") }));
 
 /** Code → files that use it. */
 const used = new Map<string, Set<string>>();
@@ -34,7 +34,7 @@ const rows = [...active.matchAll(/^\| `([A-Z]+-\d{2})` \|[^|]*\| `([^`]+)`/gm)].
 const retiredCodes = [...retired.matchAll(/^\| `([A-Z]+-\d{2})` \|/gm)].map((m) => m[1]);
 
 describe("error catalogue (docs/ERRORS.md)", () => {
-  it("documents every code used in src/", () => {
+  it("documents every code used in src/ and scripts/", () => {
     const documented = new Set(rows.map((r) => r.code));
     expect([...used.keys()].filter((c) => !documented.has(c)).sort()).toEqual([]);
   });
