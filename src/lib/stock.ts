@@ -70,7 +70,7 @@ export async function findProduct(tx: Executor, companyId: number, code: string)
       ),
     )
     .limit(1);
-  if (!p) throw new UserError("STK-05", `No conozco el código "${c}". Si es un título nuevo, pide que sincronicen con Fierro.`);
+  if (!p) throw new UserError("STK-05", `El código "${c}" no está en el catálogo. Si es un título nuevo, pide que sincronicen con Fierro.`);
   return p;
 }
 

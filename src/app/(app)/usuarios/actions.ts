@@ -24,7 +24,7 @@ const unique = (e: unknown, code: string, message: string) => {
 
 async function ofCompany(c: ActionCtx, id: number) {
   const [u] = await c.db.select().from(users).where(and(eq(users.id, id), eq(users.companyId, c.companyId)));
-  if (!u) throw new UserError("USER-03", "No encuentro a esa persona.");
+  if (!u) throw new UserError("USER-03", "No se encontró a esa persona.");
   return u;
 }
 

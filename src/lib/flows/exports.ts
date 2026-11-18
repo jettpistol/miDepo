@@ -36,7 +36,7 @@ export async function pendingExports(db: DB, companyId: number): Promise<Pending
 export async function fileFor(db: DB, companyId: number, type: ExportType, id: number): Promise<{ name: string; contents: string }> {
   if (type === "order") {
     const [p] = await db.select({ number: orders.number, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, companyId)));
-    if (!p) throw new UserError("EXP-01", "No encuentro ese pedido.");
+    if (!p) throw new UserError("EXP-01", "No se encontró ese pedido.");
     const rows = await db
       .select({ box: boxes.number, weight: boxes.weightGrams, isbn: products.isbn, internalCode: products.internalCode, title: products.title, quantity: boxItems.quantity })
       .from(boxItems)
@@ -48,18 +48,18 @@ export async function fileFor(db: DB, companyId: number, type: ExportType, id: n
   }
   if (type === "receiving") {
     const [r] = await db.select({ number: receivings.number, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, companyId)));
-    if (!r) throw new UserError("EXP-02", "No encuentro esa recepción.");
+    if (!r) throw new UserError("EXP-02", "No se encontró esa recepción.");
     const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
     return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido"]) };
   }
   if (type === "return") {
     const [d] = await db.select({ number: returns.number, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, companyId)));
-    if (!d) throw new UserError("EXP-03", "No encuentro esa devolución.");
+    if (!d) throw new UserError("EXP-03", "No se encontró esa devolución.");
     const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, status: returnLines.bookCondition, quantity: returnLines.quantity }).from(returnLines).innerJoin(products, eq(products.id, returnLines.productId)).where(eq(returnLines.returnId, id)).orderBy(asc(products.title));
     return { name: `devolucion-${d.number}.csv`, contents: csv(rows.map((f) => [d.number, d.customer, fierroCode(f), f.title, CONDITION_FOR_FIERRO[f.status], f.quantity]), ["devolucion", "cliente", "codigo", "titulo", "estado", "cantidad"]) };
   }
   const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, companyId)));
-  if (!k) throw new UserError("EXP-04", "No encuentro ese conteo.");
+  if (!k) throw new UserError("EXP-04", "No se encontró ese conteo.");
   const rows = await db
     .select({ isbn: products.isbn, internalCode: products.internalCode, countedQty: countLines.countedQty, location: locations.code })
     .from(countLines)

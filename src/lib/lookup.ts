@@ -99,7 +99,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
   async function flagUnknown(text: string) {
     if (text.length < 3) return;
     const [similar] = await db.select({ id: products.id }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(text))).limit(1);
-    if (!similar) statuses.product = { tone: "danger", text: `No conozco "${text}". Si es un título nuevo, sincroniza con Fierro.` };
+    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un título nuevo, sincroniza con Fierro.` };
   }
 
   const n = Number(v("quantity"));

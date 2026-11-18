@@ -11,7 +11,7 @@ export const generate = action("supervisor", async (c, f) => {
   try {
     scheme = JSON.parse(txt(f, "scheme"));
   } catch {
-    throw new UserError("LOC-01", "No pude leer el esquema. Recarga la página y prueba de nuevo.");
+    throw new UserError("LOC-01", "No se pudo leer el esquema. Recarga la página y prueba de nuevo.");
   }
   const problem = validateScheme(scheme);
   if (problem) throw new UserError(problem.code, problem.message);

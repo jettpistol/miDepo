@@ -8,7 +8,7 @@ Un conteo sirve para corregir el stock de un tramo del depósito sin frenar el t
 2. Elige una ubicación y toca **Contar**.
 3. Ve a ese estante.
 4. Escanea **todo lo que haya**. Si un título está muchas veces, cuéntalo, escribe la cantidad y escanea uno.
-5. Toca **Terminé esta ubicación**. Si no había nada, toca **Está vacía**.
+5. Toca **Terminar esta ubicación**. Si no había nada, toca **Está vacía**.
 6. Sigue con la próxima.
 
 ### El conteo es a ciegas

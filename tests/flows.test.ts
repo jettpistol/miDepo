@@ -238,10 +238,10 @@ describe("several companies", () => {
     const { e, u } = await buildCompany("Otra SRL", "otra", 9);
     const other: Ctx = { db, companyId: e.id, userId: u.id };
     const [foreignOrder] = await db.select().from(orders).where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"))).limit(1);
-    await expect(takeOrder(other, foreignOrder.id)).rejects.toThrow(/No encuentro/);
+    await expect(takeOrder(other, foreignOrder.id)).rejects.toThrow(/No se encontró/);
     const [foreignProduct] = await db.select().from(products).where(eq(products.companyId, c.companyId)).limit(1);
-    await expect(move(other, { source: "RECEPCION", product: foreignProduct.barcode, destination: "A-01-1", quantity: 1 })).rejects.toThrow(/No conozco el código/);
-    await expect(fileFor(db, e.id, "order", foreignOrder.id)).rejects.toThrow(/No encuentro/);
+    await expect(move(other, { source: "RECEPCION", product: foreignProduct.barcode, destination: "A-01-1", quantity: 1 })).rejects.toThrow(/no está en el catálogo/);
+    await expect(fileFor(db, e.id, "order", foreignOrder.id)).rejects.toThrow(/No se encontró/);
     expect(await pendingExports(db, e.id)).toHaveLength(0);
   });
 

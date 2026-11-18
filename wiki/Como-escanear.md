@@ -46,6 +46,6 @@ En picking, la cantidad ya viene cargada con lo que pide la parada.
 
 Los errores más comunes:
 
-- **"No conozco el código…"**: el título no está en el catálogo. Avisa para que sincronicen con Fierro.
+- **"El código … no está en el catálogo"**: el título no está en el catálogo. Avisa para que sincronicen con Fierro.
 - **"Estás en A-03-2, pero esta parada es en otra ubicación"**: escaneaste el cartel equivocado.
 - **"Ese es … No es el título que pide esta parada"**: agarraste otro libro. Pasa mucho con tomos de la misma serie.

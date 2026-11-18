@@ -7,7 +7,7 @@ import { validQuantity, type Ctx } from "./common";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
-  if (!p) throw new UserError("PICK-01", "No encuentro ese pedido.");
+  if (!p) throw new UserError("PICK-01", "No se encontró ese pedido.");
   return p;
 }
 
@@ -87,7 +87,7 @@ async function taskOf(c: Ctx, taskId: number) {
     .from(pickTasks)
     .innerJoin(orders, eq(orders.id, pickTasks.orderId))
     .where(and(eq(pickTasks.id, taskId), eq(orders.companyId, c.companyId)));
-  if (!t) throw new UserError("PICK-03", "No encuentro esa parada del recorrido.");
+  if (!t) throw new UserError("PICK-03", "No se encontró esa parada del recorrido.");
   if (t.task.status !== "pending") throw new UserError("PICK-04", "Esa parada ya está resuelta.");
   return t;
 }
@@ -130,7 +130,7 @@ export async function markShort(c: Ctx, taskId: number) {
       await tx.insert(pickTasks).values(stops.map((s) => ({ orderId: order.id, lineId: task.lineId, productId: task.productId, locationId: s.locationId, quantity: s.quantity })));
     }
     await checkEnd(tx, order.id);
-    if (stops.length > 0 && uncovered === 0) return "Anotado. Encontré el título en otra ubicación y lo sumé al recorrido.";
+    if (stops.length > 0 && uncovered === 0) return "Anotado. El título está en otra ubicación y se sumó al recorrido.";
     if (stops.length > 0) return `Anotado. Hay una parte en otra ubicación; ${uncovered} quedan como faltante.`;
     return `Anotado: ${missing} quedan como faltante. Conviene contar esa ubicación.`;
   });

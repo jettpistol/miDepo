@@ -7,7 +7,7 @@ import { validQuantity, type Ctx } from "./common";
 
 async function open(c: Ctx, id: number) {
   const [r] = await c.db.select().from(receivings).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId)));
-  if (!r) throw new UserError("RCV-01", "No encuentro esa recepción.");
+  if (!r) throw new UserError("RCV-01", "No se encontró esa recepción.");
   if (r.status === "closed") throw new UserError("RCV-02", "Esta recepción ya está cerrada.");
   return r;
 }

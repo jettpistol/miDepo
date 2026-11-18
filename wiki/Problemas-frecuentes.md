@@ -8,7 +8,7 @@ Toca el campo del código para que quede seleccionado. Si sigue sin escribir, pr
 **La cámara no abre.**
 El navegador no tiene permiso. En el teléfono, entra a los ajustes del sitio y permite la cámara. Mientras tanto, escribe el código a mano.
 
-**"No conozco el código…"**
+**"El código … no está en el catálogo"**
 El título no está en el catálogo de miDepo. Puede ser nuevo en Fierro: pídele a un supervisor que sincronice. Si es una grapa o un pack, puede faltarle la etiqueta con el código interno.
 
 **Escaneo un libro y me dice que es otro título.**

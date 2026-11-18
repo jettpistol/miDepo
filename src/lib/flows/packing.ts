@@ -6,7 +6,7 @@ import { validQuantity, type Ctx } from "./common";
 
 async function orderToPack(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
-  if (!p) throw new UserError("PACK-01", "No encuentro ese pedido.");
+  if (!p) throw new UserError("PACK-01", "No se encontró ese pedido.");
   if (p.status === "pending" || p.status === "in_picking") throw new UserError("PACK-02", "Este pedido todavía no terminó el picking.");
   if (p.status !== "picked") throw new UserError("PACK-03", "Este pedido ya está empacado.");
   return p;

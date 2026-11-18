@@ -20,7 +20,7 @@ export async function createReturn(c: Ctx, customerId: number) {
 
 async function open(c: Ctx, id: number) {
   const [d] = await c.db.select().from(returns).where(and(eq(returns.id, id), eq(returns.companyId, c.companyId)));
-  if (!d) throw new UserError("RET-02", "No encuentro esa devolución.");
+  if (!d) throw new UserError("RET-02", "No se encontró esa devolución.");
   if (d.status === "closed") throw new UserError("RET-03", "Esta devolución ya está cerrada.");
   return d;
 }

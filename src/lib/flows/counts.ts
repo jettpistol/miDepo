@@ -29,7 +29,7 @@ export async function createCount(c: Ctx, name: string, prefix: string) {
 
 async function isOpen(c: Ctx, countId: number) {
   const [k] = await c.db.select().from(counts).where(and(eq(counts.id, countId), eq(counts.companyId, c.companyId)));
-  if (!k) throw new UserError("CNT-05", "No encuentro ese conteo.");
+  if (!k) throw new UserError("CNT-05", "No se encontró ese conteo.");
   if (k.status === "closed") throw new UserError("CNT-06", "Este conteo ya está cerrado.");
   return k;
 }

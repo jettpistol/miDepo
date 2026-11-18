@@ -121,7 +121,7 @@ async function warning(p, field, value) {
   await p.click('button:has-text("Crear conteo")'); await p.waitForURL(/\/conteos\/\d+$/);
   const countUrl = p.url(); await p.click('a:has-text("Contar")'); await p.waitForSelector('#scan-product');
   step('  count → ' + await scan(p, { product: rows[0].code }, rows[0].expected - 1));
-  await p.click('button:has-text("Terminé esta ubicación")'); await p.waitForURL(countUrl); await p.waitForSelector('text=Revisión del supervisor'); await shot('count');
+  await p.click('button:has-text("Terminar esta ubicación")'); await p.waitForURL(countUrl); await p.waitForSelector('text=Revisión del supervisor'); await shot('count');
   await p.click('button:has-text("Aprobar y ajustar stock")'); await p.waitForSelector('text=Conteo cerrado');
 
   // Fierro

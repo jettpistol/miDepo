@@ -30,13 +30,27 @@ const files = (dir: string): string[] =>
 const LETTER = "A-Za-zÁÉÍÓÚáéíóúñÑü";
 const pattern = new RegExp(`(?<![${LETTER}])(${VOSEO.join("|")})(?![${LETTER}])`, "giu");
 
+/** The app never speaks as "I": "No se encontró ese pedido", not "No encuentro ese pedido". */
+const FIRST_PERSON = `
+anoté busqué cambié conozco creé encontré encuentro estoy guardé moví necesito pude puedo registré sumé tengo terminé voy
+`.trim().split(/\s+/);
+const firstPerson = new RegExp(`(?<![${LETTER}])(${FIRST_PERSON.join("|")})(?![${LETTER}])`, "giu");
+
 describe("Spanish copy", () => {
-  it("uses tú, never voseo", () => {
-    const found = [...files(path.join(ROOT, "src")), ...files(path.join(ROOT, "wiki")), path.join(ROOT, "docs/ERRORS.md")].flatMap((file) =>
+  const copy = [...files(path.join(ROOT, "src")), ...files(path.join(ROOT, "wiki")), path.join(ROOT, "docs/ERRORS.md")];
+  const find = (re: RegExp) =>
+    copy.flatMap((file) =>
       readFileSync(file, "utf8")
         .split("\n")
-        .flatMap((line, i) => [...line.matchAll(pattern)].map((m) => `${path.relative(ROOT, file)}:${i + 1}: ${m[1]}`)),
+        // Code comments are English and may say "I"; only the copy matters.
+        .flatMap((line, i) => (/^\s*(\/\/|\*|\/\*)/.test(line) ? [] : [...line.matchAll(re)].map((m) => `${path.relative(ROOT, file)}:${i + 1}: ${m[1]}`))),
     );
-    expect(found).toEqual([]);
+
+  it("uses tú, never voseo", () => {
+    expect(find(pattern)).toEqual([]);
+  });
+
+  it("never speaks in the first person", () => {
+    expect(find(firstPerson)).toEqual([]);
   });
 });

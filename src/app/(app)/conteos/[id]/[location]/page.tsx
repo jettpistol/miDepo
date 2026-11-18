@@ -35,7 +35,7 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
           <div className="space-y-3 lg:sticky lg:top-30">
             <ScanForm action={scan} context="count" hiddenFields={{ id, locationId }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar" />
             <ActionButton action={complete} hiddenFields={{ id, locationId }} className="btn-soft w-full" confirm={lines.length === 0 ? `¿Confirmas que ${row.code} está vacía?` : `¿Ya contaste todo lo que hay en ${row.code}?`} showOk={false}>
-              {lines.length === 0 ? "Está vacía" : "Terminé esta ubicación"}
+              {lines.length === 0 ? "Está vacía" : "Terminar esta ubicación"}
             </ActionButton>
           </div>
         )}

@@ -47,11 +47,11 @@ const PREFIX = "data:image/jpeg;base64,";
 
 export const savePhoto = action("operator", async (c, f) => {
   const payload = txt(f, "photo");
-  if (!payload.startsWith(PREFIX)) throw new UserError("ACCT-08", "No pude leer esa imagen. Prueba con otra foto.");
+  if (!payload.startsWith(PREFIX)) throw new UserError("ACCT-08", "No se pudo leer esa imagen. Prueba con otra foto.");
   const data = payload.slice(PREFIX.length);
   const bytes = Buffer.from(data, "base64");
   // The photo arrives already cropped and shrunk by the browser; here we only confirm it is a small JPEG.
-  if (bytes.length < 100 || bytes.length > 200_000 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) throw new UserError("ACCT-09", "No pude leer esa imagen. Prueba con otra foto.");
+  if (bytes.length < 100 || bytes.length > 200_000 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) throw new UserError("ACCT-09", "No se pudo leer esa imagen. Prueba con otra foto.");
   await c.db.transaction(async (tx) => {
     await tx.insert(userPhotos).values({ userId: c.userId, data }).onConflictDoUpdate({ target: userPhotos.userId, set: { data } });
     await tx.update(users).set({ photoVersion: (c.user.photoVersion ?? 0) + 1 }).where(eq(users.id, c.userId));
