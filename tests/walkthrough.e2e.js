@@ -170,10 +170,19 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/ubicaciones'); await p.waitForSelector('text=Generador de ubicaciones'); await p.screenshot({ path: `${OUT}/locations.png`, fullPage: true, caret: 'initial' });
   await p.goto(BASE + '/imprimir/ubicaciones?prefijo=A-01'); await shot('labels');
   await p.goto(BASE + '/ayuda'); await shot('manual'); await p.click('article a:has-text("Picking")'); await p.waitForSelector('h1:has-text("Picking")');
+  step('supervisor sees no Editar in the manual: ' + ((await p.$('a[href^="/ayuda/editar/"]')) ? fail('Editar visible') : 'ok'));
+  step('supervisor cannot open the editor: ' + ((await p.goto(BASE + '/ayuda/editar/Picking'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
   step('supervisor cannot open users: ' + ((await p.goto(BASE + '/usuarios'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
 
+  // Light/dark from the top bar, saved at once
+  await p.goto(BASE + '/'); await p.click('summary[aria-label^="Tema:"] >> visible=true'); const saved = p.waitForResponse((r) => r.request().method() === 'POST');
+  await p.click('details[open] button:has-text("Oscuro")'); await saved; await p.reload(); await shot('home-dark-switch');
+  step('theme after reload: ' + ((await p.getAttribute('html', 'data-theme')) === 'dark' ? 'dark' : fail('not saved')));
+  await p.click('summary[aria-label^="Tema:"] >> visible=true'); const back = p.waitForResponse((r) => r.request().method() === 'POST'); await p.click('details[open] button:has-text("Claro")'); await back;
+  step('sidebar has Ajustes: ' + ((await p.$('aside a[href="/cuenta"]')) ? 'ok' : fail('missing')));
+
   // Per-user colour
-  await p.goto(BASE + '/cuenta'); await p.click('button[aria-label="Magenta"]'); await p.click('button:has-text("Oscuro")'); await shot('account-magenta-dark');
+  await p.goto(BASE + '/cuenta'); await p.click('button[aria-label="Magenta"]'); await p.click('form button:has-text("Oscuro")'); await shot('account-magenta-dark');
   await p.click('button:has-text("Guardar apariencia")'); await p.waitForSelector('text=Guardado'); await p.goto(BASE + '/'); await shot('home-magenta');
   step('saved accent: ' + await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
   await ctx.close();
@@ -195,6 +204,28 @@ async function warning(p, field, value) {
   await o.goto(BASE + '/'); await o.fill('#email', 'admin@demo.test'); await o.fill('#password', 'midepo1234'); await o.click('button:has-text("Entrar")'); await o.waitForURL(BASE + '/');
   const r = await o.goto(`${BASE}/picking/${orderId}`); step(`other company opens a foreign order → HTTP ${r.status()}`);
   await o.goto(BASE + '/ubicaciones'); await o.waitForSelector('text=Generador'); step('demo company scheme: ' + ((await o.textContent('main')).includes('Mostrando el esquema') ? 'shown' : 'none'));
+
+  // An admin edits a manual page for their company only
+  o.on('pageerror', (e) => errors.push('admin pageerror: ' + e.message)); o.on('response', (r) => r.status() >= 500 && errors.push(`admin HTTP ${r.status()} ${r.url()}`));
+  await o.setViewportSize({ width: 1440, height: 900 });
+  await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
+  await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
+  await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');
+  await o.waitForSelector('[role=region] strong:has-text("zorzal")'); await o.waitForSelector('text=no lleva a ninguna página');
+  await o.screenshot({ path: `${OUT}/manual-editor.png`, caret: 'initial' });
+  await o.fill('textarea', (await o.inputValue('textarea')).replace('(Pickin)', '(Picking)')); await o.waitForSelector('text=no lleva a ninguna página', { state: 'detached' });
+  await o.click('button:has-text("Guardar")'); await o.waitForURL(BASE + '/ayuda/Glosario'); await o.waitForSelector('text=Versión de');
+  step('edited page shows: ' + ((await o.textContent('article')).includes('zorzal es un lector fiel') ? 'ok' : fail('edit missing')));
+  await m.goto(BASE + '/ayuda/Glosario'); step('other company still reads the original: ' + (!(await m.textContent('article')).includes('zorzal') ? 'ok' : fail('edit leaked')));
+  await m.goto(BASE + '/ayuda?q=zorzal'); step('other company search: ' + ((await m.textContent('main')).includes('No hay resultados') ? 'ok' : fail('found')));
+  await o.goto(BASE + '/ayuda?q=zorzal'); step('admin search finds it: ' + ((await o.$('a[href="/ayuda/Glosario"]:has-text("Glosario")')) ? 'ok' : fail('not found')));
+  await o.goto(BASE + '/ayuda/editar/Glosario'); o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Volver al original")'); await o.waitForURL(BASE + '/ayuda/Glosario');
+  step('back to original: ' + (!(await o.textContent('article')).includes('zorzal') ? 'ok' : fail('still edited')));
+  await m.goto(BASE + '/ayuda'); await m.screenshot({ path: `${OUT}/m-manual.png`, caret: 'initial' });
+  const ma = await phone.newPage(); await ma.goto(BASE + '/ingresar?agregar=1'); await ma.click('button:has-text("Email y contraseña")'); await ma.fill('#email', 'admin@ovnipress.test'); await ma.fill('#password', 'midepo1234'); await ma.click('button:has-text("Entrar")'); await ma.waitForURL(BASE + '/');
+  await ma.goto(BASE + '/ayuda/editar/Picking'); await ma.waitForSelector('textarea'); await ma.screenshot({ path: `${OUT}/m-editor.png`, caret: 'initial' });
+  await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
+  step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
   await browser.close();
   console.log(errors.length ? 'ERRORS:\n' + [...new Set(errors)].join('\n') : 'NO CONSOLE ERRORS OR 5xx');
   if (errors.length) process.exit(1);

@@ -1,13 +1,15 @@
-# Mi cuenta y colores
+# Ajustes
 
-En **Mi cuenta** cambias tu foto, cómo ves miDepo y cómo entras.
+En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y letra) y cómo entras.
 
 ## Cómo llegar
 
-**Mi cuenta** se abre desde tu nombre y tu foto:
-
-- **En la computadora:** toca tu nombre, abajo a la izquierda, y después **Mi cuenta**.
+- **En la computadora:** en el menú de la izquierda, abajo de todo, toca **Ajustes**. También está en el menú de tu nombre, arriba a la derecha.
 - **En el teléfono:** toca tu foto, arriba a la derecha, y después tu nombre.
+
+## Claro u oscuro, rápido
+
+Arriba a la derecha, al lado de tu nombre o tu foto, hay un botón con un sol, una luna o una pantalla: es el tema que estás usando. Tócalo y elige **Claro**, **Oscuro** o **Como el dispositivo**. Cambia al instante y queda guardado, sin pasar por **Ajustes**.
 
 ## Foto de perfil
 

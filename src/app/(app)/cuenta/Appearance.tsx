@@ -29,6 +29,8 @@ export function Appearance({ action, accent: initial, theme: initialTheme, font:
   useEffect(() => {
     saved.current = { accent: initial, theme: initialTheme, font: initialFont };
   }, [initial, initialTheme, initialFont]);
+  // The top-bar switch saves the theme on its own; follow it.
+  useEffect(() => setTheme(initialTheme), [initialTheme]);
   useEffect(
     () => () => {
       const root = document.documentElement;

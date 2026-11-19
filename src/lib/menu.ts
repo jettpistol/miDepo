@@ -28,8 +28,11 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
     ],
   },
   {
-    group: "Ayuda",
-    // "Mi cuenta" is not here: it opens by tapping the person's name and photo.
-    items: [{ href: "/ayuda", name: "Manual", icon: "help", help: "Paso a paso, con buscador" }],
+    group: "Ayuda y ajustes",
+    items: [
+      { href: "/ayuda", name: "Manual", icon: "help", help: "Paso a paso, con buscador" },
+      // Also opens from the person's name and photo in the top bar.
+      { href: "/cuenta", name: "Ajustes", icon: "settings", help: "Tema claro u oscuro, color, letra, foto, contraseña y PIN" },
+    ],
   },
 ];

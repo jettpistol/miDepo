@@ -30,7 +30,7 @@ What was decided, by whom, and why. Newest context last. "Owner" is the person c
 
 **D10. The manual is its own site** at `/ayuda` (black header, search, index), readable without logging in, built from the `wiki/` folder so the same files can be published as a real GitHub wiki.
 
-**D11. "Mi cuenta" opens from the user's name and photo**, not from the main menu.
+**D11. Personal settings are "Ajustes"** (`/cuenta`), in the sidebar under "Ayuda y ajustes" and from the user's name and photo. Light/dark also has its own switch in the top bar, saved at once (owner, 2026-11-19: "I cannot find the settings panel or where to turn light/dark mode"; it used to be reachable only from the name menu, as "Mi cuenta").
 
 ## Technical
 
@@ -63,3 +63,5 @@ Owner's experience: in a previous warehouse the system only let stock change thr
 **D23. "Guardar" is now "Reposición"** (owner, 2026-11-18). URL `/reposicion`; `/guardar` and the manual's old page redirect (`next.config.ts`). In code it is still put-away (`context="putaway"`, icon `putaway`).
 
 **D24. Keyboard shortcuts for desktop keyboards** (owner, 2026-11-18). Only desktop keyboards were asked for, not handheld terminals. Alt + digit opens a daily-work screen. F-keys run actions on a screen, with the same meaning everywhere: F2 main button, F3 back, F4 suggested quantity, F6 option, F7 suggested shelf, F8 other action, F9 finish the task, F10 new, Esc clear the scan. F1 lists them. The owner chose that list over badges on buttons, which keeps the density. A screen marks elements with `hotkey()` from `src/lib/hotkeys.ts`; `src/components/Hotkeys.tsx` presses them and builds the F1 list from the page, so the list cannot go stale. A key is only taken from the browser where the screen uses it; F5, F11 and F12 never are. Assumed: Alt + digit does not clash with how the warehouse's browsers switch tabs (on Linux, Chrome and Firefox use Alt + digit for that; the page takes it first).
+
+**D25. Administrators edit the manual for their company** (owner, 2026-11-19). The `wiki/` files stay the shared original. An edit made at `/ayuda/editar/<page>` is stored in `wiki_edits` (the deployed filesystem is read-only) and replaces that page for the company's logged-in users, in reading and in search; visitors not logged in read the files. "Volver al original" deletes the edit. When the file changes after an edit, the editor says so and shows the original. The editor writes Markdown with a toolbar and a live preview rendered by the same code as the manual (`src/lib/markdown.ts`), which shows raw HTML as text and keeps only plain link and image addresses. Assumed: per company, not global; only existing pages, not new ones or the index; no revision history. The footer's "avísale a tu supervisor" line was removed.

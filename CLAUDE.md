@@ -54,7 +54,9 @@ src/lib/fonts.ts, color.ts  Per-user font and accent; applied in src/app/layout.
 src/app/(app)/<screen>/   One folder per screen: page.tsx (server), actions.ts, small client parts.
 src/app/(app)/layout.tsx  Shell: top bar, sidebar with queue counts, phone bottom bar.
 src/app/(print)/          A4 print layouts (labels, packing list).
-src/app/(manual)/         The manual site at /ayuda, rendered from wiki/.
+src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
+                          /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
+src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
 src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's

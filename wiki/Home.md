@@ -25,11 +25,12 @@ miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la p
 - [Bajas y faltantes](Bajas-y-faltantes): lo que falta, lo roto y lo que aparece, con su motivo.
 - [Trabajar con Fierro](Trabajar-con-Fierro): sincronizar, cargar documentos y conciliar el stock.
 - [Usuarios y roles](Usuarios-y-roles): quién puede entrar y qué puede hacer.
+- [Editar el manual](Editar-el-manual): adaptar estas páginas a tu depósito (administradores).
 
 ## Tu cuenta
 
 - [Ingresar](Ingresar): contraseña, PIN, huella o rostro.
-- [Mi cuenta y colores](Mi-cuenta-y-colores): elegir tu color y el tema claro u oscuro.
+- [Ajustes](Ajustes): tema claro u oscuro, color, letra, foto, contraseña y PIN.
 - [Instalar en el teléfono](Instalar-en-el-telefono): tener miDepo como una app.
 
 ## Si algo no sale

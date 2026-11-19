@@ -9,7 +9,7 @@ import { Photo } from "./Photo";
 import { Appearance } from "./Appearance";
 import { AddPasskey } from "./Passkeys";
 
-export const metadata = { title: "Mi cuenta" };
+export const metadata = { title: "Ajustes" };
 
 export default async function Account() {
   const { db, user, company } = await requireSession();
@@ -19,7 +19,7 @@ export default async function Account() {
 
   return (
     <>
-      <PageHeader title="Mi cuenta" subtitle={`${user.name} · ${user.email}`} />
+      <PageHeader title="Ajustes" subtitle={`${user.name} · ${user.email}`} />
       <div className="max-w-4xl divide-y divide-line border-y border-line">
         <section className={section}>
           <h2 className="section-title">Foto de perfil</h2>

@@ -25,7 +25,7 @@ Con PIN la sesión dura un turno. Al día siguiente hay que volver a entrar.
 La más rápida, una vez configurada.
 
 1. Entra una vez con contraseña o PIN.
-2. Toca tu nombre, después **Mi cuenta**, y ahí **Registrar este dispositivo**.
+2. Abre **Ajustes** y toca **Registrar este dispositivo**.
 3. El teléfono o la computadora te pide la huella, el rostro o su PIN.
 4. Desde entonces, en la pantalla de ingreso toca **Entrar con huella, rostro o llave**.
 
@@ -66,5 +66,5 @@ Las cuentas que entraron con PIN se cierran solas al terminar el turno.
 | "Los datos no coinciden" | Revisa el email, el código de empresa y que el PIN tenga 6 números. |
 | "Demasiados intentos" | Espera 5 minutos. Es una protección contra intentos repetidos. |
 | Olvidaste la contraseña o el PIN | Pídele a un administrador que te ponga uno nuevo desde **Usuarios**. |
-| "Esta llave no está registrada" | Entra con contraseña o PIN y registra el dispositivo de nuevo en **Mi cuenta**. |
+| "Esta llave no está registrada" | Entra con contraseña o PIN y registra el dispositivo de nuevo en **Ajustes**. |
 

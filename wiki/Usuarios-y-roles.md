@@ -13,6 +13,7 @@ Esta página es para administradores.
 | Ubicaciones y etiquetas | — | Sí | Sí |
 | Sincronizar y cargar en Fierro | — | Sí | Sí |
 | Alta y baja de usuarios | — | — | Sí |
+| [Editar el manual](Editar-el-manual) | — | — | Sí |
 
 ## Sumar a alguien
 
@@ -33,7 +34,7 @@ En la lista, toca **Cambiar rol, acceso o dar de baja** debajo de la persona.
 
 ## Quitar una foto de perfil
 
-Cada persona sube su propia foto desde **Mi cuenta**. Si alguien sube una que no corresponde, abre **Cambiar rol, acceso o dar de baja** debajo de esa persona y toca **Quitar foto**.
+Cada persona sube su propia foto desde **Ajustes**. Si alguien sube una que no corresponde, abre **Cambiar rol, acceso o dar de baja** debajo de esa persona y toca **Quitar foto**.
 
 ## Equipos compartidos
 

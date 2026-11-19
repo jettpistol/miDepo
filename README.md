@@ -42,7 +42,7 @@ Ovnipress is seeded with the 118 real titles scraped from its shop (`scripts/scr
 4. **Picking** → *Preparar* the first order and follow the stops. The shelf code and book code to scan are shown on screen.
 5. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
 6. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.
-7. **Mi cuenta** → change your accent colour and font (14 to choose from).
+7. **Ajustes** (sidebar, or your name in the top bar) → change your accent colour and font (14 to choose from).
 8. On a phone (or a narrow browser window), log in with a PIN.
 
 To start again from clean demo data:

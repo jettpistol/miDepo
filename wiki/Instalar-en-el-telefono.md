@@ -20,7 +20,7 @@ miDepo se puede instalar como una app. Queda con su ícono en la pantalla de ini
 
 - Entra con tu PIN. El teléfono recuerda el código de empresa.
 - La primera vez que uses la cámara para escanear, acepta el permiso.
-- En **Mi cuenta** (tocando tu foto) puedes registrar tu huella o tu rostro para entrar más rápido.
+- En **Ajustes** (tocando tu foto) puedes registrar tu huella o tu rostro para entrar más rápido.
 
 ## Para tener en cuenta
 

@@ -1,4 +1,4 @@
-/** Interface fonts each user can pick in Mi cuenta. Codes always stay in Courier Prime. */
+/** Interface fonts each user can pick in Ajustes. Codes always stay in Courier Prime. */
 export const FONTS = [
   { id: "libre-franklin", name: "Libre Franklin", note: "La de siempre" },
   { id: "ibm-plex-sans", name: "IBM Plex Sans", note: "Técnica, de ingeniería" },

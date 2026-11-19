@@ -18,7 +18,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `SYS` | Unexpected failures (any screen) |
 | `AUTH` | Logging in (`/ingresar`) and permissions |
 | `PKEY` | Passkeys: fingerprint, face or hardware key |
-| `ACCT` | Mi cuenta (`/cuenta`) |
+| `ACCT` | Ajustes (`/cuenta`), and the theme switch in the top bar |
 | `USER` | Usuarios (`/usuarios`), admin only |
 | `LOC` | Ubicaciones (`/ubicaciones`) |
 | `STK` | Stock, moves and scanning a book or a location (any scan screen) |
@@ -30,6 +30,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
+| `WIKI` | Editing the manual (`/ayuda/editar`), admin only |
 | `CFG` | Server configuration (environment variables) |
 | `CLI` | Developer scripts: `npm run db:setup`, `company:create`, `scripts/` |
 
@@ -57,7 +58,7 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | Code | Message | Where | When |
 |---|---|---|---|
 | `PKEY-01` | El intento venció. Prueba de nuevo. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | Logging in with a passkey took more than 5 minutes, or the challenge cookie is missing or was tampered with. |
-| `PKEY-02` | Esta llave no está registrada en miDepo. Entra de otra forma y regístrala en Mi cuenta. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The passkey offered by the device is unknown, or its user is deactivated. |
+| `PKEY-02` | Esta llave no está registrada en miDepo. Entra de otra forma y regístrala en Ajustes. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The passkey offered by the device is unknown, or its user is deactivated. |
 | `PKEY-03` | No se pudo verificar la llave. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The signature check ran and did not pass. |
 | `PKEY-04` | No se pudo verificar la llave. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The signature check itself failed (malformed reply, wrong origin or domain). |
 | `PKEY-05` | Primero hay que ingresar. | `src/app/api/passkeys/[step]/route.ts` · `POST` | Registering a passkey with no session (HTTP 401). |
@@ -71,13 +72,13 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `PKEY-13` | Este dispositivo ya tiene una llave registrada para tu usuario. | `src/app/(app)/cuenta/Passkeys.tsx` · `AddPasskey` | The device already holds a passkey for this user. |
 | `PKEY-14` | Este dispositivo no permite registrar una llave. | `src/app/(app)/cuenta/Passkeys.tsx` · `AddPasskey` | The browser failed without a message (no passkey support, no network). |
 
-## ACCT: Mi cuenta
+## ACCT: Ajustes
 
 | Code | Message | Where | When |
 |---|---|---|---|
 | `ACCT-01` | Ese color no es válido. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The accent colour is not a `#RRGGBB` value. Only reachable by editing the form by hand. |
 | `ACCT-02` | Elige una letra de la lista. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The font is not one of the offered ones. |
-| `ACCT-03` | Elige un tema. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The theme is not light, dark or system. |
+| `ACCT-03` | Elige un tema. | `src/app/(app)/cuenta/actions.ts` · `validTheme` | The theme sent by Ajustes or the top-bar switch is not light, dark or system. |
 | `ACCT-04` | La contraseña actual no es esa. | `src/app/(app)/cuenta/actions.ts` · `changePassword` | Changing the password with the wrong current password. |
 | `ACCT-05` | La contraseña nueva necesita al menos 8 caracteres. | `src/app/(app)/cuenta/actions.ts` · `changePassword` | New password shorter than 8 characters. |
 | `ACCT-06` | El PIN son exactamente 6 números. | `src/app/(app)/cuenta/actions.ts` · `changePin` | New PIN is not exactly 6 digits. |
@@ -249,6 +250,15 @@ The CSV download route also returns `EXP-01` to `EXP-04` and `EXP-12` as plain t
 |---|---|---|---|
 | `CAM-01` | miDepo no tiene permiso para usar la cámara. Habilítalo en los ajustes del navegador y vuelve a intentar. | `src/components/Camera.tsx` · `Camera` | The user or the browser denied camera access. |
 | `CAM-02` | No se pudo abrir la cámara en este dispositivo. Puedes escribir el código a mano. | `src/components/Camera.tsx` · `Camera` | No camera, no camera API (for example plain HTTP), or the barcode reader failed to load. |
+
+## WIKI: editing the manual
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `WIKI-01` | Esa página del manual no existe. | `src/lib/wiki.ts` · `saveEdit` | Saving a page whose name is not a file in `wiki/`. Only reachable by editing the form by hand. |
+| `WIKI-02` | La página necesita un título: una línea que empiece con # y un espacio. | `src/lib/wiki.ts` · `saveEdit` | The text has no `# Title` line. The editor disables Guardar first and says why. |
+| `WIKI-03` | La página es demasiado larga: el máximo es {max} caracteres. | `src/lib/wiki.ts` · `saveEdit` | The text is over 100,000 characters. The editor disables Guardar first. |
+| `WIKI-04` | Esa página del manual no existe. | `src/lib/wiki.ts` · `restoreOriginal` | Restoring a page whose name is not a file in `wiki/`. Only reachable by editing the form by hand. |
 
 ## CFG: server configuration
 

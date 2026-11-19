@@ -24,14 +24,14 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
             <Avatar person={current.user} className="size-11 lg:size-9 text-base" />
           ) : (
             <span className="grid size-8 place-items-center">
-              <Icon name="account" />
+              <Icon name="settings" />
             </span>
           )}
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">{showCurrent ? current.user.name : "Mi cuenta"}</span>
+            <span className="block truncate font-semibold">{showCurrent ? current.user.name : "Ajustes"}</span>
             {showCurrent && <span className="block truncate text-xs text-muted">{`${ROLE_LABEL[current.user.role]} · ${current.company.name} · en uso`}</span>}
           </span>
-          {showCurrent && <span className="text-sm font-semibold whitespace-nowrap text-accent-text">Mi cuenta</span>}
+          {showCurrent && <span className="text-sm font-semibold whitespace-nowrap text-accent-text">Ajustes</span>}
           <Icon name="arrow" className="size-4 text-muted" />
         </Link>
       )}

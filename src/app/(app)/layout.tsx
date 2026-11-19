@@ -8,6 +8,8 @@ import { Dropdown } from "@/components/Dropdown";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
 import { Hotkeys } from "@/components/Hotkeys";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { saveTheme } from "./cuenta/actions";
 import { counts, orders, receivings, returns } from "@/db/schema";
 import { MENU } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
@@ -41,7 +43,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </form>
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted lg:hidden">{company.name}</span>
 
+          <div className="ml-auto flex items-center gap-1 lg:hidden">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
+          </div>
           <div className="ml-auto hidden items-center gap-1 lg:flex">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
             <Link href="/ayuda" title="Manual · F1: atajos de teclado" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
               <Icon name="help" className="size-5" />
             </Link>
