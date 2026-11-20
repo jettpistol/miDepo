@@ -187,6 +187,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **New button** (`<NewButton>`): "+ Nueva" in the page header, opening a small panel with the form, like Jira's Create.
 - **Always-on tables**: list screens keep their table even when empty, with one `<EmptyRow>` that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
+- **Product cards** (`<ProductCards>`, owner request 2026-11-20): the default view of product lists (Stock, a shelf's contents). A ruled grid, flat like a table: each cell has the list cover (`<Cover>`, 56 × 80 px), title, author, code chip and units. `<ViewSwitch>` (tabs "Tarjetas" / "Lista") changes to the table, whose rows lead with a 40 × 56 px cover; the choice is saved per user. Only product lists get cards; task lists stay tables.
 - **`panel`**: a plain 6px bordered panel, used only around a form or a settings group. Never nested.
 - **Progress**: a 6px progress bar with "12 de 40" beside it; it turns green when complete.
 - Motion: 150ms colour transitions, and a 180ms fade for scan responses. Nothing decorative; reduced-motion is respected.
@@ -196,7 +197,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - Do lead a row with its shelf label when it has one.
 - Do keep the product's Spanish copy (tú, never voseo) and Fierro's vocabulary.
 - Do use tokens for every colour so both themes and any user accent hold.
-- Don't build a screen from a grid of same-size cards or big-number tiles.
+- Don't build a screen from a grid of same-size cards or big-number tiles. The one exception is product cards with covers, and they stay ruled and flat.
 - Don't use rounded corners above 6px, pills for containers, gradients, or coloured side stripes.
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.

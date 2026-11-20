@@ -50,6 +50,8 @@ export const users = pgTable(
     theme: text("theme").$type<"light" | "dark" | "system">().notNull().default("system"),
     /** Interface font, one of the ids in src/lib/fonts.ts. */
     font: text("font").notNull().default("libre-franklin"),
+    /** How product lists are shown: cards with covers, or the compact table. */
+    listView: text("list_view").$type<"cards" | "table">().notNull().default("cards"),
     active: boolean("active").notNull().default(true),
     /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
     photoVersion: integer("photo_version"),
@@ -110,6 +112,8 @@ export const products = pgTable(
     weightGrams: integer("weight_grams").notNull().default(300),
     /** Cover picture (a path under /public or a URL); null when Fierro has none. */
     coverUrl: text("cover_url"),
+    /** null = no thumbnail yet. Changes with every new thumbnail, so the browser does not show the old one. */
+    thumbVersion: integer("thumb_version"),
     active: boolean("active").notNull().default(true),
   },
   (t) => [
@@ -119,6 +123,18 @@ export const products = pgTable(
     index("products_company_id_internal_code_idx").on(t.companyId, t.internalCode),
   ],
 );
+
+/**
+ * Small copy of each cover for lists, made once from `products.cover_url` (src/lib/covers.ts),
+ * so lists never load or resize the original. In its own table so product queries stay light.
+ */
+export const productThumbs = pgTable("product_thumbs", {
+  productId: integer("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
+  /** The cover_url it was made from: a different one means it must be made again. */
+  source: text("source").notNull(),
+  /** WebP, base64. */
+  data: text("data").notNull(),
+});
 
 export const customers = pgTable(
   "customers",

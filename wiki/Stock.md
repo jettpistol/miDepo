@@ -19,6 +19,12 @@ La ficha muestra:
 
 Escribe o escanea el código de la ubicación en el buscador (por ejemplo `A-03-2`) y toca **Ver qué hay**.
 
+## Tarjetas o lista
+
+Los artículos se ven en **Tarjetas**, con la portada, o en **Lista**, una fila por artículo con la portada al principio. Cambia con las pestañas arriba de la lista. La elección se guarda en tu usuario: vale en todos tus dispositivos, en Stock y en cada ubicación.
+
+Las portadas llegan de Fierro al sincronizar. Un artículo sin portada muestra un recuadro vacío.
+
 ## Las zonas especiales
 
 Además de las ubicaciones de estantería, hay seis zonas:
