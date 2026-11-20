@@ -8,6 +8,8 @@ import { products, stock, locations } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
 import { Cover, ProductCards, ViewSwitch } from "@/components/ProductCards";
+import { CodeWithCopy } from "@/components/CopyButton";
+import { ColumnHandle, ResizableTable } from "@/components/ResizableTable";
 import { toggle } from "../actions";
 import { articleName } from "@/lib/article";
 
@@ -46,13 +48,25 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
           {user.listView === "cards" ? (
             <ProductCards items={contents.map(({ s, p }) => ({ product: p, quantity: s.quantity }))} />
           ) : (
-            <div className="max-w-4xl table-wrap">
+            <ResizableTable id="location" className="max-w-5xl table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th className="w-0"><span className="sr-only">Portada</span></th>
-                    <th>Artículo</th>
-                    <th className="hidden sm:table-cell">Código</th>
+                    <th className="w-0">
+                      <span className="sr-only">Portada</span>
+                    </th>
+                    <th>
+                      Artículo
+                      <ColumnHandle />
+                    </th>
+                    <th className="hidden sm:table-cell">
+                      SKU
+                      <ColumnHandle />
+                    </th>
+                    <th className="hidden md:table-cell">
+                      ISBN
+                      <ColumnHandle />
+                    </th>
                     <th className="text-right">Unidades</th>
                   </tr>
                 </thead>
@@ -67,18 +81,19 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
                           {articleName(p.title)}
                         </Link>
                         <span className="mt-0.5 block sm:hidden">
-                          <Code>{p.barcode}</Code>
+                          <Code>{p.internalCode}</Code>
                         </span>
                       </td>
                       <td className="hidden sm:table-cell">
-                        <Code>{p.barcode}</Code>
+                        <CodeWithCopy value={p.internalCode} what="SKU" />
                       </td>
+                      <td className="hidden md:table-cell">{p.isbn ? <CodeWithCopy value={p.isbn} what="ISBN" /> : <span className="text-muted">—</span>}</td>
                       <td className="text-right text-base font-bold tabular-nums">{s.quantity}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ResizableTable>
           )}
         </>
       )}

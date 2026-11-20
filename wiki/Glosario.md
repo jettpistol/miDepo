@@ -6,7 +6,7 @@
 
 **Código de empresa.** Palabra corta que identifica a tu empresa en miDepo. Se escribe una vez en el teléfono para iniciar sesión con PIN.
 
-**Código interno.** Código que el depósito le pone a un artículo. Es el que se escanea cuando no hay ISBN.
+**Código interno.** Ver **SKU**.
 
 **Conciliación.** Comparar el stock del depósito con el de Fierro para encontrar diferencias.
 
@@ -43,6 +43,8 @@
 **Saldo.** Artículo con detalles que se vende con descuento.
 
 **Sincronizar.** Traer de Fierro los artículos, clientes, pedidos y recepciones avisadas nuevas.
+
+**SKU.** El código interno que el depósito le da a cada artículo (por ejemplo `OVN-000022`). Todos tienen uno; es el que se escanea cuando no hay ISBN.
 
 **Ubicación.** Un espacio del depósito con nombre propio: un nivel de un estante o una zona.
 

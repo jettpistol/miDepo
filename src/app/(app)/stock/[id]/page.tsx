@@ -8,11 +8,13 @@ import { fierroStock, movements, products, stock, locations, users, type Movemen
 import { requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
 import { articleName } from "@/lib/article";
+import { CodeWithCopy } from "@/components/CopyButton";
 
 const money = (cents: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(cents / 100);
 const kg = (g: number) => `${(g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
 
 const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Reposición", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
+
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -59,12 +61,14 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 </div>
               ))}
               <div>
-                <dt className="text-sm text-muted">Códigos</dt>
-                <dd className="flex min-h-7 flex-wrap items-center gap-2">
-                  <Code>{p.barcode}</Code>
-                  {p.isbn && p.internalCode !== p.barcode && <Code>{p.internalCode}</Code>}
-                  {!p.isbn && <Badge tone="warn">Sin ISBN</Badge>}
+                <dt className="text-sm text-muted">SKU</dt>
+                <dd className="flex min-h-7 items-center">
+                  <CodeWithCopy value={p.internalCode} what="SKU" />
                 </dd>
+              </div>
+              <div>
+                <dt className="text-sm text-muted">ISBN</dt>
+                <dd className="flex min-h-7 items-center">{p.isbn ? <CodeWithCopy value={p.isbn} what="ISBN" /> : <Badge tone="warn">Sin ISBN</Badge>}</dd>
               </div>
             </dl>
           </div>
