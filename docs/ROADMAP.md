@@ -12,6 +12,21 @@ Where the project stands beyond what the README's "What is not done" lists. Last
 6. **A thin standalone mode** for warehouses without Fierro: CSV import of catalogue and orders, plus a printable delivery note. Designed for, not built.
 7. Smaller: a screen to create companies, password reset, a translation file instead of Spanish text inside the pages, SINLI file import and export, tolerance for short wifi drops, continuous integration and a linter.
 
+## Gaps review against the market research (2026-11-20)
+
+Built from that review: Fierro order changes and cancellations (D40), urgent orders (D41), opening stock load (D46), Mover → Toda la ubicación (D50), damaged on arrival and receiving labels (D53), Despacho (D54), Salidas for fairs and consignment (D55). Batch picking was built separately (D43).
+
+Still missing, roughly in order of value:
+
+1. **Several barcodes per article and cartons.** One barcode per product today: no aliases for reprints or imported editions that share an ISBN, no ITF-14 carton code that counts as N units.
+2. **Returns linked to the order or the consignment they come from.** A return names only the customer.
+3. **Short shipments (saldo pendiente).** An order short-picked ships short and miDepo keeps no pending balance; with Fierro, Fierro may already track it (to ask).
+4. **Replenishment from reserve.** No pick face vs reserve, no min/max per location, no alert when a pick shelf runs low.
+5. **Floor reports.** Picking time per order, mispicks caught, orders per person: the baseline the research's rollout plan measures against.
+6. **Count scheduling.** Counts are started by hand; nothing proposes which shelves to count next.
+7. **Retries after a wifi drop.** Not checked whether a scan resent by the browser after a drop can be recorded twice; idempotency keys would rule it out.
+8. **Standalone mode** (D39): catalogue, customers, orders, remitos and consignment without Fierro.
+
 ## Hardware plan (labels, printers, scanners)
 
 Researched in [hardware/README.md](hardware/README.md), which numbers the owner's six original items as phases; below is the order of work. Each step waits for the owner's go-ahead.
@@ -29,4 +44,7 @@ Researched in [hardware/README.md](hardware/README.md), which numbers the owner'
 - Is there a contact at Fierro, and would they open write access?
 - Real warehouse facts: number of titles, orders per day, staff, whether shelves are labelled, which printers exist. (Demo data assumes 6,000 titles, 80 orders and 8 operators.)
 - Should switching accounts on a shared device ask for the PIN or password? Today it does not.
+- Salidas (D55): is what sells at a fair or a consignment bookstore invoiced in Fierro (so miDepo sends nothing), and should losses at a stand be told apart from sales at closing?
+- Despacho (D54): should loading a box require the remito number? Today only the carrier is required. Is ZPL needed, or does printing the 10 × 15 PDF to the Zebra driver do?
+- Opening stock (D46): should a second load be refused once the warehouse is live, or is loading in parts fine?
 - Stock losses (D19 to D22 in [DECISIONS.md](DECISIONS.md)): should count losses go through FALTANTES first instead of being written off at approval? Are the recount thresholds (5 units or 20%) right for Ovnipress? Should large write-offs need an admin? Today any supervisor approves.
