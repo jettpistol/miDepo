@@ -25,7 +25,9 @@ These came from the owner directly; keep to them unless told otherwise.
   - what the screen already shows: the heading, the column, the document on screen, the icon ("Seguir con PED-1" in a card titled Pedido needs no "este pedido");
   - context the user can work out alone, and explanations of ordinary controls;
   - speech: labels are nouns or short facts ("Sin movimientos", not "No hubo movimientos en estos 7 días").
-  If a word can go without losing meaning, it goes. `tests/copy.test.ts` refuses the openers and fillers; the rest is on you.
+  - confirms for actions that can be undone, and success messages that repeat what the screen now shows ("Guardado." is enough).
+  If a word can go without losing meaning, it goes. `tests/copy.test.ts` refuses the openers and fillers; the rest is on you. This review is required for every text added or changed, by anyone, in any session: see "Copy review" under "Verifying a change".
+- **Options are one to three words.** Dropdown options, tabs and toggles carry no `detail` line unless it states a fact the label cannot; their text must fit the control without truncating at 1440px and 390px. A section heading needs no subtitle ("Para toda la empresa").
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
 - **Notes go in hints, not on the screen.** Why a button is disabled (`reason` on `ActionButton`/`ActionForm`, or `DisabledReason`) and side notes (`InfoHint`, an ⓘ beside a heading or option) open on hover, focus or tap (`src/components/Hint.tsx`). Status notices (`Notice`) and facts the user needs to act stay visible.
 - **Nothing grows without limit on an overview.** Inicio, banners, cards and summaries show a fixed number of rows (Inicio: one "Seguir con…" banner, 5 of your tasks, 8 people) and sum up the rest in one line that links to the full list. Only list screens, which page, show everything. A busy day must never push the overview off the screen.
@@ -112,7 +114,15 @@ npm run db:reset && npm run dev        # in one terminal
 node tests/walkthrough.e2e.js /tmp/shots
 ```
 
-It must end with `NO CONSOLE ERRORS OR 5xx`. Look at screenshots at desktop (1440px) and phone (390px) width; no screen may scroll sideways on a phone.
+It must end with `NO CONSOLE ERRORS OR 5xx`.
+
+**Copy review (required before every push that adds or changes interface text or the manual).** Read every user-visible string in the added lines:
+
+```bash
+git diff origin/main -- src wiki | grep '^+' | grep -v '^+++'
+```
+
+Cut each one against the rules in "Owner's standing preferences" (fewest words, neutral, nothing the screen or the user already knows), then check the screenshots for text that wraps, truncates or overflows its box. Error messages change in `docs/ERRORS.md` in the same commit. Look at screenshots at desktop (1440px) and phone (390px) width; no screen may scroll sideways on a phone.
 
 Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook runs after UI edits). `npx impeccable update` updates it.
 
@@ -121,5 +131,4 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 - Assignment does not lock work (D35); the owner may want an assigned order to be off-limits to others. List screens (Picking, Recepción…) do not show the assignee yet, only detail screens and Inicio.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).
 - The sidebar runs five count queries per page (six with Control on); not measured on a hosted database.
-- Control (D42): no supervisor override of the different-person rule; a small shift turns the rule off in Ajustes instead.
 - See also "What is not done" in `README.md`.

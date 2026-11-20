@@ -11,24 +11,27 @@ import { fierroWarning } from "@/lib/orderState";
 import { hotkey } from "@/lib/hotkeys";
 import { requireSession } from "@/lib/session";
 import { Urgency } from "@/components/Urgency";
+import { SameCheck } from "@/components/SameCheck";
 import { finish, missing, restart, scan } from "../actions";
 
 const picker = alias(users, "picker");
 const controller = alias(users, "controller");
+const allower = alias(users, "allower");
 
 export default async function ControlOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
   const session = await requireSession();
   const { db, company, user } = session;
   const [row] = await db
-    .select({ p: orders, customer: customers.name, pickedBy: picker.name, controlledBy: controller.name })
+    .select({ p: orders, customer: customers.name, pickedBy: picker.name, controlledBy: controller.name, allowedBy: allower.name })
     .from(orders)
     .innerJoin(customers, eq(customers.id, orders.customerId))
     .leftJoin(picker, eq(picker.id, orders.takenBy))
     .leftJoin(controller, eq(controller.id, orders.controlledBy))
+    .leftJoin(allower, eq(allower.id, orders.sameCheckAllowedBy))
     .where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
-  const { p, customer, pickedBy, controlledBy } = row;
+  const { p, customer, pickedBy, controlledBy, allowedBy } = row;
   const lines = await db.select({ l: orderLines, title: products.title }).from(orderLines).innerJoin(products, eq(products.id, orderLines.productId)).where(eq(orderLines.orderId, id)).orderBy(asc(products.title));
   const picked = lines.reduce((s, x) => s + x.l.picked, 0);
   const checked = lines.reduce((s, x) => s + x.l.checked, 0);
@@ -38,23 +41,24 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]} · preparó ${pickedBy ?? "—"}`} back={{ href: "/control", text: "Control" }}>
+      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${pickedBy ? ` · Preparó ${pickedBy}` : ""}`} back={{ href: "/control", text: "Control" }}>
         <Urgency session={session} order={p} />
       </PageHeader>
 
       {(p.status === "pending" || p.status === "in_picking") && (
         <Notice tone="warn">
-          Este pedido todavía está en picking.{" "}
+          En picking.{" "}
           <Link href={`/picking/${id}`} className="font-semibold underline underline-offset-[3px]">
-            Ver el recorrido
+            Ver recorrido
           </Link>
         </Notice>
       )}
       {waiting && fierroWarning(p) && <Notice tone="warn">{fierroWarning(p)}</Notice>}
       {blocked && <Notice tone="warn">{blocked}</Notice>}
+      {waiting && <SameCheck session={session} order={p} picker={pickedBy} allowedBy={allowedBy} what="control" />}
       {!waiting && p.status !== "pending" && p.status !== "in_picking" && (
         <Notice tone="ok">
-          {controlledBy ? `Controlado por ${controlledBy}.` : "Este pedido no pasó por control."}{" "}
+          {controlledBy ? `Controlado por ${controlledBy}.` : "Sin control."}{" "}
           {p.status === "picked" && (
             <Link href={`/empaque/${id}`} className="font-semibold underline underline-offset-[3px]" {...hotkey("primary", "Ir a empacar")}>
               Ir a empacar
@@ -67,15 +71,15 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
         {editable && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <Progress done={checked} total={picked} unit="controladas" />
-            {checked < picked && <ScanForm action={scan} context="control" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo del carro" }]} quantity={1} button="Contar" />}
+            {checked < picked && <ScanForm action={scan} context="control" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo" }]} quantity={1} button="Contar" />}
             {checked === picked && (
               <ActionButton action={finish} hiddenFields={{ id }} className="btn w-full" hotkey="finish">
                 Terminar control
               </ActionButton>
             )}
             {checked > 0 && (
-              <ActionButton action={restart} hiddenFields={{ id }} className="btn-soft w-full" confirm="¿Empezar el control de nuevo? Se borra lo contado hasta ahora." showOk={false}>
-                Empezar de nuevo
+              <ActionButton action={restart} hiddenFields={{ id }} className="btn-soft w-full" confirm="¿Reiniciar? Se borra lo contado." showOk={false}>
+                Reiniciar
               </ActionButton>
             )}
           </div>
@@ -106,7 +110,7 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
                       {editable && (
                         <td className="text-right whitespace-nowrap">
                           {left > 0 && (
-                            <ActionButton action={missing} hiddenFields={{ id, lineId: l.id }} className="btn-sm" confirm={`¿Seguro que en el carro no hay más de "${articleName(title)}"? ${left === 1 ? "La unidad que falta pasa" : `Las ${left} unidades que faltan pasan`} a Faltantes y el pedido sale sin ${left === 1 ? "ella" : "ellas"}.`}>
+                            <ActionButton action={missing} hiddenFields={{ id, lineId: l.id }} className="btn-sm" confirm={`¿${left} de "${articleName(title)}" a Faltantes?`}>
                               No está
                             </ActionButton>
                           )}

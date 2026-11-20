@@ -210,7 +210,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       .innerJoin(orders, eq(orders.id, orderLines.orderId))
       .where(and(eq(orderLines.orderId, Number(v("id"))), eq(orderLines.productId, book.id), eq(orders.companyId, companyId)));
     const left = l ? l.l.picked - l.l.checked : 0;
-    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está entre lo preparado. Devuélvelo a su ubicación.` };
+    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está en el pedido.` };
     else if (left === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}": todo controlado.` };
     else {
       statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} por controlar` };

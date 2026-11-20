@@ -27,7 +27,7 @@ export default async function Control() {
     .where(and(eq(orders.companyId, company.id), eq(orders.status, "to_control")))
     .groupBy(orders.id, customers.name, picker.name)
     .orderBy(desc(orders.urgent), asc(orders.date));
-  const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.takenBy === user.id;
+  const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.sameCheckAllowedBy == null && p.takenBy === user.id;
   const first = rows.findIndex((r) => !mine(r.p));
 
   return (
@@ -69,11 +69,11 @@ export default async function Control() {
                   <td className="hidden sm:table-cell">{pickedBy ?? "—"}</td>
                 <td className="text-right font-semibold">{picked}</td>
                 <td>
-                  {mine(p) ? <Badge>Lo controla otra persona</Badge> : checked > 0 ? <Badge tone="accent">{checked} de {picked}</Badge> : <Badge>Sin empezar</Badge>}
+                  {mine(p) ? <Badge>Otra persona</Badge> : checked > 0 ? <Badge tone="accent">{checked} de {picked}</Badge> : <Badge>Sin empezar</Badge>}
                 </td>
               </tr>
             ))}
-            {rows.length === 0 && <EmptyRow columns={6} title="No hay pedidos esperando control." />}
+            {rows.length === 0 && <EmptyRow columns={6} title="Sin pedidos por controlar" />}
           </tbody>
         </table>
       </div>

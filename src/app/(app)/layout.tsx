@@ -14,18 +14,20 @@ import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { saveTheme } from "./cuenta/actions";
 import { counts, orders, receivings, returns } from "@/db/schema";
 import { menuFor } from "@/lib/menu";
+import { controlInUse } from "@/lib/flows/control";
 import { can, requireSession } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { db, user, company } = await requireSession();
-  const groups = menuFor(user.role, company, can);
+  const controlOn = await controlInUse(db, company);
+  const groups = menuFor(user.role, controlOn, can);
 
   // How much waits in each queue, shown beside it in the sidebar.
   const c = company.id;
   const n = (q: Promise<{ n: number }[]>) => q.then((r) => r[0].n);
   const [toPick, toControl, toReceive, toPack, toReturn, toCount] = await Promise.all([
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), inArray(orders.status, ["pending", "in_picking"])))),
-    company.controlMinUnits == null ? 0 : n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "to_control")))),
+    !controlOn ? 0 : n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "to_control")))),
     n(db.select({ n: count() }).from(receivings).where(and(eq(receivings.companyId, c), inArray(receivings.status, ["pending", "in_progress"])))),
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "picked")))),
     n(db.select({ n: count() }).from(returns).where(and(eq(returns.companyId, c), eq(returns.status, "in_progress")))),

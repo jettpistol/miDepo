@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
-import { boxes, companies, orderLines, orders, pickBatches, stock, pickTasks, locations, users } from "@/db/schema";
+import { boxes, companies, customers, orderLines, orders, pickBatches, stock, pickTasks, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
@@ -122,8 +122,14 @@ async function buildRoute(tx: Executor, companyId: number, orderId: number) {
 async function checkEnd(tx: Executor, orderId: number): Promise<false | "to_control" | "picked"> {
   const [remains] = await tx.select({ id: pickTasks.id }).from(pickTasks).where(and(eq(pickTasks.orderId, orderId), eq(pickTasks.status, "pending"))).limit(1);
   if (remains) return false;
-  const [o] = await tx.select({ companyId: orders.companyId, units: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number) }).from(orders).leftJoin(orderLines, eq(orderLines.orderId, orders.id)).where(eq(orders.id, orderId)).groupBy(orders.id);
-  const next = goesToControl(await settingsOf(tx, o.companyId), o.units) ? "to_control" : "picked";
+  const [o] = await tx
+    .select({ companyId: orders.companyId, always: customers.alwaysControl, units: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number) })
+    .from(orders)
+    .innerJoin(customers, eq(customers.id, orders.customerId))
+    .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
+    .where(eq(orders.id, orderId))
+    .groupBy(orders.id, customers.alwaysControl);
+  const next = goesToControl(await settingsOf(tx, o.companyId), o.units, o.always) ? "to_control" : "picked";
   await tx.update(orders).set({ status: next }).where(and(eq(orders.id, orderId), eq(orders.status, "in_picking")));
   return next;
 }
@@ -225,7 +231,7 @@ export async function releaseOrder(c: Ctx, orderId: number, { anyone = false } =
   const [box] = await c.db.select({ id: boxes.id }).from(boxes).where(eq(boxes.orderId, orderId)).limit(1);
   if (box) throw new UserError("PICK-11", "Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo.");
   return c.db.transaction(async (tx) => {
-    const released = await tx.update(orders).set({ status: "pending", takenBy: null, controlledBy: null, batchId: null, tray: null }).where(and(eq(orders.id, orderId), eq(orders.status, order.status))).returning({ id: orders.id });
+    const released = await tx.update(orders).set({ status: "pending", takenBy: null, controlledBy: null, sameCheckAllowedBy: null, batchId: null, tray: null }).where(and(eq(orders.id, orderId), eq(orders.status, order.status))).returning({ id: orders.id });
     if (released.length === 0) throw new UserError("PICK-12", "El pedido cambió mientras tanto. Recarga la página.");
     const tasks = await tx.select().from(pickTasks).where(eq(pickTasks.orderId, orderId));
     const prep = await zone(tx, c.companyId, "staging");

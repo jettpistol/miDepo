@@ -291,6 +291,38 @@ async function warning(p, field, value) {
   await o.click('button:has-text("Nuevo")'); await o.fill('#name', 'Prueba Recorrido'); await o.fill('#email', 'recorrido@demo.test'); await o.fill('#pin', '345678');
   await o.click('button:has-text("Crear usuario")'); await o.waitForSelector('main td:has-text("Prueba Recorrido")'); step('users: created from + Nuevo');
 
+  // Control step (demo company, before the batch below takes every order): turn it on, pick, control, then back to packing.
+  await o.goto(BASE + '/cuenta#control'); await o.click('#mode'); await o.click('[role=option]:has-text("Pedidos grandes")');
+  await o.fill('#minUnits', '1'); step('settings, 1 unit, before the click → ' + ((await o.$eval('#minUnits', (e) => e.validationMessage)) || fail('1 unit accepted')));
+  await o.click('#mode'); await o.click('[role=option]:has-text("Todos los pedidos")'); await o.click('#control button:has-text("Guardar")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
+  await o.locator('#control').screenshot({ path: `${OUT}/settings.png` });
+  await o.goto(BASE + '/picking'); await o.click('button:text-is("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
+  const ctrlId = o.url().split('/').pop(); const ctrlCodes = {};
+  await o.waitForSelector(STOP);
+  while (await o.$(STOP)) {
+    const shelf = await o.getAttribute('.shelfmark-xl', 'title');
+    const title = (await o.textContent('.bg-accent p.text-lg')).trim(); const code = await o.getAttribute('[data-scan-code]', 'data-scan-code'); ctrlCodes[title] = code;
+    const before = title + shelf; await scan(o, { location: shelf, product: code });
+    await o.waitForFunction((b) => ((document.querySelector('.bg-accent p.text-lg')?.textContent ?? '').trim() + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? '')) !== b || !document.querySelector('section[aria-label="Parada actual"]'), before, { timeout: 15000 });
+  }
+  await o.waitForSelector('a:has-text("Ir a control")'); await o.keyboard.press('F2'); await o.waitForURL(`${BASE}/control/${ctrlId}`); await o.waitForSelector('#scan-product');
+  const ctrlLines = await o.$$eval('table tbody tr', (trs) => trs.map((tr) => ({ title: tr.children[0].textContent.trim(), picked: Number(tr.children[1].textContent) })));
+  let k = 0;
+  for (const l of ctrlLines.filter((l) => l.picked > 0)) { const msg = await scan(o, { product: ctrlCodes[l.title] }, l.picked); if (k++ === 0) { step('  control → ' + msg); await o.screenshot({ path: `${OUT}/control.png`, caret: 'initial' }); } }
+  await o.keyboard.press('F9'); await o.waitForSelector('text=Controlado por'); step('control finished');
+  await o.goto(BASE + '/clientes'); await o.click('main table a[href^="/clientes/"]'); await o.click('button:has-text("Marcar control obligatorio")'); await o.waitForSelector('main header :text-is("Control obligatorio")');
+  await o.screenshot({ path: `${OUT}/customer-control.png`, caret: 'initial' }); step('customer marked for control');
+  await o.goto(BASE + '/cuenta#control'); step('Ajustes lists it: ' + ((await o.$('#control a[href^="/clientes/"]')) ? 'ok' : fail('missing')));
+  await o.goBack(); await o.click('button:has-text("Quitar control obligatorio")'); await o.waitForSelector('button:has-text("Marcar control obligatorio")'); step('customer mark taken off');
+  await o.goto(BASE + '/control'); await o.waitForSelector('text=Sin pedidos por controlar'); await o.screenshot({ path: `${OUT}/control-list.png`, caret: 'initial' });
+  await o.setViewportSize({ width: 390, height: 844 });
+  for (const [path, name] of [['/control', 'm-control-list'], [`/control/${ctrlId}`, 'm-control-done'], ['/cuenta#control', 'm-settings']]) {
+    await o.goto(BASE + path); await o.screenshot({ path: `${OUT}/${name}.png`, fullPage: true, caret: 'initial' });
+    if (await o.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) fail(`${path} scrolls sideways on a phone`);
+  }
+  await o.setViewportSize({ width: 1440, height: 900 });
+  await o.goto(BASE + '/cuenta#control'); await o.click('#mode'); await o.click('[role=option]:has-text("En empaque")'); await o.click('#control button:has-text("Guardar")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
+
   // Batch picking: every pending order in one route, totals per shelf, split into trays
   await o.goto(BASE + '/cuenta#lotes'); await o.click('#lotes button[aria-haspopup=listbox]'); await o.keyboard.type('bandeja'); await o.keyboard.press('Enter');
   await o.click('#lotes button:has-text("Guardar")'); await o.waitForSelector('#lotes [role=status]'); step('batch sorting → ' + (await o.textContent('#lotes [role=status]')).trim());
@@ -330,31 +362,6 @@ async function warning(p, field, value) {
   await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
   step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
 
-  // Control step (demo company, so the Ovnipress circuit above is untouched).: turn it on, pick, control.
-  await o.goto(BASE + '/cuenta#control'); await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, pedidos grandes")');
-  await o.fill('#minUnits', '1'); step('settings, 1 unit, before the click → ' + ((await o.$eval('#minUnits', (e) => e.validationMessage)) || fail('1 unit accepted')));
-  await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, todos los pedidos")'); await o.click('button:has-text("Guardar control")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
-  await o.locator('#control').screenshot({ path: `${OUT}/settings.png` });
-  await o.goto(BASE + '/picking'); await o.click('button:text-is("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
-  const ctrlId = o.url().split('/').pop(); const ctrlCodes = {};
-  await o.waitForSelector(STOP);
-  while (await o.$(STOP)) {
-    const shelf = await o.getAttribute('.shelfmark-xl', 'title');
-    const title = (await o.textContent('.bg-accent p.text-lg')).trim(); const code = await o.getAttribute('[data-scan-code]', 'data-scan-code'); ctrlCodes[title] = code;
-    const before = title + shelf; await scan(o, { location: shelf, product: code });
-    await o.waitForFunction((b) => ((document.querySelector('.bg-accent p.text-lg')?.textContent ?? '').trim() + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? '')) !== b || !document.querySelector('section[aria-label="Parada actual"]'), before, { timeout: 15000 });
-  }
-  await o.waitForSelector('text=Antes de empacar pasa por control'); await o.keyboard.press('F2'); await o.waitForURL(`${BASE}/control/${ctrlId}`); await o.waitForSelector('#scan-product');
-  const ctrlLines = await o.$$eval('table tbody tr', (trs) => trs.map((tr) => ({ title: tr.children[0].textContent.trim(), picked: Number(tr.children[1].textContent) })));
-  let k = 0;
-  for (const l of ctrlLines.filter((l) => l.picked > 0)) { const msg = await scan(o, { product: ctrlCodes[l.title] }, l.picked); if (k++ === 0) { step('  control → ' + msg); await o.screenshot({ path: `${OUT}/control.png`, caret: 'initial' }); } }
-  await o.keyboard.press('F9'); await o.waitForSelector('text=Controlado por'); step('control finished');
-  await o.goto(BASE + '/control'); await o.waitForSelector('text=No hay pedidos esperando control'); await o.screenshot({ path: `${OUT}/control-list.png`, caret: 'initial' });
-  await o.setViewportSize({ width: 390, height: 844 });
-  for (const [path, name] of [['/control', 'm-control-list'], [`/control/${ctrlId}`, 'm-control-done'], ['/cuenta#control', 'm-settings']]) {
-    await o.goto(BASE + path); await o.screenshot({ path: `${OUT}/${name}.png`, fullPage: true, caret: 'initial' });
-    if (await o.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) fail(`${path} scrolls sideways on a phone`);
-  }
   await browser.close();
   console.log(errors.length ? 'ERRORS:\n' + [...new Set(errors)].join('\n') : 'NO CONSOLE ERRORS OR 5xx');
   if (errors.length) process.exit(1);
