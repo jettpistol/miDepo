@@ -1,5 +1,6 @@
 "use client";
 
+import { DisabledReason } from "@/components/Hint";
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Message, type Action } from "@/components/ScanForm";
@@ -229,14 +230,15 @@ export function Editor({ page, markdown: initial, original, edited, outdated, pa
         <form ref={form} action={submitSave} className="contents">
           <input type="hidden" name="page" value={page} />
           <input type="hidden" name="markdown" value={text} />
-          <button className="btn" disabled={saving || Boolean(reason)} {...hotkey("primary", "Guardar")}>
-            {saving ? "Un momento…" : "Guardar"}
-          </button>
+          <DisabledReason reason={reason}>
+            <button className="btn" disabled={saving || Boolean(reason)} {...hotkey("primary", "Guardar")}>
+              {saving ? "Un momento…" : "Guardar"}
+            </button>
+          </DisabledReason>
         </form>
         <Link href={`/ayuda/${page}`} className="btn-soft" {...hotkey("back", "Cancelar")}>
           Cancelar
         </Link>
-        {reason && <span className="text-sm text-muted">{reason}</span>}
         <span className="ml-auto text-xs text-muted tabular-nums">{`${text.length.toLocaleString("es-AR")} caracteres`}</span>
         {edited && (
           <form
@@ -312,14 +314,15 @@ function LinkPanel({ pages, label: initialLabel, onInsert, onCancel }: { pages: 
         />
       </div>
       <div className="flex gap-2">
-        <button type="button" className="btn" disabled={Boolean(reason)} onClick={() => onInsert(finalLabel, href)}>
-          Insertar
-        </button>
+        <DisabledReason reason={reason}>
+          <button type="button" className="btn" disabled={Boolean(reason)} onClick={() => onInsert(finalLabel, href)}>
+            Insertar
+          </button>
+        </DisabledReason>
         <button type="button" className="btn-soft" onClick={onCancel}>
           Cancelar
         </button>
       </div>
-      {reason && <p className="text-sm text-muted sm:col-span-4">{reason}</p>}
     </div>
   );
 }
