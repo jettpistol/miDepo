@@ -19,7 +19,7 @@ Arriba a la derecha, al lado de tu nombre o tu foto, hay un botón con un sol, u
 
 Tu foto aparece en el menú, en la lista de usuarios y cuando alguien cambia de cuenta en un equipo compartido. Ayuda a ver de un vistazo **quién está en uso**.
 
-Para cambiarla, toca **Cambiar foto**. Para volver a las iniciales, toca **Quitar foto**. Sin foto, se muestran tus iniciales sobre tu color.
+Para cambiarla, toca **Cambiar foto**. Para volver a las iniciales, toca **Quitar foto**. Sin foto, se muestran tus iniciales sobre tu color. Si no elegiste un color, miDepo asigna uno de la paleta a cada persona, para distinguir a todos de un vistazo.
 
 Usa una foto donde se te reconozca. Un administrador puede quitar una foto que no corresponda.
 

@@ -25,6 +25,12 @@ Los artículos se ven en **Lista**, una fila por artículo con la portada al pri
 
 Las portadas llegan de Fierro al sincronizar. Un artículo sin portada muestra un recuadro vacío.
 
+## Columnas de la lista
+
+La lista muestra el **SKU** y el **ISBN** de cada artículo. El botón al lado de cada uno lo copia al portapapeles.
+
+En la computadora, arrastra el borde derecho del título de una columna para hacerla más ancha o más angosta. El ancho se guarda en ese navegador. Doble clic en el borde vuelve al ancho automático.
+
 ## Las zonas especiales
 
 Además de las ubicaciones de estantería, hay seis zonas:
@@ -40,4 +46,4 @@ Además de las ubicaciones de estantería, hay seis zonas:
 
 ## Artículos sin ISBN
 
-Las grapas, las portadas variantes y los packs no tienen ISBN. Llevan un **código interno** (por ejemplo `OVN-001824`) y aparecen marcados **Sin ISBN**. Se buscan y se escanean igual, con la etiqueta que les pone el depósito. Ver [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas).
+Todos los artículos tienen un **SKU**, el código interno del depósito (por ejemplo `OVN-001824`). Las grapas, las portadas variantes y los packs no tienen ISBN: aparecen marcados **Sin ISBN** y se identifican por el SKU. Se buscan y se escanean igual, con la etiqueta que les pone el depósito. Ver [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas).

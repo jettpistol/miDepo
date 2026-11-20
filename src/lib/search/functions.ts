@@ -64,7 +64,7 @@ const more: Feature[] = [
   { title: "Traer novedades de Fierro", path: ["Fierro"], href: "/fierro#traer", icon: "fierro", words: "sincronizar actualizar catalogo pedidos", minRole: "supervisor" },
   { title: "Documentos para cargar en Fierro", path: ["Fierro"], href: "/fierro#cargar", icon: "download", words: "exportar csv enviar informar", minRole: "supervisor" },
   { title: "Conciliación con Fierro", path: ["Fierro", "Conciliación"], href: "/fierro/conciliacion", icon: "fierro", words: "diferencias comparar stock conciliar", minRole: "supervisor" },
-  { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nuevo", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
+  { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nueva", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
   // Settings: sections of Ajustes.
   { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },
   { title: "Color de acento", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "colores tema personalizar" },

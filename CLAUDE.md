@@ -62,7 +62,7 @@ src/app/(print)/          A4 print layouts (labels, packing list).
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
                           /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
 src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
-src/components/           ScanForm (scan fields + live check), Select, NewButton, Hint, ProductCards (cover cards +
+src/components/           ScanForm (scan fields + live check), Select, NewButton, RowMenu (⋯ row options), Hint, ProductCards (cover cards +
                           view switch), ListTools (Pager, FilterTabs) and LiveSearch for paged lists, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
 src/lib/search/           The top search (src/components/GlobalSearch.tsx, /api/search): functions.ts lists

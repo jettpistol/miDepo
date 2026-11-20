@@ -3,21 +3,22 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
+import { focusQuietly } from "@/lib/quiet-focus";
 
 /** Stock search: results appear as you type, without pressing the button. */
 export function StockSearch({ initial }: { initial: string }) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   return (
-    <form className="field-group mb-6" role="search" action="/stock">
+    <form className="field-group search-box mb-6" role="search" action="/stock">
       <input
         name="q"
         type="search"
         defaultValue={initial}
         className="field"
-        placeholder="Nombre, autor, ISBN, código o ubicación"
+        placeholder="Nombre, autor, ISBN, SKU o ubicación"
         aria-label="Buscar"
-        autoFocus
+        ref={(el) => { if (el && !el.dataset.opened) { el.dataset.opened = "1"; focusQuietly(el); } }}
         autoComplete="off"
         onChange={(e) => {
           const q = e.target.value.trim();
