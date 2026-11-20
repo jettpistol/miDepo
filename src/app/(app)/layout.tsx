@@ -59,7 +59,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   <span className="block text-xs text-muted">{ROLE_LABEL[user.role]}</span>
                 </span>
               </summary>
-              <div className="absolute top-full right-0 mt-1.5 w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
+              <div className="absolute top-full right-0 mt-1.5 w-max max-w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
                 <Accounts />
               </div>
             </Dropdown>

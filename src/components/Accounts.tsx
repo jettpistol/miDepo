@@ -14,7 +14,7 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
   const accounts = await openAccounts();
   const others = accounts.filter((c) => !c.active);
   const current = accounts.find((c) => c.active);
-  const row = "flex w-full cursor-pointer items-center gap-3 rounded-control px-2.5 py-2 text-left text-sm font-medium text-ink transition-colors duration-150 hover:bg-sunken";
+  const row = "flex w-full cursor-pointer items-center gap-3 rounded-control px-2.5 py-2 text-left text-sm whitespace-nowrap font-medium text-ink transition-colors duration-150 hover:bg-sunken";
 
   return (
     <div className="space-y-1">
@@ -32,7 +32,7 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
             {showCurrent && <span className="block truncate text-xs text-muted">{`${ROLE_LABEL[current.user.role]} · ${current.company.name} · en uso`}</span>}
           </span>
           {showCurrent && <span className="text-sm font-semibold whitespace-nowrap text-accent-text">Ajustes</span>}
-          <Icon name="arrow" className="size-4 text-muted" />
+          {showCurrent && <Icon name="arrow" className="size-4 text-muted" />}
         </Link>
       )}
       {others.length > 0 && <p className="px-2.5 pt-2 text-[13px] font-bold text-muted">Cambiar a</p>}
