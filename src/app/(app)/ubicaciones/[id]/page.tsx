@@ -7,7 +7,7 @@ import { Code, PageHeader, Badge, ShelfMark } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
-import { ProductCards, ViewSwitch } from "@/components/ProductCards";
+import { Cover, ProductCards, ViewSwitch } from "@/components/ProductCards";
 import { toggle } from "../actions";
 import { articleName } from "@/lib/article";
 
@@ -50,6 +50,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th className="w-0"><span className="sr-only">Portada</span></th>
                     <th>Artículo</th>
                     <th className="hidden sm:table-cell">Código</th>
                     <th className="text-right">Unidades</th>
@@ -58,6 +59,9 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
                 <tbody>
                   {contents.map(({ s, p }) => (
                     <tr key={p.id}>
+                      <td className="w-0 py-1.5! pr-0!">
+                        <Cover productId={p.id} version={p.thumbVersion} className="h-14 w-10" />
+                      </td>
                       <td>
                         <Link href={`/stock/${p.id}`} className="link">
                           {articleName(p.title)}

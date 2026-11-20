@@ -5,7 +5,7 @@ import { Code, PageHeader, Badge, ShelfMark, EmptyRow } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { containsText } from "@/lib/lookup";
 import { requireSession } from "@/lib/session";
-import { ProductCards, ViewSwitch } from "@/components/ProductCards";
+import { Cover, ProductCards, ViewSwitch } from "@/components/ProductCards";
 import { StockSearch } from "./StockSearch";
 import { articleName } from "@/lib/article";
 
@@ -76,6 +76,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
           <table className="data-table">
             <thead>
               <tr>
+                <th className="w-0"><span className="sr-only">Portada</span></th>
                 <th>Artículo</th>
                 <th className="hidden md:table-cell">Autor</th>
                 <th className="hidden sm:table-cell">Código</th>
@@ -84,12 +85,15 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
             </thead>
             <tbody>
               {found.length === 0 && (
-                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}>
+                <EmptyRow columns={5} title={q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}>
                   {q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}
                 </EmptyRow>
               )}
               {found.map((p) => (
                 <tr key={p.id}>
+                  <td className="w-0 py-1.5! pr-0!">
+                    <Cover productId={p.id} version={p.thumbVersion} className="h-14 w-10" />
+                  </td>
                   <td>
                     <Link href={`/stock/${p.id}`} className="link">
                       {articleName(p.title)}

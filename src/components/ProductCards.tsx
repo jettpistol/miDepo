@@ -11,7 +11,7 @@ export type ListView = "cards" | "table";
 export function Cover({ productId, version, className = "h-20 w-14" }: { productId: number; version: number | null; className?: string }) {
   if (!version) return <span aria-hidden="true" className={`block shrink-0 rounded-label border border-line bg-sunken ${className}`} />;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={`/api/cover/${productId}?v=${version}`} alt="" width={56} height={80} loading="lazy" decoding="async" className={`block shrink-0 rounded-label border border-line bg-sunken object-cover ${className}`} />;
+  return <img src={`/api/cover/${productId}?v=${version}`} alt="" width={56} height={80} loading="lazy" decoding="async" className={`block max-w-none shrink-0 rounded-label border border-line bg-sunken object-cover ${className}`} />;
 }
 
 /** Underlined tabs that switch every product list between cards and table, for this person. */
