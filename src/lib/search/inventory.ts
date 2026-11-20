@@ -23,6 +23,7 @@ const ORDER: Record<OrderStatus, { label: string; screen: "picking" | "empaque" 
   picked: { label: "por empacar", screen: "empaque" },
   packed: { label: "empacado", screen: "empaque" },
   shipped: { label: "despachado", screen: "empaque" },
+  cancelled: { label: "anulado", screen: "picking" },
 };
 const RECEIVING = { pending: "por recibir", in_progress: "en curso", closed: "cerrada" } as const;
 const RETURN = { in_progress: "en curso", closed: "cerrada" } as const;

@@ -6,8 +6,8 @@ import { Icon } from "./Icon";
 
 export type Option = { value: string; label: string; detail?: string };
 
-/** How many matches are drawn at once; typing narrows the rest. */
-const VISIBLE = 150;
+/** Rows drawn above and below the visible part of the list. Every match stays reachable by scrolling. */
+const OVERSCAN = 8;
 
 /**
  * Dropdown drawn by miDepo, not the system: opens a list with a search box that stays focused,
@@ -72,8 +72,15 @@ export function Select({
   const matches = useMemo(() => (q ? indexed.filter((o) => q.split(" ").every((w) => o.key.includes(w))) : indexed), [indexed, q]);
   // Creating is offered only when nothing on the list matches, so near-copies are picked instead of made.
   const canCreate = Boolean(create) && q.length >= 2 && matches.length === 0;
-  const rows = matches.length > VISIBLE ? matches.slice(0, VISIBLE) : matches;
+  const rows = matches;
   const total = rows.length + (canCreate ? 1 : 0);
+
+  // Only the rows in view are in the page, so long lists (thousands of products) stay fast without a cap.
+  const [scroll, setScroll] = useState(0);
+  const [viewH, setViewH] = useState(320);
+  const [rowH, setRowH] = useState(32);
+  const first = Math.max(0, Math.floor(scroll / rowH) - OVERSCAN);
+  const last = Math.min(rows.length, Math.ceil((scroll + viewH) / rowH) + OVERSCAN);
 
   // Closes on an outside click, like any menu.
   useEffect(() => {
@@ -86,15 +93,33 @@ export function Select({
   // The required check lives on a hidden copy of the value so the browser can explain it at the trigger.
   useEffect(() => proxy.current?.setCustomValidity(required && !value ? requiredMessage : ""), [required, value, requiredMessage]);
 
+  // Measures one row (its height differs between phone and desktop) and the list's height.
   useEffect(() => {
-    list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
-  }, [active]);
+    if (!open || !list.current) return;
+    const row = list.current.querySelector<HTMLElement>('[role="option"]');
+    if (row && row.offsetHeight) setRowH(row.offsetHeight);
+    setViewH(list.current.clientHeight || 320);
+  }, [open, rows.length]);
+
+  // Keeps the active row in view, also when it is not drawn yet.
+  useEffect(() => {
+    const el = list.current;
+    if (!open || !el) return;
+    if (active >= rows.length) {
+      el.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    const top = active * rowH;
+    if (top < el.scrollTop) el.scrollTop = top;
+    else if (top + rowH > el.scrollTop + el.clientHeight) el.scrollTop = top + rowH - el.clientHeight + 8;
+  }, [active, open, rowH, rows.length]);
 
   function show() {
     setQuery("");
     setError(null);
     setConfirming(false);
     setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    setScroll(0);
     setOpen(true);
     requestAnimationFrame(() => search.current?.focus());
   }
@@ -168,6 +193,8 @@ export function Select({
               onChange={(e) => {
                 setQuery(e.target.value);
                 setActive(0);
+                setScroll(0);
+                if (list.current) list.current.scrollTop = 0;
                 setError(null);
                 setConfirming(false);
               }}
@@ -188,24 +215,31 @@ export function Select({
               className="h-9 w-full rounded-control border border-transparent bg-sunken pr-2 pl-8 text-base outline-none placeholder:text-muted focus:border-accent-text lg:h-8 lg:text-sm"
             />
           </div>
-          <ul ref={list} id={`${auto}-list`} role="listbox" aria-label={label ?? placeholder} className="max-h-64 overflow-y-auto py-1">
-            {rows.map((o, i) => (
-              <li
-                key={o.value}
-                id={`${auto}-opt-${i}`}
-                data-index={i}
-                role="option"
-                aria-selected={o.value === value}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => choose(o.value)}
-                onMouseEnter={() => setActive(i)}
-                className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-[15px] lg:py-1.5 lg:text-sm ${i === active ? "bg-accent-soft" : ""}`}
-              >
-                <span className={`min-w-0 flex-1 truncate ${o.value === value ? "font-semibold text-accent-text" : ""}`}>{o.label}</span>
-                {o.detail && <span className="shrink-0 truncate text-xs text-muted">{o.detail}</span>}
-                {o.value === value && <Icon name="ok" className="size-4 shrink-0 text-accent-text" />}
-              </li>
-            ))}
+          <ul ref={list} id={`${auto}-list`} role="listbox" aria-label={label ?? placeholder} onScroll={(e) => setScroll(e.currentTarget.scrollTop)} className="max-h-[min(20rem,50vh)] overflow-y-auto py-1">
+            {first > 0 && <li aria-hidden="true" role="presentation" style={{ height: first * rowH }} />}
+            {rows.slice(first, last).map((o, n) => {
+              const i = first + n;
+              return (
+                <li
+                  key={o.value}
+                  id={`${auto}-opt-${i}`}
+                  data-index={i}
+                  role="option"
+                  aria-selected={o.value === value}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => choose(o.value)}
+                  onMouseEnter={() => setActive(i)}
+                  aria-setsize={rows.length}
+                  aria-posinset={i + 1}
+                  className={`flex h-11 cursor-pointer items-center gap-2 px-3 text-[15px] lg:h-8 lg:text-sm ${i === active ? "bg-accent-soft" : ""}`}
+                >
+                  <span className={`min-w-0 flex-1 truncate ${o.value === value ? "font-semibold text-accent-text" : ""}`}>{o.label}</span>
+                  {o.detail && <span className="shrink-0 truncate text-xs text-muted">{o.detail}</span>}
+                  {o.value === value && <Icon name="ok" className="size-4 shrink-0 text-accent-text" />}
+                </li>
+              );
+            })}
+            {last < rows.length && <li aria-hidden="true" role="presentation" style={{ height: (rows.length - last) * rowH }} />}
             {canCreate && (
               <li
                 id={`${auto}-opt-${rows.length}`}
@@ -238,7 +272,6 @@ export function Select({
             )}
             {total === 0 && <li className="px-3 py-2 text-sm text-muted">{empty}</li>}
           </ul>
-          {matches.length > VISIBLE && <p className="border-t border-line px-3 py-1.5 text-xs text-muted">Se muestran {VISIBLE} de {matches.length}. Escribe para reducir la lista.</p>}
           {error && (
             <p role="alert" className="border-t border-line px-3 py-2 text-sm font-medium text-danger">
               {error}
