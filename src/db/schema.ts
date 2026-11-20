@@ -30,6 +30,8 @@ export const companies = pgTable("companies", {
   simTitles: integer("sim_titles").notNull().default(500),
   simCustomers: integer("sim_customers").notNull().default(60),
   lastSync: timestamp("last_sync", { withTimezone: true }),
+  /** How a picking batch is split into orders: at packing, or into one tray per order while picking. */
+  batchSorting: text("batch_sorting").$type<BatchSorting>().notNull().default("packing"),
   /**
    * Control step between picking and packing (Ajustes). null = no separate step: packing is the
    * control, since it scans every unit again. N = orders with at least N picked units go to Control.
@@ -39,6 +41,8 @@ export const companies = pgTable("companies", {
   samePersonChecks: boolean("same_person_checks").notNull().default(true),
   createdAt: createdAt(),
 });
+
+export type BatchSorting = "packing" | "trays";
 
 export type Role = "operator" | "supervisor" | "admin";
 
@@ -238,6 +242,26 @@ export const movements = pgTable(
 
 // ───────────── Outbound: orders, picking and boxes ─────────────
 
+/**
+ * A picking batch (lote): several orders picked in one walk. The route asks for the total of each
+ * title per shelf; the units are split into orders at packing or, with trays, while picking.
+ */
+export const pickBatches = pgTable(
+  "pick_batches",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** Shown as LOTE-0001, counted per company. */
+    number: integer("number").notNull(),
+    takenBy: integer("taken_by").notNull().references(() => users.id),
+    /** The company's setting when the batch was made; changing the setting does not change open batches. */
+    sorting: text("sorting").$type<BatchSorting>().notNull(),
+    status: text("status").$type<"open" | "done">().notNull().default("open"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("pick_batches_company_id_number_idx").on(t.companyId, t.number)],
+);
+
 /** to_control: picked, waiting for the Control step (only when the company has it on). picked: ready to pack.
  * "cancelled": no longer pending in Fierro before anyone started it. It comes back if Fierro lists it again. */
 export type OrderStatus = "pending" | "in_picking" | "to_control" | "picked" | "packed" | "shipped" | "cancelled";
@@ -257,6 +281,10 @@ export const orders = pgTable(
     status: text("status").$type<OrderStatus>().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
     takenBy: integer("taken_by").references(() => users.id),
+    /** The picking batch it was taken in, if any. */
+    batchId: integer("batch_id").references(() => pickBatches.id),
+    /** In a batch sorted into trays: the tray number for this order (1, 2, 3…). */
+    tray: integer("tray"),
     /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
     assignedTo: integer("assigned_to").references(() => users.id),
     /** Who finished the Control step (null if the order did not go through it). */

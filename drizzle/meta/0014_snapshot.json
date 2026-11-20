@@ -1,5 +1,5 @@
 {
-  "id": "e9b3a866-41ca-4c71-8086-27ca3fff5cec",
+  "id": "6e162a45-cfe8-4eed-946e-574dd925f62b",
   "prevId": "bb203bc9-f7c9-4966-a22b-46625f9d8c71",
   "version": "7",
   "dialect": "postgresql",
@@ -475,6 +475,13 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "batch_sorting": {
+          "name": "batch_sorting",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'packing'"
         },
         "control_min_units": {
           "name": "control_min_units",
@@ -1430,6 +1437,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tray": {
+          "name": "tray",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "assigned_to": {
           "name": "assigned_to",
           "type": "integer",
@@ -1559,6 +1578,19 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+        "orders_batch_id_pick_batches_id_fk": {
+          "name": "orders_batch_id_pick_batches_id_fk",
+          "tableFrom": "orders",
+          "tableTo": "pick_batches",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "orders_assigned_to_users_id_fk": {
           "name": "orders_assigned_to_users_id_fk",
           "tableFrom": "orders",
@@ -1668,6 +1700,112 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pick_batches": {
+      "name": "pick_batches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taken_by": {
+          "name": "taken_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sorting": {
+          "name": "sorting",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pick_batches_company_id_number_idx": {
+          "name": "pick_batches_company_id_number_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pick_batches_company_id_companies_id_fk": {
+          "name": "pick_batches_company_id_companies_id_fk",
+          "tableFrom": "pick_batches",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pick_batches_taken_by_users_id_fk": {
+          "name": "pick_batches_taken_by_users_id_fk",
+          "tableFrom": "pick_batches",
+          "tableTo": "users",
+          "columnsFrom": [
+            "taken_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -2623,123 +2761,6 @@
           ]
         }
       },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.stock_loads": {
-      "name": "stock_loads",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "company_id": {
-          "name": "company_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "number": {
-          "name": "number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "file_name": {
-          "name": "file_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lines": {
-          "name": "lines",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "units": {
-          "name": "units",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "undone_at": {
-          "name": "undone_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "stock_loads_company_id_number_idx": {
-          "name": "stock_loads_company_id_number_idx",
-          "columns": [
-            {
-              "expression": "company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "number",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "stock_loads_company_id_companies_id_fk": {
-          "name": "stock_loads_company_id_companies_id_fk",
-          "tableFrom": "stock_loads",
-          "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "stock_loads_created_by_users_id_fk": {
-          "name": "stock_loads_created_by_users_id_fk",
-          "tableFrom": "stock_loads",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
