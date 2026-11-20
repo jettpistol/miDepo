@@ -10,9 +10,12 @@ Where the project stands beyond what the README's "What is not done" lists. Last
 4. **Audit company isolation.** Companies share one database and every query must filter by company. A few paths are covered by tests; there has been no systematic audit of every screen and action.
 5. **A real Fierro connector** behind `FierroConnector`. Start read-only (the B2B API for catalogue and availability, or the "acceso a datos" views for stock and sales) and keep CSV for write-back. The CSV layouts for orders, receipts, returns and write-offs are guesses; only the count export follows a format Fierro documents.
 6. **A thin standalone mode** for warehouses without Fierro: CSV import of catalogue and orders, plus a printable delivery note. Designed for, not built.
-7. Smaller: a screen to create companies, password reset, a translation file instead of Spanish text inside the pages, SINLI file import and export, tolerance for short wifi drops, continuous integration and a linter.
+7. **Comments on more documents.** The table and component are generic; each screen is a few lines (see D25 in [DECISIONS.md](DECISIONS.md)). Most useful first: receivings (what the supplier got wrong, a damaged carton), returns (why the customer returned it), count shelves (why a shelf differs, read by the supervisor before approving), adjustments (the story behind a write-off) and products ("comes shrink-wrapped, do not open"). Waiting for the owner to pick.
+8. Smaller: a screen to create companies, password reset, a translation file instead of Spanish text inside the pages, SINLI file import and export, tolerance for short wifi drops, continuous integration and a linter.
 
 ## Questions only the owner can answer
+
+- Comments (D25): which documents should take them next? Are 5 minutes to edit and 2,000 characters right? Should anyone be told when a comment is left (a count in the sidebar, mentions)?
 
 - Does Ovnipress really use Fierro's orders and "cajas y despachos" screens, or only invoice? (Assumed orders yes, boxes no.)
 - Is there a contact at Fierro, and would they open write access?

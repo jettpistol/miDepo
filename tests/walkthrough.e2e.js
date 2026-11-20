@@ -20,7 +20,8 @@ async function scan(p, values, quantity) {
   for (const [name, v] of Object.entries(values)) { await p.fill(`#scan-${name}`, v); await p.press(`#scan-${name}`, 'Enter'); }
   await reply;
   // If that was the last item, the form disappears together with its message.
-  await p.waitForFunction(() => !document.querySelector('form button[disabled]'), null, { timeout: 15000 });
+  // (A comment box's button stays off while the box is empty: it is not a scan form.)
+  await p.waitForFunction(() => !document.querySelector('form:not([data-comment-form]) button[disabled]'), null, { timeout: 15000 });
   await p.waitForTimeout(150);
   return ((await p.$('[role=status]')) ? await p.textContent('[role=status]') : '(list empty)').trim().slice(0, 140);
 }
@@ -86,6 +87,21 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/picking'); await shot('picking-list');
   await p.click('button:has-text("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector('text=Próxima parada');
   const orderId = p.url().split('/').pop(); await shot('picking-stop');
+
+  // Comments on the order: post, reply, fix a slip; the count shows in the list and the header
+  const box = 'textarea[placeholder="Escribe un comentario"]';
+  step('empty comment, before the click → button ' + ((await p.isDisabled('button:has-text("Comentar")')) ? 'off' : fail('button on with an empty box')));
+  await p.fill(box, 'El cliente pidió todo en una sola caja'); await p.press(box, 'Control+Enter');
+  await p.waitForSelector('#comentarios article:has-text("una sola caja")');
+  const replyBox = 'textarea[placeholder^="Responder a"]';
+  await p.click('#comentarios button:has-text("Responder")'); await p.fill(replyBox, 'Entra justo'); await p.press(replyBox, 'Control+Enter');
+  await p.waitForSelector('#comentarios .border-l-2 article:has-text("Entra justo")');
+  await p.click('#comentarios .border-l-2 button:has-text("Editar")'); await p.fill('#comentarios .border-l-2 textarea', 'Entra justo, con relleno'); await p.press('#comentarios .border-l-2 textarea', 'Control+Enter');
+  await p.waitForSelector('#comentarios article:has-text("(editado)")'); step('comment, reply and edit → ' + (await p.$$('#comentarios article')).length + ' comments');
+  await p.reload(); step('header link → ' + (await p.textContent('a[href="#comentarios"]')).trim());
+  await p.locator('#comentarios').scrollIntoViewIfNeeded(); await shot('comments');
+  await p.goto(BASE + '/picking'); step('list count → ' + ((await p.$(`tr:has(a[href="/picking/${orderId}"]) [title="2 comentarios"]`)) ? 'shown' : fail('no count in the list')));
+  await p.goto(`${BASE}/picking/${orderId}`); await p.waitForSelector('text=Próxima parada');
   const codes = {}; let stops = 0, first = true;
   const stopKey = () => p.evaluate(() => (document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? ''));
   while (await p.$('text=Próxima parada')) {

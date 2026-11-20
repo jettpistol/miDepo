@@ -43,6 +43,10 @@ Las unidades que no estaban pasan de ese estante a la zona **FALTANTES**: así e
 
 Cuando no quedan paradas, miDepo avisa **Picking terminado**. Lleva todo a la mesa de empaque y toca **Ir a empacar**, o deja que lo empaque otra persona desde [Empaque](Empaque).
 
+## Comentarios
+
+Al final de la pantalla del pedido puedes dejar un comentario para quien lo empaque o para tu supervisor, y leer los que ya tiene. Mira [Comentarios](Comentarios).
+
 ## Preguntas frecuentes
 
 **¿Puedo dejar un pedido por la mitad?** Sí. Queda guardado y en Inicio aparece **Seguir con PED-…**.

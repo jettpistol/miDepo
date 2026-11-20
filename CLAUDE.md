@@ -57,6 +57,8 @@ src/app/(print)/          A4 print layouts (labels, packing list).
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/.
 src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
+src/components/comments/  Comments on any document: <Comments> on its screen, <CommentCount> in
+                          its list. Rules in src/lib/flows/comments.ts (kinds in SUBJECTS).
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
                           buttons with hotkey("primary") etc.; F1 lists what is marked.
 src/app/globals.css       Design tokens and component classes (btn, field, data-table…).

@@ -5,7 +5,7 @@ process.env.PGLITE_DIR = "memory://";
 delete process.env.DATABASE_URL;
 
 import { getDb, runMigrations, type DB } from "@/db";
-import { adjustmentLines, adjustments, boxes, companies, fierroStock, movements, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
+import { adjustmentLines, adjustments, boxes, comments, companies, fierroStock, movements, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
 import { createCompany, createUser } from "@/db/seed";
 import { sync } from "@/lib/fierro";
 import { UserError } from "@/lib/errors";
@@ -20,6 +20,7 @@ import { closeReturn, createReturn, scanReturn } from "@/lib/flows/returns";
 import { closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
 import { writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
+import { addComment, commentCounts, deleteComment, editComment, EDIT_WINDOW_MS, threadsOf } from "@/lib/flows/comments";
 
 let db: DB;
 let c: Ctx;
@@ -326,6 +327,62 @@ describe("suppliers", () => {
     expect(foreign).toBeDefined();
     await expect(createUnannouncedReceiving(c, foreign.id)).rejects.toBeInstanceOf(UserError);
     expect(u.companyId).toBe(e.id);
+  });
+});
+
+describe("comments", () => {
+  it("threads replies one level deep, counts them and refuses empty or foreign ones", async () => {
+    const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
+    const colleague = await createUser(db, c.companyId, { name: "Compañera", email: "companera@prueba.test", role: "operator", password: "long-password" });
+    const other: Ctx = { ...c, userId: colleague.id };
+
+    const root = await addComment(c, { subjectType: "order", subjectId: order.id, body: "  El cliente pidió que vaya en una sola caja.\r\n " });
+    expect(root.body).toBe("El cliente pidió que vaya en una sola caja.");
+    const reply = await addComment(other, { subjectType: "order", subjectId: order.id, body: "Entra justo.", parentId: root.id });
+    // Answering a reply answers its thread: no second level.
+    const nested = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Gracias.", parentId: reply.id });
+    expect(nested.parentId).toBe(root.id);
+
+    const threads = await threadsOf(db, c.companyId, "order", order.id);
+    expect(threads).toHaveLength(1);
+    expect(threads[0].replies.map((r) => r.body)).toEqual(["Entra justo.", "Gracias."]);
+    expect((await commentCounts(db, c.companyId, "order", [order.id])).get(order.id)).toBe(3);
+
+    await expect(addComment(c, { subjectType: "order", subjectId: order.id, body: "   " })).rejects.toThrow(/Escribe el comentario/);
+    await expect(addComment(c, { subjectType: "order", subjectId: order.id, body: "x".repeat(2001) })).rejects.toThrow(/demasiado largo/);
+    await expect(addComment(c, { subjectType: "receipt", subjectId: order.id, body: "Hola" })).rejects.toThrow(/No se encontró dónde/);
+    await expect(addComment(c, { subjectType: "order", subjectId: 999999, body: "Hola" })).rejects.toThrow(/No se encontró dónde/);
+    const { e, u } = await buildCompany("Comenta SA", "comenta", 13);
+    const stranger: Ctx = { db, companyId: e.id, userId: u.id };
+    await expect(addComment(stranger, { subjectType: "order", subjectId: order.id, body: "Hola" })).rejects.toThrow(/No se encontró dónde/);
+    const [own] = await db.select().from(orders).where(eq(orders.companyId, e.id)).limit(1);
+    await expect(addComment(stranger, { subjectType: "order", subjectId: own.id, body: "Hola", parentId: root.id })).rejects.toThrow(/No se encontró ese comentario/);
+    await expect(editComment(stranger, root.id, "Cambiado")).rejects.toThrow(/No se encontró ese comentario/);
+  });
+
+  it("lets only the author edit or delete, only for a few minutes, and never a thread with replies", async () => {
+    const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
+    const [colleague] = await db.select().from(comments).where(and(eq(comments.companyId, c.companyId), sql`${comments.authorId} <> ${c.userId}`)).limit(1);
+    const other: Ctx = { ...c, userId: colleague.authorId };
+
+    const slip = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Faltna dos" });
+    await expect(editComment(other, slip.id, "Faltan tres")).rejects.toThrow(/Solo quien escribió/);
+    await editComment(c, slip.id, "Faltan dos");
+    const [edited] = await db.select().from(comments).where(eq(comments.id, slip.id));
+    expect(edited.body).toBe("Faltan dos");
+    expect(edited.editedAt).not.toBeNull();
+
+    await addComment(other, { subjectType: "order", subjectId: order.id, body: "¿De cuál?", parentId: slip.id });
+    await expect(deleteComment(c, slip.id)).rejects.toThrow(/ya tiene respuestas/);
+
+    const old = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Revisado." });
+    await db.update(comments).set({ createdAt: new Date(Date.now() - EDIT_WINDOW_MS - 1000) }).where(eq(comments.id, old.id));
+    await expect(editComment(c, old.id, "Revisado y cerrado.")).rejects.toThrow(/más de 5 minutos/);
+    await expect(deleteComment(c, old.id)).rejects.toThrow(/más de 5 minutos/);
+
+    const mistake = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Pedido equivocado" });
+    await deleteComment(c, mistake.id);
+    expect(await db.select().from(comments).where(eq(comments.id, mistake.id))).toHaveLength(0);
   });
 });
 

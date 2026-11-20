@@ -6,6 +6,8 @@ import { customers, orderLines, orders, pickTasks, locations, users } from "@/db
 import type { requireSession } from "@/lib/session";
 import { take } from "./actions";
 import { hotkey } from "@/lib/hotkeys";
+import { CommentCount } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 
 type Db = Awaited<ReturnType<typeof requireSession>>["db"];
 
@@ -42,7 +44,11 @@ export async function loadOpenOrders(db: Db, companyId: number) {
       .groupBy(pickTasks.orderId);
     for (const x of stops) nextShelf.set(x.orderId, x.code);
   }
-  return { inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null })), pending };
+  const notes = await commentCounts(db, companyId, "order", rows.map((f) => f.p.id));
+  return {
+    inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null, comments: notes.get(f.p.id) })),
+    pending: pending.map((f) => ({ ...f, comments: notes.get(f.p.id) })),
+  };
 }
 
 type OpenOrders = Awaited<ReturnType<typeof loadOpenOrders>>;
@@ -61,14 +67,15 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, customer, takenBy, units, picked, nextShelf }) => (
+          {rows.map(({ p, customer, takenBy, units, picked, nextShelf, comments }) => (
             <tr key={p.id} className={p.takenBy === userId ? "bg-accent-soft" : ""}>
               <td>{nextShelf ? <ShelfMark code={nextShelf} size="md" /> : <Badge tone="ok">Recorrido terminado</Badge>}</td>
               <td>
                 {/* F2 carries on with your own order first (it is marked earlier on the page than "Preparar"). */}
                 <Link href={`/picking/${p.id}`} className="link doc-number" {...(p.id === rows.find((r) => r.p.takenBy === userId)?.p.id ? hotkey("primary", `Seguir con el pedido ${p.number}`) : {})}>
                   {p.number}
-                </Link>
+                </Link>{" "}
+                <CommentCount n={comments} />
                 <span className="block max-w-40 truncate text-muted sm:max-w-64">{customer}</span>
                 <span className="block text-muted sm:hidden">
                   {picked} de {units} · {p.takenBy === userId ? "tú" : (takenBy ?? "otra persona")}
@@ -102,12 +109,13 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, customer, city, lines, units }, i) => (
+          {rows.map(({ p, customer, city, lines, units, comments }, i) => (
             <tr key={p.id}>
               <td>
                 <Link href={`/picking/${p.id}`} className="link doc-number">
                   {p.number}
-                </Link>
+                </Link>{" "}
+                <CommentCount n={comments} />
               </td>
               <td>
                 <span className="font-medium">{customer}</span>

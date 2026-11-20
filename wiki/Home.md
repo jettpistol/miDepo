@@ -19,6 +19,8 @@ miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la p
 | Cambiar libros de lugar | **Mover** | [Mover](Mover) |
 | Saber dónde está un título | **Stock** | [Stock](Stock) |
 
+Los pedidos tienen [Comentarios](Comentarios) para dejar avisos a quien siga con ellos.
+
 ## Para supervisores y administradores
 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas): ponerle nombre a los estantes e imprimir sus carteles.

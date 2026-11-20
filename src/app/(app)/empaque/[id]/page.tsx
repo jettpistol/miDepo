@@ -6,16 +6,19 @@ import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { Comments, CommentsLink } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { close, scan, finish, empty } from "../actions";
 
 const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 });
 
 export default async function PackingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const { db, company, user } = await requireSession();
   const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
+  const commentCount = (await commentCounts(db, company.id, "order", [id])).get(id);
   const lines = await db.select({ l: orderLines, title: products.title }).from(orderLines).innerJoin(products, eq(products.id, orderLines.productId)).where(eq(orderLines.orderId, id)).orderBy(asc(products.title));
   const ofOrder = await db.select().from(boxes).where(eq(boxes.orderId, id)).orderBy(asc(boxes.number));
   const items = ofOrder.length
@@ -40,6 +43,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
             </Link>
           </>
         )}
+        {commentCount ? <CommentsLink n={commentCount} /> : null}
       </PageHeader>
 
       {!editable && !ready && (
@@ -139,6 +143,9 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
             </div>
           </section>
         </div>
+      </div>
+      <div className="mt-8 lg:mt-6">
+        <Comments db={db} companyId={company.id} userId={user.id} subjectType="order" subjectId={id} />
       </div>
     </>
   );

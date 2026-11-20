@@ -29,6 +29,10 @@ Con al menos una caja cerrada aparecen dos botones:
 - **"… no está entre lo preparado para el pedido":** ese libro no es de este pedido. Sepáralo y avisa.
 - **"Ya empacaste todas las unidades de …":** sobra un libro. Vuelve a contar la caja.
 
+## Comentarios
+
+Los comentarios que se dejaron en el picking están al final de la pantalla. Si el pedido tiene alguno, arriba aparece el botón **N comentarios**. Mira [Comentarios](Comentarios).
+
 ## Qué pasa después
 
 El pedido queda **empacado** y le aparece al supervisor en **Fierro**, para documentarlo. Los libros siguen contando como stock del depósito hasta que la oficina lo marca como cargado: recién ahí salen.

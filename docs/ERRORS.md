@@ -28,6 +28,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
+| `CMT` | Comments on documents (today: orders, in Picking and Empaque) |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
 | `CFG` | Server configuration (environment variables) |
@@ -222,6 +223,18 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `ADJ-03` | Ese título no está en el catálogo. | `src/lib/flows/adjustments.ts` · `writeOff` | The title does not exist or belongs to another company. Only reachable by editing the form. |
 
 Writing off more units than the zone holds is refused by `STK-03`.
+
+## CMT: comments
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `CMT-01` | Escribe el comentario. | `src/lib/flows/comments.ts` · `cleanBody` | Sending or saving an empty comment. The button is off while the box is empty, so only reachable by editing the form. |
+| `CMT-02` | El comentario es demasiado largo: el máximo es {max} caracteres. | `src/lib/flows/comments.ts` · `cleanBody` | More than 2,000 characters. The box counts down from 200 left and turns the button off past the limit. |
+| `CMT-03` | No se encontró dónde dejar el comentario. | `src/lib/flows/comments.ts` · `addComment` | The document does not exist, belongs to another company, or is of a kind that takes no comments. Only reachable by editing the form. |
+| `CMT-04` | No se encontró ese comentario. Puede que lo hayan borrado. | `src/lib/flows/comments.ts` · `addComment`, `ownRecent` | Replying to, editing or deleting a comment that was deleted meanwhile (or is another company's or another document's). |
+| `CMT-05` | Solo quien escribió el comentario puede cambiarlo. | `src/lib/flows/comments.ts` · `ownRecent` | Editing or deleting someone else's comment. The buttons only appear on your own, so only reachable by editing the form. |
+| `CMT-06` | Pasaron más de 5 minutos: el comentario ya no se puede cambiar. Puedes responderlo con la corrección. | `src/lib/flows/comments.ts` · `ownRecent` | Saving an edit or deleting after the 5-minute window (the buttons disappear when it ends, but an edit box left open can still be sent). |
+| `CMT-07` | Ese comentario ya tiene respuestas: no se puede borrar. Puedes editarlo. | `src/lib/flows/comments.ts` · `deleteComment` | Deleting a thread's first comment after someone replied. The button is hidden then, so it only happens when a reply arrives while the page is open. |
 
 ## EXP: Fierro documents
 

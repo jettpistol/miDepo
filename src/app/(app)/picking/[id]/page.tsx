@@ -6,15 +6,18 @@ import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge, ShelfMark } from "@/components/ui";
 import { customers, orderLines, orders, products, pickTasks, locations } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { Comments, CommentsLink } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { confirm, shortage, take } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 
 export default async function PickingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const { db, company, user } = await requireSession();
   const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
+  const commentCount = (await commentCounts(db, company.id, "order", [id])).get(id);
   const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, id));
   const tasks = await db
     .select({ t: pickTasks, title: products.title, code: products.barcode, location: locations.code })
@@ -35,6 +38,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
     <>
       <PageHeader title={`Pedido ${p.number}`} subtitle={customer} back={{ href: "/picking", text: "Picking" }}>
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
+        {commentCount ? <CommentsLink n={commentCount} /> : null}
       </PageHeader>
 
       {p.status === "pending" ? (
@@ -139,6 +143,9 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
           </div>
         </div>
       )}
+      <div className="mt-8 lg:mt-6">
+        <Comments db={db} companyId={company.id} userId={user.id} subjectType="order" subjectId={id} />
+      </div>
     </>
   );
 }

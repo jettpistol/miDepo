@@ -4,6 +4,8 @@ import { PageHeader, Badge, plural, EmptyState } from "@/components/ui";
 import { customers, orderLines, orders } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { hotkey } from "@/lib/hotkeys";
+import { CommentCount } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 
 export const metadata = { title: "Empaque" };
 
@@ -23,6 +25,7 @@ export default async function Packing() {
     .where(and(eq(orders.companyId, company.id), eq(orders.status, "picked")))
     .groupBy(orders.id, customers.name)
     .orderBy(asc(orders.date));
+  const notes = await commentCounts(db, company.id, "order", rows.map((r) => r.p.id));
 
   return (
     <>
@@ -49,7 +52,8 @@ export default async function Packing() {
                   <td>
                     <Link href={`/empaque/${p.id}`} className="link doc-number" {...(i === 0 ? hotkey("primary", `Empacar ${p.number}`) : {})}>
                       {p.number}
-                    </Link>
+                    </Link>{" "}
+                    <CommentCount n={notes.get(p.id)} />
                   </td>
                   <td>
                     <span className="font-medium">{customer}</span>
