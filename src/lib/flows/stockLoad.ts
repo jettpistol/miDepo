@@ -7,7 +7,7 @@ import { nextNumber, type Ctx } from "./common";
 
 /**
  * The opening stock load: what is already on the shelves on the day a warehouse starts with
- * miDepo, read from a spreadsheet saved as CSV. See D44 in docs/DECISIONS.md.
+ * miDepo, read from a spreadsheet saved as CSV. See "Opening stock is loaded from a file" in docs/DECISIONS.md.
  *
  * Columns: code (barcode, ISBN or SKU), quantity, location. A header row is optional and may name
  * them in Spanish or English in any order; the separator may be comma, semicolon or tab.
