@@ -39,9 +39,10 @@ export function OrdersTable({ rows, showCustomer = true, empty, comments }: { ro
             </EmptyRow>
           )}
           {rows.map(({ o, customer, units }) => (
-            <tr key={o.id}>
+            // The order number's link covers the whole row; the customer link sits above it.
+            <tr key={o.id} className="relative cursor-pointer">
               <td>
-                <Link href={`/${orderScreen(o.status)}/${o.id}`} className="link doc-number">
+                <Link href={`/${orderScreen(o.status)}/${o.id}`} className="link doc-number after:absolute after:inset-0">
                   {o.number}
                 </Link>{" "}
                 <CommentCount n={comments?.get(o.id)} />
@@ -49,7 +50,7 @@ export function OrdersTable({ rows, showCustomer = true, empty, comments }: { ro
               </td>
               {showCustomer && (
                 <td>
-                  <Link href={`/clientes/${o.customerId}`} className="font-medium hover:text-accent-text hover:underline">
+                  <Link href={`/clientes/${o.customerId}`} className="relative z-10 font-medium hover:text-accent-text hover:underline">
                     {customer}
                   </Link>
                   <span className="block text-muted sm:hidden">
