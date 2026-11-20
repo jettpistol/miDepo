@@ -328,6 +328,17 @@ h3 {
   .btn-icon {
     @apply inline-flex size-11 cursor-pointer items-center justify-center rounded-control text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink aria-expanded:bg-sunken aria-expanded:text-ink lg:size-7;
   }
+  /* Copy a code beside it (SKU, ISBN). */
+  .btn-copy {
+    @apply inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-label text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink lg:size-6;
+  }
+  /* Drag handle at the right edge of a resizable table's header (ResizableTable). */
+  .data-table th:has(> .column-handle) {
+    @apply relative;
+  }
+  .column-handle {
+    @apply absolute top-0 -right-1 bottom-0 z-10 hidden w-2 cursor-col-resize after:absolute after:inset-y-1.5 after:left-1/2 after:w-px after:bg-line-strong after:opacity-0 after:transition-opacity hover:after:opacity-100 lg:block;
+  }
   /* One option in a row menu. */
   .menu-item {
     @apply flex min-h-11 w-full cursor-pointer items-center px-3 text-left text-[15px] text-ink transition-colors duration-150 hover:bg-sunken disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-8 lg:text-sm;
@@ -427,4 +438,10 @@ h3 {
 }
 .manual-index a {
   @apply block rounded-control px-2 py-1 font-medium no-underline hover:bg-sunken;
+}
+
+/* While a column is being dragged wider or thinner. */
+body.resizing-columns {
+  cursor: col-resize;
+  user-select: none;
 }

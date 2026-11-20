@@ -35,7 +35,7 @@ export function ViewSwitch({ view }: { view: ListView }) {
 }
 
 export type CardItem = {
-  product: { id: number; title: string; author: string | null; barcode: string; thumbVersion: number | null };
+  product: { id: number; title: string; author: string | null; internalCode: string; thumbVersion: number | null };
   quantity: number;
   /** Badges after the title (type of product). */
   extra?: ReactNode;
@@ -56,7 +56,7 @@ export function ProductCards({ items, empty }: { items: CardItem[]; empty?: Reac
             {p.author && <span className="truncate text-sm text-muted lg:text-xs">{p.author}</span>}
             <span className="mt-auto flex items-end justify-between gap-2 pt-1">
               <span className="flex min-w-0 flex-wrap items-center gap-1">
-                <Code>{p.barcode}</Code>
+                <Code>{p.internalCode}</Code>
                 {extra}
               </span>
               <span className={`text-base leading-none font-bold tabular-nums ${quantity ? "" : "text-muted/60"}`} >
