@@ -12,15 +12,15 @@ import { UserError } from "@/lib/errors";
 import { moveStock, zone } from "@/lib/stock";
 import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
 import type { Ctx } from "@/lib/flows/common";
-import { closeReceiving, createSupplier, createUnannouncedReceiving, scanReceiving } from "@/lib/flows/receiving";
-import { move } from "@/lib/flows/move";
-import { confirmPick, markShort, takeOrder } from "@/lib/flows/picking";
-import { closeBox, scanIntoBox, finishPacking } from "@/lib/flows/packing";
+import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving } from "@/lib/flows/receiving";
+import { move, recentMoves, undoMove } from "@/lib/flows/move";
+import { confirmPick, markShort, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
+import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenPacking } from "@/lib/flows/packing";
+import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } from "@/lib/flows/returns";
+import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
 import { checkUnit, finishControl, reportMissing, restartControl } from "@/lib/flows/control";
 import { saveControlSettings } from "@/lib/flows/settings";
-import { closeReturn, createReturn, scanReturn } from "@/lib/flows/returns";
-import { closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
-import { writeOff } from "@/lib/flows/adjustments";
+import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
 import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
@@ -409,6 +409,7 @@ describe("control before packing", () => {
 
   beforeAll(async () => {
     const { e, u } = await buildCompany("Control SA", "control", 13);
+    await simulateNews(db, e, "orders", 4);
     const second = await createUser(db, e.id, { name: "Segunda", email: "segunda-control@prueba.test", role: "operator", password: "long-password" });
     picker = { db, companyId: e.id, userId: u.id };
     checker = { db, companyId: e.id, userId: second.id };
@@ -473,6 +474,33 @@ describe("control before packing", () => {
     await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).resolves.toBeTruthy();
   });
 
+  it("undoing the picking of an order in Control sends it back to picking, and its count starts over", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: true });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await pickAll(picker, ord.id);
+    // One unit of the first article is not in the cart: it goes to FALTANTES and off the route.
+    for (const l of lines.slice(1)) await checkUnit(checker, ord.id, prods.get(l.productId)!.barcode, l.picked);
+    if (lines[0].picked > 1) await checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].picked - 1);
+    await reportMissing(checker, ord.id, lines[0].id);
+    const staging = await zone(db, picker.companyId, "staging");
+    const routeUnits = async () => (await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id))).reduce((s, t) => s + t.picked, 0);
+    const lineUnits = async () => (await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))).reduce((s, l) => s + l.picked, 0);
+    expect(await routeUnits()).toBe(await lineUnits());
+
+    const [done] = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.lineId, lines[1].id)));
+    await unpick(picker, done.id);
+    const back = await status(ord.id);
+    expect(back.status).toBe("in_picking");
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))).every((l) => l.checked === 0)).toBe(true);
+
+    // Dropping it returns exactly what is in Preparación: nothing left behind, nothing missing.
+    const before = await Promise.all(lines.map((l) => atLocation(l.productId, staging.id)));
+    await releaseOrder(picker, ord.id);
+    const after = await Promise.all(lines.map((l) => atLocation(l.productId, staging.id)));
+    expect(after.every((n, i) => n <= before[i] && n >= 0)).toBe(true);
+    expect((await status(ord.id)).status).toBe("pending");
+  });
+
   it("turning the step off sends waiting orders to packing", async () => {
     await saveControlSettings(picker, { mode: "all", samePerson: true });
     const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
@@ -500,5 +528,145 @@ describe("several companies", () => {
     const r = await simulateNews(db, company, "orders", 4);
     expect(r.newOrders).toBe(4);
     expect((await db.select().from(orders).where(eq(orders.companyId, c.companyId))).length).toBe(before + 4);
+  });
+});
+
+describe("going back", () => {
+  let u: Ctx;
+  let prods: Map<number, typeof products.$inferSelect>;
+  const shelf = async (code: string) => (await db.select().from(locations).where(and(eq(locations.companyId, u.companyId), eq(locations.code, code))))[0];
+
+  beforeAll(async () => {
+    const { e, u: user } = await buildCompany("Deshacer SA", "deshacer", 21);
+    u = { db, companyId: e.id, userId: user.id };
+    prods = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.id, p]));
+  });
+
+  it("an order can be dropped half picked: units go back to their shelf and it returns to Pendientes", async () => {
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, u.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id));
+    const a1 = await shelf("A-01-1");
+    const a2 = await shelf("A-01-2");
+    for (const l of lines) await moveStock(db, { companyId: u.companyId, productId: l.productId, fromId: null, toId: a1.id, quantity: l.quantity, reason: "initial" });
+    // The first title also has a spare unit elsewhere, so a shortage report finds it.
+    await moveStock(db, { companyId: u.companyId, productId: lines[0].productId, fromId: null, toId: a2.id, quantity: lines[0].quantity, reason: "initial" });
+
+    await takeOrder(u, ord.id);
+    const tasks = await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id)).orderBy(asc(pickTasks.id));
+    const [t0, t1] = tasks;
+    await confirmPick(u, { taskId: t0.id, location: "A-01-1", product: prods.get(t0.productId)!.barcode, quantity: t0.quantity });
+    expect(await atLocation(t0.productId, a1.id)).toBe(0);
+
+    // Undo one pick: the stop is pending again and the units are back.
+    expect(await unpick(u, t0.id)).toMatch(/A-01-1/);
+    expect(await atLocation(t0.productId, a1.id)).toBe(t0.quantity);
+    await expect(unpick(u, t0.id)).rejects.toThrow(/todavía no se tomó/);
+
+    // "Not here", then "it was there after all": the units leave FALTANTES and the extra stop goes.
+    const missingZone = await zone(db, u.companyId, "missing");
+    expect(await markShort(u, t0.id)).toMatch(/otra ubicación/i);
+    expect(await atLocation(t0.productId, missingZone.id)).toBe(t0.quantity);
+    expect((await db.select().from(pickTasks).where(eq(pickTasks.replacesTaskId, t0.id))).length).toBe(1);
+    await undoShort(u, t0.id);
+    expect(await atLocation(t0.productId, missingZone.id)).toBe(0);
+    expect(await atLocation(t0.productId, a1.id)).toBe(t0.quantity);
+    expect((await db.select().from(pickTasks).where(eq(pickTasks.replacesTaskId, t0.id))).length).toBe(0);
+    expect((await db.select().from(pickTasks).where(eq(pickTasks.id, t0.id)))[0].status).toBe("pending");
+
+    // Somebody else cannot drop it; its picker can.
+    if (t1) await confirmPick(u, { taskId: t1.id, location: "A-01-1", product: prods.get(t1.productId)!.barcode, quantity: 1 });
+    await expect(releaseOrder({ ...u, userId: u.userId + 999 }, ord.id)).rejects.toThrow(/Solo esa persona/);
+    expect(await releaseOrder(u, ord.id)).toMatch(/vuelve a Pendientes/);
+    const [after] = await db.select().from(orders).where(eq(orders.id, ord.id));
+    expect(after.status).toBe("pending");
+    expect(after.takenBy).toBeNull();
+    expect(await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id))).toHaveLength(0);
+    for (const l of lines) expect((await db.select().from(orderLines).where(eq(orderLines.id, l.id)))[0].picked).toBe(0);
+    expect(await atLocation(lines[0].productId, a1.id)).toBe(lines[0].quantity);
+    await expect(releaseOrder(u, ord.id)).rejects.toThrow(/Nadie está preparando/);
+  });
+
+  it("packing can be gone back over until the order is loaded in Fierro", async () => {
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, u.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await takeOrder(u, ord.id);
+    const tasks = await db.select({ t: pickTasks, code: locations.code }).from(pickTasks).innerJoin(locations, eq(locations.id, pickTasks.locationId)).where(eq(pickTasks.orderId, ord.id));
+    for (const { t, code } of tasks) await confirmPick(u, { taskId: t.id, location: code, product: prods.get(t.productId)!.barcode, quantity: t.quantity });
+    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id));
+    await scanIntoBox(u, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].quantity);
+    const [box] = await db.select().from(boxes).where(eq(boxes.orderId, ord.id));
+    await expect(releaseOrder(u, ord.id)).rejects.toThrow(/cajas armadas/);
+    await expect(unpick(u, tasks.find((x) => x.t.productId === lines[0].productId)!.t.id)).rejects.toThrow(/en una caja/);
+    await removeFromBox(u, box.id, lines[0].productId);
+    expect((await db.select().from(orderLines).where(eq(orderLines.id, lines[0].id)))[0].packed).toBe(0);
+    for (const l of lines) await scanIntoBox(u, ord.id, prods.get(l.productId)!.barcode, l.quantity);
+    await closeBox(u, box.id);
+    await reopenBox(u, box.id);
+    await closeBox(u, box.id);
+    await finishPacking(u, ord.id);
+    await reopenPacking(u, ord.id);
+    expect((await db.select().from(orders).where(eq(orders.id, ord.id)))[0].status).toBe("picked");
+    await finishPacking(u, ord.id);
+    const [e] = await db.select().from(companies).where(eq(companies.id, u.companyId));
+    await markSent(u, e, "order", ord.id);
+    await expect(reopenPacking(u, ord.id)).rejects.toThrow(/No se puede reabrir/);
+  });
+
+  it("a receiving or a return can be cancelled while open and reopened while its units have not moved", async () => {
+    const [sup] = await db.select().from(suppliers).where(eq(suppliers.companyId, u.companyId)).limit(1);
+    const id = await createUnannouncedReceiving(u, sup.id);
+    const [r] = await db.select().from(receivings).where(eq(receivings.id, id));
+    expect(await cancelReceiving(u, id)).toMatch(/cancelada/);
+    // The next one gets the same number: nothing ever shares one.
+    const id2 = await createUnannouncedReceiving(u, sup.id);
+    expect((await db.select().from(receivings).where(eq(receivings.id, id2)))[0].number).toBe(r.number);
+    const p = [...prods.values()][5];
+    await scanReceiving(u, id2, p.barcode, 3);
+    await closeReceiving(u, id2);
+    const dock = await zone(db, u.companyId, "receiving");
+    const before = await atLocation(p.id, dock.id);
+    await move(u, { source: "RECEPCION", product: p.barcode, destination: "A-02-1", quantity: 1 });
+    await expect(reopenReceiving(u, id2)).rejects.toThrow(/ya se guardó/);
+    // Undo that move, then the receiving reopens and its units leave.
+    const [m] = await recentMoves(db, u.companyId, u.userId);
+    await undoMove(u, m.id);
+    await expect(undoMove(u, m.id)).rejects.toThrow(/ya se deshizo/);
+    expect((await recentMoves(db, u.companyId, u.userId))[0].undone).toBe(true);
+    await reopenReceiving(u, id2);
+    expect(await atLocation(p.id, dock.id)).toBe(before - 3);
+
+    const [cust] = await db.select().from(orders).where(eq(orders.companyId, u.companyId)).limit(1);
+    const ret = await createReturn(u, cust.customerId);
+    await scanReturn(u, ret, p.barcode, "damaged", 2);
+    await closeReturn(u, ret);
+    await reopenReturn(u, ret);
+    const damaged = await zone(db, u.companyId, "damaged");
+    expect(await atLocation(p.id, damaged.id)).toBe(0);
+    await cancelReturn(u, ret);
+  });
+
+  it("a write-off from Bajas can be undone until Fierro hears of it; a count can be cancelled while open", async () => {
+    const damaged = await zone(db, u.companyId, "damaged");
+    const p = [...prods.values()][7];
+    await moveStock(db, { companyId: u.companyId, productId: p.id, fromId: null, toId: damaged.id, quantity: 2, reason: "initial" });
+    await writeOff(u, { locationId: damaged.id, productId: p.id, quantity: 2, cause: "damage" });
+    const [a] = await db.select().from(adjustments).where(eq(adjustments.companyId, u.companyId)).orderBy(sql`${adjustments.id} desc`).limit(1);
+    await undoWriteOff(u, a.id);
+    expect(await atLocation(p.id, damaged.id)).toBe(2);
+    await writeOff(u, { locationId: damaged.id, productId: p.id, quantity: 1, cause: "damage" });
+    const [b] = await db.select().from(adjustments).where(eq(adjustments.companyId, u.companyId)).orderBy(sql`${adjustments.id} desc`).limit(1);
+    expect(b.number).toBe(a.number);
+    const [e] = await db.select().from(companies).where(eq(companies.id, u.companyId));
+    await markSent(u, e, "adjustment", b.id);
+    await expect(undoWriteOff(u, b.id)).rejects.toThrow(/ya se cargó/);
+
+    const k = await createCount(u, "Prueba", "A-01");
+    expect(await cancelCount(u, k)).toMatch(/cancelado/);
+  });
+
+  it("a supplier created by mistake can be deleted while nothing uses it", async () => {
+    const s = await createSupplier(u, "Distribuidora Equivocada");
+    expect(await deleteSupplier(u, s.id)).toMatch(/borrado/);
+    const [fromFierro] = await db.select().from(suppliers).where(and(eq(suppliers.companyId, u.companyId), sql`${suppliers.createdBy} is null`)).limit(1);
+    await expect(deleteSupplier(u, fromFierro.id)).rejects.toThrow(/Fierro/);
   });
 });

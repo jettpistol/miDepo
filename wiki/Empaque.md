@@ -27,7 +27,9 @@ Con al menos una caja cerrada aparecen dos botones:
 
 ## Si te equivocaste
 
-- **Pusiste un artículo en la caja equivocada:** mientras la caja esté abierta, toca **Vaciar** y vuelve a escanear lo que va.
+- **Pusiste un artículo en la caja equivocada:** mientras la caja esté abierta, toca **Sacar** en esa línea (vuelve a "por empacar") o **Vaciar** para sacar todo, y vuelve a escanear lo que va.
+- **Cerraste una caja antes de tiempo:** toca **Reabrir** en esa caja. Solo puede haber una caja abierta: cierra la otra primero.
+- **Terminaste el pedido y falta algo:** toca **Reabrir empaque** en el aviso verde. Se puede mientras no esté cargado en Fierro; después ya salió del depósito.
 - **"… no está entre lo preparado para el pedido":** ese artículo no es de este pedido. Sepáralo y avisa.
 - **"Ya empacaste todas las unidades de …":** sobra un artículo. Vuelve a contar la caja.
 

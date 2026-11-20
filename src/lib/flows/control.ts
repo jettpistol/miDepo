@@ -1,6 +1,6 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
-import { companies, orderLines, orders } from "@/db/schema";
+import { companies, orderLines, orders, pickTasks } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
@@ -83,6 +83,14 @@ export async function reportMissing(c: Ctx, orderId: number, lineId: number) {
     const [from, to] = [await zone(tx, c.companyId, "staging"), await zone(tx, c.companyId, "missing")];
     await moveStock(tx, { companyId: c.companyId, productId: line.productId, fromId: from.id, toId: to.id, quantity: missing, reason: "missing", reference: order.number, userId: c.userId });
     await tx.update(orderLines).set({ picked: line.checked }).where(eq(orderLines.id, line.id));
+    // The route says what is in Preparación: take the units off its stops too, so undoing the picking later returns only what is there.
+    let left = missing;
+    for (const t of await tx.select().from(pickTasks).where(and(eq(pickTasks.lineId, line.id), gt(pickTasks.picked, 0))).orderBy(desc(pickTasks.id))) {
+      if (left === 0) break;
+      const off = Math.min(t.picked, left);
+      await tx.update(pickTasks).set({ picked: t.picked - off }).where(eq(pickTasks.id, t.id));
+      left -= off;
+    }
   });
   return `Anotado: ${missing === 1 ? "1 unidad queda" : `${missing} unidades quedan`} como faltante.`;
 }

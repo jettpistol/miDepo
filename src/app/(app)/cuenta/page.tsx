@@ -32,7 +32,7 @@ export default async function Account() {
             <div className="flex flex-wrap items-start gap-2">
               <Photo action={savePhoto} has={Boolean(user.photoVersion)} />
               {user.photoVersion && (
-                <ActionButton action={removePhoto} className="btn-soft" showOk={false}>
+                <ActionButton action={removePhoto} className="btn-soft" showOk={false} confirm="¿Quitar tu foto? No se puede deshacer; puedes subir otra cuando quieras.">
                   Quitar foto
                 </ActionButton>
               )}
@@ -57,7 +57,7 @@ export default async function Account() {
                     <span>
                       <span className="font-semibold">{l.name}</span> <span className="text-sm text-muted">· registrada el {shortDate(l.createdAt)}</span>
                     </span>
-                    <ActionButton action={removePasskey} hiddenFields={{ id: l.id }} className="cursor-pointer rounded-control text-sm font-semibold text-danger underline decoration-danger/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-danger disabled:opacity-55" confirm="¿Quitar esta llave? Ese dispositivo tendrá que iniciar sesión con contraseña o PIN." showOk={false}>
+                    <ActionButton action={removePasskey} hiddenFields={{ id: l.id }} className="cursor-pointer rounded-control text-sm font-semibold text-danger underline decoration-danger/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-danger disabled:opacity-55" confirm="¿Quitar esta llave? No se puede deshacer: para volver a usarla hay que registrarla de nuevo. Ese dispositivo tendrá que iniciar sesión con contraseña o PIN." showOk={false}>
                       Quitar
                     </ActionButton>
                   </li>

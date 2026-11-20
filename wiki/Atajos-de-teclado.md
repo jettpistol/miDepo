@@ -35,7 +35,7 @@ Cada tecla hace lo mismo en todas las pantallas que la usan.
 | **F4** | Poner la cantidad sugerida | "Todas: 60" |
 | **F6** | Cambiar el estado del artículo | En una devolución: Vendible → Dañado → Saldo |
 | **F7** | Poner la ubicación sugerida | "Está en A-01-1", "Ubicación actual A-03-2" |
-| **F8** | La otra acción de la pantalla | Picking: No está en la ubicación · Empaque: Cerrar caja · Conteo: Terminar esta ubicación · Reposición: cambiar entre Recepción y Devoluciones |
+| **F8** | La otra acción de la pantalla | Picking: No está aquí · Empaque: Cerrar caja · Conteo: Terminar esta ubicación · Reposición: cambiar entre Recepción y Devoluciones |
 | **F9** | Terminar la tarea | Cerrar recepción · Cerrar devolución · Terminar pedido · Aprobar el conteo |
 | **F10** | Nueva | Nueva recepción, Nueva devolución |
 | **Esc** | Borrar lo escaneado y empezar de nuevo | |

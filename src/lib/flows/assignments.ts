@@ -22,7 +22,7 @@ async function target(c: Ctx, kind: AssignKind, id: number) {
   switch (kind) {
     case "order": {
       const [o] = await c.db.select().from(orders).where(mine(orders));
-      return o && { save, label: `Pedido ${o.number}`, open: ["pending", "in_picking", "picked"].includes(o.status) };
+      return o && { save, label: `Pedido ${o.number}`, open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
     }
     case "receiving": {
       const [r] = await c.db.select().from(receivings).where(mine(receivings));

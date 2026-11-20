@@ -34,4 +34,6 @@ Si cargaste mal una línea, toca **Quitar** y escanéala de nuevo con el estado 
 
 Las devoluciones cerradas quedan en **Cerradas**, abajo en Devoluciones: todas, con buscador por número o cliente.
 
-> Una devolución cerrada no se puede corregir. Revisa los totales por estado, arriba de la lista, antes de cerrar.
+Si te equivocaste al cerrar, toca **Reabrir**: sus unidades salen del stock hasta que la cierres de nuevo. Se puede mientras no esté cargada en Fierro y mientras sus artículos sigan en la zona donde quedaron.
+
+Mientras está abierta, **Cancelar devolución** la borra con todo lo escaneado. No se puede deshacer.

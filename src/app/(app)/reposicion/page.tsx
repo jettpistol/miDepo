@@ -5,6 +5,7 @@ import { Code, PageHeader, ShelfMark, EmptyState } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { moveAction } from "../mover/actions";
+import { RecentMoves } from "../mover/RecentMoves";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
@@ -13,7 +14,7 @@ export const metadata = { title: "Reposición" };
 
 export default async function PutAway({ searchParams }: { searchParams: Promise<{ zona?: string }> }) {
   const session = await requireSession();
-  const { db, company } = session;
+  const { db, company, user } = session;
   const zone = (await searchParams).zona === "devoluciones" ? "returns" : "receiving";
   const zones = await db.select().from(locations).where(and(eq(locations.companyId, company.id), inArray(locations.type, ["receiving", "returns"])));
   const current = zones.find((z) => z.type === zone);
@@ -102,6 +103,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
           </div>
         </div>
       )}
+      <RecentMoves db={db} companyId={company.id} userId={user.id} />
     </>
   );
 }
