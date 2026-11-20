@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
+import { Cover } from "@/components/ProductCards";
 import { Progress, Notice, PageHeader, Badge, ShelfMark, plural } from "@/components/ui";
 import { boxes, customers, orderLines, orders, products, pickTasks, locations, users } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
@@ -29,7 +30,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
   const { p, customer, takenBy } = row;
   const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, id));
   const tasks = await db
-    .select({ t: pickTasks, title: products.title, barcode: products.barcode, sku: products.internalCode, isbn: products.isbn, location: locations.code })
+    .select({ t: pickTasks, title: products.title, thumb: products.thumbVersion, barcode: products.barcode, sku: products.internalCode, isbn: products.isbn, location: locations.code })
     .from(pickTasks)
     .innerJoin(products, eq(products.id, pickTasks.productId))
     .leftJoin(locations, eq(locations.id, pickTasks.locationId))
@@ -107,7 +108,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                 <thead>
                   <tr>
                     <th>Ubicación</th>
-                    <th>Artículo</th>
+                    <th colSpan={2}>Artículo</th>
                     <th className="text-right">Cantidad</th>
                   </tr>
                 </thead>
@@ -115,6 +116,9 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                   {preview.map((x, i) => (
                     <tr key={i}>
                       <td className="w-px">{x.location ? <ShelfMark code={x.location} /> : <span className="text-muted">—</span>}</td>
+                      <td className="w-0 py-1.5! pr-0!">
+                        <Cover productId={x.productId} version={x.thumb} className="h-14 w-10" />
+                      </td>
                       <td className="max-w-0 w-full">
                         <span className="block truncate font-medium">{articleName(x.title)}</span>
                         <span className="block truncate font-mono text-xs text-muted">
@@ -146,11 +150,16 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                       <span className="text-4xl font-bold lg:text-3xl">{current.t.quantity - current.t.picked}</span>
                     </p>
                   </div>
-                  <p className="mt-3 text-lg leading-snug font-semibold lg:text-base">{articleName(current.title)}</p>
-                  <p className="font-mono text-sm font-bold opacity-85">
-                    {current.sku}
-                    {current.isbn && ` · ${current.isbn}`}
-                  </p>
+                  <div className="mt-3 flex items-start gap-3">
+                    <Cover productId={current.t.productId} version={current.thumb} className="h-30 w-21 border-on-accent/40" />
+                    <div className="min-w-0">
+                      <p className="text-lg leading-snug font-semibold lg:text-base">{articleName(current.title)}</p>
+                      <p className="mt-1 font-mono text-sm font-bold break-all opacity-85">
+                        {current.sku}
+                        {current.isbn && ` · ${current.isbn}`}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-3 p-4">
                   <ScanForm
@@ -217,14 +226,14 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                 <thead>
                   <tr>
                     <th>Ubicación</th>
-                    <th>Artículo</th>
+                    <th colSpan={2}>Artículo</th>
                     <th className="hidden text-right sm:table-cell">Cantidad</th>
                     <th className="hidden md:table-cell">Estado</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {tasks.map(({ t, title, sku, location }) => {
+                  {tasks.map(({ t, title, thumb, sku, location }) => {
                     const isCurrent = t === current?.t;
                     const left = t.quantity - t.picked;
                     const state =
@@ -240,6 +249,9 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                     return (
                       <tr key={t.id} className={isCurrent ? "bg-accent-soft" : t.status === "done" ? "text-muted" : ""} aria-current={isCurrent ? "step" : undefined}>
                         <td className="w-px">{location ? <ShelfMark code={location} /> : <span className="text-muted">—</span>}</td>
+                        <td className="w-0 py-1.5! pr-0!">
+                          <Cover productId={t.productId} version={thumb} className={`h-14 w-10 ${t.status === "done" ? "opacity-60" : ""}`} />
+                        </td>
                         <td className="max-w-0 w-full">
                           <span className="block truncate font-medium">{articleName(title)}</span>
                           <span className="block truncate font-mono text-xs text-muted">{sku}</span>
@@ -288,14 +300,14 @@ async function previewRoute(db: Awaited<ReturnType<typeof requireSession>>["db"]
   const stops = await planRoute(db, companyId, orderId);
   const ids = [...new Set(stops.map((s) => s.productId))];
   const locIds = [...new Set(stops.map((s) => s.locationId).filter((l): l is number => l != null))];
-  const prods = ids.length ? await db.select({ id: products.id, title: products.title, sku: products.internalCode, isbn: products.isbn }).from(products).where(inArray(products.id, ids)) : [];
+  const prods = ids.length ? await db.select({ id: products.id, title: products.title, thumb: products.thumbVersion, sku: products.internalCode, isbn: products.isbn }).from(products).where(inArray(products.id, ids)) : [];
   const locs = locIds.length ? await db.select({ id: locations.id, code: locations.code }).from(locations).where(inArray(locations.id, locIds)) : [];
   const prod = new Map(prods.map((x) => [x.id, x]));
   const loc = new Map(locs.map((x) => [x.id, x.code]));
   return stops
     .map((s) => {
       const p = prod.get(s.productId)!;
-      return { title: p.title, sku: p.sku, isbn: p.isbn, quantity: s.quantity, location: s.locationId != null ? (loc.get(s.locationId) ?? null) : null };
+      return { productId: s.productId, title: p.title, thumb: p.thumb, sku: p.sku, isbn: p.isbn, quantity: s.quantity, location: s.locationId != null ? (loc.get(s.locationId) ?? null) : null };
     })
     .sort((a, b) => (a.location == null ? 1 : 0) - (b.location == null ? 1 : 0) || (a.location ?? "").localeCompare(b.location ?? "") || a.title.localeCompare(b.title));
 }
