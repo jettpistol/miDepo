@@ -235,7 +235,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `CTRL-08` | Quedan {n} sin controlar. | `src/lib/flows/control.ts` · `finishControl` | Finishing Control with picked units not counted. |
 | `CTRL-09` | No se encontró ese pedido. | `src/lib/flows/control.ts` · `allowSameCheck` | Giving or taking back the same-person permission on an order that does not exist or belongs to another company. |
 | `CTRL-10` | Lo preparaste tú. Lo permite otro supervisor. | `src/lib/flows/control.ts` · `allowSameCheck` | A supervisor who picked the order tries to let themselves check it. The button is disabled with this reason first. |
-| `CTRL-11` | Pedido {número} ya empacado. | `src/lib/flows/control.ts` · `allowSameCheck` | The order is pending, packed or later. |
+| `CTRL-11` | {número} ya empacado. | `src/lib/flows/control.ts` · `allowSameCheck` | The order is pending, packed or later. |
 | `CTRL-12` | No se encontró ese cliente. | `src/lib/flows/control.ts` · `setCustomerControl` | Marking a customer that does not exist or belongs to another company. |
 
 ## PACK: Empaque
@@ -315,7 +315,7 @@ Writing off more units than the zone holds is refused by `STK-03`.
 |---|---|---|---|
 | `ASG-01` | Tipo de tarea desconocido. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
 | `ASG-02` | No se encontró. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
-| `ASG-03` | {Pedido PED-00012} sin trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
+| `ASG-03` | {PED-00012} sin trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
 | `ASG-04` | Elige una persona de la lista. | `src/lib/flows/assignments.ts` · `assign` | The person chosen does not exist, is deactivated, or belongs to another company. Only reachable by editing the form or a stale page. |
 
 ## EXP: Fierro documents

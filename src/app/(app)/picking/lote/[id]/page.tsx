@@ -97,7 +97,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
 
   return (
     <>
-      <PageHeader title={`Lote ${batchNumber(b.number)}`} subtitle={`${plural(batchOrders.length, "pedido", "pedidos")}${mine ? "" : ` · Lo prepara ${row.takenBy}`}`} back={{ href: "/picking", text: "Picking" }}>
+      <PageHeader title={`${batchNumber(b.number)}`} subtitle={`${plural(batchOrders.length, "pedido", "pedidos")}${mine ? "" : ` · Lo prepara ${row.takenBy}`}`} back={{ href: "/picking", text: "Picking" }}>
         <Badge>{trays ? "Por bandeja" : "Se separa en empaque"}</Badge>
         {open.length > 0 && (
           <ActionButton
