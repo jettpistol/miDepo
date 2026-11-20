@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge, ShelfMark, plural } from "@/components/ui";
@@ -11,6 +11,7 @@ import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
 import { fierroWarning } from "@/lib/orderState";
+import { planRoute } from "@/lib/flows/picking";
 
 export default async function PickingOrder({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ parada?: string }> }) {
   const id = Number((await params).id);
@@ -46,6 +47,9 @@ export default async function PickingOrder({ params, searchParams }: { params: P
   const mine = p.takenBy === user.id;
   const releaseReason = !mine && !can(user.role, "supervisor") ? `Lo está preparando ${takenBy ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.` : box ? "Ya hay cajas armadas. Vacíalas en empaque antes de soltarlo." : undefined;
   const warning = fierroWarning(p);
+  // Before anyone takes it: the route taking it would build now, so the order can be read first.
+  const preview = ["pending", "cancelled"].includes(p.status) ? await previewRoute(db, company.id, id) : [];
+  const previewShort = preview.filter((x) => x.location == null).reduce((s, x) => s + x.quantity, 0);
   const missingInRoute = tasks.filter((x) => x.t.sentToMissing > 0).reduce((s, x) => s + x.t.sentToMissing, 0);
 
   return (
@@ -75,13 +79,47 @@ export default async function PickingOrder({ params, searchParams }: { params: P
 
       {warning && <Notice tone="warn">{warning}</Notice>}
       {p.status === "pending" || p.status === "cancelled" ? (
-        <div className="max-w-md space-y-4 border-y border-line py-5 lg:py-4">
-          <p>
-            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} artículos{p.status === "pending" && " y todavía no lo tomó nadie"}.
-          </p>
-          <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary" reason={warning ?? undefined}>
-            Preparar este pedido
-          </ActionButton>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <div className="min-w-0 space-y-3 lg:sticky lg:top-30">
+            <p>
+              <strong>{plural(total, "unidad", "unidades")}</strong> de {plural(lines.length, "artículo", "artículos")}{p.status === "pending" && ". Todavía no lo tomó nadie; el stock se reserva al tomarlo"}.
+            </p>
+            {previewShort > 0 && <Notice tone="danger">Sin stock en estanterías para {plural(previewShort, "unidad", "unidades")}: saldrían como faltantes.</Notice>}
+            <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary" reason={warning ?? undefined}>
+              Preparar este pedido
+            </ActionButton>
+          </div>
+          <section className="min-w-0">
+            <h2 className="section-title">
+              Recorrido previsto <small>{plural(preview.filter((x) => x.location != null).length, "parada", "paradas")}</small>
+            </h2>
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Ubicación</th>
+                    <th>Artículo</th>
+                    <th className="text-right">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.map((x, i) => (
+                    <tr key={i}>
+                      <td className="w-px">{x.location ? <ShelfMark code={x.location} /> : <span className="text-muted">—</span>}</td>
+                      <td className="max-w-0 w-full">
+                        <span className="block truncate font-medium">{articleName(x.title)}</span>
+                        <span className="block truncate font-mono text-xs text-muted">
+                          {x.sku}
+                          {x.isbn && ` · ${x.isbn}`}
+                        </span>
+                      </td>
+                      <td className="text-right whitespace-nowrap tabular-nums">{x.location ? <span className="font-semibold">{x.quantity}</span> : <Badge tone="danger">Sin stock · {x.quantity}</Badge>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       ) : (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
@@ -228,4 +266,20 @@ export default async function PickingOrder({ params, searchParams }: { params: P
       )}
     </>
   );
+}
+
+async function previewRoute(db: Awaited<ReturnType<typeof requireSession>>["db"], companyId: number, orderId: number) {
+  const stops = await planRoute(db, companyId, orderId);
+  const ids = [...new Set(stops.map((s) => s.productId))];
+  const locIds = [...new Set(stops.map((s) => s.locationId).filter((l): l is number => l != null))];
+  const prods = ids.length ? await db.select({ id: products.id, title: products.title, sku: products.internalCode, isbn: products.isbn }).from(products).where(inArray(products.id, ids)) : [];
+  const locs = locIds.length ? await db.select({ id: locations.id, code: locations.code }).from(locations).where(inArray(locations.id, locIds)) : [];
+  const prod = new Map(prods.map((x) => [x.id, x]));
+  const loc = new Map(locs.map((x) => [x.id, x.code]));
+  return stops
+    .map((s) => {
+      const p = prod.get(s.productId)!;
+      return { title: p.title, sku: p.sku, isbn: p.isbn, quantity: s.quantity, location: s.locationId != null ? (loc.get(s.locationId) ?? null) : null };
+    })
+    .sort((a, b) => (a.location == null ? 1 : 0) - (b.location == null ? 1 : 0) || (a.location ?? "").localeCompare(b.location ?? "") || a.title.localeCompare(b.title));
 }
