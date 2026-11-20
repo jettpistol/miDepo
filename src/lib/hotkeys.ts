@@ -8,7 +8,10 @@
  * - F5, F11 and F12 are left to the browser (reload, full screen, developer tools).
  */
 
-/** Alt + digit → screen. Digits follow the order of the "Trabajo del día" menu. */
+/**
+ * Alt + digit → screen. Digits follow the order of the "Trabajo del día" menu, except Control:
+ * it can be turned off, so it took the free 9 instead of moving everyone's habits.
+ */
 export const NAV: Record<string, string> = {
   "0": "/",
   "1": "/recepcion",
@@ -19,6 +22,7 @@ export const NAV: Record<string, string> = {
   "6": "/conteos",
   "7": "/mover",
   "8": "/stock",
+  "9": "/control",
 };
 
 /** What each F-key means on every screen. Only the keys a screen marks do anything there. */

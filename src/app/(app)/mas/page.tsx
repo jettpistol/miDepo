@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Accounts } from "@/components/Accounts";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/ui";
-import { MENU } from "@/lib/menu";
+import { menuFor } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
 
 export const metadata = { title: "Menú" };
@@ -18,9 +18,9 @@ export default async function More() {
           <Accounts showCurrent />
         </div>
       </section>
-      {MENU.map((g) => {
+      {menuFor(user.role, company, can).map((g) => {
         // Ajustes is already the first row of "Tu cuenta".
-        const items = g.items.filter((i) => can(user.role, i.minRole ?? "operator") && i.href !== "/cuenta");
+        const items = g.items.filter((i) => i.href !== "/cuenta");
         if (items.length === 0) return null;
         return (
           <section key={g.group} className="mb-8 lg:mb-6">

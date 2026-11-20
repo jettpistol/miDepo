@@ -20,11 +20,13 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `PKEY` | Passkeys: fingerprint, face or hardware key |
 | `ACCT` | Ajustes (`/cuenta`), and the theme switch in the top bar |
 | `USER` | Usuarios (`/usuarios`), admin only |
+| `SET` | Company settings in Ajustes (`/cuenta#control`), admin only |
 | `LOC` | Ubicaciones (`/ubicaciones`) |
 | `STK` | Stock, moves and scanning a book or a location (any scan screen) |
 | `RCV` | Recepción and suppliers |
 | `ORD` | Orders in general: Pedidos and marking an order urgent |
 | `PICK` | Picking |
+| `CTRL` | Control: the second count of a picked order before packing |
 | `PACK` | Empaque |
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
@@ -105,6 +107,13 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `USER-10` | Escribe una contraseña nueva, un PIN nuevo o ambos. | `src/app/(app)/usuarios/actions.ts` · `setAccess` | Saving access with both fields empty. |
 | `USER-11` | Ese email o ese PIN ya lo usa otra persona. | `src/app/(app)/usuarios/actions.ts` · `create` | The database refused a duplicate email or PIN (Postgres 23505). |
 | `USER-12` | Ese PIN ya lo usa otra persona. Elige otro. | `src/app/(app)/usuarios/actions.ts` · `setAccess` | The database refused a duplicate PIN (Postgres 23505). |
+
+## SET: Ajustes
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `SET-01` | Para pedidos grandes, escribe desde cuántas unidades: un número entero de 2 o más. | `src/lib/flows/settings.ts` · `saveControlSettings` | Choosing Control for large orders without a valid threshold. |
+| `SET-02` | Elige cómo se controlan los pedidos. | `src/lib/flows/settings.ts` · `saveControlSettings` | The form sent no valid choice of where orders are checked. |
 
 ## LOC: Ubicaciones
 
@@ -201,6 +210,19 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-20` | El pedido {número} tiene {n} artículos que no están en el catálogo. Sincroniza con Fierro cuando estén cargados. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order whose Fierro lines name articles missing from the synced catalogue. |
 | `PICK-21` | Fierro cambió el pedido {número}. Sincroniza antes de prepararlo. | `src/lib/flows/picking.ts` · `takeOrder` | Taking a released order whose change from Fierro has not been applied yet. |
 
+## CTRL: Control
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `CTRL-01` | No se encontró ese pedido. | `src/lib/flows/control.ts` · `orderToControl` | The order does not exist or belongs to another company. |
+| `CTRL-02` | Este pedido no está esperando control. | `src/lib/flows/control.ts` · `orderToControl` | The order is still being picked, or already passed Control (or the step was turned off). |
+| `CTRL-03` | Preparaste este pedido: lo tiene que controlar otra persona. | `src/lib/flows/control.ts` · `orderToControl` | The company does not let the picker do the check (Ajustes) and the person controlling is the one who picked it. |
+| `CTRL-04` | "{artículo}" no está entre lo preparado para el pedido {número}. Devuélvelo a su ubicación. | `src/lib/flows/control.ts` · `checkUnit` | The book in the cart is not in the order, or none of it was picked. In stock terms it never left its shelf. |
+| `CTRL-05` | Ya están controladas todas las unidades de "{artículo}". Las que sobran vuelven a su ubicación. | `src/lib/flows/control.ts` · `checkUnit` | Every picked unit of that title was already counted: the cart has extra copies. |
+| `CTRL-06` | De "{artículo}" quedan {n} por controlar, no {m}. | `src/lib/flows/control.ts` · `checkUnit` | Counting more units than are left to control (also when two scans race). |
+| `CTRL-07` | En ese artículo no falta nada. | `src/lib/flows/control.ts` · `reportMissing` | Marking a title as missing from the cart when every picked unit was counted. |
+| `CTRL-08` | Quedan {n} unidades sin controlar. Escanéalas o márcalas como faltantes. | `src/lib/flows/control.ts` · `finishControl` | Finishing Control with picked units not counted. |
+
 ## PACK: Empaque
 
 | Code | Message | Where | When |
@@ -224,6 +246,8 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PACK-17` | La caja {n} está abierta. Ciérrala antes de reabrir otra. | `src/lib/flows/packing.ts` · `reopenBox` | Reopening a box while another box of the order is open. The screen disables the button first. |
 | `PACK-18` | Este pedido ya se cargó en Fierro y salió del depósito. No se puede reabrir. | `src/lib/flows/packing.ts` · `reopenPacking` | Reopening packing of a shipped order. |
 | `PACK-19` | Este pedido todavía no se terminó de empacar. | `src/lib/flows/packing.ts` · `reopenPacking` | Reopening packing of an order that is not packed. |
+| `PACK-20` | Este pedido todavía no pasó por control. | `src/lib/flows/packing.ts` · `orderToPack` | Packing an order that is waiting in Control. |
+| `PACK-21` | Preparaste este pedido: lo tiene que empacar otra persona. | `src/lib/flows/packing.ts` · `orderToPack` | The company does not let the picker do the check (Ajustes), the order skipped Control, and the person packing is the one who picked it. |
 
 ## RET: Devoluciones
 
