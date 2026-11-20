@@ -8,6 +8,9 @@ import { fierroStock, movements, products, stock, locations, users, type Movemen
 import { requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
 
+const money = (cents: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(cents / 100);
+const kg = (g: number) => `${(g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
+
 const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Guardado", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -35,25 +38,33 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   return (
     <>
       <PageHeader title={p.title} back={{ href: "/stock", text: "Stock" }} subtitle={[p.author, p.imprint].filter(Boolean).join(" · ")} />
-      <dl className="mb-8 lg:mb-6 flex flex-wrap items-end gap-x-10 lg:gap-x-8 gap-y-3 border-y border-line px-2 py-3 lg:py-2 lg:px-3">
-        {[
-          ["En el depósito", total],
-          ["Según Fierro", fierro?.quantity ?? 0],
-        ].map(([k, v]) => (
-          <div key={k}>
-            <dt className="text-sm text-muted">{k}</dt>
-            <dd className="text-xl lg:text-base font-bold tabular-nums">{v}</dd>
+      <div className="mb-8 lg:mb-6 flex items-stretch gap-4 border-y border-line px-2 py-3 lg:py-2 lg:px-3">
+        {p.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- small local covers; no resizing needed
+          <img src={p.coverUrl} alt={`Tapa de ${p.title}`} className="w-20 lg:w-24 shrink-0 self-start rounded-sm border border-line object-cover" />
+        )}
+        <dl className="flex min-w-0 flex-1 flex-wrap content-start items-end gap-x-10 lg:gap-x-8 gap-y-3">
+          {[
+            ["En el depósito", total],
+            ["Según Fierro", fierro?.quantity ?? 0],
+            ["Precio", p.price > 0 ? money(p.price) : "—"],
+            ["Peso", kg(p.weightGrams)],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-sm text-muted">{k}</dt>
+              <dd className="text-xl lg:text-base font-bold tabular-nums">{v}</dd>
+            </div>
+          ))}
+          <div>
+            <dt className="text-sm text-muted">Códigos</dt>
+            <dd className="flex min-h-7 flex-wrap items-center gap-2">
+              <Code>{p.barcode}</Code>
+              {p.isbn && p.internalCode !== p.barcode && <Code>{p.internalCode}</Code>}
+              {!p.isbn && <Badge tone="warn">Sin ISBN</Badge>}
+            </dd>
           </div>
-        ))}
-        <div>
-          <dt className="text-sm text-muted">Códigos</dt>
-          <dd className="flex min-h-7 flex-wrap items-center gap-2">
-            <Code>{p.barcode}</Code>
-            {p.isbn && p.internalCode !== p.barcode && <Code>{p.internalCode}</Code>}
-            {!p.isbn && <Badge tone="warn">Sin ISBN</Badge>}
-          </dd>
-        </div>
-      </dl>
+        </dl>
+      </div>
 
       <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
         <section>
