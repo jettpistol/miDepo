@@ -8,7 +8,6 @@ import { Camera } from "./Camera";
 import { Icon } from "./Icon";
 import { ShelfMark } from "./ui";
 import { hotkey, type HotkeyName } from "@/lib/hotkeys";
-import { focusQuietly } from "@/lib/quiet-focus";
 
 export type Action = (prev: Result, data: FormData) => Promise<Result>;
 
@@ -145,8 +144,8 @@ export function ScanForm({
   }, [inputs]);
 
   useEffect(() => {
-    // On opening the screen: the cursor is ready for the scanner, but nothing is highlighted until the person acts.
-    if (!status.ok && !status.error) return focusQuietly(inputs().find((e) => e && !e.value) ?? inputs()[0]);
+    // On opening the screen nothing has focus: the cursor goes into a field only when the person clicks or taps it.
+    if (!status.ok && !status.error) return;
     beep(status.error ? "error" : "ok");
     const els = inputs();
     if (status.ok) {
