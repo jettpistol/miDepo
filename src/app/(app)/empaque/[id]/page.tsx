@@ -5,6 +5,7 @@ import { ActionButton, ScanForm, ActionForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
+import { blockedCheck } from "@/lib/flows/control";
 import { requireSession } from "@/lib/session";
 import { Assignee } from "@/components/Assignee";
 import { close, scan, finish, empty } from "../actions";
@@ -15,7 +16,7 @@ const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDi
 export default async function PackingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
   const session = await requireSession();
-  const { db, company } = session;
+  const { db, company, user } = session;
   const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
@@ -28,7 +29,9 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   const packed = lines.reduce((s, x) => s + x.l.packed, 0);
   const open = ofOrder.find((k) => k.status === "open");
   const ready = p.status === "packed" || p.status === "shipped";
-  const editable = p.status === "picked";
+  // When the order skipped Control, packing is the check.
+  const blocked = p.status === "picked" && p.controlledBy == null ? blockedCheck(company, p, user.id, "empacar") : null;
+  const editable = p.status === "picked" && !blocked;
 
   return (
     <>
@@ -46,7 +49,16 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
         )}
       </PageHeader>
 
-      {!editable && !ready && (
+      {blocked && <Notice tone="warn">{blocked}</Notice>}
+      {p.status === "to_control" && (
+        <Notice tone="warn">
+          Este pedido todavía no pasó por control.{" "}
+          <Link href={`/control/${id}`} className="font-semibold underline underline-offset-[3px]">
+            Ir a control
+          </Link>
+        </Notice>
+      )}
+      {(p.status === "pending" || p.status === "in_picking") && (
         <Notice tone="warn">
           Este pedido todavía está en picking.{" "}
           <Link href={`/picking/${id}`} className="font-semibold underline underline-offset-[3px]">
@@ -56,7 +68,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
       )}
       {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Despachado." : "Pendiente en Fierro."}</Notice>}
 
-      <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
+      <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${!editable ? "mt-6" : ""}`}>
         {editable && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <Progress done={packed} total={picked} unit="en cajas" />

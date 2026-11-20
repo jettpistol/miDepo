@@ -132,7 +132,7 @@ export default async function Home() {
         </Card>
 
         <Card title="Pedidos abiertos" count={stages.reduce((s, x) => s + x.n, 0)} link={{ href: "/picking", text: "Ver en Picking" }}>
-          <StageBar stages={stages.map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
+          <StageBar stages={stages.filter((s) => s.key !== "to_control" || s.n > 0 || company.controlMinUnits != null).map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
         </Card>
 
         <Card title="Actividad, últimos 7 días" count={days.reduce((s, d) => s + d.received + d.picked + d.shipped, 0)}>

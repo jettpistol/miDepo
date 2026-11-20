@@ -16,6 +16,8 @@ import { closeReceiving, createSupplier, createUnannouncedReceiving, scanReceivi
 import { move } from "@/lib/flows/move";
 import { confirmPick, markShort, takeOrder } from "@/lib/flows/picking";
 import { closeBox, scanIntoBox, finishPacking } from "@/lib/flows/packing";
+import { checkUnit, finishControl, reportMissing, restartControl } from "@/lib/flows/control";
+import { saveControlSettings } from "@/lib/flows/settings";
 import { closeReturn, createReturn, scanReturn } from "@/lib/flows/returns";
 import { closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
 import { writeOff } from "@/lib/flows/adjustments";
@@ -375,12 +377,109 @@ describe("assignments", () => {
 
   it("counts orders per stage and units per day for the home page", async () => {
     const stages = await orderStages(db, c.companyId);
-    expect(stages.map((s) => s.key)).toEqual(["pending", "in_picking", "picked", "packed"]);
+    expect(stages.map((s) => s.key)).toEqual(["pending", "in_picking", "to_control", "picked", "packed"]);
     const days = await weekActivity(db, c.companyId);
     expect(days).toHaveLength(7);
     expect(days[6].label).toBe("Hoy");
     // Earlier tests received and picked units today.
     expect(days[6].received + days[6].picked).toBeGreaterThan(0);
+  });
+});
+
+describe("control before packing", () => {
+  let picker: Ctx;
+  let checker: Ctx;
+  let prods: Map<number, typeof products.$inferSelect>;
+  const status = async (id: number) => (await db.select().from(orders).where(eq(orders.id, id)))[0];
+
+  /** Puts the order's units on a shelf and picks them all as `who`. */
+  async function pickAll(who: Ctx, orderId: number) {
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, who.companyId), eq(locations.code, "A-01-2")));
+    for (const l of await db.select().from(orderLines).where(eq(orderLines.orderId, orderId))) {
+      await moveStock(db, { companyId: who.companyId, productId: l.productId, fromId: null, toId: shelf.id, quantity: l.quantity, reason: "initial" });
+    }
+    await takeOrder(who, orderId);
+    for (const t of await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, orderId), eq(pickTasks.status, "pending")))) {
+      const [u] = await db.select().from(locations).where(eq(locations.id, t.locationId!));
+      await confirmPick(who, { taskId: t.id, location: u.code, product: prods.get(t.productId)!.barcode, quantity: t.quantity });
+    }
+    return db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).orderBy(asc(orderLines.id));
+  }
+  const orderUnits = async (id: number) => (await db.select().from(orderLines).where(eq(orderLines.orderId, id))).reduce((s, l) => s + l.quantity, 0);
+
+  beforeAll(async () => {
+    const { e, u } = await buildCompany("Control SA", "control", 13);
+    const second = await createUser(db, e.id, { name: "Segunda", email: "segunda-control@prueba.test", role: "operator", password: "long-password" });
+    picker = { db, companyId: e.id, userId: u.id };
+    checker = { db, companyId: e.id, userId: second.id };
+    prods = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.id, p]));
+  });
+
+  it("validates the settings", async () => {
+    await expect(saveControlSettings(picker, { mode: "large", minUnits: "1", samePerson: true })).rejects.toThrow(UserError);
+    await expect(saveControlSettings(picker, { mode: "large", minUnits: "", samePerson: true })).rejects.toThrow(/2 o más/);
+    await expect(saveControlSettings(picker, { mode: "otro", samePerson: true })).rejects.toThrow(UserError);
+  });
+
+  it("with the step on, a picked order waits in Control, and only someone else can check it", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: false });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("to_control");
+    await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/no pasó por control/);
+    await expect(checkUnit(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/otra persona/);
+
+    const foreign = [...prods.values()].find((p) => !lines.some((l) => l.productId === p.id))!;
+    await expect(checkUnit(checker, ord.id, foreign.barcode, 1)).rejects.toThrow(/no está entre lo preparado/);
+    await expect(checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].picked + 1)).rejects.toThrow(/quedan/);
+
+    // Everything is in the cart except one unit of the first title.
+    await checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1);
+    await restartControl(checker, ord.id);
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))).every((l) => l.checked === 0)).toBe(true);
+    for (const [i, l] of lines.entries()) await checkUnit(checker, ord.id, prods.get(l.productId)!.barcode, i === 0 ? l.picked - 1 : l.picked);
+    await expect(finishControl(checker, ord.id)).rejects.toThrow(/sin controlar/);
+    await expect(reportMissing(checker, ord.id, lines[1]?.id ?? -1)).rejects.toThrow(UserError);
+
+    const staging = await zone(db, picker.companyId, "staging");
+    const missingZone = await zone(db, picker.companyId, "missing");
+    const before = await atLocation(lines[0].productId, missingZone.id);
+    await reportMissing(checker, ord.id, lines[0].id);
+    expect(await atLocation(lines[0].productId, missingZone.id)).toBe(before + 1);
+    expect(await atLocation(lines[0].productId, staging.id)).toBe(lines[0].picked - 1);
+    await finishControl(checker, ord.id);
+    const done = await status(ord.id);
+    expect(done.status).toBe("picked");
+    expect(done.controlledBy).toBe(checker.userId);
+
+    // Controlled by someone else, so the picker may pack it.
+    for (const l of await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))) if (l.picked > 0) await scanIntoBox(picker, ord.id, prods.get(l.productId)!.barcode, l.picked);
+    const [box] = await db.select().from(boxes).where(eq(boxes.orderId, ord.id));
+    await closeBox(picker, box.id);
+    await finishPacking(picker, ord.id);
+    expect((await status(ord.id)).packedBy).toBe(picker.userId);
+  });
+
+  it("only orders from the threshold up go to Control; otherwise packing is the check", async () => {
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await saveControlSettings(picker, { mode: "large", minUnits: String((await orderUnits(ord.id)) + 1), samePerson: false });
+    const lines = await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("picked");
+    await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/lo tiene que empacar otra persona/);
+    await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).resolves.toContain("Caja 1");
+
+    // When the same person is allowed, the picker can pack.
+    await saveControlSettings(picker, { mode: "large", minUnits: "1000", samePerson: true });
+    await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).resolves.toBeTruthy();
+  });
+
+  it("turning the step off sends waiting orders to packing", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: true });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("to_control");
+    await expect(saveControlSettings(picker, { mode: "packing", samePerson: true })).resolves.toMatch(/1 pedido/);
+    expect((await status(ord.id)).status).toBe("picked");
   });
 });
 

@@ -12,6 +12,7 @@
 - [Recepción](Recepcion)
 - [Reposición](Reposicion)
 - [Picking](Picking)
+- [Control](Control)
 - [Empaque](Empaque)
 - [Devoluciones](Devoluciones)
 - [Conteos](Conteos)

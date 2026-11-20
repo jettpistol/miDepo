@@ -17,9 +17,10 @@ export type InventoryHit = {
   exact?: boolean;
 };
 
-const ORDER: Record<OrderStatus, { label: string; screen: "picking" | "empaque" }> = {
+const ORDER: Record<OrderStatus, { label: string; screen: "picking" | "control" | "empaque" }> = {
   pending: { label: "por preparar", screen: "picking" },
   in_picking: { label: "en picking", screen: "picking" },
+  to_control: { label: "por controlar", screen: "control" },
   picked: { label: "por empacar", screen: "empaque" },
   packed: { label: "empacado", screen: "empaque" },
   shipped: { label: "despachado", screen: "empaque" },
@@ -128,7 +129,7 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
     ...ords.map((o) => ({
       kind: "document" as const,
       title: `Pedido ${o.number}`,
-      path: [ORDER[o.status].screen === "picking" ? "Picking" : "Empaque", o.customer],
+      path: [{ picking: "Picking", control: "Control", empaque: "Empaque" }[ORDER[o.status].screen], o.customer],
       href: `/${ORDER[o.status].screen}/${o.id}`,
       aside: ORDER[o.status].label,
       exact: o.number.toUpperCase() === upper,

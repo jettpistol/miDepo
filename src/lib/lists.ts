@@ -53,7 +53,7 @@ export async function listCustomers(db: DB, companyId: number, q: string, page: 
   return { total, rows };
 }
 
-export const ORDER_STATUSES = ["pending", "in_picking", "picked", "packed", "shipped"] as const satisfies readonly OrderStatus[];
+export const ORDER_STATUSES = ["pending", "in_picking", "to_control", "picked", "packed", "shipped"] as const satisfies readonly OrderStatus[];
 
 /** Orders of any state, newest first. `customerId` narrows to one customer's orders. */
 export async function listOrders(db: DB, companyId: number, f: { q?: string; status?: OrderStatus; customerId?: number }, page: Paging) {
@@ -86,7 +86,7 @@ export async function listOrders(db: DB, companyId: number, f: { q?: string; sta
 }
 
 /** Where an order is worked on: picking until it is picked, packing after. */
-export const orderScreen = (status: OrderStatus) => (status === "pending" || status === "in_picking" ? "picking" : "empaque");
+export const orderScreen = (status: OrderStatus) => (status === "pending" || status === "in_picking" ? "picking" : status === "to_control" ? "control" : "empaque");
 
 export const MOVEMENT_REASONS = ["initial", "receiving", "putaway", "movement", "picking", "shipment", "return", "count_adjustment", "count_relocation", "missing", "found", "write_off"] as const satisfies readonly MovementReason[];
 /** What each movement reason is called on screen. */

@@ -81,6 +81,13 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   No está en la ubicación
                 </ActionButton>
               </>
+            ) : p.status === "to_control" ? (
+              <Notice tone="ok">
+                <p className="mb-3 text-base">Picking terminado. {shortages.length > 0 ? "Sale con faltantes." : "Está completo."} Antes de empacar pasa por control.</p>
+                <Link href={`/control/${id}`} className="btn w-full" {...hotkey("primary")}>
+                  Ir a control
+                </Link>
+              </Notice>
             ) : p.status === "picked" ? (
               <Notice tone="ok">
                 <p className="mb-3 text-base">Picking terminado. {shortages.length > 0 ? "Con faltantes." : "Completo."}</p>

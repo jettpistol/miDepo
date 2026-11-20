@@ -1,7 +1,7 @@
 /**
  * Full walkthrough in a real browser: receiving, put-away, picking, packing, return, count,
  * keyboard shortcuts (several steps below press F-keys instead of clicking),
- * Fierro, the registers (orders, suppliers, customers, movements), per-user colour, phone login with a PIN, and separation between companies.
+ * Fierro, the registers (orders, suppliers, customers, movements), per-user colour, phone login with a PIN, separation between companies, and the Control step.
  * Needs Playwright and miDepo running on localhost:3000 with freshly loaded demo data:
  *   npm run db:reset && npm run dev        (in another terminal)
  *   node tests/walkthrough.e2e.js [folder-for-screenshots]
@@ -294,6 +294,31 @@ async function warning(p, field, value) {
   await ma.goto(BASE + '/ayuda/editar/Picking'); await ma.waitForSelector('textarea'); await ma.screenshot({ path: `${OUT}/m-editor.png`, caret: 'initial' });
   await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
   step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
+
+  // Control step (demo company, so the Ovnipress circuit above is untouched).: turn it on, pick, control.
+  await o.goto(BASE + '/cuenta#control'); await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, pedidos grandes")');
+  await o.fill('#minUnits', '1'); step('settings, 1 unit, before the click → ' + ((await o.$eval('#minUnits', (e) => e.validationMessage)) || fail('1 unit accepted')));
+  await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, todos los pedidos")'); await o.click('button:has-text("Guardar control")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
+  await o.locator('#control').screenshot({ path: `${OUT}/settings.png` });
+  await o.goto(BASE + '/picking'); await o.click('button:has-text("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
+  const ctrlId = o.url().split('/').pop(); const ctrlCodes = {};
+  while (await o.$('text=Próxima parada')) {
+    const shelf = await o.getAttribute('.shelfmark-xl', 'title');
+    const title = (await o.textContent('.bg-accent p.text-lg')).trim(); const code = (await o.textContent('.bg-accent p.font-mono.text-sm')).trim(); ctrlCodes[title] = code;
+    const before = title + shelf; await scan(o, { location: shelf, product: code });
+    await o.waitForFunction((b) => ((document.querySelector('.bg-accent p.text-lg')?.textContent ?? '').trim() + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? '')) !== b || !document.querySelector('.shelfmark-xl'), before, { timeout: 15000 });
+  }
+  await o.waitForSelector('text=Antes de empacar pasa por control'); await o.keyboard.press('F2'); await o.waitForURL(`${BASE}/control/${ctrlId}`); await o.waitForSelector('#scan-product');
+  const ctrlLines = await o.$$eval('table tbody tr', (trs) => trs.map((tr) => ({ title: tr.children[0].textContent.trim(), picked: Number(tr.children[1].textContent) })));
+  let k = 0;
+  for (const l of ctrlLines.filter((l) => l.picked > 0)) { const msg = await scan(o, { product: ctrlCodes[l.title] }, l.picked); if (k++ === 0) { step('  control → ' + msg); await o.screenshot({ path: `${OUT}/control.png`, caret: 'initial' }); } }
+  await o.keyboard.press('F9'); await o.waitForSelector('text=Controlado por'); step('control finished');
+  await o.goto(BASE + '/control'); await o.waitForSelector('text=No hay pedidos esperando control'); await o.screenshot({ path: `${OUT}/control-list.png`, caret: 'initial' });
+  await o.setViewportSize({ width: 390, height: 844 });
+  for (const [path, name] of [['/control', 'm-control-list'], [`/control/${ctrlId}`, 'm-control-done'], ['/cuenta#control', 'm-settings']]) {
+    await o.goto(BASE + path); await o.screenshot({ path: `${OUT}/${name}.png`, fullPage: true, caret: 'initial' });
+    if (await o.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) fail(`${path} scrolls sideways on a phone`);
+  }
   await browser.close();
   console.log(errors.length ? 'ERRORS:\n' + [...new Set(errors)].join('\n') : 'NO CONSOLE ERRORS OR 5xx');
   if (errors.length) process.exit(1);

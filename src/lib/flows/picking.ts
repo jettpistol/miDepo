@@ -5,6 +5,7 @@ import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
 import { articleName } from "@/lib/article";
+import { goesToControl, settingsOf } from "./control";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
@@ -80,10 +81,14 @@ export async function takeOrder(c: Ctx, orderId: number) {
   });
 }
 
-async function checkEnd(tx: Executor, orderId: number) {
+/** When no stop is left, the order goes to Control or straight to packing, as the company set it. Returns where it went. */
+async function checkEnd(tx: Executor, orderId: number): Promise<false | "to_control" | "picked"> {
   const [remains] = await tx.select({ id: pickTasks.id }).from(pickTasks).where(and(eq(pickTasks.orderId, orderId), eq(pickTasks.status, "pending"))).limit(1);
-  if (!remains) await tx.update(orders).set({ status: "picked" }).where(and(eq(orders.id, orderId), eq(orders.status, "in_picking")));
-  return !remains;
+  if (remains) return false;
+  const [o] = await tx.select({ companyId: orders.companyId, units: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number) }).from(orders).leftJoin(orderLines, eq(orderLines.orderId, orders.id)).where(eq(orders.id, orderId)).groupBy(orders.id);
+  const next = goesToControl(await settingsOf(tx, o.companyId), o.units) ? "to_control" : "picked";
+  await tx.update(orders).set({ status: next }).where(and(eq(orders.id, orderId), eq(orders.status, "in_picking")));
+  return next;
 }
 
 async function taskOf(c: Ctx, taskId: number) {
@@ -114,7 +119,8 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
     const end = await checkEnd(tx, order.id);
-    return end ? `Pedido ${order.number} completo. Llévalo a empaque.` : `${n} × ${articleName(p.title)} ✓`;
+    if (end) return `Pedido ${order.number} completo. Llévalo a ${end === "to_control" ? "control" : "empaque"}.`;
+    return `${n} × ${articleName(p.title)} ✓`;
   });
 }
 

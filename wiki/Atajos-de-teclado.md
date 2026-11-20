@@ -17,6 +17,7 @@ Mantén **Alt** pulsado y pulsa un número.
 | Alt + 6 | Conteos |
 | Alt + 7 | Mover |
 | Alt + 8 | Stock |
+| Alt + 9 | Control (si está activado) |
 
 ## Buscar
 
