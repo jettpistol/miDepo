@@ -338,19 +338,19 @@ describe("assignments", () => {
   it("gives work to a person, shows it as theirs, and takes it back", async () => {
     const ana = await createUser(db, c.companyId, { name: "Ana Asignada", email: "ana@prueba.test", role: "operator", pin: "864213" });
     const [order] = await db.select().from(orders).where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"))).limit(1);
-    expect(await assign(c, "order", order.id, ana.id)).toMatch(/ahora es de Ana Asignada/);
+    expect(await assign(c, "order", order.id, ana.id)).toMatch(/Asignado a Ana Asignada/);
     let tasks = await openTasks(db, c.companyId);
     const task = tasks.find((t) => t.kind === "order" && t.id === order.id)!;
     expect(isMine(task, ana.id)).toBe(true);
     expect(isUnassigned(task)).toBe(false);
-    expect(await assign(c, "order", order.id, null)).toMatch(/sin asignar/);
+    expect(await assign(c, "order", order.id, null)).toMatch(/Sin asignar/);
     tasks = await openTasks(db, c.companyId);
     expect(isUnassigned(tasks.find((t) => t.kind === "order" && t.id === order.id)!)).toBe(true);
   });
 
   it("assigns the put-away of a zone, and the order a person is picking is theirs", async () => {
     const recepcion = await zone(db, c.companyId, "receiving");
-    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Reposición desde Recepción/);
+    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Asignado a/);
     // In a company of its own, so the pending orders later tests rely on stay pending.
     const { e, u } = await buildCompany("Toma SA", "toma", 15);
     const own: Ctx = { db, companyId: e.id, userId: u.id };
@@ -364,9 +364,9 @@ describe("assignments", () => {
   it("refuses what cannot be assigned", async () => {
     const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, c.companyId), eq(locations.type, "shelf"))).limit(1);
     await expect(assign(c, "putaway", shelf.id, null)).rejects.toThrow(/No se encontró/);
-    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/No se reconoce/);
+    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/Tipo de tarea desconocido/);
     const [closed] = await db.select().from(receivings).where(and(eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"))).limit(1);
-    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/ya no tiene trabajo pendiente/);
+    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/sin trabajo pendiente/);
     const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
     const { e, u } = await buildCompany("Lejana SA", "lejana", 13);
     await expect(assign(c, "order", order.id, u.id)).rejects.toThrow(/Elige una persona/);
