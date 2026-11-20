@@ -12,13 +12,16 @@ Usa **Mover** cada vez que cambies artículos de una ubicación a otra: para reo
 
 El mensaje verde resume el movimiento: `12 × Artículo: A-03-2 → B-01-4`.
 
+## Mover toda una ubicación
+
+Para vaciar una ubicación o pasar todo su contenido a otra, abre la pestaña **Toda la ubicación**, escanea el **Origen** y el **Destino** y toca **Mover todo**. Antes de confirmar, miDepo muestra cuántos artículos y unidades hay en el origen. Todo se mueve de una vez y queda como un solo movimiento: **Deshacer** lo devuelve entero.
+
 ## Deshacer un movimiento
 
 Debajo del formulario están **Tus últimos movimientos**. **Deshacer** devuelve las unidades del destino al origen, una sola vez. Si alguien ya movió esas unidades del destino, muévelas a mano. Lo mismo aparece en [Reposición](Reposicion).
 
 ## Para tener en cuenta
 
-- Se mueve **un artículo por vez**. Para vaciar una ubicación, repite por cada artículo.
 - No se puede mover más de lo que hay en el origen. Si miDepo dice que no hay tantas unidades, el stock de esa ubicación está mal: pide un [conteo](Conteos).
 - Los pedidos ya preparados no se mueven con esta pantalla: salen automáticamente al despacharse.
 - **Si aparece un faltante**, muévelo desde `FALTANTES` a su ubicación: vuelve al stock sin baja. A `FALTANTES` no se mueve nada manualmente: solo llega desde el picking.
