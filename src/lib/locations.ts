@@ -64,7 +64,7 @@ export const TEMPLATES: { id: string; name: string; description: string; audienc
   {
     id: "shelf-level-position",
     name: "Estante · Nivel · Posición",
-    description: "Además del nivel, numera cada hueco del estante de izquierda a derecha.",
+    description: "Numera también cada hueco del estante, de izquierda a derecha.",
     audience: "Quien guarda muchos artículos distintos por estante y quiere encontrar cada uno sin buscar.",
     scheme: {
       id: "shelf-level-position",
