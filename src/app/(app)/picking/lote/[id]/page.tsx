@@ -4,6 +4,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge, ShelfMark, plural } from "@/components/ui";
+import { Cover } from "@/components/ProductCards";
 import { boxes, customers, orderLines, orders, pickBatches, pickTasks, products, locations, users } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { batchNumber } from "@/lib/flows/picking";
@@ -19,6 +20,7 @@ type Stop = {
   key: string;
   locationId: number | null;
   productId: number;
+  thumb: number | null;
   location: string | null;
   title: string;
   sku: string;
@@ -53,7 +55,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
     .orderBy(desc(orders.urgent), asc(orders.date), asc(orders.id));
   const lines = await db.select({ quantity: orderLines.quantity, picked: orderLines.picked }).from(orderLines).innerJoin(orders, eq(orders.id, orderLines.orderId)).where(eq(orders.batchId, id));
   const tasks = await db
-    .select({ t: pickTasks, order: orders.number, tray: orders.tray, title: products.title, sku: products.internalCode, isbn: products.isbn, barcode: products.barcode, location: locations.code })
+    .select({ t: pickTasks, order: orders.number, tray: orders.tray, title: products.title, thumb: products.thumbVersion, sku: products.internalCode, isbn: products.isbn, barcode: products.barcode, location: locations.code })
     .from(pickTasks)
     .innerJoin(orders, eq(orders.id, pickTasks.orderId))
     .innerJoin(products, eq(products.id, pickTasks.productId))
@@ -69,7 +71,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
   for (const x of tasks) {
     const key = `${x.t.locationId ?? "x"}-${x.t.productId}`;
     let s = stops.find((y) => y.key === key);
-    if (!s) stops.push((s = { key, locationId: x.t.locationId, productId: x.t.productId, location: x.location, title: x.title, sku: x.sku, isbn: x.isbn, barcode: x.barcode, quantity: 0, picked: 0, shares: [], pending: false, short: 0 }));
+    if (!s) stops.push((s = { key, locationId: x.t.locationId, productId: x.t.productId, location: x.location, title: x.title, thumb: x.thumb, sku: x.sku, isbn: x.isbn, barcode: x.barcode, quantity: 0, picked: 0, shares: [], pending: false, short: 0 }));
     s.quantity += x.t.quantity;
     s.picked += x.t.picked;
     if (x.t.status === "short") s.short += x.t.quantity - x.t.picked;
@@ -126,11 +128,16 @@ export default async function PickingBatch({ params, searchParams }: { params: P
                     <span className="text-4xl font-bold lg:text-3xl">{left(current)}</span>
                   </p>
                 </div>
-                <p className="mt-3 text-lg leading-snug font-semibold lg:text-base">{articleName(current.title)}</p>
-                <p className="font-mono text-sm font-bold opacity-85">
-                  {current.sku}
-                  {current.isbn && ` · ${current.isbn}`}
-                </p>
+                <div className="mt-3 flex items-start gap-3">
+                  <Cover productId={current.productId} version={current.thumb} className="h-30 w-21 border-on-accent/40" />
+                  <div className="min-w-0">
+                    <p className="text-lg leading-snug font-semibold lg:text-base">{articleName(current.title)}</p>
+                    <p className="mt-1 font-mono text-sm font-bold break-all opacity-85">
+                      {current.sku}
+                      {current.isbn && ` · ${current.isbn}`}
+                    </p>
+                  </div>
+                </div>
                 {current.shares.length > 1 && !trays && <p className="mt-2 text-sm opacity-85">Para {current.shares.length} pedidos</p>}
                 {trays && (
                   <ul className="mt-3 space-y-1 border-t border-on-accent/25 pt-3 text-sm">
@@ -206,7 +213,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
                 <thead>
                   <tr>
                     <th>Ubicación</th>
-                    <th>Artículo</th>
+                    <th colSpan={2}>Artículo</th>
                     <th className="hidden text-right sm:table-cell">Cantidad</th>
                     <th className="hidden md:table-cell">Estado</th>
                     <th />
@@ -219,6 +226,9 @@ export default async function PickingBatch({ params, searchParams }: { params: P
                     return (
                       <tr key={s.key} className={isCurrent ? "bg-accent-soft" : !s.pending && s.short === 0 ? "text-muted" : ""} aria-current={isCurrent ? "step" : undefined}>
                         <td className="w-px">{s.location ? <ShelfMark code={s.location} /> : <span className="text-muted">—</span>}</td>
+                        <td className="w-0 py-1.5! pr-0!">
+                          <Cover productId={s.productId} version={s.thumb} className={`h-14 w-10 ${!s.pending && s.short === 0 ? "opacity-60" : ""}`} />
+                        </td>
                         <td className="w-full max-w-0">
                           <span className="block truncate font-medium">{articleName(s.title)}</span>
                           <span className="block truncate font-mono text-xs text-muted">
