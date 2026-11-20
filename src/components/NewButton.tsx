@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
 import { hotkey } from "@/lib/hotkeys";
+import { inFloating } from "./Select";
 
 /** "+ Nueva": a primary button that opens a small panel with the form to create something. */
 export function NewButton({ label = "Nueva", title, children }: { label?: string; title: string; children: ReactNode }) {
@@ -10,11 +11,23 @@ export function NewButton({ label = "Nueva", title, children }: { label?: string
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
 
+  // "#nueva" in the address (from the top search) opens the panel, on arrival or on the same page.
+  useEffect(() => {
+    const fromHash = () => {
+      if (location.hash !== "#nueva") return;
+      history.replaceState(null, "", location.pathname + location.search);
+      setOpen(true);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     // Opened from the keyboard (F10) or not, the cursor goes to the first field.
     root.current?.querySelector<HTMLElement>("[role=dialog] :is(input:not([type=hidden]), button, textarea)")?.focus();
-    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
+    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && !inFloating(e.target) && setOpen(false);
     const esc = (e: KeyboardEvent) => {
       // A dropdown inside the panel handles its own Escape first.
       if (e.key === "Escape" && !(e.target as HTMLElement).closest("[role=combobox], [aria-haspopup]")) {

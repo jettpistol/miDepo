@@ -14,7 +14,7 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
   const accounts = await openAccounts();
   const others = accounts.filter((c) => !c.active);
   const current = accounts.find((c) => c.active);
-  const row = "flex w-full cursor-pointer items-center gap-3 rounded-control px-2.5 py-2 text-left text-sm font-medium text-ink transition-colors duration-150 hover:bg-sunken";
+  const row = "flex w-full cursor-pointer items-center gap-3 rounded-control px-2.5 py-2 text-left text-sm whitespace-nowrap font-medium text-ink transition-colors duration-150 hover:bg-sunken";
 
   return (
     <div className="space-y-1">
@@ -24,15 +24,23 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
             <Avatar person={current.user} className="size-11 lg:size-9 text-base" />
           ) : (
             <span className="grid size-8 place-items-center">
-              <Icon name="account" />
+              <Icon name="settings" />
             </span>
           )}
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">{showCurrent ? current.user.name : "Mi cuenta"}</span>
+            <span className="block truncate font-semibold">{showCurrent ? current.user.name : "Ajustes"}</span>
             {showCurrent && <span className="block truncate text-xs text-muted">{`${ROLE_LABEL[current.user.role]} · ${current.company.name} · en uso`}</span>}
           </span>
-          {showCurrent && <span className="text-sm font-semibold whitespace-nowrap text-accent-text">Mi cuenta</span>}
-          <Icon name="arrow" className="size-4 text-muted" />
+          {showCurrent && <span className="text-sm font-semibold whitespace-nowrap text-accent-text">Ajustes</span>}
+          {showCurrent && <Icon name="arrow" className="size-4 text-muted" />}
+        </Link>
+      )}
+      {current && !showCurrent && current.user.role !== "operator" && (
+        <Link href="/organizacion" className={row}>
+          <span className="grid size-8 place-items-center">
+            <Icon name="organization" />
+          </span>
+          <span className="min-w-0 flex-1 truncate font-semibold">Organización</span>
         </Link>
       )}
       {others.length > 0 && <p className="px-2.5 pt-2 text-[13px] font-bold text-muted">Cambiar a</p>}
@@ -64,14 +72,14 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
           <span className="grid size-8 place-items-center">
             <Icon name="logout" />
           </span>
-          {others.length > 0 ? `Salir de ${current?.user.name.split(" ")[0] ?? "esta cuenta"}` : "Salir"}
+          {others.length > 0 ? `Cerrar la sesión de ${current?.user.name.split(" ")[0] ?? "esta cuenta"}` : "Cerrar sesión"}
         </button>
       </form>
       {others.length > 0 && (
         <form action={logoutAll}>
           <button className={`${row} text-danger`}>
             <span className="size-8" />
-            Salir de todas las cuentas
+            Cerrar todas las sesiones
           </button>
         </form>
       )}

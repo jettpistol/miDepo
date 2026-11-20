@@ -1,4 +1,5 @@
-import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { unionAll } from "drizzle-orm/pg-core";
 import type { DB } from "@/db";
 import { adjustmentLines, adjustments, boxItems, boxes, customers, countLines, counts, returnLines, returns, companies, orderLines, orders, products, receivingLines, receivings, suppliers, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
@@ -34,8 +35,29 @@ export async function pendingExports(db: DB, companyId: number): Promise<Pending
     ...rs.map((r) => ({ type: "receiving" as const, ...r })),
     ...ds.map((d) => ({ type: "return" as const, ...d })),
     ...ks.map((k) => ({ type: "count" as const, ...k, detail: "Ajustes de stock por ubicación" })),
-    ...as.map((a) => ({ type: "adjustment" as const, ...a, detail: `Aprobó ${a.detail}` })),
+    ...as.map((a) => ({ type: "adjustment" as const, ...a, detail: `Aprobado por ${a.detail}` })),
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
+export type Sent = Pending & { sent: Date };
+
+/** Everything already marked as loaded in Fierro, last loaded first, a page at a time. */
+export async function sentExports(db: DB, companyId: number, page: { limit: number; offset: number }): Promise<{ total: number; rows: Sent[] }> {
+  const t = (type: ExportType) => sql<ExportType>`${type}::text`.as("type");
+  const all = unionAll(
+    db.select({ type: t("order"), id: orders.id, number: orders.number, detail: customers.name, date: orders.date, sent: sql<Date>`${orders.sentToFierro}`.as("sent") }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.companyId, companyId), isNotNull(orders.sentToFierro))),
+    db.select({ type: t("receiving"), id: receivings.id, number: receivings.number, detail: suppliers.name, date: receivings.date, sent: sql<Date>`${receivings.sentToFierro}`.as("sent") }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.companyId, companyId), isNotNull(receivings.sentToFierro))),
+    db.select({ type: t("return"), id: returns.id, number: returns.number, detail: customers.name, date: returns.date, sent: sql<Date>`${returns.sentToFierro}`.as("sent") }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.companyId, companyId), isNotNull(returns.sentToFierro))),
+    db.select({ type: t("count"), id: counts.id, number: counts.name, detail: sql<string>`'Ajustes de stock por ubicación'`.as("detail"), date: counts.date, sent: sql<Date>`${counts.sentToFierro}`.as("sent") }).from(counts).where(and(eq(counts.companyId, companyId), isNotNull(counts.sentToFierro))),
+    // A count's own adjustment travels with the count, so it is listed under the count.
+    db.select({ type: t("adjustment"), id: adjustments.id, number: adjustments.number, detail: sql<string>`'Aprobado por ' || ${users.name}`.as("detail"), date: adjustments.createdAt, sent: sql<Date>`${adjustments.sentToFierro}`.as("sent") }).from(adjustments).innerJoin(users, eq(users.id, adjustments.approvedBy)).where(and(eq(adjustments.companyId, companyId), isNull(adjustments.countId), isNotNull(adjustments.sentToFierro))),
+  ).as("sent_docs");
+  const [[{ n: total }], rows] = await Promise.all([
+    db.select({ n: count() }).from(all),
+    db.select().from(all).orderBy(desc(all.sent), desc(all.id)).limit(page.limit).offset(page.offset),
+  ]);
+  // Drivers differ on timestamps inside a subquery: some return strings.
+  return { total, rows: rows.map((r) => ({ ...r, date: new Date(r.date), sent: new Date(r.sent) })) };
 }
 
 /** Builds the CSV file of a document to be loaded into Fierro. */
@@ -55,8 +77,8 @@ export async function fileFor(db: DB, companyId: number, type: ExportType, id: n
   if (type === "receiving") {
     const [r] = await db.select({ number: receivings.number, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, companyId)));
     if (!r) throw new UserError("EXP-02", "No se encontró esa recepción.");
-    const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
-    return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido"]) };
+    const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received, damaged: receivingLines.damaged }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
+    return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received, f.damaged]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido", "danados"]) };
   }
   if (type === "return") {
     const [d] = await db.select({ number: returns.number, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, companyId)));
@@ -99,8 +121,8 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
     const doc: FierroDocument = { type: "receiving", reference: "", lines: [] };
     const now = new Date();
     if (type === "order") {
-      const flagged = await tx.update(orders).set({ status: "shipped", sentToFierro: now }).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId), eq(orders.status, "packed"))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-05", "Ese pedido no está listo para documentar.");
+      const flagged = await tx.update(orders).set({ status: "shipped", sentToFierro: now, fierroChange: null }).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId), eq(orders.status, "packed"))).returning();
+      if (flagged.length === 0) throw new UserError("EXP-05", "Ese pedido no está listo para cargar en Fierro.");
       const prep = await zone(tx, c.companyId, "staging");
       const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, id));
       for (const l of lines) {
@@ -112,24 +134,24 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
       doc.reference = flagged[0].number;
     } else if (type === "receiving") {
       const flagged = await tx.update(receivings).set({ sentToFierro: now }).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-06", "Esa recepción no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-06", "Esa recepción no está pendiente de carga en Fierro.");
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(receivingLines).where(eq(receivingLines.receivingId, id))).map((l) => ({ productId: l.productId, delta: l.received }));
     } else if (type === "return") {
       const flagged = await tx.update(returns).set({ sentToFierro: now }).where(and(eq(returns.id, id), eq(returns.companyId, c.companyId), eq(returns.status, "closed"), isNull(returns.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-07", "Esa devolución no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-07", "Esa devolución no está pendiente de carga en Fierro.");
       doc.type = "return";
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(returnLines).where(eq(returnLines.returnId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
     } else if (type === "adjustment") {
       const flagged = await tx.update(adjustments).set({ sentToFierro: now }).where(and(eq(adjustments.id, id), eq(adjustments.companyId, c.companyId), isNull(adjustments.countId), isNull(adjustments.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-13", "Esa baja no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-13", "Esa baja no está pendiente de carga en Fierro.");
       doc.type = "adjustment";
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(adjustmentLines).where(eq(adjustmentLines.adjustmentId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
     } else {
       const flagged = await tx.update(counts).set({ sentToFierro: now }).where(and(eq(counts.id, id), eq(counts.companyId, c.companyId), eq(counts.status, "closed"), isNull(counts.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-08", "Ese conteo no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-08", "Ese conteo no está pendiente de carga en Fierro.");
       doc.type = "count";
       doc.reference = flagged[0].name;
       const [own] = await tx.update(adjustments).set({ sentToFierro: now }).where(eq(adjustments.countId, id)).returning();
@@ -141,7 +163,7 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
         : (await tx.select().from(countLines).where(eq(countLines.countId, id))).map((l) => ({ productId: l.productId, delta: l.countedQty - (l.system ?? l.countedQty) }));
     }
     await connector(tx, company).submit(doc);
-    return `${EXPORT_NAME[type]} ${doc.reference}: marcado como cargado en Fierro.`;
+    return `${EXPORT_NAME[type]} ${doc.reference}: cargado en Fierro.`;
   });
 }
 

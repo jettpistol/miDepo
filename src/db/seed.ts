@@ -1,6 +1,6 @@
-import { eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { DB } from "./index";
-import { companies, fierroStock, products, stock, locations, users, type Role } from "./schema";
+import { carriers, companies, fierroStock, orders, products, receivings, stock, locations, users, type Role } from "./schema";
 import ovnipressCatalog from "@/lib/fierro/ovnipress-catalog.json";
 import { hashPassword, pinHmac } from "@/lib/credentials";
 import { sync } from "@/lib/fierro";
@@ -102,6 +102,8 @@ export async function seed(db: DB, log: (m: string) => void = () => {}) {
       .sort((a, b) => codes.indexOf(a.code) - codes.indexOf(b.code));
 
     await sync(db, company);
+    // Common Argentine carriers, so Despacho has a list to choose from.
+    await db.insert(carriers).values(["Andreani", "OCA", "Correo Argentino", "Mercado Envíos Flex", "Mensajería propia"].map((name) => ({ companyId: company.id, name })));
     const prods = (await db.select({ id: products.id, fierroId: products.fierroId }).from(products).where(eq(products.companyId, company.id)))
       .map((p) => ({ id: p.id, i: Number(p.fierroId.split("-L")[1]) - 1 }))
       .sort((a, b) => a.i - b.i);
@@ -126,6 +128,15 @@ export async function seed(db: DB, log: (m: string) => void = () => {}) {
     for (const t of batches(stockRows, 1000)) await db.insert(stock).values(t);
     for (const t of batches(fierroRows, 1000)) {
       await db.insert(fierroStock).values(t).onConflictDoUpdate({ target: [fierroStock.companyId, fierroStock.productId], set: { quantity: sql`excluded.quantity` } });
+    }
+
+    // Some work already given to the first operator, so the home page shows "Asignado a ti".
+    const [operator] = await db.select({ id: users.id }).from(users).where(and(eq(users.companyId, company.id), eq(users.role, "operator"))).orderBy(asc(users.id)).limit(1);
+    if (operator) {
+      const someOrders = await db.select({ id: orders.id }).from(orders).where(eq(orders.companyId, company.id)).orderBy(asc(orders.date)).offset(2).limit(2);
+      if (someOrders.length) await db.update(orders).set({ assignedTo: operator.id }).where(inArray(orders.id, someOrders.map((o) => o.id)));
+      const [aReceiving] = await db.select({ id: receivings.id }).from(receivings).where(eq(receivings.companyId, company.id)).orderBy(asc(receivings.date)).offset(1).limit(1);
+      if (aReceiving) await db.update(receivings).set({ assignedTo: operator.id }).where(eq(receivings.id, aReceiving.id));
     }
   }
 }

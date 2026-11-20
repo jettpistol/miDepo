@@ -1,5 +1,7 @@
+import { SALE_MODE } from "@/lib/orderState";
 import { requireSession } from "@/lib/session";
 import { kilos, orderWithBoxes } from "../../data";
+import { articleName } from "@/lib/article";
 
 /** Packing list for the order. It is not a delivery note (remito): Fierro issues that. */
 export default async function PackingList({ params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +23,7 @@ export default async function PackingList({ params }: { params: Promise<{ id: st
           <p>
             {d.customer.city}, {d.customer.province}
           </p>
-          <p className="mt-[1mm]">{d.p.saleMode === "consignment" ? "En consignación" : "En firme"}</p>
+          <p className="mt-[1mm]">Condición: {SALE_MODE[d.p.saleMode]}</p>
         </div>
       </header>
       <p className="my-[4mm]">
@@ -39,7 +41,7 @@ export default async function PackingList({ params }: { params: Promise<{ id: st
               {d.items.filter((i) => i.boxId === k.id).map((i) => (
                 <tr key={i.code} className="border-b border-neutral-300">
                   <td className="w-[38mm] py-[1mm] font-mono text-[9pt]">{i.code}</td>
-                  <td className="py-[1mm]">{i.title}</td>
+                  <td className="py-[1mm]">{articleName(i.title)}</td>
                   <td className="w-[14mm] py-[1mm] text-right font-bold">{i.quantity}</td>
                 </tr>
               ))}
@@ -53,13 +55,13 @@ export default async function PackingList({ params }: { params: Promise<{ id: st
           <ul>
             {shortages.map((x) => (
               <li key={x.l.id}>
-                {x.l.quantity - x.l.picked} × {x.title}
+                {x.l.quantity - x.l.picked} × {articleName(x.title)}
               </li>
             ))}
           </ul>
         </section>
       )}
-      <p className="mt-[6mm] text-[8.5pt]">Documento interno del depósito. No reemplaza al remito ni a la factura.</p>
+      <p className="mt-[6mm] text-[8.5pt]">Documento interno del depósito. No reemplaza a la remito ni a la factura.</p>
     </article>
   );
 }

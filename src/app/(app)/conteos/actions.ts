@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { action, num, txt } from "@/lib/action";
-import { closeCount, createCount, scanCount, setCounted, markLocation, requestRecount } from "@/lib/flows/counts";
+import { cancelCount, closeCount, createCount, scanCount, setCounted, markLocation, requestRecount } from "@/lib/flows/counts";
 
 export const create = action("supervisor", async (c, f) => {
   const id = await createCount(c, txt(f, "name"), txt(f, "prefix"));
@@ -17,3 +17,7 @@ export const complete = action("operator", async (c, f) => {
 export const reopen = action("supervisor", (c, f) => markLocation(c, num(f, "id"), num(f, "locationId"), false));
 export const approve = action("supervisor", (c, f) => closeCount(c, num(f, "id"), txt(f, "cause") || "count_difference"));
 export const recount = action("supervisor", (c, f) => requestRecount(c, num(f, "id"), num(f, "locationId")));
+export const cancel = action("supervisor", async (c, f) => {
+  await cancelCount(c, num(f, "id"));
+  redirect("/conteos");
+});

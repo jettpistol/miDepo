@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "urgent" boolean DEFAULT false NOT NULL;

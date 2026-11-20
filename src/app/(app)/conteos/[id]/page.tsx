@@ -8,12 +8,15 @@ import { countLocations, counts, locations, users } from "@/db/schema";
 import { awaitingRecount, differences, needsRecount, planCount } from "@/lib/flows/counts";
 import { LOSS_CAUSES } from "@/lib/flows/adjustments";
 import { can, requireSession } from "@/lib/session";
-import { approve, recount, reopen } from "../actions";
+import { approve, cancel, recount, reopen } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, company.id)));
   if (!k) notFound();
   const us = await db
@@ -45,7 +48,13 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Conteo cerrado: el stock ya quedó ajustado."} />
+      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."} meta={<Assignee session={session} kind="count" id={k.id} value={k.assignedTo} open={isOpen} />}>
+        {isOpen && can(user.role, "supervisor") && (
+          <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar el conteo "${k.name}"? Se borra lo contado; el stock no cambia. No se puede deshacer.`}>
+            Cancelar conteo
+          </ActionButton>
+        )}
+      </PageHeader>
       <div className="mb-8 lg:mb-6 max-w-xl">
         <Progress done={countedCount} total={us.length} unit="ubicaciones" />
       </div>
@@ -56,14 +65,14 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             Revisión del supervisor {diffs.length > 0 && <small>{diffs.length}</small>}
           </h2>
           {diffs.length === 0 ? (
-            <Notice tone="ok">Lo contado hasta ahora coincide con el sistema.</Notice>
+            <Notice tone="ok">Sin diferencias.</Notice>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>Ubicación</th>
-                    <th>Título</th>
+                    <th>Artículo</th>
                     <th className="hidden text-right sm:table-cell">Sistema</th>
                     <th className="hidden text-right sm:table-cell">Contado</th>
                     <th className="text-right">Diferencia</th>
@@ -77,7 +86,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                         <ShelfMark code={d.location} />
                       </td>
                       <td>
-                        <span className="font-medium">{d.title}</span>
+                        <span className="font-medium">{articleName(d.title)}</span>
                         <span className="block text-muted sm:hidden">
                           Sistema {d.system} · Contado {d.countedQty}
                         </span>
@@ -87,7 +96,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                       <td className={`text-right font-semibold ${d.countedQty < d.system ? "text-danger" : "text-ok"}`}>{d.countedQty > d.system ? "+" : ""}{d.countedQty - d.system}</td>
                       <td className="w-px text-right whitespace-nowrap">
                         {recountButtonOn.has(`${d.locationId}-${d.productId}`) ? (
-                          <ActionButton action={recount} hiddenFields={{ id, locationId: d.locationId }} className="btn-sm" showOk={false}>
+                          <ActionButton action={recount} hiddenFields={{ id, locationId: d.locationId }} className="btn-sm" showOk={false} confirm={`¿Pedir el recuento de ${d.location}? Se borra lo contado ahí y otra persona la cuenta de nuevo. No se puede deshacer.`}>
                             Pedir recuento
                           </ActionButton>
                         ) : waiting.has(d.locationId) && needsRecount(d.system, d.countedQty) ? (
@@ -109,8 +118,8 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             className="mt-4 flex flex-wrap items-end gap-2"
             resetOnOk={false}
             hotkey="finish"
-            reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes. El recuento lo hace otra persona.` : undefined}
-            confirm={`Se va a ajustar el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}
+            reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes, por otra persona.` : undefined}
+            confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} No se puede deshacer: un error se corrige con otro conteo. ¿Cerrar el conteo?`}
           >
             <input type="hidden" name="id" value={id} />
             {plan.losses.length > 0 ? (
@@ -137,7 +146,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
               <tr>
                 <th>Ubicación</th>
                 <th>Estado</th>
-                <th className="hidden sm:table-cell">Quién contó</th>
+                <th className="hidden sm:table-cell">Contado por</th>
                 <th />
               </tr>
             </thead>

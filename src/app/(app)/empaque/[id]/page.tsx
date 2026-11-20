@@ -3,17 +3,32 @@ import { notFound } from "next/navigation";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm, ActionForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
-import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
-import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
+import { Progress, Notice, PageHeader, Badge, SALE_MODE } from "@/components/ui";
+import { boxItems, boxes, customers, orderLines, orders, products, users } from "@/db/schema";
+import { alias } from "drizzle-orm/pg-core";
+import { SameCheck } from "@/components/SameCheck";
+import { blockedCheck } from "@/lib/flows/control";
 import { requireSession } from "@/lib/session";
-import { close, scan, finish, empty } from "../actions";
+import { fierroWarning } from "@/lib/orderState";
+import { Assignee } from "@/components/Assignee";
+import { Urgency } from "@/components/Urgency";
+import { close, scan, finish, empty, takeOut, reopen, reopenOrder } from "../actions";
+import { articleName } from "@/lib/article";
 
 const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 });
 
 export default async function PackingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
-  const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
+  const session = await requireSession();
+  const { db, company, user } = session;
+  const [picker, allower] = [alias(users, "picker"), alias(users, "allower")];
+  const [row] = await db
+    .select({ p: orders, customer: customers.name, pickedBy: picker.name, allowedBy: allower.name })
+    .from(orders)
+    .innerJoin(customers, eq(customers.id, orders.customerId))
+    .leftJoin(picker, eq(picker.id, orders.takenBy))
+    .leftJoin(allower, eq(allower.id, orders.sameCheckAllowedBy))
+    .where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
   const lines = await db.select({ l: orderLines, title: products.title }).from(orderLines).innerJoin(products, eq(products.id, orderLines.productId)).where(eq(orderLines.orderId, id)).orderBy(asc(products.title));
@@ -25,11 +40,15 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   const packed = lines.reduce((s, x) => s + x.l.packed, 0);
   const open = ofOrder.find((k) => k.status === "open");
   const ready = p.status === "packed" || p.status === "shipped";
-  const editable = p.status === "picked";
+  // When the order skipped Control, packing is the check.
+  const blocked = p.status === "picked" && p.controlledBy == null ? blockedCheck(company, p, user.id, "empacar") : null;
+  const editable = p.status === "picked" && !blocked;
+  const warning = p.status === "shipped" ? null : fierroWarning(p);
 
   return (
     <>
-      <PageHeader title={`Empaque ${p.number}`} subtitle={customer} back={{ href: "/empaque", text: "Empaque" }}>
+      <PageHeader title={p.number} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}`} back={{ href: "/empaque", text: "Empaque" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />}>
+        <Urgency session={session} order={p} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>
             <Link href={`/imprimir/cajas/${id}`} target="_blank" className="btn-soft">
@@ -42,7 +61,18 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
         )}
       </PageHeader>
 
-      {!editable && !ready && (
+      {warning && <Notice tone="warn">{warning}</Notice>}
+      {blocked && <Notice tone="warn">{blocked}</Notice>}
+      {p.status === "picked" && p.controlledBy == null && <SameCheck session={session} order={p} picker={row.pickedBy} allowedBy={row.allowedBy} what="empaque" />}
+      {p.status === "to_control" && (
+        <Notice tone="warn">
+          Este pedido todavía no pasó por control.{" "}
+          <Link href={`/control/${id}`} className="font-semibold underline underline-offset-[3px]">
+            Ir a control
+          </Link>
+        </Notice>
+      )}
+      {(p.status === "pending" || p.status === "in_picking") && (
         <Notice tone="warn">
           Este pedido todavía está en picking.{" "}
           <Link href={`/picking/${id}`} className="font-semibold underline underline-offset-[3px]">
@@ -50,13 +80,26 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
           </Link>
         </Notice>
       )}
-      {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está documentado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo documenta en Fierro."}</Notice>}
+      {ready && (
+        <Notice tone="ok">
+          <span className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Despachado." : "Pendiente en Fierro."}
+            </span>
+            {p.status === "packed" && (
+              <ActionButton action={reopenOrder} hiddenFields={{ id }} className="btn-sm" showOk={false} confirm={`¿Reabrir el empaque de ${p.number}? Deja de estar listo para cargar en Fierro hasta que lo termines de nuevo.`}>
+                Reabrir empaque
+              </ActionButton>
+            )}
+          </span>
+        </Notice>
+      )}
 
-      <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
+      <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${!editable ? "mt-6" : ""}`}>
         {editable && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <Progress done={packed} total={picked} unit="en cajas" />
-            {packed < picked && <ScanForm action={scan} context="packing" hiddenFields={{ id }} fields={[{ name: "product", label: open ? `Libro para la caja ${open.number}` : "Libro (abre una caja nueva)" }]} quantity={1} button="Poner en la caja" />}
+            {packed < picked && <ScanForm action={scan} context="packing" hiddenFields={{ id }} fields={[{ name: "product", label: open ? `Artículo para la caja ${open.number}` : "Artículo (abre una caja nueva)" }]} quantity={1} button="Poner en la caja" />}
             {open && items.some((x) => x.i.boxId === open.id) && (
               <div className="panel p-4 lg:p-3">
                 <h2 className="section-title mb-3">Cerrar la caja {open.number}</h2>
@@ -88,8 +131,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                   <h2 className="section-title mb-0">Caja {k.number}</h2>
                   <span className="flex flex-wrap items-center justify-end gap-3">
                     {k.status === "closed" ? <Badge tone="ok">Cerrada · {kg(k.weightGrams ?? 0)} kg</Badge> : <Badge tone="accent">Abierta</Badge>}
+                    {k.status === "closed" && editable && (
+                      <ActionButton action={reopen} hiddenFields={{ boxId: k.id }} className="btn-sm" showOk={false} reason={open ? `Cierra la caja ${open.number} antes de reabrir otra.` : undefined}>
+                        Reabrir
+                      </ActionButton>
+                    )}
                     {k.status === "open" && editable && (
-                      <ActionButton action={empty} hiddenFields={{ boxId: k.id }} className="btn-sm border-danger/50 text-danger hover:border-danger hover:bg-danger-soft hover:text-danger" confirm={`¿Vaciar la caja ${k.number}? Vas a tener que escanear de nuevo lo que tenía.`} showOk={false}>
+                      <ActionButton action={empty} hiddenFields={{ boxId: k.id }} className="btn-sm border-danger/50 text-danger hover:border-danger hover:bg-danger-soft hover:text-danger" confirm={`¿Vaciar la caja ${k.number}? Tendrás que escanear de nuevo lo que contenía.`} showOk={false}>
                         Vaciar
                       </ActionButton>
                     )}
@@ -98,8 +146,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                 <ul className="ruled-list framed">
                   {own.map((x) => (
                     <li key={x.i.productId} className="row justify-between">
-                      <span className="min-w-0">{x.title}</span>
+                      <span className="min-w-0 flex-1">{articleName(x.title)}</span>
                       <span className="font-semibold whitespace-nowrap">× {x.i.quantity}</span>
+                      {k.status === "open" && editable && (
+                        <ActionButton action={takeOut} hiddenFields={{ boxId: k.id, productId: x.i.productId }} className="btn-sm" showOk={false}>
+                          Sacar
+                        </ActionButton>
+                      )}
                     </li>
                   ))}
                   {own.length === 0 && <li className="row text-muted">Vacía</li>}
@@ -110,13 +163,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
 
           <section>
             <h2 className="section-title">
-              Títulos del pedido <small>{lines.length}</small>
+              Artículos del pedido <small>{lines.length}</small>
             </h2>
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Título</th>
+                    <th>Artículo</th>
                     <th className="hidden text-right sm:table-cell">Pedido</th>
                     <th className="text-right">Preparado</th>
                     <th className="text-right">En cajas</th>
@@ -126,7 +179,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                   {lines.map(({ l, title }) => (
                     <tr key={l.id}>
                       <td>
-                        <span className="font-medium">{title}</span>
+                        <span className="font-medium">{articleName(title)}</span>
                         <span className="block text-muted sm:hidden">Pedido: {l.quantity}</span>
                       </td>
                       <td className="hidden text-right sm:table-cell">{l.quantity}</td>

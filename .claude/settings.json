@@ -1,5 +1,5 @@
 {
-  "description": "Impeccable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop.",
+  "description": "Impeccable design detector after UI edits and on Stop; copy check (fewest words, agreed vocabulary) after every edit to interface code or the manual.",
   "hooks": {
     "PostToolUse": [
       {
@@ -10,6 +10,12 @@
             "command": "\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook",
             "timeout": 5,
             "statusMessage": "Checking UI changes"
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/copy-check.mjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking copy"
           }
         ]
       }

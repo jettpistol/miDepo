@@ -26,7 +26,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Ubicaciones" subtitle={`${total.toLocaleString("es-AR")} estantes`}>
+      <PageHeader title="Ubicaciones" subtitle={`${total.toLocaleString("es-AR")} ubicaciones`}>
         <Link href={`/imprimir/ubicaciones?prefijo=${encodeURIComponent(prefix)}`} target="_blank" className="btn-soft">
           <Icon name="print" /> Imprimir etiquetas{prefix && ` de ${prefix}…`}
         </Link>
@@ -35,9 +35,11 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         </Link>
       </PageHeader>
 
-      <form className="mb-4 flex max-w-md gap-2">
+      <form className="field-group search-box mb-4" role="search">
         <input name="prefijo" defaultValue={prefix} className="field font-mono" placeholder="Ver las que empiezan con… (A-01)" aria-label="Filtrar por comienzo del código" autoCapitalize="characters" />
-        <button className="btn-soft">Filtrar</button>
+        <button className="btn" aria-label="Filtrar">
+          <Icon name="stock" />
+        </button>
       </form>
       {list.length > 0 ? (
         <div className="max-w-3xl table-wrap">
@@ -45,7 +47,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
             <thead>
               <tr>
                 <th>Ubicación</th>
-                <th className="text-right">Títulos</th>
+                <th className="text-right">Artículos</th>
                 <th className="text-right">Unidades</th>
                 <th>Estado</th>
               </tr>
@@ -60,18 +62,18 @@ export default async function Locations({ searchParams }: { searchParams: Promis
                   </td>
                   <td className={`text-right ${titles === 0 ? "text-muted" : ""}`}>{titles}</td>
                   <td className={`text-right ${units === 0 ? "text-muted" : "font-semibold"}`}>{units}</td>
-                  <td>{!u.active ? <Badge tone="warn">Dada de baja</Badge> : titles === 0 ? <span className="text-muted">Vacía</span> : null}</td>
+                  <td>{!u.active ? <Badge tone="warn">Desactivada</Badge> : titles === 0 ? <span className="text-muted">Vacía</span> : null}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay estantes. Créalos con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
+        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Sin ubicaciones." : `Ninguna ubicación empieza con "${prefix}".`}</p>
       )}
       {list.length === 120 && <p className="mt-3 text-sm text-muted">Se muestran las primeras 120.</p>}
 
-      <section className="mt-10 lg:mt-8 max-w-5xl">
+      <section id="generador" className="mt-10 lg:mt-8 max-w-5xl">
         <h2 className="section-title">Generador de ubicaciones</h2>
         {company.locationScheme ? (
           <p className="mb-5">
@@ -81,10 +83,10 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         <Generator action={generate} initial={(company.locationScheme as Scheme | null) ?? null} />
       </section>
 
-      <section className="mt-10 lg:mt-8">
+      <section id="suelta" className="mt-10 lg:mt-8">
         <h2 className="section-title">Agregar una ubicación suelta</h2>
-        <ActionForm action={createStandalone} button="Agregar" className="flex flex-wrap items-start gap-3">
-          <input name="code" className="field max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />
+        <ActionForm action={createStandalone} button="Agregar" buttonClassName="btn-soft" attached className="max-w-xs space-y-2">
+          <input name="code" className="field font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />
         </ActionForm>
       </section>
     </>

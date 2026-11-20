@@ -1,9 +1,11 @@
-import { ActionForm } from "@/components/ScanForm";
+import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Select } from "@/components/Select";
 import { Code, EmptyRow, PageHeader, ShelfMark, shortDate } from "@/components/ui";
 import { adjustmentHistory, causeName, heldStock, LOSS_CAUSES, misplacedSince, WRITE_OFF_ZONES } from "@/lib/flows/adjustments";
 import { requireSession } from "@/lib/session";
-import { writeOffAction } from "./actions";
+import { undoWriteOffAction, writeOffAction } from "./actions";
+import { articleName } from "@/lib/article";
+import { InfoHint } from "@/components/Hint";
 
 export const metadata = { title: "Bajas" };
 
@@ -19,7 +21,7 @@ function WriteOffForm({ h }: { h: Held }) {
       button="Dar de baja"
       buttonClassName="btn-sm"
       className="flex flex-wrap items-center gap-2 md:justify-end [&>p[role=status]]:basis-full"
-      confirm="¿Dar de baja estas unidades? Salen del stock y quedan para informar a Fierro."
+      confirm="¿Dar de baja estas unidades? Salen del stock y quedan para cargar en Fierro. Se puede deshacer en el historial hasta que se cargue."
     >
       <input type="hidden" name="locationId" value={h.locationId} />
       <input type="hidden" name="productId" value={h.productId} />
@@ -49,13 +51,13 @@ export default async function WriteOffs() {
       <section className="mb-8 lg:mb-6">
         <h2 className="section-title">
           Faltantes y dañados <small>{held.length}</small>
+          <InfoHint text="Si un faltante aparece, muévelo desde FALTANTES a su ubicación con Mover: vuelve al stock sin baja." />
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Si un faltante aparece, muévelo desde FALTANTES a su estante con Mover: vuelve al stock sin baja.</p>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Título</th>
+                <th>Artículo</th>
                 <th className="hidden md:table-cell">Zona</th>
                 <th className="hidden text-right md:table-cell">Cantidad</th>
                 <th className="hidden md:table-cell" />
@@ -66,7 +68,7 @@ export default async function WriteOffs() {
               {held.map((h) => (
                 <tr key={`${h.locationId}-${h.productId}`}>
                   <td>
-                    <span className="block font-medium">{h.title}</span>
+                    <span className="block font-medium">{articleName(h.title)}</span>
                     <Code>{h.code}</Code>
                     <span className="mt-2 flex items-center gap-2 md:hidden">
                       <ShelfMark code={h.zone === "missing" ? "FALTANTES" : "DANADOS"} />
@@ -97,8 +99,8 @@ export default async function WriteOffs() {
             <thead>
               <tr>
                 <th>Motivo</th>
-                <th className="text-right">Salieron</th>
-                <th className="text-right">Entraron</th>
+                <th className="text-right">Salidas</th>
+                <th className="text-right">Entradas</th>
               </tr>
             </thead>
             <tbody>
@@ -130,23 +132,24 @@ export default async function WriteOffs() {
             <thead>
               <tr>
                 <th>Documento</th>
-                <th>Título</th>
+                <th>Artículo</th>
                 <th className="hidden md:table-cell">Ubicación</th>
                 <th className="text-right">Cantidad</th>
                 <th className="hidden sm:table-cell">Motivo</th>
-                <th className="hidden lg:table-cell">Aprobó</th>
+                <th className="hidden lg:table-cell">Aprobado por</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {history.length === 0 && <EmptyRow columns={6} title="Sin bajas ni ajustes." />}
-              {history.map((h) => (
+              {history.length === 0 && <EmptyRow columns={7} title="Sin bajas ni ajustes." />}
+              {history.map((h, i) => (
                 <tr key={h.id}>
                   <td className="whitespace-nowrap">
                     <span className="doc-number">{h.number}</span>
                     <span className="block text-xs text-muted">{shortDate(h.date)}</span>
                   </td>
                   <td>
-                    <span className="font-medium">{h.title}</span>
+                    <span className="font-medium">{articleName(h.title)}</span>
                     <span className="block text-xs text-muted sm:hidden">{causeName(h.cause)}</span>
                   </td>
                   <td className="hidden w-px md:table-cell">
@@ -158,6 +161,13 @@ export default async function WriteOffs() {
                   </td>
                   <td className="hidden sm:table-cell">{causeName(h.cause)}</td>
                   <td className="hidden text-muted lg:table-cell">{h.approvedBy}</td>
+                  <td className="w-px text-right whitespace-nowrap">
+                    {h.countId == null && !h.sent && history[i - 1]?.adjustmentId !== h.adjustmentId && (
+                      <ActionButton action={undoWriteOffAction} hiddenFields={{ id: h.adjustmentId }} className="btn-sm" showOk={false} confirm={`¿Deshacer ${h.number}? Las unidades vuelven a ${h.location} y la baja ya no se carga en Fierro.`}>
+                        Deshacer
+                      </ActionButton>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

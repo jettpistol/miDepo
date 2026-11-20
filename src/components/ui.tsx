@@ -2,8 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import { hotkey } from "@/lib/hotkeys";
+import { SALE_MODE as SALE_LABEL } from "@/lib/orderState";
+import { InfoHint } from "./Hint";
 
-export function PageHeader({ title, subtitle, back, children }: { title: ReactNode; subtitle?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
+/** `meta` sits on the subtitle's line: facts about the record, such as its assignee. */
+export function PageHeader({ title, subtitle, meta, back, children }: { title: ReactNode; subtitle?: ReactNode; meta?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
   return (
     <header className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mb-5">
       <div className="min-w-0">
@@ -16,7 +19,12 @@ export function PageHeader({ title, subtitle, back, children }: { title: ReactNo
           </nav>
         )}
         <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] lg:text-2xl lg:font-semibold">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-[70ch] text-[15px] text-muted lg:text-sm">{subtitle}</p>}
+        {(subtitle || meta) && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-muted lg:text-sm">
+            {subtitle && <p className="max-w-[70ch]">{subtitle}</p>}
+            {meta && <div className="text-ink">{meta}</div>}
+          </div>
+        )}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
@@ -40,8 +48,10 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
 export function EmptyState({ title, children }: { icon?: unknown; title: string; children?: ReactNode }) {
   return (
     <div className="border-y border-line px-2 py-8 lg:rounded-control lg:border lg:px-4 lg:py-6">
-      <p className="font-bold">{title}</p>
-      {children && <div className="mt-1 max-w-[60ch] text-sm text-muted">{children}</div>}
+      <p className="flex items-center gap-1.5 font-bold">
+        {title}
+        {children && <InfoHint text={children} />}
+      </p>
     </div>
   );
 }
@@ -51,8 +61,10 @@ export function EmptyRow({ columns, title, children }: { columns: number; title:
   return (
     <tr className="hover:bg-transparent!">
       <td colSpan={columns} className="px-3 py-8 text-center lg:py-6">
-        <p className="font-semibold">{title}</p>
-        {children && <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{children}</p>}
+        <p className="inline-flex items-center gap-1.5 font-semibold">
+          {title}
+          {children && <InfoHint text={children} />}
+        </p>
       </td>
     </tr>
   );
@@ -70,7 +82,7 @@ export function Progress({ done, total, unit = "" }: { done: number; total: numb
       <div className="h-1.5 min-w-12 flex-1 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
         <div className={`h-full transition-[width] duration-200 ${pct === 100 ? "bg-ok" : "bg-accent-text"}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold whitespace-nowrap tabular-nums">
+      <span className="min-w-[9ch] text-right text-sm font-semibold whitespace-nowrap tabular-nums">
         {done} de {total}
         {unit && ` ${unit}`}
       </span>
@@ -78,8 +90,8 @@ export function Progress({ done, total, unit = "" }: { done: number; total: numb
   );
 }
 
-const ZONES: Record<string, string> = { RECEPCION: "receiving", DEVOLUCIONES: "returns", DANADOS: "damaged", SALDOS: "clearance", PREPARACION: "staging" };
-const ZONE_NAME: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
+const ZONES: Record<string, string> = { RECEPCION: "receiving", DEVOLUCIONES: "returns", FALTANTES: "missing", DANADOS: "damaged", SALDOS: "clearance", PREPARACION: "staging" };
+const ZONE_NAME: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", FALTANTES: "FALTANTES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
 
 /**
  * The shelf mark (tejuelo): a shelf's code written like the label on a book's spine, with each
@@ -109,3 +121,14 @@ export function Code({ children }: { children: ReactNode }) {
 
 export const shortDate = (d: Date) => new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }).format(d);
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export { SALE_MODE } from "@/lib/orderState";
+
+/** An order's condición in a list: the value links to the order, like its number. */
+export function Condition({ mode, href }: { mode: "firm" | "consignment"; href: string }) {
+  return (
+    <Link href={href} className="text-muted transition-colors duration-150 hover:text-accent-text hover:underline">
+      {SALE_LABEL[mode]}
+    </Link>
+  );
+}

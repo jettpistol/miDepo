@@ -141,6 +141,7 @@ export function Hotkeys({ allowed, names }: { allowed: string[]; names: Record<s
           <section>
             <h3 className="section-title">Ir a</h3>
             <dl className="space-y-1">
+              <Row keys={["Ctrl", "K"]}>Buscar en todo miDepo</Row>
               {nav.map(([digit, href]) => (
                 <Row key={href} keys={["Alt", digit]}>
                   {names[href]}

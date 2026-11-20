@@ -40,10 +40,11 @@ Ovnipress is seeded with the 118 real titles scraped from its shop (`scripts/scr
 2. **Recepción** → open a receipt, type a few of the listed codes (or scan them), close it.
 3. **Reposición** (put-away) → put those titles on a shelf such as `A-01-1`.
 4. **Picking** → *Preparar* the first order and follow the stops. The shelf code and book code to scan are shown on screen.
-5. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
-6. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.
-7. **Mi cuenta** → change your accent colour and font (14 to choose from).
-8. On a phone (or a narrow browser window), log in with a PIN.
+5. **Control** (off by default; an admin turns it on in **Organización** → Control de pedidos) → another person scans the picked articles again before packing.
+6. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
+7. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.
+8. **Ajustes** (sidebar, or your name in the top bar) → change your accent colour and font (14 to choose from).
+9. On a phone (or a narrow browser window), log in with a PIN.
 
 To start again from clean demo data:
 
@@ -62,6 +63,8 @@ npm run db:reset
 | Returns | Start with **+ Nueva** and a customer from the list; grade each copy as *vendible*, *saldo* or *dañado*; each grade goes to its own zone. |
 | Cycle counts | Blind counts by shelf range, supervisor review of differences, a recount by another person for large differences (5+ units or 20%+). On approval, misplaced units move between shelves, found units come back from FALTANTES or enter as found, and losses are written off with a cause. |
 | Write-offs | **Bajas**: write off what sits in FALTANTES or DANADOS with a cause (theft or loss, damage, entry error, internal use…). Every adjustment is a numbered document with its approver, sent to Fierro as a stock write-off, never as a fake order. Units in and out by cause over 90 days, misplaced units shown apart. |
+| Registers | **Pedidos** (every order in any state, tabs by state), **Proveedores** and **Clientes** (each with its page and all its documents), **Movimientos** (the warehouse's whole movement log, searchable by article, location, document or user, filtered by reason). Closed receivings, returns and counts are all listed, searchable and paged; Fierro → **Cargados** lists what was marked as loaded. Only supervisors and admins create suppliers. |
+| Opening stock | **Stock → Stock inicial** (admins): load the stock already on the shelves from a CSV (code, quantity, location); every row is checked first; numbered `CI-` loads, undoable while untouched. |
 | Stock | The whole catalogue, 50 titles per page; search by title, author, ISBN, internal code or shelf as you type; per-shelf quantities and movement history. |
 | Locations | Four naming templates plus a custom builder; printable Code 128 shelf labels (24 per A4 sheet). |
 | Fierro | Sync (catalogue, customers, suppliers, orders, expected receipts), CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
@@ -70,6 +73,7 @@ npm run db:reset
 | Appearance | The Tejuelo design system (see `DESIGN.md`) at the density of a work tool like Jira on desktop: left sidebar with a count beside each queue, compact tables and controls. Phones keep touch-size controls. **Each user picks their own accent colour, light/dark theme and font**; it follows them to every device. |
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
+| Search | The top bar searches everything, in three tabs: **Funciones** (screens, actions, settings, with synonyms and typo tolerance), **Inventario** (titles, shelves, suppliers, customers, orders, receivings, returns, counts; a scanned code goes first) and **Guías** (the manual, opened at the matching section). Ctrl/⌘+K or `/`; full screen on a phone. |
 | Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (search bar, readable without logging in). |
 
 ## How it fits with Fierro

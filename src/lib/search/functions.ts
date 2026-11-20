@@ -1,0 +1,132 @@
+import type { Role } from "@/db/schema";
+import type { IconName } from "@/components/Icon";
+import { MENU } from "@/lib/menu";
+import { KEYS, NAV } from "@/lib/hotkeys";
+import { can } from "@/lib/session";
+import { distance, plain } from "@/lib/text";
+
+/**
+ * Everything the "Funciones" tab of the top search can open: screens, actions on a screen and
+ * settings. Screens come from MENU so they cannot drift from the sidebar. `words` are the other
+ * ways people say it (warehouse words, English, common slips); they are matched but not shown.
+ */
+export type Feature = {
+  title: string;
+  /** Where it lives, shown under the title: ["Ajustes", "Apariencia"]. */
+  path: string[];
+  href: string;
+  icon: IconName;
+  words?: string;
+  minRole?: Role;
+  /** Its keyboard shortcut, shown at the right ("Alt + 3", "F10"). */
+  keys?: string;
+};
+
+const screenKeys = Object.fromEntries(Object.entries(NAV).map(([d, href]) => [href, `Alt + ${d}`]));
+
+const SCREEN_WORDS: Record<string, string> = {
+  "/": "inicio home tablero resumen hoy",
+  "/recepcion": "recibir ingreso entrada llegada proveedor remito compra mercaderia",
+  "/reposicion": "guardar ubicar acomodar estante put away putaway",
+  "/picking": "pedidos preparar sacar recoger orden ventas urgente prioridad corte mismo dia",
+  "/control": "controlar verificar revisar chequear doble control segunda persona carro",
+  "/empaque": "empacar cajas embalar envio packing",
+  "/despacho": "despachar cargar camion transporte envio salida remito seguimiento tracking andreani oca correo",
+  "/devoluciones": "devolucion retorno vuelve cliente consignacion",
+  "/conteos": "contar inventario recuento ciclico auditoria",
+  "/mover": "transferir trasladar cambiar lugar reubicar",
+  "/stock": "existencias inventario articulos libros titulos buscar disponible",
+  "/pedidos": "ordenes ventas historial despachados empacados todos orders",
+  "/proveedores": "proveedor editorial distribuidora suppliers vendors compras",
+  "/clientes": "cliente librerias compradores customers localidad",
+  "/movimientos": "historial registro log trazabilidad entradas salidas kardex auditoria",
+  "/ubicaciones": "estantes tejuelos lugares zonas etiquetas",
+  "/bajas": "faltantes danados roturas perdidas ajustes write off",
+  "/fierro": "sincronizar exportar csv enviar documentos integracion erp",
+  "/usuarios": "personas empleados roles permisos pin altas operadores",
+  "/ayuda": "manual guia ayuda documentacion",
+  "/cuenta": "mi cuenta perfil configuracion preferencias personales settings",
+  "/organizacion": "empresa compania organizacion configuracion general ajustes de la empresa",
+};
+
+const screens: Feature[] = MENU.flatMap((g) =>
+  g.items.map((i) => ({ title: i.name, path: [g.group], href: i.href, icon: i.icon, words: `${i.help} ${SCREEN_WORDS[i.href] ?? ""}`, minRole: i.minRole, keys: screenKeys[i.href] })),
+);
+
+const more: Feature[] = [
+  // Actions on a screen. "#nueva" opens that screen's "+ Nueva" panel.
+  { title: "Nueva recepción sin aviso", path: ["Recepción", "+ Nueva"], href: "/recepcion#nueva", icon: "plus", words: "crear recepcion ingreso sin aviso", keys: KEYS.create },
+  { title: "Nueva devolución", path: ["Devoluciones", "+ Nueva"], href: "/devoluciones#nueva", icon: "plus", words: "crear devolucion retorno", keys: KEYS.create },
+  { title: "Preparar todos los pedidos", path: ["Picking"], href: "/picking", icon: "picking", words: "lote recorrido conjunto juntos varios pedidos batch oleada", keys: KEYS.secondary },
+  { title: "Nuevo conteo", path: ["Conteos"], href: "/conteos#nuevo", icon: "plus", words: "crear conteo contar rango inventario", minRole: "supervisor" },
+  { title: "Nuevo proveedor", path: ["Proveedores", "+ Nuevo"], href: "/proveedores#nueva", icon: "plus", words: "crear proveedor alta editorial", minRole: "supervisor", keys: KEYS.create },
+  { title: "Documentos cargados en Fierro", path: ["Fierro", "Cargados"], href: "/fierro/cargados", icon: "history", words: "historial enviados exportados csv", minRole: "supervisor" },
+  { title: "Generar ubicaciones", path: ["Ubicaciones", "Generador de ubicaciones"], href: "/ubicaciones#generador", icon: "locations", words: "crear estantes pasillos niveles", minRole: "supervisor" },
+  { title: "Agregar una ubicación suelta", path: ["Ubicaciones"], href: "/ubicaciones#suelta", icon: "plus", words: "crear ubicacion estante", minRole: "supervisor" },
+  { title: "Imprimir etiquetas de ubicaciones", path: ["Ubicaciones"], href: "/imprimir/ubicaciones", icon: "print", words: "tejuelos etiquetas imprimir estantes", minRole: "supervisor" },
+  { title: "Imprimir etiquetas sin ISBN", path: ["Ubicaciones"], href: "/imprimir/productos", icon: "print", words: "codigo interno barras grapas etiquetas", minRole: "supervisor" },
+  { title: "Traer novedades de Fierro", path: ["Fierro"], href: "/fierro#traer", icon: "fierro", words: "sincronizar actualizar catalogo pedidos", minRole: "supervisor" },
+  { title: "Documentos para cargar en Fierro", path: ["Fierro"], href: "/fierro#cargar", icon: "download", words: "exportar csv enviar informar", minRole: "supervisor" },
+  { title: "Conciliación con Fierro", path: ["Fierro", "Conciliación"], href: "/fierro/conciliacion", icon: "fierro", words: "diferencias comparar stock conciliar", minRole: "supervisor" },
+  { title: "Cargar stock inicial", path: ["Stock", "Stock inicial"], href: "/stock/carga-inicial", icon: "download", words: "importar planilla csv excel arranque inventario inicial existencias", minRole: "admin" },
+  { title: "Mover toda una ubicación", path: ["Mover", "Toda la ubicación"], href: "/mover?modo=todo", icon: "move", words: "vaciar estante reubicar masivo todo contenido traspaso bulk" },
+  { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nueva", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
+  // Settings: sections of Ajustes (personal) and Organización (the company).
+  { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },
+  { title: "Color de acento", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "colores tema personalizar" },
+  { title: "Tipografía", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "letra fuente tamano texto font" },
+  { title: "Tema claro u oscuro", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "modo oscuro noche dark light" },
+  { title: "Huella, rostro o llave", path: ["Ajustes"], href: "/cuenta#llaves", icon: "account", words: "passkey llave de acceso biometria touch id face id" },
+  { title: "Control de pedidos", path: ["Organización"], href: "/organizacion#control", icon: "check", words: "controlar verificar revisar doble chequeo segunda persona empaque pedidos grandes", minRole: "admin" },
+  { title: "Cambiar contraseña", path: ["Ajustes", "Contraseña"], href: "/cuenta#contrasena", icon: "account", words: "clave password" },
+  { title: "Picking por lotes", path: ["Organización"], href: "/organizacion#lotes", icon: "picking", words: "lote bandeja separar pedidos empaque batch oleada", minRole: "supervisor" },
+  { title: "Nombre de la organización", path: ["Organización"], href: "/organizacion#nombre", icon: "organization", words: "empresa renombrar razon social", minRole: "admin" },
+  { title: "Código de empresa", path: ["Organización"], href: "/organizacion#codigo", icon: "organization", words: "codigo pin empresa iniciar sesion slug", minRole: "admin" },
+  { title: "PIN del depósito", path: ["Ajustes", "PIN"], href: "/cuenta#pin", icon: "account", words: "codigo numerico clave" },
+  { title: "Cambiar de cuenta", path: ["Ajustes"], href: "/mas", icon: "users", words: "otra cuenta usuario salir cerrar sesion logout" },
+  { title: "Atajos de teclado", path: ["Manual"], href: "/ayuda/Atajos-de-teclado", icon: "help", words: "teclas f1 shortcuts", keys: KEYS.help },
+];
+
+export const FEATURES: Feature[] = [...screens, ...more];
+
+/** The words of a text, without accents or capitals. */
+const words = (s: string) => plain(s).split(/[^a-z0-9ñ]+/).filter(Boolean);
+
+/**
+ * How well one typed word matches a list of words: the start of a word counts most, a word
+ * inside another less, and one wrong letter in a longer word still counts ("recpcion").
+ */
+function wordScore(typed: string, against: string[]) {
+  let best = 0;
+  for (const w of against) {
+    if (w === typed) return 3;
+    if (w.startsWith(typed)) best = Math.max(best, 2.5);
+    else if (typed.length >= 3 && w.includes(typed)) best = Math.max(best, 1.5);
+    else if (typed.length >= 4 && Math.abs(w.length - typed.length) <= 1 && distance(w, typed) <= 1) best = Math.max(best, 1);
+  }
+  return best;
+}
+
+/** Features the role may use that match every typed word, best first. */
+export function searchFeatures(q: string, role: Role, limit = 12): Feature[] {
+  const typed = words(q);
+  if (typed.length === 0) return [];
+  const scored: { f: Feature; points: number }[] = [];
+  for (const f of FEATURES) {
+    if (!can(role, f.minRole ?? "operator")) continue;
+    const title = words(f.title);
+    const rest = words(`${f.path.join(" ")} ${f.words ?? ""}`);
+    let points = 0;
+    for (const t of typed) {
+      const s = Math.max(wordScore(t, title) * 2, wordScore(t, rest));
+      if (s === 0) {
+        points = 0;
+        break;
+      }
+      points += s;
+    }
+    // A screen ranks over an action or setting with the same score.
+    if (points > 0) scored.push({ f, points: points + (f.path.length === 1 && screens.includes(f) ? 0.5 : 0) });
+  }
+  return scored.sort((a, b) => b.points - a.points).slice(0, limit).map((s) => s.f);
+}

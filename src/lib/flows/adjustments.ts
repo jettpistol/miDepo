@@ -1,9 +1,10 @@
-import { and, count, desc, eq, gte, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import type { DB, Executor } from "@/db";
 import { adjustmentLines, adjustments, locations, movements, products, stock, users, type AdjustmentCause } from "@/db/schema";
 import { UserError } from "../errors";
 import { moveStock } from "../stock";
-import { validQuantity, type Ctx } from "./common";
+import { nextNumber, validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 /**
  * Stock that changes with nobody on the other side: losses, damage, stock that turns up.
@@ -31,8 +32,7 @@ export type AdjustmentLine = { productId: number; locationId: number; quantity: 
 
 /** Records an adjustment document. The stock movements are made by the caller. */
 export async function recordAdjustment(tx: Executor, c: Ctx, lines: AdjustmentLine[], countId: number | null = null) {
-  const [{ n }] = await tx.select({ n: count() }).from(adjustments).where(eq(adjustments.companyId, c.companyId));
-  const number = `AJ-${String(n + 1).padStart(5, "0")}`;
+  const number = await nextNumber(tx, adjustments, adjustments.number, eq(adjustments.companyId, c.companyId), "AJ-", 5);
   const [a] = await tx.insert(adjustments).values({ companyId: c.companyId, number, countId, approvedBy: c.userId }).returning();
   if (lines.length > 0) await tx.insert(adjustmentLines).values(lines.map((l) => ({ adjustmentId: a.id, ...l })));
   return a;
@@ -45,11 +45,11 @@ export async function writeOff(c: Ctx, d: { locationId: number; productId: numbe
   if (!u || !(u.type in WRITE_OFF_ZONES)) throw new UserError("ADJ-01", "Solo se da de baja lo que está en Faltantes o en Dañados.");
   if (!isLossCause(d.cause)) throw new UserError("ADJ-02", "Elige el motivo de la baja.");
   const [p] = await c.db.select().from(products).where(and(eq(products.id, d.productId), eq(products.companyId, c.companyId)));
-  if (!p) throw new UserError("ADJ-03", "Ese título no está en el catálogo.");
+  if (!p) throw new UserError("ADJ-03", "Ese artículo no está en el catálogo.");
   return c.db.transaction(async (tx) => {
     const a = await recordAdjustment(tx, c, [{ productId: p.id, locationId: u.id, quantity: -n, cause: d.cause as AdjustmentCause }]);
     await moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: u.id, toId: null, quantity: n, reason: "write_off", reference: a.number, userId: c.userId });
-    return `${a.number}: ${n} × ${p.title} dado de baja (${causeName(d.cause).toLowerCase()}).`;
+    return `${a.number}: ${n} × ${articleName(p.title)} dado de baja (${causeName(d.cause).toLowerCase()}).`;
   });
 }
 
@@ -69,6 +69,8 @@ export async function adjustmentHistory(db: DB, companyId: number, since: Date) 
   return db
     .select({
       id: adjustmentLines.id,
+      adjustmentId: adjustments.id,
+      sent: adjustments.sentToFierro,
       date: adjustments.createdAt,
       number: adjustments.number,
       countId: adjustments.countId,
@@ -99,3 +101,23 @@ export async function misplacedSince(db: DB, companyId: number, since: Date) {
 /** Adjustments that are not part of a count and Fierro has not been told about. */
 export const unsentAdjustments = (db: DB, companyId: number) =>
   db.select().from(adjustments).where(and(eq(adjustments.companyId, companyId), isNull(adjustments.countId), isNull(adjustments.sentToFierro)));
+
+/**
+ * Undoes a write-off from Bajas while Fierro has not been told: the units go back to the zone
+ * they left and the adjustment document is deleted. Adjustments made by a count cannot be undone
+ * here: they belong to the count.
+ */
+export async function undoWriteOff(c: Ctx, adjustmentId: number) {
+  const [a] = await c.db.select().from(adjustments).where(and(eq(adjustments.id, adjustmentId), eq(adjustments.companyId, c.companyId)));
+  if (!a) throw new UserError("ADJ-04", "No se encontró esa baja.");
+  if (a.countId != null) throw new UserError("ADJ-05", "Ese ajuste es parte de un conteo aprobado y no se puede deshacer.");
+  if (a.sentToFierro) throw new UserError("ADJ-06", "Esa baja ya se cargó en Fierro. No se puede deshacer.");
+  return c.db.transaction(async (tx) => {
+    for (const l of await tx.select().from(adjustmentLines).where(eq(adjustmentLines.adjustmentId, a.id))) {
+      if (l.quantity < 0) await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: l.locationId, quantity: -l.quantity, reason: "undo", reference: a.number, userId: c.userId });
+      else await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: l.locationId, toId: null, quantity: l.quantity, reason: "undo", reference: a.number, userId: c.userId });
+    }
+    await tx.delete(adjustments).where(eq(adjustments.id, a.id));
+    return `${a.number} deshecha: las unidades volvieron a su zona.`;
+  });
+}
