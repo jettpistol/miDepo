@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { Pager, paging, requestedPage } from "@/components/ListTools";
-import { PageHeader } from "@/components/ui";
+import { Badge, PageHeader } from "@/components/ui";
+import { ActionButton } from "@/components/ScanForm";
+import { can } from "@/lib/session";
+import { customerControl } from "../actions";
 import { customers, returns } from "@/db/schema";
 import { listOrders } from "@/lib/lists";
 import { requireSession } from "@/lib/session";
@@ -11,7 +14,7 @@ import { returnRows } from "@/lib/lists";
 
 export default async function CustomerDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const { db, company, user } = await requireSession();
   const [c] = Number.isInteger(id) ? await db.select().from(customers).where(and(eq(customers.id, id), eq(customers.companyId, company.id))) : [];
   if (!c) notFound();
   const page = requestedPage((await searchParams).pagina);
@@ -20,7 +23,18 @@ export default async function CustomerDetail({ params, searchParams }: { params:
 
   return (
     <>
-      <PageHeader title={c.name} subtitle={address || undefined} back={{ href: "/clientes", text: "Clientes" }} />
+      <PageHeader title={c.name} subtitle={address || undefined} back={{ href: "/clientes", text: "Clientes" }}>
+        {c.alwaysControl && <Badge tone="accent">Control obligatorio</Badge>}
+        {can(user.role, "admin") && (
+          <ActionButton
+            action={customerControl}
+            hiddenFields={{ id: c.id, always: c.alwaysControl ? "no" : "yes" }}
+            className="btn-soft"
+          >
+            {c.alwaysControl ? "Quitar control obligatorio" : "Marcar control obligatorio"}
+          </ActionButton>
+        )}
+      </PageHeader>
       <section className="mb-8 lg:mb-6">
         <h2 className="section-title">
           Pedidos <small>{ords.all}</small>

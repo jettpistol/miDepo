@@ -28,7 +28,7 @@ export default async function Packing() {
     .orderBy(desc(orders.urgent), asc(orders.date));
 
   // When the order skipped Control, packing is the check: the picker may not do it if the company says so.
-  const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.controlledBy == null && p.takenBy === user.id;
+  const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.controlledBy == null && p.sameCheckAllowedBy == null && p.takenBy === user.id;
   const first = rows.findIndex((r) => !mine(r.p));
 
   return (

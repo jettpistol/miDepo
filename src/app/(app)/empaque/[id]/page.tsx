@@ -4,7 +4,9 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm, ActionForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
-import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
+import { boxItems, boxes, customers, orderLines, orders, products, users } from "@/db/schema";
+import { alias } from "drizzle-orm/pg-core";
+import { SameCheck } from "@/components/SameCheck";
 import { blockedCheck } from "@/lib/flows/control";
 import { requireSession } from "@/lib/session";
 import { fierroWarning } from "@/lib/orderState";
@@ -19,7 +21,14 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   const id = Number((await params).id);
   const session = await requireSession();
   const { db, company, user } = session;
-  const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
+  const [picker, allower] = [alias(users, "picker"), alias(users, "allower")];
+  const [row] = await db
+    .select({ p: orders, customer: customers.name, pickedBy: picker.name, allowedBy: allower.name })
+    .from(orders)
+    .innerJoin(customers, eq(customers.id, orders.customerId))
+    .leftJoin(picker, eq(picker.id, orders.takenBy))
+    .leftJoin(allower, eq(allower.id, orders.sameCheckAllowedBy))
+    .where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
   const lines = await db.select({ l: orderLines, title: products.title }).from(orderLines).innerJoin(products, eq(products.id, orderLines.productId)).where(eq(orderLines.orderId, id)).orderBy(asc(products.title));
@@ -54,6 +63,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
 
       {warning && <Notice tone="warn">{warning}</Notice>}
       {blocked && <Notice tone="warn">{blocked}</Notice>}
+      {p.status === "picked" && p.controlledBy == null && <SameCheck session={session} order={p} picker={row.pickedBy} allowedBy={row.allowedBy} what="empaque" />}
       {p.status === "to_control" && (
         <Notice tone="warn">
           Este pedido todavía no pasó por control.{" "}
