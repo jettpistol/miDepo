@@ -25,7 +25,14 @@ En **Fierro**, toca **Sincronizar ahora**. Trae:
 - recepciones avisadas (aparecen en [Recepción](Recepcion));
 - el stock que tiene Fierro, para comparar.
 
-Los pedidos que ya se empezaron a preparar no se sobrescriben.
+Los pedidos que nadie empezó siguen a Fierro:
+
+- si cambió en Fierro, se actualizan sus artículos;
+- si ya no figura como pendiente en Fierro, queda **Anulado** y no se puede preparar (vuelve si Fierro lo lista de nuevo).
+
+Un pedido ya empezado no se toca: muestra un aviso. Para aplicar el cambio, [suelta el pedido](Picking) y sincroniza otra vez.
+
+Un pedido con artículos que no están en el catálogo entra igual, pero no se puede preparar hasta que esos artículos estén en Fierro y se sincronice.
 
 ## Cargar en Fierro lo que hizo el depósito
 

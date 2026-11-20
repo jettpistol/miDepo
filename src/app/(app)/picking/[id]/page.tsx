@@ -10,6 +10,7 @@ import { confirm, putBack, release, shortage, take, wasThere } from "../actions"
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
+import { fierroWarning } from "@/lib/orderState";
 
 export default async function PickingOrder({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ parada?: string }> }) {
   const id = Number((await params).id);
@@ -44,6 +45,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
   const editable = p.status === "in_picking" || p.status === "picked";
   const mine = p.takenBy === user.id;
   const releaseReason = !mine && !can(user.role, "supervisor") ? `Lo está preparando ${takenBy ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.` : box ? "Ya hay cajas armadas. Vacíalas en empaque antes de soltarlo." : undefined;
+  const warning = fierroWarning(p);
   const missingInRoute = tasks.filter((x) => x.t.sentToMissing > 0).reduce((s, x) => s + x.t.sentToMissing, 0);
 
   return (
@@ -71,12 +73,13 @@ export default async function PickingOrder({ params, searchParams }: { params: P
         )}
       </PageHeader>
 
-      {p.status === "pending" ? (
+      {warning && <Notice tone="warn">{warning}</Notice>}
+      {p.status === "pending" || p.status === "cancelled" ? (
         <div className="max-w-md space-y-4 border-y border-line py-5 lg:py-4">
           <p>
-            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} artículos y todavía no lo tomó nadie.
+            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} artículos{p.status === "pending" && " y todavía no lo tomó nadie"}.
           </p>
-          <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary">
+          <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary" reason={warning ?? undefined}>
             Preparar este pedido
           </ActionButton>
         </div>

@@ -58,6 +58,9 @@ function distribute(places: { locationId: number; free: number }[], quantity: nu
 /** The operator takes a pending order: the route through the shelves is built. */
 export async function takeOrder(c: Ctx, orderId: number) {
   const p = await orderOf(c, orderId);
+  if (p.status === "cancelled") throw new UserError("PICK-19", `El pedido ${p.number} ya no figura como pendiente en Fierro.`);
+  if (p.unknownLines > 0) throw new UserError("PICK-20", `El pedido ${p.number} tiene ${p.unknownLines === 1 ? "un artículo que no está" : `${p.unknownLines} artículos que no están`} en el catálogo. Sincroniza con Fierro cuando estén cargados.`);
+  if (p.status === "pending" && p.fierroChange) throw new UserError("PICK-21", `Fierro cambió el pedido ${p.number}. Sincroniza antes de prepararlo.`);
   return c.db.transaction(async (tx) => {
     // The status change goes first and is conditional: if two people act at once, only one wins.
     const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
