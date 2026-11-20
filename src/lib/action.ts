@@ -15,9 +15,13 @@ export function action(minRole: Role, fn: (c: ActionCtx, f: FormData) => Promise
   return async (_: Result, f: FormData): Promise<Result> =>
     attempt(async () => {
       const s = await requireSessionInAction(minRole);
-      const message = await fn({ db: s.db, companyId: s.company.id, userId: s.user.id, company: s.company, user: s.user }, f);
-      revalidatePath("/", "layout");
-      return message;
+      try {
+        return await fn({ db: s.db, companyId: s.company.id, userId: s.user.id, company: s.company, user: s.user }, f);
+      } finally {
+        // Also when fn redirects or fails: the screens left behind (the back button) must not show
+        // what was there before, like an order still pending after someone took it.
+        revalidatePath("/", "layout");
+      }
     });
 }
 

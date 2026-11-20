@@ -61,7 +61,11 @@ export async function takeOrder(c: Ctx, orderId: number) {
   return c.db.transaction(async (tx) => {
     // The status change goes first and is conditional: if two people act at once, only one wins.
     const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
-    if (taken.length === 0) throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
+    if (taken.length === 0) {
+      // Already yours (an old screen, or a second tap): carry on with it.
+      if (p.status === "in_picking" && p.takenBy === c.userId) return `Pedido ${p.number} tomado.`;
+      throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
+    }
     const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
     const freeOnes = await available(tx, c.companyId, lines.map((l) => l.productId));
     const tasks: (typeof pickTasks.$inferInsert)[] = [];

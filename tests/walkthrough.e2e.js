@@ -86,6 +86,10 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/picking'); await shot('picking-list');
   await p.click('button:has-text("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector('text=Próxima parada');
   const orderId = p.url().split('/').pop(); await shot('picking-stop');
+  // The browser's back button shows the list as it is now: the order is in progress, not pending.
+  const taken = await p.textContent('h1'); await p.goBack(); await p.waitForURL(BASE + '/picking');
+  await p.waitForFunction((n) => ![...document.querySelectorAll('main section:last-of-type tbody tr')].some((r) => r.textContent.includes(n)), taken.match(/PED-\d+/)[0], { timeout: 10000 });
+  step('back after Preparar: order no longer pending'); await p.goForward(); await p.waitForSelector('text=Próxima parada');
   const codes = {}; let stops = 0, first = true;
   const stopKey = () => p.evaluate(() => (document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? ''));
   while (await p.$('text=Próxima parada')) {

@@ -97,7 +97,10 @@ describe("full circuit", () => {
     }
 
     await takeOrder(c, ord.id);
-    await expect(takeOrder(c, ord.id)).rejects.toThrow(/ya lo tomó/);
+    // Taking it again (an old screen, a second tap) just carries on; someone else is refused.
+    await expect(takeOrder(c, ord.id)).resolves.toMatch(/tomado/);
+    const intruder = await createUser(db, c.companyId, { name: "Intrusa", email: "intrusa@prueba.test", role: "operator", pin: "135790" });
+    await expect(takeOrder({ ...c, userId: intruder.id }, ord.id)).rejects.toThrow(/ya lo tomó/);
     const tasks = await db.select({ t: pickTasks, u: locations.code }).from(pickTasks).innerJoin(locations, eq(locations.id, pickTasks.locationId)).where(eq(pickTasks.orderId, ord.id));
     expect(tasks.reduce((s, t) => s + t.t.quantity, 0)).toBe(lines.reduce((s, l) => s + l.quantity, 0));
 

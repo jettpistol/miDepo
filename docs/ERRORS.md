@@ -161,7 +161,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | Code | Message | Where | When |
 |---|---|---|---|
 | `PICK-01` | No se encontró ese pedido. | `src/lib/flows/picking.ts` · `orderOf` | The order does not exist or belongs to another company. |
-| `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. |
+| `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. Taking an order you already have opens it instead. |
 | `PICK-03` | No se encontró esa parada del recorrido. | `src/lib/flows/picking.ts` · `taskOf` | The pick task does not exist or belongs to another company. |
 | `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf` | Confirming or marking short a stop that is already done. |
 | `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
