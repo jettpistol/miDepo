@@ -7,6 +7,7 @@ import { Code, PageHeader, Badge, EmptyRow, plural } from "@/components/ui";
 import { users } from "@/db/schema";
 import { Select } from "@/components/Select";
 import { requireSession } from "@/lib/session";
+import { openTasks } from "@/lib/work";
 import { toggleActive, changeRole, create, setAccess, removePhotoOf } from "./actions";
 
 export const metadata = { title: "Usuarios" };
@@ -21,6 +22,17 @@ const roleOptions = ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.he
 export default async function Users() {
   const { db, company, user } = await requireSession("admin");
   const list = await db.select().from(users).where(eq(users.companyId, company.id)).orderBy(asc(users.name));
+  // Deactivating someone does not free their work: the confirmation says what stays in their name.
+  const tasks = await openTasks(db, company.id);
+  const held = (id: number) => {
+    const taken = tasks.filter((t) => t.takenBy === id).length;
+    const assigned = tasks.filter((t) => t.assignedTo === id && t.takenBy !== id).length;
+    const parts = [taken > 0 && plural(taken, "pedido tomado", "pedidos tomados"), assigned > 0 && plural(assigned, "tarea asignada", "tareas asignadas")].filter(Boolean);
+    if (!parts.length) return "";
+    // Agreement: one order "lo", one task "la", several of anything "los" / "las".
+    const it = taken + assigned === 1 ? (taken ? "sigue a su nombre hasta que un supervisor lo" : "sigue a su nombre hasta que un supervisor la") : taken ? "siguen a su nombre hasta que un supervisor los" : "siguen a su nombre hasta que un supervisor las";
+    return ` Tiene ${parts.join(" y ")}: ${it} suelte o reasigne.`;
+  };
   // Given with every PIN: the PIN only works together with the company code.
   const pinNote = (
     <p className="text-sm text-muted lg:text-xs">
@@ -148,7 +160,7 @@ export default async function Users() {
                           Quitar foto
                         </ActionButton>
                       )}
-                      <ActionButton action={toggleActive} hiddenFields={{ id: u.id }} className={`menu-item w-full ${u.active ? "danger" : ""}`} confirm={u.active ? `¿Desactivar a ${u.name}? Ya no podrá iniciar sesión.` : undefined}>
+                      <ActionButton action={toggleActive} hiddenFields={{ id: u.id }} className={`menu-item w-full ${u.active ? "danger" : ""}`} confirm={u.active ? `¿Desactivar a ${u.name}? Ya no podrá iniciar sesión.${held(u.id)}` : undefined}>
                         {u.active ? "Desactivar" : "Reactivar"}
                       </ActionButton>
                     </RowMenu>
