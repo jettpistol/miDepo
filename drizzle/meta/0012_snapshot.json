@@ -1,5 +1,5 @@
 {
-  "id": "185bdc50-4408-4922-826f-1938a441b0a5",
+  "id": "6dcf20a4-ce2b-4e81-921b-258f7b66b913",
   "prevId": "8cec14a7-0efc-40ec-bb12-7c9f74243a2b",
   "version": "7",
   "dialect": "postgresql",
@@ -475,13 +475,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
-        },
-        "batch_sorting": {
-          "name": "batch_sorting",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'packing'"
         },
         "created_at": {
           "name": "created_at",
@@ -1417,18 +1410,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "batch_id": {
-          "name": "batch_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tray": {
-          "name": "tray",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "assigned_to": {
           "name": "assigned_to",
           "type": "integer",
@@ -1446,6 +1427,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "urgent": {
+          "name": "urgent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "unknown_lines": {
           "name": "unknown_lines",
@@ -1539,19 +1527,6 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "orders_batch_id_pick_batches_id_fk": {
-          "name": "orders_batch_id_pick_batches_id_fk",
-          "tableFrom": "orders",
-          "tableTo": "pick_batches",
-          "columnsFrom": [
-            "batch_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "orders_assigned_to_users_id_fk": {
           "name": "orders_assigned_to_users_id_fk",
           "tableFrom": "orders",
@@ -1635,112 +1610,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.pick_batches": {
-      "name": "pick_batches",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "company_id": {
-          "name": "company_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "number": {
-          "name": "number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "taken_by": {
-          "name": "taken_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sorting": {
-          "name": "sorting",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'open'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "pick_batches_company_id_number_idx": {
-          "name": "pick_batches_company_id_number_idx",
-          "columns": [
-            {
-              "expression": "company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "number",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "pick_batches_company_id_companies_id_fk": {
-          "name": "pick_batches_company_id_companies_id_fk",
-          "tableFrom": "pick_batches",
-          "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "pick_batches_taken_by_users_id_fk": {
-          "name": "pick_batches_taken_by_users_id_fk",
-          "tableFrom": "pick_batches",
-          "tableTo": "users",
-          "columnsFrom": [
-            "taken_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },

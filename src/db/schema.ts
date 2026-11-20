@@ -282,6 +282,8 @@ export const orders = pgTable(
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
     /** Set by sync when Fierro edited the order, or stopped listing it, after picking started. */
     fierroChange: text("fierro_change").$type<FierroChange>(),
+    /** A supervisor marked it to go first (same-day delivery, a cutoff). Queues sort urgent first, then oldest. */
+    urgent: boolean("urgent").notNull().default(false),
     /** Lines Fierro sent for articles not in the catalogue. Such an order cannot be taken until they are known. */
     unknownLines: integer("unknown_lines").notNull().default(0),
   },

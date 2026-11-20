@@ -10,6 +10,7 @@ import { confirm, putBack, release, shortage, take, wasThere } from "../actions"
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
+import { Urgency } from "@/components/Urgency";
 import { fierroWarning } from "@/lib/orderState";
 import { planRoute } from "@/lib/flows/picking";
 
@@ -56,6 +57,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
     <>
       <PageHeader title={`Pedido ${p.number}`} subtitle={p.status !== "pending" && !mine && takenBy ? `${customer} · Lo prepara ${takenBy}` : customer} back={{ href: "/picking", text: "Picking" }}>
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
+        <Urgency session={session} order={p} />
         <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "picked"].includes(p.status)} />
         {editable && (
           <ActionButton

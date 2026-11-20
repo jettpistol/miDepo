@@ -8,6 +8,7 @@ import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/s
 import { requireSession } from "@/lib/session";
 import { fierroWarning } from "@/lib/orderState";
 import { Assignee } from "@/components/Assignee";
+import { Urgency } from "@/components/Urgency";
 import { close, scan, finish, empty, takeOut, reopen, reopenOrder } from "../actions";
 import { articleName } from "@/lib/article";
 
@@ -35,6 +36,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHeader title={`Empaque ${p.number}`} subtitle={customer} back={{ href: "/empaque", text: "Empaque" }}>
+        <Urgency session={session} order={p} />
         <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
 import { boxes, companies, orderLines, orders, pickBatches, stock, pickTasks, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
@@ -285,10 +285,10 @@ export async function takeAll(c: Ctx) {
       .set({ status: "in_picking", takenBy: c.userId, batchId: batch.id })
       // Not the ones a single "Preparar" would refuse: changed in Fierro, or with titles not in the catalogue.
       .where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"), isNull(orders.fierroChange), eq(orders.unknownLines, 0)))
-      .returning({ id: orders.id, date: orders.date });
+      .returning({ id: orders.id, date: orders.date, urgent: orders.urgent });
     if (taken.length === 0) throw new UserError("PICK-22", "No hay pedidos pendientes para preparar.");
-    taken.sort((a, b) => a.date.getTime() - b.date.getTime() || a.id - b.id);
-    // Oldest first: when stock is short, the oldest orders get it.
+    taken.sort((a, b) => Number(b.urgent) - Number(a.urgent) || a.date.getTime() - b.date.getTime() || a.id - b.id);
+    // Urgent first, then oldest: when stock is short, those orders get it (and the lower trays).
     for (const [i, o] of taken.entries()) {
       if (batch.sorting === "trays") await tx.update(orders).set({ tray: i + 1 }).where(eq(orders.id, o.id));
       await buildRoute(tx, c.companyId, o.id);
@@ -311,7 +311,7 @@ async function stopTasks(tx: Executor, batchId: number, locationId: number, prod
     .from(pickTasks)
     .innerJoin(orders, eq(orders.id, pickTasks.orderId))
     .where(and(eq(orders.batchId, batchId), eq(pickTasks.status, "pending"), eq(pickTasks.locationId, locationId), eq(pickTasks.productId, productId)))
-    .orderBy(asc(orders.date), asc(orders.id), asc(pickTasks.id));
+    .orderBy(desc(orders.urgent), asc(orders.date), asc(orders.id), asc(pickTasks.id));
 }
 
 /** The batch is done when no order in it has a stop left. */

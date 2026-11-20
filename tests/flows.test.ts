@@ -22,6 +22,8 @@ import { cancelCount, closeCount, createCount, differences, scanCount, markLocat
 import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
+import { setUrgent } from "@/lib/flows/orders";
+import { loadOpenOrders } from "@/app/(app)/picking/Tables";
 import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
 
 let db: DB;
@@ -598,5 +600,23 @@ describe("orders that Fierro changes", () => {
     expect((await byId(gone.id)).status).toBe("pending");
     await sync(db, e, Object.assign(Object.create(real), { pendingOrders: async () => [] }));
     expect((await byId(gone.id)).status).toBe("pending");
+  });
+});
+
+describe("urgent orders", () => {
+  it("a supervisor marks an order urgent and it goes first in the queue; not once packed", async () => {
+    const { e, u: user } = await buildCompany("Urgente SA", "urgente", 41);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const pending = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.status, "pending"))).orderBy(asc(orders.date));
+    const last = pending[pending.length - 1];
+    await setUrgent(u, last.id, true);
+    const { pending: queue } = await loadOpenOrders(db, e.id);
+    expect(queue[0].p.id).toBe(last.id);
+    await setUrgent(u, last.id, false);
+    expect((await loadOpenOrders(db, e.id)).pending[0].p.id).toBe(pending[0].id);
+    await db.update(orders).set({ status: "packed" }).where(eq(orders.id, last.id));
+    await expect(setUrgent(u, last.id, true)).rejects.toThrow(/ORD-02|empacado/);
+    const other = await buildCompany("Ajena SA", "ajena-urg", 42);
+    await expect(setUrgent({ db, companyId: other.e.id, userId: other.u.id }, pending[0].id, true)).rejects.toThrow(UserError);
   });
 });

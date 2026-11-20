@@ -46,7 +46,7 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
       .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
       .where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "in_picking", "picked"])))
       .groupBy(orders.id, customers.name)
-      .orderBy(asc(orders.date))
+      .orderBy(desc(orders.urgent), asc(orders.date))
       .limit(300),
     db
       .select({

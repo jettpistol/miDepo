@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge, ShelfMark, plural } from "@/components/ui";
@@ -50,7 +50,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
     .from(orders)
     .innerJoin(customers, eq(customers.id, orders.customerId))
     .where(eq(orders.batchId, id))
-    .orderBy(asc(orders.date), asc(orders.id));
+    .orderBy(desc(orders.urgent), asc(orders.date), asc(orders.id));
   const lines = await db.select({ quantity: orderLines.quantity, picked: orderLines.picked }).from(orderLines).innerJoin(orders, eq(orders.id, orderLines.orderId)).where(eq(orders.batchId, id));
   const tasks = await db
     .select({ t: pickTasks, order: orders.number, tray: orders.tray, title: products.title, sku: products.internalCode, isbn: products.isbn, barcode: products.barcode, location: locations.code })
@@ -59,7 +59,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
     .innerJoin(products, eq(products.id, pickTasks.productId))
     .leftJoin(locations, eq(locations.id, pickTasks.locationId))
     .where(eq(orders.batchId, id))
-    .orderBy(asc(locations.code), asc(products.title), asc(orders.date), asc(orders.id));
+    .orderBy(asc(locations.code), asc(products.title), desc(orders.urgent), asc(orders.date), asc(orders.id));
   const open = batchOrders.filter(({ o }) => o.status === "in_picking" || o.status === "picked");
   const [box] = open.length > 0 ? await db.select({ id: boxes.id }).from(boxes).where(inArray(boxes.orderId, open.map(({ o }) => o.id))).limit(1) : [];
 
