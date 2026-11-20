@@ -8,6 +8,10 @@ import { Dropdown } from "@/components/Dropdown";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
 import { Hotkeys } from "@/components/Hotkeys";
+import { GlobalSearch, type SearchRow } from "@/components/GlobalSearch";
+import { NAV } from "@/lib/hotkeys";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { saveTheme } from "./cuenta/actions";
 import { counts, orders, receivings, returns } from "@/db/schema";
 import { MENU } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
@@ -26,6 +30,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     n(db.select({ n: count() }).from(returns).where(and(eq(returns.companyId, c), eq(returns.status, "in_progress")))),
     n(db.select({ n: count() }).from(counts).where(and(eq(counts.companyId, c), eq(counts.status, "open")))),
   ]);
+  // What the top search offers before anything is typed: the screens this person can open.
+  const altKey = Object.fromEntries(Object.entries(NAV).map(([d, href]) => [href, `Alt + ${d}`]));
+  const starters: SearchRow[] = groups.flatMap((g) => g.items.map((i) => ({ key: i.href, group: g.group, title: i.name, path: [], href: i.href, icon: i.icon, keys: altKey[i.href] })));
   const queueCounts = { "/picking": toPick, "/recepcion": toReceive, "/empaque": toPack, "/devoluciones": toReturn, "/conteos": toCount };
 
   return (
@@ -35,13 +42,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <Link href="/" className="-ml-1 shrink-0 rounded-control px-1 py-1 text-accent-text lg:w-[13.5rem]">
             <Brand />
           </Link>
-          <form action="/stock" role="search" className="relative hidden max-w-xl flex-1 lg:block">
-            <Icon name="stock" className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted" />
-            <input name="q" type="search" placeholder="Buscar título, autor, ISBN o ubicación" aria-label="Buscar en el stock" autoComplete="off" className="h-8 w-full rounded-control border border-line-strong bg-surface pr-3 pl-8 text-sm placeholder:text-muted hover:border-ink/60 focus:border-accent-text" />
-          </form>
+          <GlobalSearch starters={starters} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted lg:hidden">{company.name}</span>
 
+          <div className="ml-auto flex items-center gap-1 lg:hidden">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
+          </div>
           <div className="ml-auto hidden items-center gap-1 lg:flex">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
             <Link href="/ayuda" title="Manual · F1: atajos de teclado" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
               <Icon name="help" className="size-5" />
             </Link>
@@ -53,13 +61,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   <span className="block text-xs text-muted">{ROLE_LABEL[user.role]}</span>
                 </span>
               </summary>
-              <div className="absolute top-full right-0 mt-1.5 w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
+              <div className="absolute top-full right-0 mt-1.5 w-max max-w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
                 <Accounts />
               </div>
             </Dropdown>
           </div>
 
-          <Link href="/mas" className="flex items-center lg:hidden" aria-label={`Menú y cuentas. En uso: ${user.name}`}>
+          <Link href="/mas" className="flex items-center max-lg:order-2 lg:hidden" aria-label={`Menú y cuentas. En uso: ${user.name}`}>
             <Avatar person={user} className="size-8 text-xs" />
           </Link>
         </div>

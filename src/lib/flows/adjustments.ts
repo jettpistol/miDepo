@@ -4,6 +4,7 @@ import { adjustmentLines, adjustments, locations, movements, products, stock, us
 import { UserError } from "../errors";
 import { moveStock } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 /**
  * Stock that changes with nobody on the other side: losses, damage, stock that turns up.
@@ -45,11 +46,11 @@ export async function writeOff(c: Ctx, d: { locationId: number; productId: numbe
   if (!u || !(u.type in WRITE_OFF_ZONES)) throw new UserError("ADJ-01", "Solo se da de baja lo que está en Faltantes o en Dañados.");
   if (!isLossCause(d.cause)) throw new UserError("ADJ-02", "Elige el motivo de la baja.");
   const [p] = await c.db.select().from(products).where(and(eq(products.id, d.productId), eq(products.companyId, c.companyId)));
-  if (!p) throw new UserError("ADJ-03", "Ese título no está en el catálogo.");
+  if (!p) throw new UserError("ADJ-03", "Ese artículo no está en el catálogo.");
   return c.db.transaction(async (tx) => {
     const a = await recordAdjustment(tx, c, [{ productId: p.id, locationId: u.id, quantity: -n, cause: d.cause as AdjustmentCause }]);
     await moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: u.id, toId: null, quantity: n, reason: "write_off", reference: a.number, userId: c.userId });
-    return `${a.number}: ${n} × ${p.title} dado de baja (${causeName(d.cause).toLowerCase()}).`;
+    return `${a.number}: ${n} × ${articleName(p.title)} dado de baja (${causeName(d.cause).toLowerCase()}).`;
   });
 }
 

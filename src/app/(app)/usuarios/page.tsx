@@ -11,8 +11,8 @@ export const metadata = { title: "Usuarios" };
 
 const ROLES = [
   { id: "operator", name: "Operario", help: "Hace el trabajo del depósito." },
-  { id: "supervisor", name: "Supervisor", help: "Además arma conteos, ubicaciones y habla con Fierro." },
-  { id: "admin", name: "Administrador", help: "Además maneja los usuarios." },
+  { id: "supervisor", name: "Supervisor", help: "Además crea conteos y ubicaciones, y gestiona la conexión con Fierro." },
+  { id: "admin", name: "Administrador", help: "Además gestiona los usuarios." },
 ] as const;
 
 export default async function Users() {
@@ -23,7 +23,7 @@ export default async function Users() {
     <>
       <PageHeader title="Usuarios" subtitle={
           <>
-            {list.filter((u) => u.active).length} personas · código de empresa para entrar con PIN: <Code>{company.slug}</Code>
+            {list.filter((u) => u.active).length} personas · código de empresa para iniciar sesión con PIN: <Code>{company.slug}</Code>
           </>
         }
       />
@@ -45,12 +45,12 @@ export default async function Users() {
                 <Badge tone="accent">{ROLES.find((r) => r.id === u.role)?.name}</Badge>
                 {u.passwordHash && <Badge>Contraseña</Badge>}
                 {u.pinHmac && <Badge>PIN</Badge>}
-                {!u.active && <Badge tone="danger">Dado de baja</Badge>}
+                {!u.active && <Badge tone="danger">Desactivado</Badge>}
               </span>
             </div>
             {u.id !== user.id && (
               <details className="mt-2 sm:pl-12">
-                <summary className="link inline-block cursor-pointer text-sm">Cambiar rol, acceso o dar de baja</summary>
+                <summary className="link inline-block cursor-pointer text-sm">Cambiar rol, acceso o estado</summary>
                 <div className="mt-3 mb-2 grid max-w-3xl gap-x-6 gap-y-5 sm:grid-cols-2">
                   <ActionForm action={changeRole} button="Guardar rol" className="space-y-2" resetOnOk={false}>
                     <input type="hidden" name="id" value={u.id} />
@@ -59,12 +59,12 @@ export default async function Users() {
                     </label>
                     <Select id={`rol-${u.id}`} name="role" defaultValue={u.role} options={ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }))} />
                   </ActionForm>
-                  <ActionForm action={setAccess} button="Guardar acceso" className="space-y-2" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o las dos cosas." }}>
+                  <ActionForm action={setAccess} button="Guardar acceso" className="space-y-2" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o ambos." }}>
                     <input type="hidden" name="id" value={u.id} />
                     <label className="field-label" htmlFor={`pin-${u.id}`}>
                       PIN nuevo y/o contraseña nueva
                     </label>
-                    <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 números" className="field font-mono" placeholder="PIN de 6 números" autoComplete="off" />
+                    <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 dígitos" className="field font-mono" placeholder="PIN de 6 dígitos" autoComplete="off" />
                     <input name="password" type="password" minLength={8} className="field" placeholder="Contraseña (8 o más)" aria-label="Contraseña nueva" autoComplete="new-password" />
                   </ActionForm>
                   <div className="flex flex-wrap items-start gap-2">
@@ -73,8 +73,8 @@ export default async function Users() {
                         Quitar foto
                       </ActionButton>
                     )}
-                    <ActionButton action={toggleActive} hiddenFields={{ id: u.id }} className={u.active ? "btn-danger" : "btn-soft"} confirm={u.active ? `¿Dar de baja a ${u.name}? No va a poder entrar más.` : undefined}>
-                      {u.active ? "Dar de baja" : "Volver a habilitar"}
+                    <ActionButton action={toggleActive} hiddenFields={{ id: u.id }} className={u.active ? "btn-danger" : "btn-soft"} confirm={u.active ? `¿Desactivar a ${u.name}? Ya no podrá iniciar sesión.` : undefined}>
+                      {u.active ? "Desactivar" : "Reactivar"}
                     </ActionButton>
                   </div>
                 </div>
@@ -84,9 +84,9 @@ export default async function Users() {
         ))}
       </ul>
 
-      <section className="panel mt-10 lg:mt-8 max-w-3xl p-5 lg:p-4">
-        <h2 className="section-title mb-3">Sumar a alguien</h2>
-        <ActionForm action={create} button="Crear usuario" className="grid gap-3 sm:grid-cols-2" anyOf={{ fields: ["pin", "password"], message: "Dale un PIN, una contraseña o las dos cosas para que pueda entrar." }}>
+      <section id="nuevo" className="panel mt-10 lg:mt-8 max-w-3xl p-5 lg:p-4">
+        <h2 className="section-title mb-3">Nuevo usuario</h2>
+        <ActionForm action={create} button="Crear usuario" className="grid gap-3 sm:grid-cols-2" anyOf={{ fields: ["pin", "password"], message: "Asigna un PIN, una contraseña o ambos para que pueda iniciar sesión." }}>
           <div>
             <label htmlFor="name" className="field-label">
               Nombre y apellido
@@ -109,7 +109,7 @@ export default async function Users() {
             <label htmlFor="pin" className="field-label">
               PIN
             </label>
-            <input id="pin" name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 números" className="field font-mono" placeholder="6 números" autoComplete="off" />
+            <input id="pin" name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 dígitos" className="field font-mono" placeholder="6 dígitos" autoComplete="off" />
           </div>
           <div>
             <label htmlFor="password" className="field-label">

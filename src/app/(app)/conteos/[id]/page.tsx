@@ -10,6 +10,7 @@ import { LOSS_CAUSES } from "@/lib/flows/adjustments";
 import { can, requireSession } from "@/lib/session";
 import { approve, recount, reopen } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 
 export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -63,7 +64,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                 <thead>
                   <tr>
                     <th>Ubicación</th>
-                    <th>Título</th>
+                    <th>Artículo</th>
                     <th className="hidden text-right sm:table-cell">Sistema</th>
                     <th className="hidden text-right sm:table-cell">Contado</th>
                     <th className="text-right">Diferencia</th>
@@ -77,7 +78,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                         <ShelfMark code={d.location} />
                       </td>
                       <td>
-                        <span className="font-medium">{d.title}</span>
+                        <span className="font-medium">{articleName(d.title)}</span>
                         <span className="block text-muted sm:hidden">
                           Sistema {d.system} · Contado {d.countedQty}
                         </span>
@@ -110,7 +111,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             resetOnOk={false}
             hotkey="finish"
             reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes. El recuento lo hace otra persona.` : undefined}
-            confirm={`Se va a ajustar el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}
+            confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}
           >
             <input type="hidden" name="id" value={id} />
             {plan.losses.length > 0 ? (
@@ -137,7 +138,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
               <tr>
                 <th>Ubicación</th>
                 <th>Estado</th>
-                <th className="hidden sm:table-cell">Quién contó</th>
+                <th className="hidden sm:table-cell">Contado por</th>
                 <th />
               </tr>
             </thead>

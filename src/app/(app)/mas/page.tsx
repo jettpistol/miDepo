@@ -19,7 +19,8 @@ export default async function More() {
         </div>
       </section>
       {MENU.map((g) => {
-        const items = g.items.filter((i) => can(user.role, i.minRole ?? "operator"));
+        // Ajustes is already the first row of "Tu cuenta".
+        const items = g.items.filter((i) => can(user.role, i.minRole ?? "operator") && i.href !== "/cuenta");
         if (items.length === 0) return null;
         return (
           <section key={g.group} className="mb-8 lg:mb-6">

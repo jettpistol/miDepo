@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { DB, Executor } from "@/db";
 import { customers, companies, fierroStock, orderLines, orders, products, receivingLines, receivings, suppliers } from "@/db/schema";
+import { makeThumbnails } from "@/lib/covers";
 import { SimulatedFierro } from "./simulated";
 import type { FierroConnector } from "./types";
 
@@ -79,6 +80,8 @@ export async function sync(db: DB, company: Company) {
     }
     await tx.update(companies).set({ lastSync: new Date() }).where(eq(companies.id, company.id));
   });
+  // Outside the transaction: covers may come from the network, and a missing one blocks nothing.
+  await makeThumbnails(db, company.id);
   return summary;
 }
 

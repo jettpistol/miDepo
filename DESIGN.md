@@ -148,7 +148,7 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 ## Typography
 
 - **Libre Franklin** for all interface text. One family; weight and size carry hierarchy. Desktop: page titles 24px semibold, section headings 14px semibold, body and tables 14px, table headers and field labels 12px. Phones: titles 22px bold, body 15px. Fixed rem sizes, no fluid type.
-- **Each user can switch the interface font** in Mi cuenta (14 choices in `src/lib/fonts.ts`, loaded in `src/app/fonts.ts`, applied through `--font-ui`). Libre Franklin is the default. Only the default is preloaded; other files download only for the people who pick them.
+- **Each user can switch the interface font** in Ajustes (14 choices in `src/lib/fonts.ts`, loaded in `src/app/fonts.ts`, applied through `--font-ui`). Libre Franklin is the default. Only the default is preloaded; other files download only for the people who pick them.
 - **Courier Prime bold**, as typed on a label, only for codes: shelf labels, ISBNs, internal codes and document numbers. Never for prose or headings.
 - Numerals are tabular everywhere.
 - Prose (the manual) is capped at 72ch.
@@ -157,7 +157,7 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 
 - **Density follows Jira on desktop** (from `lg`, 1024px): 14px body text with 20px line height, 32px buttons and inputs (`btn`, `field`), 28px row buttons (`btn-sm`), 12px table headers and field labels, 24px semibold page titles. Free space is left free: a screen that is not full has room for the next feature.
 - **Phones keep touch sizes** (below `lg`): 44px controls and 15–16px text, because operators scan on the floor with one hand.
-- Desktop shell: a 48px white top bar (brand, stock search, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
+- Desktop shell: a 48px white top bar (brand, the search for everything, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
 - Phone shell: a 52px white top bar and a five-item bar fixed at the bottom. The rest of the menu is at `/mas`.
 - Page header: a breadcrumb (parent / ) above the title, actions on the right.
 - Work screens use two columns from `lg`: a sticky 22–24rem scan column (`lg:top-30`) and the list beside it.
@@ -187,6 +187,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **New button** (`<NewButton>`): "+ Nueva" in the page header, opening a small panel with the form, like Jira's Create.
 - **Always-on tables**: list screens keep their table even when empty, with one `<EmptyRow>` that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
+- **Product cards** (`<ProductCards>`, owner request 2026-11-20): the second view of product lists (Stock, a location's contents); Lista is the default. A ruled grid, flat like a table: each cell has the list cover (`<Cover>`, 56 × 80 px), title, author, code chip and units. `<ViewSwitch>` (tabs "Lista" / "Tarjetas", the default first) switches between them; the table's rows lead with a 40 × 56 px cover. The last choice is saved per user. Only product lists get cards; task lists stay tables.
 - **`panel`**: a plain 6px bordered panel, used only around a form or a settings group. Never nested.
 - **Progress**: a 6px progress bar with "12 de 40" beside it; it turns green when complete.
 - Motion: 150ms colour transitions, and a 180ms fade for scan responses. Nothing decorative; reduced-motion is respected.
@@ -196,7 +197,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - Do lead a row with its shelf label when it has one.
 - Do keep the product's Spanish copy (tú, never voseo) and Fierro's vocabulary.
 - Do use tokens for every colour so both themes and any user accent hold.
-- Don't build a screen from a grid of same-size cards or big-number tiles.
+- Don't build a screen from a grid of same-size cards or big-number tiles. The one exception is product cards with covers, and they stay ruled and flat.
 - Don't use rounded corners above 6px, pills for containers, gradients, or coloured side stripes.
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.

@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Shortcut, Lookup, FieldStatus } from "@/lib/lookup";
+import { DisabledReason } from "./Hint";
 import type { Result } from "@/lib/errors";
 import { Camera } from "./Camera";
 import { Icon } from "./Icon";
@@ -410,7 +411,6 @@ export function ActionButton({
   hotkey?: HotkeyName;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
-  const id = useId();
   return (
     <form
       action={submit}
@@ -422,14 +422,11 @@ export function ActionButton({
       {Object.entries(hiddenFields).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
-      <button className={className} disabled={submitting || Boolean(reason)} aria-describedby={reason ? id : undefined} {...(key ? hotkey(key, typeof children === "string" ? children : undefined) : {})}>
-        {submitting ? "Un momento…" : children}
-      </button>
-      {reason && (
-        <p id={id} className="basis-full text-sm text-muted">
-          {reason}
-        </p>
-      )}
+      <DisabledReason reason={reason} className={/\bw-full\b/.test(className) ? "flex w-full" : "inline-flex"}>
+        <button className={className} disabled={submitting || Boolean(reason)} {...(key ? hotkey(key, typeof children === "string" ? children : undefined) : {})}>
+          {submitting ? "Un momento…" : children}
+        </button>
+      </DisabledReason>
       {(status.error || (showOk && status.ok)) && (
         <div className="basis-full">
           <Message status={status} />
@@ -469,7 +466,6 @@ export function ActionForm({
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const form = useRef<HTMLFormElement>(null);
-  const reasonId = useId();
   useEffect(() => {
     if (status.ok && resetOnOk) form.current?.reset();
   }, [status, resetOnOk]);
@@ -491,14 +487,11 @@ export function ActionForm({
       }}
     >
       {children}
-      <button className={buttonClassName} disabled={submitting || Boolean(reason)} aria-describedby={reason ? reasonId : undefined} {...(key ? hotkey(key, button) : {})}>
-        {submitting ? "Un momento…" : button}
-      </button>
-      {reason && (
-        <p id={reasonId} className="basis-full text-sm text-muted">
-          {reason}
-        </p>
-      )}
+      <DisabledReason reason={reason} className={/\bw-full\b/.test(buttonClassName) ? "flex w-full" : "inline-flex"}>
+        <button className={buttonClassName} disabled={submitting || Boolean(reason)} {...(key ? hotkey(key, button) : {})}>
+          {submitting ? "Un momento…" : button}
+        </button>
+      </DisabledReason>
       <Message status={status} />
     </form>
   );

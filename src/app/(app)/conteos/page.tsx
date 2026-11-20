@@ -29,7 +29,7 @@ export default async function Counts() {
     <>
       <PageHeader title="Conteos" />
       {can(user.role, "supervisor") && (
-        <section className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
+        <section id="nuevo" className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
           <h2 className="section-title">Nuevo conteo</h2>
           <ActionForm action={create} button="Crear conteo" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
             <div>
@@ -44,7 +44,7 @@ export default async function Counts() {
       )}
       {rows.length === 0 ? (
         <EmptyState icon="count" title="No hay conteos">
-          {can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
+          {can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor cree un conteo, aparecerá aquí."}
         </EmptyState>
       ) : (
         <div className="table-wrap">
@@ -75,7 +75,7 @@ export default async function Counts() {
                     <Progress done={countedCount} total={total} />
                   </td>
                   <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(k.date)}</td>
-                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">Para revisar</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
+                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">En revisión</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
                 </tr>
               ))}
             </tbody>

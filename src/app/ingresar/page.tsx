@@ -8,7 +8,7 @@ import { Brand } from "@/components/Brand";
 import { ShelfMark } from "@/components/ui";
 import { LoginForm } from "./LoginForm";
 
-export const metadata: Metadata = { title: "Ingresar" };
+export const metadata: Metadata = { title: "Iniciar sesión" };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ agregar?: string }> }) {
   const adding = Boolean((await searchParams).agregar);
@@ -23,10 +23,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
         <div className="my-8 max-w-md lg:my-0">
           <ShelfMark code="A-01-1" size="md" onAccent className="mb-4 lg:hidden" />
           <ShelfMark code="A-01-1" size="xl" onAccent className="mb-7 max-lg:hidden" />
-          <h1 className="text-3xl leading-[1.1] font-bold tracking-[-0.025em] lg:text-[2.75rem]">El depósito de libros, ordenado.</h1>
-          <p className="mt-4 text-base opacity-85 lg:text-lg">Cada título en su estante, cada pedido en su caja. La oficina sigue trabajando en Fierro como siempre.</p>
+          <h1 className="text-3xl leading-[1.1] font-bold tracking-[-0.025em] lg:text-[2.75rem]">El depósito, en orden.</h1>
+          <p className="mt-4 text-base opacity-85 lg:text-lg">Cada artículo en su ubicación, cada pedido en su caja. La oficina sigue trabajando en Fierro como siempre.</p>
         </div>
-        <p className="hidden text-sm opacity-80 lg:block">Recepción · Guardado · Picking · Empaque · Devoluciones · Conteos</p>
+        <p className="hidden text-sm opacity-80 lg:block">Recepción · Reposición · Picking · Empaque · Devoluciones · Conteos</p>
       </section>
       <section className="flex items-start justify-center bg-page px-6 py-10 lg:items-center">
         <div className="w-full max-w-sm">

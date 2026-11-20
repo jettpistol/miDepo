@@ -34,7 +34,7 @@ export async function pendingExports(db: DB, companyId: number): Promise<Pending
     ...rs.map((r) => ({ type: "receiving" as const, ...r })),
     ...ds.map((d) => ({ type: "return" as const, ...d })),
     ...ks.map((k) => ({ type: "count" as const, ...k, detail: "Ajustes de stock por ubicación" })),
-    ...as.map((a) => ({ type: "adjustment" as const, ...a, detail: `Aprobó ${a.detail}` })),
+    ...as.map((a) => ({ type: "adjustment" as const, ...a, detail: `Aprobado por ${a.detail}` })),
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
@@ -100,7 +100,7 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
     const now = new Date();
     if (type === "order") {
       const flagged = await tx.update(orders).set({ status: "shipped", sentToFierro: now }).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId), eq(orders.status, "packed"))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-05", "Ese pedido no está listo para documentar.");
+      if (flagged.length === 0) throw new UserError("EXP-05", "Ese pedido no está listo para cargar en Fierro.");
       const prep = await zone(tx, c.companyId, "staging");
       const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, id));
       for (const l of lines) {
@@ -112,24 +112,24 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
       doc.reference = flagged[0].number;
     } else if (type === "receiving") {
       const flagged = await tx.update(receivings).set({ sentToFierro: now }).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-06", "Esa recepción no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-06", "Esa recepción no está pendiente de carga en Fierro.");
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(receivingLines).where(eq(receivingLines.receivingId, id))).map((l) => ({ productId: l.productId, delta: l.received }));
     } else if (type === "return") {
       const flagged = await tx.update(returns).set({ sentToFierro: now }).where(and(eq(returns.id, id), eq(returns.companyId, c.companyId), eq(returns.status, "closed"), isNull(returns.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-07", "Esa devolución no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-07", "Esa devolución no está pendiente de carga en Fierro.");
       doc.type = "return";
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(returnLines).where(eq(returnLines.returnId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
     } else if (type === "adjustment") {
       const flagged = await tx.update(adjustments).set({ sentToFierro: now }).where(and(eq(adjustments.id, id), eq(adjustments.companyId, c.companyId), isNull(adjustments.countId), isNull(adjustments.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-13", "Esa baja no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-13", "Esa baja no está pendiente de carga en Fierro.");
       doc.type = "adjustment";
       doc.reference = flagged[0].number;
       doc.lines = (await tx.select().from(adjustmentLines).where(eq(adjustmentLines.adjustmentId, id))).map((l) => ({ productId: l.productId, delta: l.quantity }));
     } else {
       const flagged = await tx.update(counts).set({ sentToFierro: now }).where(and(eq(counts.id, id), eq(counts.companyId, c.companyId), eq(counts.status, "closed"), isNull(counts.sentToFierro))).returning();
-      if (flagged.length === 0) throw new UserError("EXP-08", "Ese conteo no está pendiente de envío.");
+      if (flagged.length === 0) throw new UserError("EXP-08", "Ese conteo no está pendiente de carga en Fierro.");
       doc.type = "count";
       doc.reference = flagged[0].name;
       const [own] = await tx.update(adjustments).set({ sentToFierro: now }).where(eq(adjustments.countId, id)).returning();

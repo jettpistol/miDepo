@@ -7,6 +7,7 @@ import { sql } from "drizzle-orm";
 import { connect, runMigrations } from "./index";
 import { companies } from "./schema";
 import { seed } from "./seed";
+import { makeThumbnails } from "@/lib/covers";
 
 async function main() {
   const reset = process.argv.includes("--reset");
@@ -24,6 +25,11 @@ async function main() {
     const startedAt = Date.now();
     await seed(db, (m) => console.log("  " + m));
     console.log(`Demo data loaded in ${((Date.now() - startedAt) / 1000).toFixed(1)} s.`);
+  }
+  // Thumbnails missing from databases made before list covers existed, or whose cover changed.
+  for (const c of await db.select({ id: companies.id }).from(companies)) {
+    const r = await makeThumbnails(db, c.id);
+    if (r.made > 0 || r.failed > 0) console.log(`  Portadas para listas: ${r.made} hechas${r.failed > 0 ? `, ${r.failed} no se pudieron leer` : ""}.`);
   }
   console.log(`Database ready (${embedded ? "embedded in ./.data" : "Postgres"}).`);
   await close();

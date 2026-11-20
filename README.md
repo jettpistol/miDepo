@@ -42,7 +42,7 @@ Ovnipress is seeded with the 118 real titles scraped from its shop (`scripts/scr
 4. **Picking** → *Preparar* the first order and follow the stops. The shelf code and book code to scan are shown on screen.
 5. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
 6. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.
-7. **Mi cuenta** → change your accent colour and font (14 to choose from).
+7. **Ajustes** (sidebar, or your name in the top bar) → change your accent colour and font (14 to choose from).
 8. On a phone (or a narrow browser window), log in with a PIN.
 
 To start again from clean demo data:
@@ -70,6 +70,7 @@ npm run db:reset
 | Appearance | The Tejuelo design system (see `DESIGN.md`) at the density of a work tool like Jira on desktop: left sidebar with a count beside each queue, compact tables and controls. Phones keep touch-size controls. **Each user picks their own accent colour, light/dark theme and font**; it follows them to every device. |
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
+| Search | The top bar searches everything, in three tabs: **Funciones** (screens, actions, settings, with synonyms and typo tolerance), **Inventario** (titles, shelves, orders, receivings, returns, counts; a scanned code goes first) and **Guías** (the manual, opened at the matching section). Ctrl/⌘+K or `/`; full screen on a phone. |
 | Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (search bar, readable without logging in). |
 
 ## How it fits with Fierro

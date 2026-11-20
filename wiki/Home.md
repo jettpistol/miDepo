@@ -1,6 +1,6 @@
 # Manual de miDepo
 
-miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la preparación de los pedidos y deja registro de todo lo que entra y sale. La oficina sigue trabajando en **Fierro**: miDepo toma de ahí los pedidos y le devuelve lo que pasó en el depósito.
+miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía la preparación de los pedidos y deja registro de todo lo que entra y sale. La oficina sigue trabajando en **Fierro**: miDepo toma de allí los pedidos y le devuelve lo que pasó en el depósito.
 
 > Este manual tiene **buscador**: está arriba de todo.
 
@@ -11,28 +11,29 @@ miDepo es la herramienta del depósito. Dice dónde está cada libro, guía la p
 | Si tienes que… | Ve a | Guía |
 |---|---|---|
 | Contar mercadería que llega | **Recepción** | [Recepción](Recepcion) |
-| Llevar lo recibido a su estante | **Reposición** | [Reposición](Reposicion) |
+| Llevar lo recibido a su ubicación | **Reposición** | [Reposición](Reposicion) |
 | Preparar un pedido | **Picking** | [Picking](Picking) |
-| Armar las cajas de un pedido | **Empaque** | [Empaque](Empaque) |
-| Revisar libros que vuelven | **Devoluciones** | [Devoluciones](Devoluciones) |
+| Preparar las cajas de un pedido | **Empaque** | [Empaque](Empaque) |
+| Revisar artículos que vuelven | **Devoluciones** | [Devoluciones](Devoluciones) |
 | Contar un tramo del depósito | **Conteos** | [Conteos](Conteos) |
-| Cambiar libros de lugar | **Mover** | [Mover](Mover) |
-| Saber dónde está un título | **Stock** | [Stock](Stock) |
+| Cambiar artículos de ubicación | **Mover** | [Mover](Mover) |
+| Saber dónde está un artículo | **Stock** | [Stock](Stock) |
 
 ## Para supervisores y administradores
 
-- [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas): ponerle nombre a los estantes e imprimir sus carteles.
+- [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas): nombrar las ubicaciones e imprimir sus etiquetas.
 - [Bajas y faltantes](Bajas-y-faltantes): lo que falta, lo roto y lo que aparece, con su motivo.
 - [Trabajar con Fierro](Trabajar-con-Fierro): sincronizar, cargar documentos y conciliar el stock.
-- [Usuarios y roles](Usuarios-y-roles): quién puede entrar y qué puede hacer.
+- [Usuarios y roles](Usuarios-y-roles): quién puede iniciar sesión y qué puede hacer.
+- [Editar el manual](Editar-el-manual): adaptar estas páginas a tu depósito (administradores).
 
 ## Tu cuenta
 
-- [Ingresar](Ingresar): contraseña, PIN, huella o rostro.
-- [Mi cuenta y colores](Mi-cuenta-y-colores): elegir tu color y el tema claro u oscuro.
+- [Iniciar sesión](Ingresar): contraseña, PIN, huella o rostro.
+- [Ajustes](Ajustes): tema claro u oscuro, color, tipografía, foto, contraseña y PIN.
 - [Instalar en el teléfono](Instalar-en-el-telefono): tener miDepo como una app.
 
-## Si algo no sale
+## Si algo falla
 
 - [Problemas frecuentes](Problemas-frecuentes)
 - [Glosario](Glosario)

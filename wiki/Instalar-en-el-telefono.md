@@ -18,12 +18,12 @@ miDepo se puede instalar como una app. Queda con su ícono en la pantalla de ini
 
 ## Después de instalar
 
-- Entra con tu PIN. El teléfono recuerda el código de empresa.
+- Inicia sesión con tu PIN. El teléfono recuerda el código de empresa.
 - La primera vez que uses la cámara para escanear, acepta el permiso.
-- En **Mi cuenta** (tocando tu foto) puedes registrar tu huella o tu rostro para entrar más rápido.
+- En **Ajustes** (tocando tu foto) puedes registrar tu huella o tu rostro para iniciar sesión más rápido.
 
 ## Para tener en cuenta
 
 - miDepo **necesita conexión**. Si el wifi se corta, espera a que vuelva: lo que no llegó a confirmarse no se guardó.
 - No hace falta actualizar nada: siempre abres la última versión.
-- Si el teléfono es compartido, **sal** al terminar el turno.
+- Si el teléfono es compartido, **cierra sesión** al terminar el turno.

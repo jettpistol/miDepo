@@ -121,6 +121,8 @@ html {
   accent-color: var(--accent-text);
   caret-color: var(--accent-text);
   scrollbar-color: var(--line-strong) transparent;
+  /* A link to a section (#apariencia) lands below the sticky top bar. */
+  scroll-padding-top: 4.5rem;
 }
 body {
   min-height: 100dvh;
@@ -171,6 +173,24 @@ h3 {
   }
   .btn-danger {
     @apply border border-danger/50 bg-surface text-danger hover:bg-danger-soft;
+  }
+  /* A field with its button attached on the right edge (search boxes, filters): one control, not two. */
+  .field-group {
+    @apply flex items-stretch rounded-control;
+  }
+  /* One focus ring around the whole control, whichever part has focus. */
+  .field-group:has(:focus-visible) {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+  .field-group > :focus-visible {
+    outline: none;
+  }
+  .field-group > .field {
+    @apply min-w-0 flex-1 rounded-r-none;
+  }
+  .field-group > button {
+    @apply -ml-px shrink-0 rounded-l-none;
   }
   .field-label {
     @apply mb-1.5 block text-sm font-semibold text-ink lg:mb-1 lg:text-xs lg:text-muted;

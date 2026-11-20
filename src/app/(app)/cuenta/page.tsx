@@ -9,7 +9,7 @@ import { Photo } from "./Photo";
 import { Appearance } from "./Appearance";
 import { AddPasskey } from "./Passkeys";
 
-export const metadata = { title: "Mi cuenta" };
+export const metadata = { title: "Ajustes" };
 
 export default async function Account() {
   const { db, user, company } = await requireSession();
@@ -19,9 +19,9 @@ export default async function Account() {
 
   return (
     <>
-      <PageHeader title="Mi cuenta" subtitle={`${user.name} · ${user.email}`} />
+      <PageHeader title="Ajustes" subtitle={`${user.name} · ${user.email}`} />
       <div className="max-w-4xl divide-y divide-line border-y border-line">
-        <section className={section}>
+        <section id="foto" className={section}>
           <h2 className="section-title">Foto de perfil</h2>
           <div className="flex flex-wrap items-center gap-5">
             <Avatar person={user} className="size-20 lg:size-14 text-2xl" />
@@ -36,12 +36,12 @@ export default async function Account() {
           </div>
         </section>
 
-        <section className={section}>
+        <section id="apariencia" className={section}>
           <h2 className="section-title">Apariencia</h2>
           <Appearance action={saveAppearance} accent={user.accent} theme={user.theme} font={user.font} />
         </section>
 
-        <section className={section}>
+        <section id="llaves" className={section}>
           <h2 className="section-title">
             Huella, rostro o llave {keys.length > 0 && <small>{keys.length}</small>}
           </h2>
@@ -53,7 +53,7 @@ export default async function Account() {
                     <span>
                       <span className="font-semibold">{l.name}</span> <span className="text-sm text-muted">· registrada el {shortDate(l.createdAt)}</span>
                     </span>
-                    <ActionButton action={removePasskey} hiddenFields={{ id: l.id }} className="cursor-pointer rounded-control text-sm font-semibold text-danger underline decoration-danger/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-danger disabled:opacity-55" confirm="¿Quitar esta llave? Ese dispositivo va a tener que entrar con contraseña o PIN." showOk={false}>
+                    <ActionButton action={removePasskey} hiddenFields={{ id: l.id }} className="cursor-pointer rounded-control text-sm font-semibold text-danger underline decoration-danger/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-danger disabled:opacity-55" confirm="¿Quitar esta llave? Ese dispositivo tendrá que iniciar sesión con contraseña o PIN." showOk={false}>
                       Quitar
                     </ActionButton>
                   </li>
@@ -64,7 +64,7 @@ export default async function Account() {
           </div>
         </section>
 
-        <section className={section}>
+        <section id="contrasena" className={section}>
           <h2 className="section-title">Contraseña</h2>
           <div className="max-w-sm">
             <ActionForm action={changePassword} button="Cambiar contraseña">
@@ -86,7 +86,7 @@ export default async function Account() {
           </div>
         </section>
 
-        <section className={section}>
+        <section id="pin" className={section}>
           <div>
             <h2 className="section-title">PIN del depósito</h2>
             <p className="text-sm text-muted">
