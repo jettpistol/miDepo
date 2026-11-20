@@ -6,7 +6,7 @@ Esta página es para administradores.
 
 | Tarea | Operario | Supervisor | Administrador |
 |---|:-:|:-:|:-:|
-| Recepción, reposición, picking, empaque | Sí | Sí | Sí |
+| Recepción, reposición, picking, control, empaque | Sí | Sí | Sí |
 | Devoluciones, mover, consultar stock | Sí | Sí | Sí |
 | Contar ubicaciones | Sí | Sí | Sí |
 | Ver pedidos, proveedores, clientes y movimientos | Sí | Sí | Sí |
@@ -17,6 +17,7 @@ Esta página es para administradores.
 | Sincronizar y cargar en Fierro | — | Sí | Sí |
 | Crear y desactivar usuarios | — | — | Sí |
 | [Editar el manual](Editar-el-manual) | — | — | Sí |
+| [Control de pedidos](Ajustes#control-de-pedidos) | — | — | Sí |
 
 ## Nuevo usuario
 
@@ -45,7 +46,7 @@ Un mismo teléfono o computadora admite varias cuentas abiertas, y pasar de una 
 
 ## Desactivar un usuario
 
-Toca **⋯** en su fila y luego **Desactivar**. La persona deja de poder iniciar sesión al instante, aunque tuviera la sesión abierta. Su historial queda: los movimientos que hizo siguen a su nombre. Se puede **reactivar** con **Reactivar**.
+Toca **⋯** en su fila y luego **Desactivar**. La persona deja de poder iniciar sesión al instante, aunque tuviera la sesión abierta. Su historial queda: los movimientos que hizo siguen a su nombre. Se puede **reactivar** con **Reactivar**. Lo que tenía tomado o asignado no se libera solo: el aviso de confirmación dice cuánto es, y un supervisor puede soltar sus pedidos o reasignar sus tareas.
 
 ## Buenas prácticas
 

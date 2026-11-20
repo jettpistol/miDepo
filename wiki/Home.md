@@ -13,6 +13,7 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 | Contar mercadería que llega | **Recepción** | [Recepción](Recepcion) |
 | Llevar lo recibido a su ubicación | **Reposición** | [Reposición](Reposicion) |
 | Preparar un pedido | **Picking** | [Picking](Picking) |
+| Contar de nuevo lo preparado | **Control** (si está activado) | [Control](Control) |
 | Preparar las cajas de un pedido | **Empaque** | [Empaque](Empaque) |
 | Revisar artículos que vuelven | **Devoluciones** | [Devoluciones](Devoluciones) |
 | Contar un tramo del depósito | **Conteos** | [Conteos](Conteos) |

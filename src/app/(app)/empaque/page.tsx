@@ -10,7 +10,7 @@ export const metadata = { title: "Empaque" };
 
 export default async function Packing() {
   const session = await requireSession();
-  const { db, company } = session;
+  const { db, company, user } = session;
   const a = await assignees(session);
   const rows = await db
     .select({
@@ -26,6 +26,10 @@ export default async function Packing() {
     .where(and(eq(orders.companyId, company.id), eq(orders.status, "picked")))
     .groupBy(orders.id, customers.name)
     .orderBy(desc(orders.urgent), asc(orders.date));
+
+  // When the order skipped Control, packing is the check: the picker may not do it if the company says so.
+  const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.controlledBy == null && p.takenBy === user.id;
+  const first = rows.findIndex((r) => !mine(r.p));
 
   return (
     <>
@@ -49,7 +53,7 @@ export default async function Packing() {
               {rows.map(({ p, customer, picked, packed, order }, i) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/empaque/${p.id}`} className="link doc-number" {...(i === 0 ? hotkey("primary", `Empacar ${p.number}`) : {})}>
+                    <Link href={`/empaque/${p.id}`} className="link doc-number" {...(i === first ? hotkey("primary", `Empacar ${p.number}`) : {})}>
                       {p.number}
                     </Link>
                   </td>
@@ -72,7 +76,9 @@ export default async function Packing() {
                   <td className="hidden text-right font-semibold sm:table-cell">{picked}</td>
                   <td className={`hidden text-right sm:table-cell ${picked < order ? "font-semibold text-danger" : "text-muted"}`}>{picked < order ? order - picked : "—"}</td>
                   <td>
-                    {packed > 0 ? (
+                    {mine(p) ? (
+                      <Badge>Lo empaca otra persona</Badge>
+                    ) : packed > 0 ? (
                       <Badge tone="accent">
                         {packed} de {picked} en cajas
                       </Badge>
