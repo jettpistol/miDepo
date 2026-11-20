@@ -1,6 +1,6 @@
 # Roadmap and open questions
 
-Where the project stands beyond what the README's "What is not done" lists. Last updated 2026-11-18.
+Where the project stands beyond what the README's "What is not done" lists. Last updated 2026-11-20.
 
 ## Suggested next steps, in order
 
@@ -11,6 +11,16 @@ Where the project stands beyond what the README's "What is not done" lists. Last
 5. **A real Fierro connector** behind `FierroConnector`. Start read-only (the B2B API for catalogue and availability, or the "acceso a datos" views for stock and sales) and keep CSV for write-back. The CSV layouts for orders, receipts, returns and write-offs are guesses; only the count export follows a format Fierro documents.
 6. **A thin standalone mode** for warehouses without Fierro: CSV import of catalogue and orders, plus a printable delivery note. Designed for, not built.
 7. Smaller: a screen to create companies, password reset, a translation file instead of Spanish text inside the pages, SINLI file import and export, tolerance for short wifi drops, continuous integration and a linter.
+
+## Hardware plan (labels, printers, scanners)
+
+Researched in [hardware/README.md](hardware/README.md); each phase waits for the owner's go-ahead.
+
+1. **Research.** Done (2026-11-20).
+2. **Labels prepared for one click, through the print dialog.** A label model in millimetres, every standard size, the label catalogue (item label at receiving, box label at packing, location and totem labels, return condition sticker, test label), a queue of prepared labels with reprint, a test label with a ruler, demo printers and scanners behind an admin test mode, the device panel, and the Spanish manual pages (supported models, setup, troubleshooting). Also the scan clean-up: keyboard-layout fixes, add-ons dropped, UPC-A and ISBN-10 accepted.
+3. **Direct printing from Chrome:** ZPL and TSPL over WebUSB, Web Serial and Web Bluetooth. Android first; on Windows only COM-port and Bluetooth printers, plus an optional driver swap a supervisor does.
+4. **Printers per computer:** a computer identity, a default printer per computer and label type, a company printer list for supervisors and admins.
+5. **Windows helper** for wifi, network and driver-installed USB printers. Design only, in the research; not to be built until the owner says so.
 
 ## Questions only the owner can answer
 

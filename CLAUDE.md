@@ -1,6 +1,6 @@
 # Working on miDepo
 
-Read this first, then `README.md` (what the product does and how to run it), `PRODUCT.md` (users and product rules) and `DESIGN.md` (the design system). The user manual is in `wiki/` (Spanish) and is served at `/ayuda`. Why things were decided as they are: `docs/DECISIONS.md`. Next steps and questions for the owner: `docs/ROADMAP.md`. Everything learned about Fierro, with its B2B API schema and the questions to ask them: `docs/fierro/README.md`. Every error message and its code: `docs/ERRORS.md`.
+Read this first, then `README.md` (what the product does and how to run it), `PRODUCT.md` (users and product rules) and `DESIGN.md` (the design system). The user manual is in `wiki/` (Spanish) and is served at `/ayuda`. Why things were decided as they are: `docs/DECISIONS.md`. Next steps and questions for the owner: `docs/ROADMAP.md`. Everything learned about Fierro, with its B2B API schema and the questions to ask them: `docs/fierro/README.md`. Every error message and its code: `docs/ERRORS.md`. Label printers, scanners and the hardware plan: `docs/hardware/README.md`.
 
 ## Next.js 16 is not the Next.js you know
 
