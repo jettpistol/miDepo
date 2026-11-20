@@ -22,6 +22,7 @@ These came from the owner directly; keep to them unless told otherwise.
 - **Neutral, professional, as few words as possible; never narrative.** A value under a column says only what the header does not: "Fierro" under Origen, not "De Fierro"; "Sin pedidos", not "Este cliente no tiene pedidos"; "Pendiente en Fierro", not "Falta cargarla en Fierro". No story-telling notices ("Cuando alguien termine…, aparece aquí"), no instructions the screen already makes obvious.
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
 - **Notes go in hints, not on the screen.** Why a button is disabled (`reason` on `ActionButton`/`ActionForm`, or `DisabledReason`) and side notes (`InfoHint`, an ⓘ beside a heading or option) open on hover, focus or tap (`src/components/Hint.tsx`). Status notices (`Notice`) and facts the user needs to act stay visible.
+- **Nothing grows without limit on an overview.** Inicio, banners, cards and summaries show a fixed number of rows (Inicio: one "Seguir con…" banner, 5 of your tasks, 8 people) and sum up the rest in one line that links to the full list. Only list screens, which page, show everything. A busy day must never push the overview off the screen.
 - **Dropdowns are the app's own `<Select>`** with a search box that stays open; never a system `<select>`.
 - **List screens show their table even when empty** (one `EmptyRow`), with a "+ Nueva" button (`NewButton`) for creating.
 - **Article names are shown in capitals** everywhere (lists, article page, scan feedback, messages, printouts) through `articleName()` in `src/lib/article.ts`. The stored name keeps its case, and the CSV files for Fierro use it as stored.
@@ -114,5 +115,5 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 - Assignment does not lock work (D35); the owner may want an assigned order to be off-limits to others. List screens (Picking, Recepción…) do not show the assignee yet, only detail screens and Inicio.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).
 - The sidebar runs five count queries per page (six with Control on); not measured on a hosted database.
-- Control (D25): no supervisor override of the different-person rule; a small shift turns the rule off in Ajustes instead.
+- Control (D39): no supervisor override of the different-person rule; a small shift turns the rule off in Ajustes instead.
 - See also "What is not done" in `README.md`.

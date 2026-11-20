@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, inArray, ne, sql, sum } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, ne, sql, sum } from "drizzle-orm";
 import type { DB } from "@/db";
 import { countLocations, counts, customers, locations, movements, orderLines, orders, receivingLines, receivings, returnLines, returns, stock, suppliers, users } from "@/db/schema";
 import type { AssignKind } from "./flows/assignments";
@@ -218,4 +218,15 @@ export async function orderStages(db: DB, companyId: number) {
     { key: "picked", label: "Para empacar", n: n("picked"), href: "/empaque" },
     { key: "packed", label: "Empacados, sin cargar en Fierro", n: n("packed"), href: "/fierro" },
   ];
+}
+
+/** The order number this person last picked a unit for, to offer that one first. */
+export async function lastPickedOrder(db: DB, companyId: number, userId: number) {
+  const [m] = await db
+    .select({ reference: movements.reference })
+    .from(movements)
+    .where(and(eq(movements.companyId, companyId), eq(movements.userId, userId), eq(movements.reason, "picking")))
+    .orderBy(desc(movements.id))
+    .limit(1);
+  return m?.reference ?? null;
 }

@@ -7,10 +7,36 @@ import { PageHeader, Progress, ShelfMark, plural, shortDate } from "@/components
 import { pendingExports } from "@/lib/flows/exports";
 import { hotkey } from "@/lib/hotkeys";
 import { can, requireSession } from "@/lib/session";
-import { assignablePeople, isMine, isUnassigned, KIND, movedToday, openTasks, orderStages, weekActivity, zoneStock, type Task } from "@/lib/work";
+import { assignablePeople, isMine, lastPickedOrder, isUnassigned, KIND, movedToday, openTasks, orderStages, weekActivity, zoneStock, type Task } from "@/lib/work";
 import { loadOpenOrders } from "./picking/Tables";
 
-const FIRST_N = 8;
+/**
+ * Inicio never grows with the work: each part shows a fixed number of rows and sums up the rest
+ * with links. A busy day must not push the overview off the screen.
+ */
+const MY_ROWS = 5;
+const TEAM_ROWS = 8;
+
+const KIND_HREF: Record<Task["kind"], string> = { order: "/picking", receiving: "/recepcion", return: "/devoluciones", count: "/conteos", putaway: "/reposicion" };
+
+/** "4 pedidos · 1 recepción", each kind linking to its screen: the rows that did not fit. */
+function Rest({ tasks }: { tasks: Task[] }) {
+  if (tasks.length === 0) return null;
+  const kinds = (Object.keys(KIND) as Task["kind"][]).map((k) => [k, tasks.filter((t) => t.kind === k).length] as const).filter(([, n]) => n > 0);
+  return (
+    <p className="mt-3 text-[13px] text-muted">
+      Y {tasks.length} más:{" "}
+      {kinds.map(([k, n], i) => (
+        <span key={k}>
+          {i > 0 && " · "}
+          <Link href={KIND_HREF[k]} className="link">
+            {plural(n, KIND[k].one, KIND[k].many)}
+          </Link>
+        </span>
+      ))}
+    </p>
+  );
+}
 
 /** "3 pedidos · 1 recepción": how much of each kind, in a fixed order. */
 function byKind(tasks: Task[]) {
@@ -48,7 +74,7 @@ export default async function Home() {
   const e = company.id;
   const supervisor = can(user.role, "supervisor");
 
-  const [tasks, stages, days, zones, moved, people, exports, openOrders] = await Promise.all([
+  const [tasks, stages, days, zones, moved, people, exports, openOrders, lastPicked] = await Promise.all([
     openTasks(db, e),
     orderStages(db, e),
     weekActivity(db, e),
@@ -57,14 +83,20 @@ export default async function Home() {
     supervisor ? assignablePeople(db, e) : Promise.resolve([]),
     supervisor ? pendingExports(db, e) : Promise.resolve([]),
     loadOpenOrders(db, e),
+    lastPickedOrder(db, e, user.id),
   ]);
 
   // Yours first: the order you are picking right now, then the rest by age.
   const mine = tasks.filter((t) => isMine(t, user.id)).sort((a, b) => Number(b.takenBy === user.id) - Number(a.takenBy === user.id) || a.date.getTime() - b.date.getTime());
   const unassigned = tasks.filter(isUnassigned);
   const picking = openOrders.inProgress.filter((o) => o.p.takenBy === user.id);
+  // One banner, for the order you scanned into last; the others are in "Asignado a ti".
+  const current = picking.find((o) => o.p.number === lastPicked) ?? picking[0];
   // With nothing given to you, the oldest order nobody has is the next thing to do.
   const next = mine.length === 0 ? unassigned.find((t) => t.kind === "order" && t.verb === "Preparar") : undefined;
+  // Busiest first, so the people left out of the table are the ones with nothing on.
+  const load = (id: number) => tasks.filter((t) => isMine(t, id)).length;
+  const team = [...people].sort((a, b) => (moved.get(b.id) ?? 0) - (moved.get(a.id) ?? 0) || load(b.id) - load(a.id) || a.name.localeCompare(b.name));
   const n = (key: string) => stages.find((s) => s.key === key)?.n ?? 0;
   const putAway = zones.filter((z) => z.type === "receiving" || z.type === "returns").reduce((s, z) => s + z.units, 0);
 
@@ -74,16 +106,23 @@ export default async function Home() {
         {supervisor && <span className="text-[13px] text-muted">{company.lastSync ? `Fierro sincronizado ${shortDate(company.lastSync)}` : "Fierro sin sincronizar"}</span>}
       </PageHeader>
 
-      {picking.map(({ p, nextShelf }) => (
-        <Link key={p.id} href={`/picking/${p.id}`} className="mb-4 flex items-center gap-4 rounded-control bg-accent px-4 py-3 text-on-accent transition-colors duration-150 hover:bg-accent-hover">
-          {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm opacity-85">Pedido en curso</span>
-            <span className="block text-lg leading-tight font-bold lg:text-base">Seguir con {p.number}</span>
-          </span>
-          <Icon name="arrow" className="size-6" />
-        </Link>
-      ))}
+      {current && (
+        <div className="mb-4 flex items-stretch overflow-hidden rounded-control bg-accent text-on-accent">
+          <Link href={`/picking/${current.p.id}`} className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 transition-colors duration-150 hover:bg-accent-hover">
+            {current.nextShelf && <ShelfMark code={current.nextShelf} size="md" onAccent />}
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm opacity-85">Pedido en curso</span>
+              <span className="block text-lg leading-tight font-bold lg:text-base">Seguir con {current.p.number}</span>
+            </span>
+            <Icon name="arrow" className="size-6" />
+          </Link>
+          {picking.length > 1 && (
+            <Link href="/picking" className="flex shrink-0 items-center border-l border-on-accent/25 px-4 text-sm font-semibold transition-colors duration-150 hover:bg-accent-hover">
+              {picking.length - 1} más en curso
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {supervisor ? (
@@ -108,11 +147,11 @@ export default async function Home() {
           {mine.length > 0 ? (
             <>
               <ul className="-my-2 divide-y divide-line">
-                {mine.slice(0, FIRST_N).map((t, i) => (
-                  <TaskRow key={`${t.kind}-${t.id}`} t={t} first={i === 0 && picking.length === 0} />
+                {mine.slice(0, MY_ROWS).map((t, i) => (
+                  <TaskRow key={`${t.kind}-${t.id}`} t={t} first={i === 0 && !current} />
                 ))}
               </ul>
-              {mine.length > FIRST_N && <p className="mt-3 text-[13px] text-muted">Y {mine.length - FIRST_N} más.</p>}
+              <Rest tasks={mine.slice(MY_ROWS)} />
             </>
           ) : (
             <div className="py-2">
@@ -121,7 +160,7 @@ export default async function Home() {
                 <>
                   <p className="mt-0.5 mb-2 text-sm text-muted">Próximo pedido sin asignar</p>
                   <ul className="divide-y divide-line border-y border-line">
-                    <TaskRow t={next} first={picking.length === 0} />
+                    <TaskRow t={next} first={!current} />
                   </ul>
                 </>
               ) : (
@@ -169,11 +208,11 @@ export default async function Home() {
                     <td className="hidden sm:table-cell" />
                     <td />
                   </tr>
-                  {[...people]
-                    .sort((a, b) => (moved.get(b.id) ?? 0) - (moved.get(a.id) ?? 0) || a.name.localeCompare(b.name))
-                    .map((p) => {
-                      const theirs = tasks.filter((t) => t.assignedTo === p.id);
-                      const now = tasks.find((t) => t.takenBy === p.id);
+                  {team.slice(0, TEAM_ROWS).map((p) => {
+                      // Same rule as "Asignado a ti": given to them, or an order they are picking.
+                      const theirs = tasks.filter((t) => isMine(t, p.id));
+                      const busy = tasks.filter((t) => t.takenBy === p.id);
+                      const now = busy[0];
                       const max = Math.max(0, ...moved.values());
                       return (
                         <tr key={p.id} className={p.id === user.id ? "bg-accent-soft" : ""}>
@@ -189,9 +228,12 @@ export default async function Home() {
                           <td className={theirs.length ? "" : "text-muted"}>{byKind(theirs) || "—"}</td>
                           <td className="hidden sm:table-cell">
                             {now ? (
-                              <Link href={now.href} className="link doc-number">
-                                {now.name}
-                              </Link>
+                              <>
+                                <Link href={now.href} className="link doc-number">
+                                  {now.name}
+                                </Link>
+                                {busy.length > 1 && <span className="text-muted"> +{busy.length - 1}</span>}
+                              </>
                             ) : (
                               <span className="text-muted">—</span>
                             )}
@@ -205,6 +247,19 @@ export default async function Home() {
                 </tbody>
               </table>
             </div>
+            {team.length > TEAM_ROWS && (
+              <p className="mt-3 text-[13px] text-muted">
+                Y {plural(team.length - TEAM_ROWS, "persona más", "personas más")}
+                {can(user.role, "admin") && (
+                  <>
+                    {" · "}
+                    <Link href="/usuarios" className="link">
+                      Ver en Usuarios
+                    </Link>
+                  </>
+                )}
+              </p>
+            )}
           </Card>
         )}
       </div>

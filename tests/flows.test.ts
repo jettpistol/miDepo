@@ -14,7 +14,7 @@ import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
 import type { Ctx } from "@/lib/flows/common";
 import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving } from "@/lib/flows/receiving";
 import { move, recentMoves, undoMove } from "@/lib/flows/move";
-import { confirmPick, markShort, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
+import { confirmPick, markShort, planRoute, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
 import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenPacking } from "@/lib/flows/packing";
 import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } from "@/lib/flows/returns";
 import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
@@ -100,7 +100,12 @@ describe("full circuit", () => {
       before.set(l.productId, await total(l.productId));
     }
 
+    // The order's page shows the route before it is taken; taking builds exactly that route.
+    const preview = await planRoute(db, c.companyId, ord.id);
     await takeOrder(c, ord.id);
+    const built = await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id));
+    const key = (t: { lineId: number; locationId: number | null; quantity: number }) => `${t.lineId}:${t.locationId}:${t.quantity}`;
+    expect(built.map(key).sort()).toEqual(preview.map(key).sort());
     // Taking it again (an old screen, a second tap) just carries on; someone else is refused.
     await expect(takeOrder(c, ord.id)).resolves.toMatch(/tomado/);
     const intruder = await createUser(db, c.companyId, { name: "Intrusa", email: "intrusa@prueba.test", role: "operator", pin: "135790" });
