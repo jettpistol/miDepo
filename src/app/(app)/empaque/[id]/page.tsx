@@ -7,6 +7,7 @@ import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { close, scan, finish, empty } from "../actions";
+import { articleName } from "@/lib/article";
 
 const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 });
 
@@ -98,7 +99,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                 <ul className="ruled-list framed">
                   {own.map((x) => (
                     <li key={x.i.productId} className="row justify-between">
-                      <span className="min-w-0">{x.title}</span>
+                      <span className="min-w-0">{articleName(x.title)}</span>
                       <span className="font-semibold whitespace-nowrap">× {x.i.quantity}</span>
                     </li>
                   ))}
@@ -126,7 +127,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                   {lines.map(({ l, title }) => (
                     <tr key={l.id}>
                       <td>
-                        <span className="font-medium">{title}</span>
+                        <span className="font-medium">{articleName(title)}</span>
                         <span className="block text-muted sm:hidden">Pedido: {l.quantity}</span>
                       </td>
                       <td className="hidden text-right sm:table-cell">{l.quantity}</td>

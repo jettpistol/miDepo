@@ -1,6 +1,7 @@
 import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 /** Moves units from one location to another. Putting away received stock is the same movement from Receiving. */
 export async function move(c: Ctx, d: { source: string; product: string; destination: string; quantity: unknown }) {
@@ -18,5 +19,5 @@ export async function move(c: Ctx, d: { source: string; product: string; destina
   await c.db.transaction((tx) =>
     moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: source.id, toId: destination.id, quantity: n, reason, userId: c.userId }),
   );
-  return `${n} × ${p.title}: ${source.code} → ${destination.code}`;
+  return `${n} × ${articleName(p.title)}: ${source.code} → ${destination.code}`;
 }

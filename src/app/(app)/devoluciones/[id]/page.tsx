@@ -8,6 +8,7 @@ import { BOOK_CONDITIONS } from "@/lib/flows/returns";
 import { requireSession } from "@/lib/session";
 import { close, scan, remove } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 
 const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
@@ -74,7 +75,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
               {lines.map(({ l, title, code }) => (
                 <li key={`${l.productId}-${l.bookCondition}`} className="row flex-wrap">
                   <span className="min-w-0 flex-1 basis-48">
-                    <span className="block font-medium">{title}</span>
+                    <span className="block font-medium">{articleName(title)}</span>
                     <Code>{code}</Code>
                   </span>
                   <Badge tone={TONE_CLASS[l.bookCondition]}>{BOOK_CONDITIONS.find((e) => e.id === l.bookCondition)?.name}</Badge>

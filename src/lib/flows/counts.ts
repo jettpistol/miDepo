@@ -5,6 +5,7 @@ import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { isLossCause, recordAdjustment, type AdjustmentLine } from "./adjustments";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 export const MAX_COUNT_LOCATIONS = 300;
 
@@ -66,7 +67,7 @@ export async function scanCount(c: Ctx, countId: number, locationId: number, cod
     .values({ countId, locationId, productId: p.id, countedQty: n })
     .onConflictDoUpdate({ target: [countLines.countId, countLines.locationId, countLines.productId], set: { countedQty: sql`${countLines.countedQty} + ${n}` } })
     .returning();
-  return `${p.title}: llevas ${l.countedQty}`;
+  return `${articleName(p.title)}: llevas ${l.countedQty}`;
 }
 
 export async function setCounted(c: Ctx, countId: number, locationId: number, productId: number, countedQty: unknown) {

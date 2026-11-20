@@ -4,6 +4,7 @@ import { Code, EmptyRow, PageHeader, ShelfMark, shortDate } from "@/components/u
 import { adjustmentHistory, causeName, heldStock, LOSS_CAUSES, misplacedSince, WRITE_OFF_ZONES } from "@/lib/flows/adjustments";
 import { requireSession } from "@/lib/session";
 import { writeOffAction } from "./actions";
+import { articleName } from "@/lib/article";
 
 export const metadata = { title: "Bajas" };
 
@@ -66,7 +67,7 @@ export default async function WriteOffs() {
               {held.map((h) => (
                 <tr key={`${h.locationId}-${h.productId}`}>
                   <td>
-                    <span className="block font-medium">{h.title}</span>
+                    <span className="block font-medium">{articleName(h.title)}</span>
                     <Code>{h.code}</Code>
                     <span className="mt-2 flex items-center gap-2 md:hidden">
                       <ShelfMark code={h.zone === "missing" ? "FALTANTES" : "DANADOS"} />
@@ -146,7 +147,7 @@ export default async function WriteOffs() {
                     <span className="block text-xs text-muted">{shortDate(h.date)}</span>
                   </td>
                   <td>
-                    <span className="font-medium">{h.title}</span>
+                    <span className="font-medium">{articleName(h.title)}</span>
                     <span className="block text-xs text-muted sm:hidden">{causeName(h.cause)}</span>
                   </td>
                   <td className="hidden w-px md:table-cell">

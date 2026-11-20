@@ -4,6 +4,7 @@ import { Notice, Code, PageHeader, EmptyState } from "@/components/ui";
 import { fierroStock, products, stock } from "@/db/schema";
 import { pendingExports } from "@/lib/flows/exports";
 import { requireSession } from "@/lib/session";
+import { articleName } from "@/lib/article";
 
 export const metadata = { title: "Conciliación con Fierro" };
 
@@ -58,7 +59,7 @@ export default async function Reconciliation() {
                   <tr key={f.id}>
                     <td>
                       <Link href={`/stock/${f.id}`} className="link">
-                        {f.title}
+                        {articleName(f.title)}
                       </Link>
                       <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted sm:hidden">
                         <Code>{f.code}</Code>

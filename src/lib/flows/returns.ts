@@ -3,6 +3,7 @@ import { customers, returnLines, returns, type BookCondition } from "@/db/schema
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 export const BOOK_CONDITIONS: { id: BookCondition; name: string; help: string }[] = [
   { id: "sellable", name: "Vendible", help: "Como nuevo. Vuelve a su ubicación." },
@@ -35,7 +36,7 @@ export async function scanReturn(c: Ctx, returnId: number, code: string, bookCon
     .insert(returnLines)
     .values({ returnId, productId: p.id, bookCondition: status.id, quantity: n })
     .onConflictDoUpdate({ target: [returnLines.returnId, returnLines.productId, returnLines.bookCondition], set: { quantity: sql`${returnLines.quantity} + ${n}` } });
-  return `${n} × ${p.title} → ${status.name}`;
+  return `${n} × ${articleName(p.title)} → ${status.name}`;
 }
 
 export async function removeReturnLine(c: Ctx, returnId: number, productId: number, bookCondition: string) {

@@ -4,6 +4,7 @@ import { distance, plain } from "../text";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 async function open(c: Ctx, id: number) {
   const [r] = await c.db.select().from(receivings).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId)));
@@ -55,7 +56,7 @@ export async function scanReceiving(c: Ctx, receivingId: number, code: string, q
     .returning();
   if (r.status === "pending") await c.db.update(receivings).set({ status: "in_progress" }).where(eq(receivings.id, receivingId));
   const notice = line.expected === 0 ? " (no estaba en el aviso)" : line.received > line.expected ? ` (${line.received - line.expected} de más)` : "";
-  return `${p.title}: ${line.received} de ${line.expected}${notice}`;
+  return `${articleName(p.title)}: ${line.received} de ${line.expected}${notice}`;
 }
 
 export async function setReceived(c: Ctx, receivingId: number, productId: number, received: unknown) {

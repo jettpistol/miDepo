@@ -10,6 +10,7 @@ import { LOSS_CAUSES } from "@/lib/flows/adjustments";
 import { can, requireSession } from "@/lib/session";
 import { approve, recount, reopen } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 
 export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -77,7 +78,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                         <ShelfMark code={d.location} />
                       </td>
                       <td>
-                        <span className="font-medium">{d.title}</span>
+                        <span className="font-medium">{articleName(d.title)}</span>
                         <span className="block text-muted sm:hidden">
                           Sistema {d.system} · Contado {d.countedQty}
                         </span>

@@ -22,6 +22,7 @@ These came from the owner directly; keep to them unless told otherwise.
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
 - **Dropdowns are the app's own `<Select>`** with a search box that stays open; never a system `<select>`.
 - **List screens show their table even when empty** (one `EmptyRow`), with a "+ Nueva" button (`NewButton`) for creating.
+- **Article names are shown in capitals** everywhere (lists, article page, scan feedback, messages, printouts) through `articleName()` in `src/lib/article.ts`. The stored name keeps its case, and the CSV files for Fierro use it as stored.
 - **Tú, never voseo**, in the app, its messages and the manual.
 - **The app never speaks as "I".** Messages are impersonal: "No se encontró ese pedido", "No se pudo leer esa imagen", not "No encuentro…", "No pude…". `tests/copy.test.ts` refuses it.
 - The owner prefers concise replies, with assumptions stated up front, and asks questions before large changes.

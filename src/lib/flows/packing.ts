@@ -3,6 +3,7 @@ import { boxItems, boxes, orderLines, orders, products } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 async function orderToPack(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
@@ -19,10 +20,10 @@ export async function scanIntoBox(c: Ctx, orderId: number, code: string, quantit
   const p = await findProduct(c.db, c.companyId, code);
   return c.db.transaction(async (tx) => {
     const [line] = await tx.select().from(orderLines).where(and(eq(orderLines.orderId, orderId), eq(orderLines.productId, p.id)));
-    if (!line || line.picked === 0) throw new UserError("PACK-04", `"${p.title}" no está entre lo preparado para el pedido ${order.number}.`);
+    if (!line || line.picked === 0) throw new UserError("PACK-04", `"${articleName(p.title)}" no está entre lo preparado para el pedido ${order.number}.`);
     const left = line.picked - line.packed;
-    if (left === 0) throw new UserError("PACK-05", `Ya empacaste todas las unidades de "${p.title}".`);
-    if (n > left) throw new UserError("PACK-06", `De "${p.title}" quedan ${left} por empacar, no ${n}.`);
+    if (left === 0) throw new UserError("PACK-05", `Ya empacaste todas las unidades de "${articleName(p.title)}".`);
+    if (n > left) throw new UserError("PACK-06", `De "${articleName(p.title)}" quedan ${left} por empacar, no ${n}.`);
     let [box] = await tx.select().from(boxes).where(and(eq(boxes.orderId, orderId), eq(boxes.status, "open")));
     if (!box) {
       const [{ last }] = await tx.select({ last: max(boxes.number) }).from(boxes).where(eq(boxes.orderId, orderId));
@@ -33,7 +34,7 @@ export async function scanIntoBox(c: Ctx, orderId: number, code: string, quantit
       .values({ boxId: box.id, productId: p.id, quantity: n })
       .onConflictDoUpdate({ target: [boxItems.boxId, boxItems.productId], set: { quantity: sql`${boxItems.quantity} + ${n}` } });
     await tx.update(orderLines).set({ packed: line.packed + n }).where(eq(orderLines.id, line.id));
-    return `Caja ${box.number}: ${n} × ${p.title}`;
+    return `Caja ${box.number}: ${n} × ${articleName(p.title)}`;
   });
 }
 

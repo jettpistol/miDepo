@@ -6,6 +6,7 @@ import { products, stock, locations } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { moveAction } from "../mover/actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 
 export const metadata = { title: "Reposición" };
 
@@ -86,7 +87,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
                   {pending.map((p) => (
                     <tr key={p.productId}>
                       <td>
-                        <span className="block font-medium">{p.title}</span>
+                        <span className="block font-medium">{articleName(p.title)}</span>
                         <Code>{p.code}</Code>
                       </td>
                       <td className="text-right text-base font-bold">{p.quantity}</td>
