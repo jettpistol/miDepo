@@ -4,7 +4,8 @@ import { Icon } from "./Icon";
 import { hotkey } from "@/lib/hotkeys";
 import { InfoHint } from "./Hint";
 
-export function PageHeader({ title, subtitle, back, children }: { title: ReactNode; subtitle?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
+/** `meta` sits on the subtitle's line: facts about the record, such as its assignee. */
+export function PageHeader({ title, subtitle, meta, back, children }: { title: ReactNode; subtitle?: ReactNode; meta?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
   return (
     <header className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 lg:mb-5">
       <div className="min-w-0">
@@ -17,7 +18,12 @@ export function PageHeader({ title, subtitle, back, children }: { title: ReactNo
           </nav>
         )}
         <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em] lg:text-2xl lg:font-semibold">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-[70ch] text-[15px] text-muted lg:text-sm">{subtitle}</p>}
+        {(subtitle || meta) && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-muted lg:text-sm">
+            {subtitle && <p className="max-w-[70ch]">{subtitle}</p>}
+            {meta && <div className="text-ink">{meta}</div>}
+          </div>
+        )}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>

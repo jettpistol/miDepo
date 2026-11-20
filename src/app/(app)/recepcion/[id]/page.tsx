@@ -31,8 +31,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"}>
-        <Assignee session={session} kind="receiving" id={r.id} value={r.assignedTo} open={r.status !== "closed"} />
+      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"} meta={<Assignee session={session} kind="receiving" id={r.id} value={r.assignedTo} open={r.status !== "closed"} />}>
         {open && (r.fierroId == null || received > 0) && (
           <ActionButton
             action={cancel}

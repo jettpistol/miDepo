@@ -52,9 +52,13 @@ async function warning(p, field, value) {
   // Assigning: a supervisor gives a receiving to Martín; it shows on his home page later.
   await p.goto(BASE + '/'); await p.waitForSelector('text=Pedidos abiertos'); await shot('home-supervisor');
   await p.goto(BASE + '/recepcion'); const assignedHref = await p.locator('tbody a[href^="/recepcion/"]').nth(2).getAttribute('href');
+  // From the list's Asignado column, like Jira; the detail page shows it after a reload.
+  await p.locator('tbody tr').nth(2).locator('button[aria-label="Asignado a"]').click(); await p.keyboard.type('Martín'); await p.keyboard.press('Enter');
+  await p.waitForFunction(() => document.querySelectorAll('tbody tr')[2]?.querySelector('form')?.className.includes('opacity-60') === false);
+  await p.waitForTimeout(500);
+  if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('assignee picker scrolls the page sideways');
   await p.goto(BASE + assignedHref); const assignedNumber = (await p.textContent('h1')).split(' ·')[0].trim();
-  await p.click('button[aria-label="Asignado a"]'); await p.keyboard.type('Martín'); await p.keyboard.press('Enter');
-  await p.waitForSelector('[role=status]:has-text("Asignado a Martín Sosa")'); step(`assigned ${assignedNumber} to Martín Sosa: ok`);
+  await p.waitForSelector('header button[aria-label="Asignado a"]:has-text("Martín Sosa")'); step(`assigned ${assignedNumber} to Martín Sosa from the list: ok`);
 
   // Receiving
   await p.goto(BASE + '/recepcion'); await p.click('a[href^="/recepcion/"]'); await p.waitForSelector('#scan-product');

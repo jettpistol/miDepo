@@ -1,26 +1,27 @@
-import { ROLE_LABEL } from "./Accounts";
-import { AssignSelect } from "./AssignSelect";
+import { AssigneePicker } from "./AssigneePicker";
 import type { AssignKind } from "@/lib/flows/assignments";
 import { assignablePeople } from "@/lib/work";
 import { can, type requireSession } from "@/lib/session";
 
 export type Session = Awaited<ReturnType<typeof requireSession>>;
 
+/** Who can be given work, who is looking, and whether they may change it. Load once per page. */
+export async function assignees(session: Session) {
+  const people = await assignablePeople(session.db, session.company.id);
+  return { people, me: session.user.id, canAssign: can(session.user.role, "supervisor") };
+}
+export type Assignees = Awaited<ReturnType<typeof assignees>>;
+
 /**
- * Whose this work is. Supervisors change it in place; operators see the name, or nothing if
- * it is nobody's in particular.
+ * Whose this work is, as avatar and name. Supervisors change it in place while there is work
+ * left (`open`); everyone else sees it.
  */
-export async function Assignee({ session, kind, id, value, open = true }: { session: Session; kind: AssignKind; id: number; value: number | null; open?: boolean }) {
-  const { db, company, user } = session;
-  const people = await assignablePeople(db, company.id);
-  if (can(user.role, "supervisor") && open) {
-    return <AssignSelect kind={kind} id={id} value={value} people={people.map((p) => ({ value: String(p.id), label: p.id === user.id ? `${p.name} (tú)` : p.name, detail: ROLE_LABEL[p.role] }))} />;
-  }
-  const person = people.find((p) => p.id === value);
-  if (!person) return null;
-  return (
-    <span className="text-sm text-muted">
-      Asignado a <strong className="text-ink">{person.id === user.id ? "ti" : person.name}</strong>
-    </span>
-  );
+export async function Assignee({ session, kind, id, value, open = true, iconOnly = false }: { session: Session; kind: AssignKind; id: number; value: number | null; open?: boolean; iconOnly?: boolean }) {
+  const a = await assignees(session);
+  return <AssigneeCell a={a} kind={kind} id={id} value={value} open={open} iconOnly={iconOnly} />;
+}
+
+/** The same, with people already loaded: for a table with one per row. */
+export function AssigneeCell({ a, kind, id, value, open = true, iconOnly = false }: { a: Assignees; kind: AssignKind; id: number; value: number | null; open?: boolean; iconOnly?: boolean }) {
+  return <AssigneePicker kind={kind} id={id} value={value} people={a.people} me={a.me} editable={a.canAssign && open} iconOnly={iconOnly} />;
 }

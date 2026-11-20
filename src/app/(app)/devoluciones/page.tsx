@@ -10,18 +10,21 @@ import { PageHeader } from "@/components/ui";
 import { customers, returns } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { create } from "./actions";
+import { assignees } from "@/components/Assignee";
 
 export const metadata = { title: "Devoluciones" };
 
 export default async function Returns({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const page = requestedPage(sp.pagina);
-  const [list, { rows: inProgress }, closed] = await Promise.all([
+  const [list, { rows: inProgress }, closed, a] = await Promise.all([
     db.select({ id: customers.id, name: customers.name, city: customers.city }).from(customers).where(eq(customers.companyId, company.id)).orderBy(asc(customers.name)),
     returnRows(db, company.id, eq(returns.status, "in_progress"), { limit: 500, offset: 0 }),
     returnRows(db, company.id, eq(returns.status, "closed"), paging(page), q),
+    assignees(session),
   ]);
 
   return (
@@ -52,7 +55,7 @@ export default async function Returns({ searchParams }: { searchParams: Promise<
         <h2 className="section-title">
           En curso <small>{inProgress.length}</small>
         </h2>
-        <ReturnsTable rows={inProgress} empty={{ title: "Sin devoluciones en curso" }} />
+        <ReturnsTable rows={inProgress} assignees={a} empty={{ title: "Sin devoluciones en curso" }} />
       </section>
 
       <section id="cerradas">
