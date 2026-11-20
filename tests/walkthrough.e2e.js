@@ -308,6 +308,8 @@ async function warning(p, field, value) {
   await o.screenshot({ path: `${OUT}/m-batch.png`, fullPage: true, caret: 'initial' });
   step('phone batch scrolls sideways: ' + ((await o.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
   await o.setViewportSize({ width: 1440, height: 900 });
+  // "Preparar todos" took every Demo order; the Control step below needs one pending again.
+  o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Soltar lote")'); await o.waitForURL(/\/picking(\?|$)/); step('batch released');
   await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
   await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
   await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');
@@ -332,7 +334,7 @@ async function warning(p, field, value) {
   await o.fill('#minUnits', '1'); step('settings, 1 unit, before the click → ' + ((await o.$eval('#minUnits', (e) => e.validationMessage)) || fail('1 unit accepted')));
   await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, todos los pedidos")'); await o.click('button:has-text("Guardar control")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
   await o.locator('#control').screenshot({ path: `${OUT}/settings.png` });
-  await o.goto(BASE + '/picking'); await o.click('button:has-text("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
+  await o.goto(BASE + '/picking'); await o.click('button:text-is("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
   const ctrlId = o.url().split('/').pop(); const ctrlCodes = {};
   await o.waitForSelector(STOP);
   while (await o.$(STOP)) {
