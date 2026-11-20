@@ -1,5 +1,5 @@
 {
-  "id": "a4d00f33-6ee5-45ad-8b8a-b1a8c03aa0dc",
+  "id": "9043dc7e-61c6-4e3b-9c51-efe9d2af0bcb",
   "prevId": "6e162a45-cfe8-4eed-946e-574dd925f62b",
   "version": "7",
   "dialect": "postgresql",
@@ -847,13 +847,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "always_control": {
-          "name": "always_control",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {
@@ -1468,12 +1461,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "same_check_allowed_by": {
-          "name": "same_check_allowed_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "packed_by": {
           "name": "packed_by",
           "type": "integer",
@@ -1623,19 +1610,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "controlled_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "orders_same_check_allowed_by_users_id_fk": {
-          "name": "orders_same_check_allowed_by_users_id_fk",
-          "tableFrom": "orders",
-          "tableTo": "users",
-          "columnsFrom": [
-            "same_check_allowed_by"
           ],
           "columnsTo": [
             "id"
@@ -2787,6 +2761,123 @@
           ]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stock_loads": {
+      "name": "stock_loads",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lines": {
+          "name": "lines",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "units": {
+          "name": "units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "undone_at": {
+          "name": "undone_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "stock_loads_company_id_number_idx": {
+          "name": "stock_loads_company_id_number_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "stock_loads_company_id_companies_id_fk": {
+          "name": "stock_loads_company_id_companies_id_fk",
+          "tableFrom": "stock_loads",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "stock_loads_created_by_users_id_fk": {
+          "name": "stock_loads_created_by_users_id_fk",
+          "tableFrom": "stock_loads",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

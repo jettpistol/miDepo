@@ -154,6 +154,12 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `STK-13` | Solo quien hizo el movimiento puede deshacerlo. | `src/lib/flows/move.ts` · `undoMove` | Undoing somebody else's move. The screen lists only your own. |
 | `STK-14` | Ese movimiento ya se deshizo. | `src/lib/flows/move.ts` · `undoMove` | Undoing the same move twice. |
 | `STK-15` | Esas unidades ya no están todas en el destino. Muévelas a mano. | `src/lib/flows/move.ts` · `undoMove` | Undoing a move after some of the units left the destination. |
+| `STK-16` | El archivo tiene más de 20000 filas. Divídelo en varios. | `src/lib/flows/stockLoad.ts` · `applyLoad` | Loading an opening stock file with too many rows. |
+| `STK-17` | El archivo no tiene filas para cargar. | `src/lib/flows/stockLoad.ts` · `applyLoad` | Loading an empty opening stock file. |
+| `STK-18` | {n} filas tienen errores. Corrígelas y vuelve a subir el archivo. | `src/lib/flows/stockLoad.ts` · `applyLoad` | Loading an opening stock file in which some row names an unknown code or location, or a wrong quantity. |
+| `STK-19` | No se encontró esa carga. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load that does not exist or belongs to another company. |
+| `STK-20` | La carga {número} ya se deshizo. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load twice. |
+| `STK-21` | Parte de la carga {número} ya se movió. Corrige las diferencias con un conteo. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load after some of its units were moved, picked or written off. |
 | `STK-10` | La cantidad tiene que ser un número entero mayor que cero. | `src/lib/flows/common.ts` · `validQuantity` | A scanned quantity that is not a whole number from 1 to 100,000. Used by every scan flow. |
 
 ## RCV: Recepción and suppliers

@@ -516,6 +516,28 @@ export const adjustmentLines = pgTable(
   (t) => [index("adjustment_lines_adjustment_id_idx").on(t.adjustmentId)],
 );
 
+/**
+ * An opening stock load: the stock already on the shelves when a warehouse starts with miDepo,
+ * read from a file (code, quantity, location). Its movements have reason "initial" and this
+ * number as reference. Not an adjustment and not sent to Fierro: Fierro already counts that stock.
+ */
+export const stockLoads = pgTable(
+  "stock_loads",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    number: text("number").notNull(),
+    fileName: text("file_name"),
+    lines: integer("lines").notNull(),
+    units: integer("units").notNull(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    createdAt: createdAt(),
+    /** Set when it was undone: its units were taken back off the shelves. */
+    undoneAt: timestamp("undone_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("stock_loads_company_id_number_idx").on(t.companyId, t.number)],
+);
+
 export const now = sql`now()`;
 
 // ───────────── Manual ─────────────
