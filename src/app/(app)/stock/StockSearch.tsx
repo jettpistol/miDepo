@@ -9,7 +9,7 @@ export function StockSearch({ initial }: { initial: string }) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   return (
-    <form className="field-group mb-6 max-w-xl" role="search" action="/stock">
+    <form className="field-group mb-6" role="search" action="/stock">
       <input
         name="q"
         type="search"
@@ -25,7 +25,7 @@ export function StockSearch({ initial }: { initial: string }) {
           timer.current = setTimeout(() => router.replace(q ? `/stock?q=${encodeURIComponent(q)}` : "/stock", { scroll: false }), 250);
         }}
       />
-      <button className="btn px-4" aria-label="Buscar">
+      <button className="btn" aria-label="Buscar">
         <Icon name="stock" />
       </button>
     </form>

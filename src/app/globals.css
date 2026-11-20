@@ -142,6 +142,16 @@ body {
   outline: 2px solid var(--accent-text);
   outline-offset: 2px;
 }
+/* A field group draws one ring around itself; its parts draw none (unlayered, to win over the rule above). */
+.field-group:has(:focus-visible) {
+  border-color: var(--accent-text);
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+.field-group > :focus-visible,
+.field-group > .bg-accent:focus-visible {
+  outline: none;
+}
 /* On the blue bar, the focus ring takes the bar's text colour. */
 .bg-accent:focus-visible,
 .bg-accent :focus-visible {
@@ -172,23 +182,16 @@ h3 {
   .btn-danger {
     @apply border border-danger/50 bg-surface text-danger hover:bg-danger-soft;
   }
-  /* A field with its button attached on the right edge (search boxes, filters): one control, not two. */
+  /* A field with its button attached on the right edge (search boxes, filters): one control with
+     one border, one focus ring and one standard size everywhere it is used. */
   .field-group {
-    @apply flex items-stretch rounded-control;
-  }
-  /* One focus ring around the whole control, whichever part has focus. */
-  .field-group:has(:focus-visible) {
-    outline: 2px solid var(--accent-text);
-    outline-offset: 2px;
-  }
-  .field-group > :focus-visible {
-    outline: none;
+    @apply flex w-full max-w-xl items-stretch overflow-hidden rounded-control border border-line-strong bg-surface transition-colors duration-150 hover:border-ink/60;
   }
   .field-group > .field {
-    @apply min-w-0 flex-1 rounded-r-none;
+    @apply min-h-[42px] min-w-0 flex-1 rounded-none border-0 bg-transparent lg:min-h-[30px];
   }
   .field-group > button {
-    @apply -ml-px shrink-0 rounded-l-none;
+    @apply min-h-[42px] shrink-0 rounded-none px-4 lg:min-h-[30px] lg:px-3;
   }
   .field-label {
     @apply mb-1.5 block text-sm font-semibold text-ink lg:mb-1 lg:text-xs lg:text-muted;

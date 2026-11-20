@@ -35,9 +35,11 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         </Link>
       </PageHeader>
 
-      <form className="field-group mb-4 max-w-md">
+      <form className="field-group mb-4" role="search">
         <input name="prefijo" defaultValue={prefix} className="field font-mono" placeholder="Ver las que empiezan con… (A-01)" aria-label="Filtrar por comienzo del código" autoCapitalize="characters" />
-        <button className="btn-soft">Filtrar</button>
+        <button className="btn" aria-label="Filtrar">
+          <Icon name="stock" />
+        </button>
       </form>
       {list.length > 0 ? (
         <div className="max-w-3xl table-wrap">
