@@ -4,7 +4,7 @@ import { Icon } from "@/components/Icon";
 import { Code, PageHeader, Badge, ShelfMark, EmptyRow } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { containsText } from "@/lib/lookup";
-import { requireSession } from "@/lib/session";
+import { can, requireSession } from "@/lib/session";
 import { Cover, ProductCards, ViewSwitch } from "@/components/ProductCards";
 import { CodeWithCopy } from "@/components/CopyButton";
 import { ColumnHandle, ResizableTable } from "@/components/ResizableTable";
@@ -44,7 +44,13 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <>
-      <PageHeader title="Stock" />
+      <PageHeader title="Stock">
+        {can(user.role, "admin") && (
+          <Link href="/stock/carga-inicial" className="btn-soft">
+            Stock inicial
+          </Link>
+        )}
+      </PageHeader>
       <StockSearch initial={q} />
 
       {location && (
