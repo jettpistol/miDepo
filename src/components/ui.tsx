@@ -75,7 +75,7 @@ export function Progress({ done, total, unit = "" }: { done: number; total: numb
       <div className="h-1.5 min-w-12 flex-1 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
         <div className={`h-full transition-[width] duration-200 ${pct === 100 ? "bg-ok" : "bg-accent-text"}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold whitespace-nowrap tabular-nums">
+      <span className="min-w-[9ch] text-right text-sm font-semibold whitespace-nowrap tabular-nums">
         {done} de {total}
         {unit && ` ${unit}`}
       </span>
@@ -83,8 +83,8 @@ export function Progress({ done, total, unit = "" }: { done: number; total: numb
   );
 }
 
-const ZONES: Record<string, string> = { RECEPCION: "receiving", DEVOLUCIONES: "returns", DANADOS: "damaged", SALDOS: "clearance", PREPARACION: "staging" };
-const ZONE_NAME: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
+const ZONES: Record<string, string> = { RECEPCION: "receiving", DEVOLUCIONES: "returns", FALTANTES: "missing", DANADOS: "damaged", SALDOS: "clearance", PREPARACION: "staging" };
+const ZONE_NAME: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", FALTANTES: "FALTANTES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
 
 /**
  * The shelf mark (tejuelo): a shelf's code written like the label on a book's spine, with each

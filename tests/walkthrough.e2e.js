@@ -340,6 +340,9 @@ async function warning(p, field, value) {
   await o.screenshot({ path: `${OUT}/m-batch.png`, fullPage: true, caret: 'initial' });
   step('phone batch scrolls sideways: ' + ((await o.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
   await o.setViewportSize({ width: 1440, height: 900 });
+  // Soltar lote: every order goes back to Pendientes (the steps after this need them).
+  o.once('dialog', (d) => d.accept()); await o.click('button:text-is("Soltar lote")'); await o.waitForURL(BASE + '/picking');
+  step('release batch: ' + ((await o.$('main a[href^="/picking/lote/"]')) ? fail('still listed') : `${(await o.$$('main button:text-is("Preparar")')).length} orders pending again`));
   await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
   await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
   await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');

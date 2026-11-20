@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { ROLE_LABEL } from "@/components/Accounts";
-import { ActivityChart, Card, Meter, StageBar, StatTile, ZoneBars } from "@/components/charts";
+import { ActivityChart, Card, Meter, StageBar, StatTile, ZoneTable } from "@/components/charts";
 import { Icon } from "@/components/Icon";
 import { PageHeader, Progress, ShelfMark, plural, shortDate } from "@/components/ui";
 import { pendingExports } from "@/lib/flows/exports";
@@ -190,8 +190,8 @@ export default async function Home() {
           <ActivityChart days={days} />
         </Card>
 
-        <Card title="Stock en zonas">
-          <ZoneBars zones={zones.map((z) => ({ ...z, href: z.type === "missing" || z.type === "damaged" ? (supervisor ? z.href : undefined) : z.href }))} />
+        <Card title="Stock en zonas" count={zones.reduce((s, z) => s + z.units, 0)}>
+          <ZoneTable zones={zones.map((z) => ({ ...z, href: z.type === "missing" || z.type === "damaged" ? (supervisor ? z.href : undefined) : z.href }))} />
         </Card>
 
         {supervisor && (
