@@ -22,15 +22,15 @@ async function target(c: Ctx, kind: AssignKind, id: number) {
   switch (kind) {
     case "order": {
       const [o] = await c.db.select().from(orders).where(mine(orders));
-      return o && { save, label: `Pedido ${o.number}`, open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
+      return o && { save, label: `${o.number}`, open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
     }
     case "receiving": {
       const [r] = await c.db.select().from(receivings).where(mine(receivings));
-      return r && { save, label: `Recepción ${r.number}`, open: r.status !== "closed" };
+      return r && { save, label: `${r.number}`, open: r.status !== "closed" };
     }
     case "return": {
       const [d] = await c.db.select().from(returns).where(mine(returns));
-      return d && { save, label: `Devolución ${d.number}`, open: d.status === "in_progress" };
+      return d && { save, label: `${d.number}`, open: d.status === "in_progress" };
     }
     case "count": {
       const [k] = await c.db.select().from(counts).where(mine(counts));

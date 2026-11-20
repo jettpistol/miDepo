@@ -148,18 +148,19 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `STK-06` | Escanea o escribe la ubicación. | `src/lib/stock.ts` · `findLocation` | The location field is empty. |
 | `STK-07` | No existe la ubicación "{código}". | `src/lib/stock.ts` · `findLocation` | No location of the company has that code. |
 | `STK-08` | La ubicación "{código}" está desactivada. | `src/lib/stock.ts` · `findLocation` | The location exists but is deactivated. |
-| `STK-09` | Los pedidos preparados no se mueven manualmente: salen cuando se despacha el pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into or out of the staging zone (picked orders) by hand. |
-| `STK-11` | Nada pasa a Faltantes manualmente: solo ocurre cuando un artículo no está en su ubicación durante el picking. | `src/lib/flows/move.ts` · `move` | Moving stock into FALTANTES by hand. Moving out of it is allowed: that is how a missing book comes back. |
-| `STK-12` | Ese movimiento no se puede deshacer desde aquí. | `src/lib/flows/move.ts` · `undoMove` | Undoing a movement that was not a manual move (picking, a count, a receiving…). Only reachable by editing the form. |
-| `STK-13` | Solo quien hizo el movimiento puede deshacerlo. | `src/lib/flows/move.ts` · `undoMove` | Undoing somebody else's move. The screen lists only your own. |
-| `STK-14` | Ese movimiento ya se deshizo. | `src/lib/flows/move.ts` · `undoMove` | Undoing the same move twice. |
-| `STK-15` | Esas unidades ya no están todas en el destino. Muévelas a mano. | `src/lib/flows/move.ts` · `undoMove` | Undoing a move after some of the units left the destination. |
+| `STK-09` | Los pedidos preparados no se mueven manualmente: salen cuando se despacha el pedido. | `src/lib/flows/move.ts` · `checkMove` | Moving stock into or out of the staging zone (picked orders) by hand. |
+| `STK-11` | Nada pasa a Faltantes manualmente: solo ocurre cuando un artículo no está en su ubicación durante el picking. | `src/lib/flows/move.ts` · `checkMove` | Moving stock into FALTANTES by hand. Moving out of it is allowed: that is how a missing book comes back. |
+| `STK-12` | Ese movimiento no se puede deshacer desde aquí. | `src/lib/flows/move.ts` · `undoMove`, `undoMoveAll` | Undoing a movement that was not a manual move (picking, a count, a receiving…). Only reachable by editing the form. |
+| `STK-13` | Solo quien hizo el movimiento puede deshacerlo. | `src/lib/flows/move.ts` · `undoMove`, `undoMoveAll` | Undoing somebody else's move. The screen lists only your own. |
+| `STK-14` | Ese movimiento ya se deshizo. | `src/lib/flows/move.ts` · `undoMove`, `undoMoveAll` | Undoing the same move twice. |
+| `STK-15` | Esas unidades ya no están todas en el destino. Muévelas a mano. | `src/lib/flows/move.ts` · `undoMove`, `undoMoveAll` | Undoing a move after some of the units left the destination. |
 | `STK-16` | El archivo tiene más de 20000 filas. Divídelo en varios. | `src/lib/flows/stockLoad.ts` · `applyLoad` | Loading an opening stock file with too many rows. |
 | `STK-17` | El archivo no tiene filas para cargar. | `src/lib/flows/stockLoad.ts` · `applyLoad` | Loading an empty opening stock file. |
 | `STK-18` | {n} filas tienen errores. Corrígelas y vuelve a subir el archivo. | `src/lib/flows/stockLoad.ts` · `applyLoad` | Loading an opening stock file in which some row names an unknown code or location, or a wrong quantity. |
 | `STK-19` | No se encontró esa carga. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load that does not exist or belongs to another company. |
 | `STK-20` | La carga {número} ya se deshizo. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load twice. |
 | `STK-21` | Parte de la carga {número} ya se movió. Corrige las diferencias con un conteo. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load after some of its units were moved, picked or written off. |
+| `STK-22` | {ubicación} está vacía. | `src/lib/flows/move.ts` · `moveAll` | Moving everything from a location that holds nothing. |
 | `STK-10` | La cantidad tiene que ser un número entero mayor que cero. | `src/lib/flows/common.ts` · `validQuantity` | A scanned quantity that is not a whole number from 1 to 100,000. Used by every scan flow. |
 
 ## RCV: Recepción and suppliers
@@ -234,7 +235,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `CTRL-08` | Quedan {n} sin controlar. | `src/lib/flows/control.ts` · `finishControl` | Finishing Control with picked units not counted. |
 | `CTRL-09` | No se encontró ese pedido. | `src/lib/flows/control.ts` · `allowSameCheck` | Giving or taking back the same-person permission on an order that does not exist or belongs to another company. |
 | `CTRL-10` | Lo preparaste tú. Lo permite otro supervisor. | `src/lib/flows/control.ts` · `allowSameCheck` | A supervisor who picked the order tries to let themselves check it. The button is disabled with this reason first. |
-| `CTRL-11` | Pedido {número} ya empacado. | `src/lib/flows/control.ts` · `allowSameCheck` | The order is pending, packed or later. |
+| `CTRL-11` | {número} ya empacado. | `src/lib/flows/control.ts` · `allowSameCheck` | The order is pending, packed or later. |
 | `CTRL-12` | No se encontró ese cliente. | `src/lib/flows/control.ts` · `setCustomerControl` | Marking a customer that does not exist or belongs to another company. |
 
 ## PACK: Empaque
@@ -314,7 +315,7 @@ Writing off more units than the zone holds is refused by `STK-03`.
 |---|---|---|---|
 | `ASG-01` | Tipo de tarea desconocido. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
 | `ASG-02` | No se encontró. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
-| `ASG-03` | {Pedido PED-00012} sin trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
+| `ASG-03` | {PED-00012} sin trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
 | `ASG-04` | Elige una persona de la lista. | `src/lib/flows/assignments.ts` · `assign` | The person chosen does not exist, is deactivated, or belongs to another company. Only reachable by editing the form or a stale page. |
 
 ## EXP: Fierro documents

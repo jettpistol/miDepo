@@ -87,7 +87,7 @@ Cuando no quedan paradas, miDepo avisa **Recorrido terminado**. Lleva todo a la 
 
 **¿Por qué el recorrido pasa por dos ubicaciones para el mismo artículo?** Porque en una sola no había suficientes unidades.
 
-**¿Qué es "Consignación"?** El cliente recibe los artículos y paga lo que vende. Para el picking no cambia nada.
+**¿Qué es la columna Condición?** La condición de venta en Fierro. **Firme**: venta definitiva. **Consignación**: el cliente paga lo que vende y devuelve el resto. Para el picking no cambia nada. Tocar el valor abre el pedido.
 
 **Tomé de más.** Devuelve la diferencia a la misma ubicación. miDepo no deja confirmar más de lo que pide la parada.
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ActionForm } from "@/components/ScanForm";
 import { Select } from "@/components/Select";
+import { Toggle } from "@/components/Toggle";
 import type { ControlMode } from "@/lib/flows/settings";
 import { saveControl } from "./company-actions";
 
@@ -10,10 +11,6 @@ const MODES = [
   { value: "packing", label: "En empaque" },
   { value: "all", label: "Todos los pedidos" },
   { value: "large", label: "Pedidos grandes" },
-];
-const SAME_PERSON = [
-  { value: "yes", label: "Cualquiera" },
-  { value: "no", label: "Otra persona" },
 ];
 
 export function ControlSettings({ mode: initial, minUnits, samePerson }: { mode: ControlMode; minUnits: number | null; samePerson: boolean }) {
@@ -36,12 +33,7 @@ export function ControlSettings({ mode: initial, minUnits, samePerson }: { mode:
           </div>
         )}
       </div>
-      <div>
-        <label htmlFor="samePerson" className="field-label">
-          Quién controla
-        </label>
-        <Select id="samePerson" name="samePerson" defaultValue={samePerson ? "yes" : "no"} options={SAME_PERSON} required />
-      </div>
+      <Toggle name="otherPerson" label="Redundancia" hint="Prohíbe que el armador controle su propio pedido" defaultChecked={!samePerson} />
     </ActionForm>
   );
 }

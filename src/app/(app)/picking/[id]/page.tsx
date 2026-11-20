@@ -4,7 +4,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
 import { Cover } from "@/components/ProductCards";
-import { Progress, Notice, PageHeader, Badge, ShelfMark, plural } from "@/components/ui";
+import { Progress, Notice, PageHeader, Badge, ShelfMark, plural, SALE_MODE } from "@/components/ui";
 import { boxes, customers, orderLines, orders, products, pickTasks, locations, users } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { confirm, putBack, release, shortage, take, wasThere } from "../actions";
@@ -56,8 +56,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
 
   return (
     <>
-      <PageHeader title={`Pedido ${p.number}`} subtitle={p.status !== "pending" && !mine && takenBy ? `${customer} · Lo prepara ${takenBy}` : customer} back={{ href: "/picking", text: "Picking" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "to_control", "picked"].includes(p.status)} />}>
-        {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
+      <PageHeader title={p.number} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${p.status !== "pending" && !mine && takenBy ? ` · Lo prepara ${takenBy}` : ""}`} back={{ href: "/picking", text: "Picking" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "to_control", "picked"].includes(p.status)} />}>
         <Urgency session={session} order={p} />
         {editable && (
           <ActionButton

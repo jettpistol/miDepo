@@ -3,6 +3,7 @@ import type { DB } from "@/db";
 import { countLocations, counts, customers, locations, movements, orderLines, orders, receivingLines, receivings, returnLines, returns, stock, suppliers, users } from "@/db/schema";
 import type { AssignKind } from "./flows/assignments";
 import type { IconName } from "@/components/Icon";
+import { SALE_MODE } from "./orderState";
 
 /** One open piece of work, whoever has it: what it is, where to go, how far along it is. */
 export type Task = {
@@ -99,7 +100,7 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
         kind: "order",
         id: o.id,
         name: o.number,
-        detail: customer,
+        detail: `${customer} · ${SALE_MODE[o.saleMode]}`,
         href: packing ? `/empaque/${o.id}` : control ? `/control/${o.id}` : `/picking/${o.id}`,
         assignedTo: o.assignedTo,
         takenBy: o.status === "in_picking" ? o.takenBy : null,

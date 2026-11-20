@@ -16,5 +16,5 @@ export async function setUrgent(c: Ctx, orderId: number, urgent: boolean) {
     .where(and(eq(orders.id, orderId), inArray(orders.status, ["pending", "in_picking", "to_control", "picked"])))
     .returning({ id: orders.id });
   if (changed.length === 0) throw new UserError("ORD-02", `El pedido ${o.number} ya está empacado: la urgencia no cambia nada.`);
-  return urgent ? `Pedido ${o.number}: urgente.` : `Pedido ${o.number}: sin urgencia.`;
+  return urgent ? `${o.number}: urgente.` : `${o.number}: sin urgencia.`;
 }
