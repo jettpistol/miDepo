@@ -6,7 +6,7 @@ import { getDb } from "@/db";
 import { users, wikiEdits } from "@/db/schema";
 import { UserError } from "./errors";
 import type { Ctx } from "./flows/common";
-import { renderMarkdown, titleOf } from "./markdown";
+import { renderMarkdown, slug, titleOf } from "./markdown";
 
 /**
  * The manual lives in the /wiki folder in GitHub wiki format (Home.md, _Sidebar.md,
@@ -147,4 +147,39 @@ export async function search(lookup: string, companyId?: number): Promise<Search
     results.push({ page, title, excerptHtml: html, points });
   }
   return results.sort((a, b) => b.points - a.points || a.title.localeCompare(b.title));
+}
+
+export type SectionHit = { page: string; pageTitle: string; section: string | null; href: string; excerpt: string };
+
+/**
+ * Searches the manual section by section, as the given company reads it, for the "Guías" tab of
+ * the top search: a hit opens the page at the section where the words are. Every word has to
+ * appear in the same section (or in its page's title).
+ */
+export async function searchSections(lookup: string, companyId?: number, limit = 10): Promise<SectionHit[]> {
+  const words = plain(lookup).split(/\s+/).filter((p) => p.length > 1).slice(0, 6);
+  if (words.length === 0) return [];
+  const edits = await editsOf(companyId);
+  const results: (SectionHit & { points: number })[] = [];
+  for (const page of pages()) {
+    if (page === "Home") continue;
+    const md = edits.get(page) ?? fileText(page);
+    const pageTitle = titleOf(md) ?? fallbackTitle(page);
+    // The text before the first "##" belongs to the page itself.
+    md.split(/^##\s+/m).forEach((part, i) => {
+      const section = i === 0 ? null : part.split("\n")[0].trim();
+      const text = textOnly(i === 0 ? part : part.slice(part.indexOf("\n") + 1));
+      const [t, h, body] = [plain(pageTitle), plain(section ?? ""), plain(text)];
+      if (!words.every((w) => t.includes(w) || h.includes(w) || body.includes(w))) return;
+      const points = words.reduce((s, w) => s + (h.includes(w) ? 12 : 0) + (t.includes(w) ? 8 : 0) + Math.min(5, body.split(w).length - 1), 0) + (i === 0 ? 1 : 0);
+      const at = Math.max(0, Math.min(...words.map((w) => body.indexOf(w)).filter((n) => n >= 0), body.length));
+      const from = at > 60 ? text.lastIndexOf(" ", at - 40) + 1 : 0;
+      const excerpt = (from > 0 ? "… " : "") + text.slice(from, from + 140).trim() + (from + 140 < text.length ? " …" : "");
+      results.push({ page, pageTitle, section, href: `/ayuda/${page}${section ? `#${slug(section)}` : ""}`, excerpt, points });
+    });
+  }
+  return results
+    .sort((a, b) => b.points - a.points)
+    .slice(0, limit)
+    .map(({ points: _, ...hit }) => hit);
 }

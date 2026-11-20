@@ -12,6 +12,18 @@ Al iniciar sesión ves una tarjeta por cada tipo de trabajo, con un número gran
 
 Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir con PED-…** para retomarlo.
 
+## Buscar
+
+El buscador de arriba encuentra cualquier cosa de miDepo. Los resultados vienen en tres pestañas:
+
+- **Funciones:** pantallas, acciones y ajustes. "Nueva devolución", "etiquetas", "color", "PIN".
+- **Inventario:** artículos, ubicaciones y documentos. Busca por nombre, autor, ISBN, código de ubicación, número de pedido o recepción, o por el nombre del cliente o proveedor.
+- **Guías:** este manual, abierto en la sección que habla de lo que buscaste.
+
+Se abre sola la pestaña que tiene resultados; **Tab** pasa a la siguiente. Con las flechas eliges y con **Enter** abres. Si escaneas un código, lo que coincide exacto aparece primero: **Enter** y estás ahí.
+
+En la computadora, **Ctrl + K** (en Mac, **⌘ + K**) o **/** llevan al buscador desde cualquier pantalla. En el teléfono, toca la lupa de arriba.
+
 ## El recorrido de un artículo
 
 1. **Llega** al depósito: se cuenta en [Recepción](Recepcion).
