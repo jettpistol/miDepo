@@ -129,7 +129,7 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
     ...custs.map((x) => ({ kind: "party" as const, title: x.name, path: ["Clientes", ...(x.city ? [x.city] : [])], href: `/clientes/${x.id}` })),
     ...ords.map((o) => ({
       kind: "document" as const,
-      title: `Pedido ${o.number}`,
+      title: `${o.number}`,
       path: [{ picking: "Picking", control: "Control", empaque: "Empaque" }[ORDER[o.status].screen], o.customer],
       href: `/${ORDER[o.status].screen}/${o.id}`,
       aside: ORDER[o.status].label,
@@ -137,7 +137,7 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
     })),
     ...recs.map((r) => ({
       kind: "document" as const,
-      title: `Recepción ${r.number}`,
+      title: `${r.number}`,
       path: ["Recepción", r.supplier],
       href: `/recepcion/${r.id}`,
       aside: RECEIVING[r.status],
@@ -145,7 +145,7 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
     })),
     ...rets.map((r) => ({
       kind: "document" as const,
-      title: `Devolución ${r.number}`,
+      title: `${r.number}`,
       path: ["Devoluciones", r.customer],
       href: `/devoluciones/${r.id}`,
       aside: RETURN[r.status],

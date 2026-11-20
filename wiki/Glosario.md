@@ -10,6 +10,8 @@
 
 **Conciliación.** Comparar el stock del depósito con el de Fierro para encontrar diferencias.
 
+**Condición.** La condición de venta de un pedido en Fierro: Firme o Consignación.
+
 **Consignación.** El cliente recibe los artículos y paga solo los que vende. Lo que no vende, lo devuelve.
 
 **Conteo a ciegas.** Contar sin saber cuánto dice el sistema que debería haber.

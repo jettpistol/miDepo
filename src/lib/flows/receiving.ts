@@ -97,7 +97,7 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
     }
     await tx.update(receivings).set({ status: "closed" }).where(eq(receivings.id, receivingId));
     const damaged = lines.reduce((s, l) => s + l.damaged, 0);
-    return `Recepción ${r.number} cerrada. ${total - damaged} unidades por reponer${damaged > 0 ? `, ${damaged} en Dañados` : ""}.`;
+    return `${r.number} cerrada. ${total - damaged} unidades por reponer${damaged > 0 ? `, ${damaged} en Dañados` : ""}.`;
   });
 }
 
@@ -109,14 +109,14 @@ export async function cancelReceiving(c: Ctx, receivingId: number) {
   const r = await open(c, receivingId);
   if (r.fierroId == null) {
     await c.db.delete(receivings).where(eq(receivings.id, receivingId));
-    return `Recepción ${r.number} cancelada.`;
+    return `${r.number} cancelada.`;
   }
   await c.db.transaction(async (tx) => {
     await tx.delete(receivingLines).where(and(eq(receivingLines.receivingId, receivingId), eq(receivingLines.expected, 0)));
     await tx.update(receivingLines).set({ received: 0, damaged: 0 }).where(eq(receivingLines.receivingId, receivingId));
     await tx.update(receivings).set({ status: "pending" }).where(eq(receivings.id, receivingId));
   });
-  return `Recepción ${r.number} vuelve a esperar: lo escaneado se borró.`;
+  return `${r.number} vuelve a esperar: lo escaneado se borró.`;
 }
 
 /**
@@ -141,7 +141,7 @@ export async function reopenReceiving(c: Ctx, receivingId: number) {
       }
     }
     await tx.update(receivings).set({ status: "in_progress" }).where(eq(receivings.id, receivingId));
-    return `Recepción ${r.number} reabierta. Sus unidades salieron de Recepción hasta que se vuelva a cerrar.`;
+    return `${r.number} reabierta. Sus unidades salieron de Recepción hasta que se vuelva a cerrar.`;
   });
 }
 

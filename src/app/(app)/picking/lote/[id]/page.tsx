@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
-import { Progress, Notice, PageHeader, Badge, ShelfMark, plural } from "@/components/ui";
+import { Progress, Notice, PageHeader, Badge, ShelfMark, plural, Condition, SALE_MODE } from "@/components/ui";
 import { Cover } from "@/components/ProductCards";
+import { orderScreen } from "@/lib/lists";
 import { boxes, customers, orderLines, orders, pickBatches, pickTasks, products, locations, users } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { batchNumber } from "@/lib/flows/picking";
@@ -97,7 +98,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
 
   return (
     <>
-      <PageHeader title={`Lote ${batchNumber(b.number)}`} subtitle={`${plural(batchOrders.length, "pedido", "pedidos")}${mine ? "" : ` · Lo prepara ${row.takenBy}`}`} back={{ href: "/picking", text: "Picking" }}>
+      <PageHeader title={`${batchNumber(b.number)}`} subtitle={`${plural(batchOrders.length, "pedido", "pedidos")}${mine ? "" : ` · Lo prepara ${row.takenBy}`}`} back={{ href: "/picking", text: "Picking" }}>
         <Badge>{trays ? "Por bandeja" : "Se separa en empaque"}</Badge>
         {open.length > 0 && (
           <ActionButton
@@ -282,6 +283,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
                     {trays && <th className="w-0">Bandeja</th>}
                     <th>Pedido</th>
                     <th className="hidden sm:table-cell">Cliente</th>
+                    <th className="hidden sm:table-cell">Condición</th>
                     <th className="text-right">Estado</th>
                   </tr>
                 </thead>
@@ -291,9 +293,14 @@ export default async function PickingBatch({ params, searchParams }: { params: P
                       {trays && <td className="text-center text-base font-bold tabular-nums">{o.tray}</td>}
                       <td className="max-w-0 w-full sm:w-auto sm:max-w-none">
                         <span className="doc-number">{o.number}</span>
-                        <span className="block truncate text-sm text-muted sm:hidden">{customer}</span>
+                        <span className="block truncate text-sm text-muted sm:hidden">
+                          {customer} · {SALE_MODE[o.saleMode]}
+                        </span>
                       </td>
                       <td className="hidden sm:table-cell">{customer}</td>
+                      <td className="hidden sm:table-cell">
+                        <Condition mode={o.saleMode} href={`/${orderScreen(o.status)}/${o.id}`} />
+                      </td>
                       <td className="text-right whitespace-nowrap">{o.status === "in_picking" ? <Badge>En preparación</Badge> : o.status === "to_control" ? <Badge tone="accent">Para control</Badge> : o.status === "picked" ? <Badge tone="accent">Listo para empacar</Badge> : <Badge tone="ok">Empacado</Badge>}</td>
                     </tr>
                   ))}
