@@ -68,6 +68,7 @@ const more: Feature[] = [
   { title: "Documentos para cargar en Fierro", path: ["Fierro"], href: "/fierro#cargar", icon: "download", words: "exportar csv enviar informar", minRole: "supervisor" },
   { title: "Conciliación con Fierro", path: ["Fierro", "Conciliación"], href: "/fierro/conciliacion", icon: "fierro", words: "diferencias comparar stock conciliar", minRole: "supervisor" },
   { title: "Cargar stock inicial", path: ["Stock", "Stock inicial"], href: "/stock/carga-inicial", icon: "download", words: "importar planilla csv excel arranque inventario inicial existencias", minRole: "admin" },
+  { title: "Mover toda una ubicación", path: ["Mover", "Toda la ubicación"], href: "/mover?modo=todo", icon: "move", words: "vaciar estante reubicar masivo todo contenido traspaso bulk" },
   { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nueva", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
   // Settings: sections of Ajustes (personal) and Organización (the company).
   { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },

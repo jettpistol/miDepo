@@ -1,3 +1,4 @@
+import { SALE_MODE } from "@/lib/orderState";
 import { requireSession } from "@/lib/session";
 import { kilos, orderWithBoxes } from "../../data";
 import { articleName } from "@/lib/article";
@@ -22,7 +23,7 @@ export default async function PackingList({ params }: { params: Promise<{ id: st
           <p>
             {d.customer.city}, {d.customer.province}
           </p>
-          <p className="mt-[1mm]">{d.p.saleMode === "consignment" ? "En consignación" : "En firme"}</p>
+          <p className="mt-[1mm]">Condición: {SALE_MODE[d.p.saleMode]}</p>
         </div>
       </header>
       <p className="my-[4mm]">
