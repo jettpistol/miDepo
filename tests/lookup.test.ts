@@ -46,7 +46,7 @@ describe("rehearsing a move", () => {
   it("says which book it is, how many there are, and offers to move them all", async () => {
     const r = await rehearsal({ ctx: "move", source: "a-01-1", product: book.barcode, quantity: "1" });
     expect(r.statuses.source?.tone).toBe("ok");
-    expect(r.statuses.product).toEqual({ tone: "ok", text: `${articleName(book.title)} · hay 7 en A-01-1` });
+    expect(r.statuses.product).toEqual({ tone: "ok", text: `${articleName(book.title)} · 7 en A-01-1` });
     expect(r.shortcuts).toContainEqual({ field: "quantity", value: "7", text: "Todas: 7" });
   });
 

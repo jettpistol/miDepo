@@ -32,7 +32,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
       />
       <OrdersTable
         rows={r.rows}
-        empty={q ? { title: `Ningún pedido coincide con "${q}"` } : status ? { title: `No hay pedidos en "${ORDER_STATE[status].label}"` } : { title: "Todavía no hay pedidos", text: "Los pedidos llegan de Fierro al sincronizar." }}
+        empty={q ? { title: `Ningún pedido coincide con "${q}"` } : status ? { title: `Sin pedidos: ${ORDER_STATE[status].label}` } : { title: "Sin pedidos", text: "Llegan de Fierro al sincronizar." }}
       />
       <Pager base="/pedidos" params={params} page={page} total={r.total} />
     </>

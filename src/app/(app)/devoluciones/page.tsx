@@ -41,7 +41,7 @@ export default async function Returns({ searchParams }: { searchParams: Promise<
                 requiredMessage="Elige el cliente de la lista."
                 placeholder="Elige el cliente"
                 searchPlaceholder="Buscar cliente o localidad…"
-                empty="Ningún cliente coincide. Los clientes vienen de Fierro: si falta uno, sincroniza."
+                empty="Ningún cliente coincide. Los clientes llegan de Fierro al sincronizar."
               />
             </div>
           </ActionForm>
@@ -52,7 +52,7 @@ export default async function Returns({ searchParams }: { searchParams: Promise<
         <h2 className="section-title">
           En curso <small>{inProgress.length}</small>
         </h2>
-        <ReturnsTable rows={inProgress} empty={{ title: "No hay devoluciones en curso", text: "Cuando llegue una, toca Nueva y elige el cliente." }} />
+        <ReturnsTable rows={inProgress} empty={{ title: "Sin devoluciones en curso" }} />
       </section>
 
       <section id="cerradas">
@@ -60,7 +60,7 @@ export default async function Returns({ searchParams }: { searchParams: Promise<
           Cerradas <small>{closed.total}</small>
         </h2>
         {(closed.total > 0 || q) && <LiveSearch placeholder="Número o cliente" className="mb-3 max-w-md" />}
-        <ReturnsTable rows={closed.rows} empty={q ? { title: `Ninguna devolución cerrada coincide con "${q}"` } : { title: "Todavía no hay devoluciones cerradas" }} />
+        <ReturnsTable rows={closed.rows} empty={q ? { title: `Ninguna devolución cerrada coincide con "${q}"` } : { title: "Sin devoluciones cerradas" }} />
         <Pager base="/devoluciones" params={{ q }} page={page} total={closed.total} />
       </section>
     </>

@@ -37,7 +37,7 @@ export default async function Reconciliation() {
         </div>
       )}
       {rows.length === 0 ? (
-        <EmptyState title="El depósito y Fierro dicen lo mismo">No hay ninguna diferencia de stock.</EmptyState>
+        <EmptyState title="Sin diferencias de stock">No hay ninguna diferencia de stock.</EmptyState>
       ) : (
         <>
           <p className="mb-3 max-w-[70ch] text-sm text-muted">

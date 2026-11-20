@@ -100,7 +100,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
   async function flagUnknown(text: string) {
     if (text.length < 3) return;
     const [similar] = await db.select({ id: products.id }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(text))).limit(1);
-    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un artículo nuevo, sincroniza con Fierro.` };
+    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo.` };
   }
 
   const n = Number(v("quantity"));
@@ -128,7 +128,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         if (present === 0) {
           statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está en ${locationName(source)}.` };
         } else {
-          statuses.product = { tone: "ok", text: `${articleName(book.title)} · hay ${present} en ${locationName(source)}` };
+          statuses.product = { tone: "ok", text: `${articleName(book.title)} · ${present} en ${locationName(source)}` };
           if (present > 1 && quantity !== present) shortcuts.push({ field: "quantity", value: String(present), text: `Todas: ${present}` });
           if (quantity && quantity > present) statuses.quantity = { tone: "danger", text: `En ${locationName(source)} hay ${present}.` };
         }
@@ -154,7 +154,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     if (t) {
       const u = await location(v("location"));
       await checkLocation("location", u);
-      if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Es la ubicación de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
+      if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Ubicación correcta" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
       if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: articleName(book.title) } : { tone: "danger", text: `Ese es "${articleName(book.title)}". No es el artículo de esta parada.` };
       const remaining = t.t.quantity - t.t.picked;
       if (quantity && quantity > remaining) statuses.quantity = { tone: "danger", text: `Esta parada pide ${remaining}.` };
@@ -181,12 +181,12 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     if (r) {
       const [l] = await db.select().from(receivingLines).where(and(eq(receivingLines.receivingId, r.id), eq(receivingLines.productId, book.id)));
       if (l && l.expected > 0) {
-        statuses.product = { tone: "ok", text: `${articleName(book.title)} · van ${l.received} de ${l.expected}` };
-        if (quantity && l.received + quantity > l.expected) statuses.quantity = { tone: "warn", text: `Con estas son ${l.received + quantity - l.expected} de más.` };
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · ${l.received} de ${l.expected}` };
+        if (quantity && l.received + quantity > l.expected) statuses.quantity = { tone: "warn", text: `${l.received + quantity - l.expected} de más.` };
       } else if (l) {
-        statuses.product = { tone: "ok", text: `${articleName(book.title)} · van ${l.received}` };
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · ${l.received}` };
       } else if (r.fierroId) {
-        statuses.product = { tone: "warn", text: `${articleName(book.title)} · no está en el aviso de esta recepción` };
+        statuses.product = { tone: "warn", text: `${articleName(book.title)} · fuera del aviso` };
       }
     }
   } else if (ctx === "packing" && book) {
@@ -197,7 +197,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       .where(and(eq(orderLines.orderId, Number(v("id"))), eq(orderLines.productId, book.id), eq(orders.companyId, companyId)));
     const left = l ? l.l.picked - l.l.packed : 0;
     if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está entre lo preparado para este pedido.` };
-    else if (left === 0) statuses.product = { tone: "danger", text: `Ya empacaste todas las unidades de "${articleName(book.title)}".` };
+    else if (left === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}": todo empacado.` };
     else {
       statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} por empacar` };
       if (left > 1 && quantity !== left) shortcuts.push({ field: "quantity", value: String(left), text: `Todas: ${left}` });

@@ -9,10 +9,12 @@ import { close, correct, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function ReceivingDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ r: receivings, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, company.id)));
   const r = row?.r;
   if (!r) notFound();
@@ -29,7 +31,9 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"} />
+      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"}>
+        <Assignee session={session} kind="receiving" id={r.id} value={r.assignedTo} open={r.status !== "closed"} />
+      </PageHeader>
 
       {open ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">
@@ -37,7 +41,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
             <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar" />
             {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
+              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Sin artículos escaneados." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? No se podrá seguir escaneando."}>
                 Cerrar recepción
               </ActionButton>
             </div>
@@ -47,7 +51,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
       ) : (
         <div className="space-y-6">
           <Notice tone="ok">
-            Recepción cerrada con {received} unidades. {r.sentToFierro ? "Ya está cargada en Fierro." : "Falta cargarla en Fierro."}{" "}
+            Recepción cerrada con {received} unidades. {r.sentToFierro ? "Cargada en Fierro." : "Pendiente en Fierro."}{" "}
             <Link href="/reposicion" className="font-semibold underline underline-offset-[3px]" {...hotkey("primary", "Ir a reposición")}>
               Ir a reposición
             </Link>
@@ -60,7 +64,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 }
 
 function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLines.$inferSelect; title: string; code: string }[]; id: number; editable?: boolean }) {
-  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay artículos. Escanea el primero.</p>;
+  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Sin artículos.</p>;
   return (
     <div className="table-wrap">
       <table className="data-table">

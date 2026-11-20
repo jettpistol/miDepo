@@ -152,9 +152,9 @@ export async function markShort(c: Ctx, taskId: number) {
       await tx.insert(pickTasks).values(stops.map((s) => ({ orderId: order.id, lineId: task.lineId, productId: task.productId, locationId: s.locationId, quantity: s.quantity })));
     }
     await checkEnd(tx, order.id);
-    if (stops.length > 0 && uncovered === 0) return "Registrado. El artículo está en otra ubicación y se sumó al recorrido.";
-    if (stops.length > 0) return `Registrado. Hay una parte en otra ubicación; ${uncovered} quedan como faltante.`;
-    return `Registrado: ${missing} quedan como faltante. Conviene contar esa ubicación.`;
+    if (stops.length > 0 && uncovered === 0) return "Registrado. Otra ubicación agregada al recorrido.";
+    if (stops.length > 0) return `Registrado. Otra ubicación agregada al recorrido; ${uncovered} a Faltantes.`;
+    return `Registrado. ${missing} a Faltantes.`;
   });
 }
 

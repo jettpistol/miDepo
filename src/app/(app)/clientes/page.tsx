@@ -33,8 +33,8 @@ export default async function Customers({ searchParams }: { searchParams: Promis
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <EmptyRow columns={4} title={q ? `Ningún cliente coincide con "${q}"` : "Todavía no hay clientes"}>
-                {q ? undefined : "Los clientes llegan de Fierro al sincronizar."}
+              <EmptyRow columns={4} title={q ? `Ningún cliente coincide con "${q}"` : "Sin clientes"}>
+                {q ? undefined : "Llegan de Fierro al sincronizar."}
               </EmptyRow>
             )}
             {rows.map(({ c, orders, returns }) => {

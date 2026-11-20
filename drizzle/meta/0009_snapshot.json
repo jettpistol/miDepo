@@ -1,5 +1,5 @@
 {
-  "id": "dc8a95d8-8070-4218-882f-875202e9ed5d",
+  "id": "ffff3758-a292-4e4c-b13a-1748d740f55c",
   "prevId": "fe756325-78de-442e-b604-80e27d7aebec",
   "version": "7",
   "dialect": "postgresql",
@@ -476,13 +476,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "batch_sorting": {
-          "name": "batch_sorting",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'packing'"
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -741,6 +734,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -756,6 +755,19 @@
           "tableTo": "companies",
           "columnsFrom": [
             "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "counts_assigned_to_users_id_fk": {
+          "name": "counts_assigned_to_users_id_fk",
+          "tableFrom": "counts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -963,6 +975,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -995,6 +1013,19 @@
           "tableTo": "companies",
           "columnsFrom": [
             "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "locations_assigned_to_users_id_fk": {
+          "name": "locations_assigned_to_users_id_fk",
+          "tableFrom": "locations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -1113,6 +1144,27 @@
           "columns": [
             {
               "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "movements_company_id_created_at_idx": {
+          "name": "movements_company_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "company_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1358,14 +1410,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "batch_id": {
-          "name": "batch_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tray": {
-          "name": "tray",
+        "assigned_to": {
+          "name": "assigned_to",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1461,12 +1507,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "orders_batch_id_pick_batches_id_fk": {
-          "name": "orders_batch_id_pick_batches_id_fk",
+        "orders_assigned_to_users_id_fk": {
+          "name": "orders_assigned_to_users_id_fk",
           "tableFrom": "orders",
-          "tableTo": "pick_batches",
+          "tableTo": "users",
           "columnsFrom": [
-            "batch_id"
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -1544,112 +1590,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.pick_batches": {
-      "name": "pick_batches",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "company_id": {
-          "name": "company_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "number": {
-          "name": "number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "taken_by": {
-          "name": "taken_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sorting": {
-          "name": "sorting",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'open'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "pick_batches_company_id_number_idx": {
-          "name": "pick_batches_company_id_number_idx",
-          "columns": [
-            {
-              "expression": "company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "number",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "pick_batches_company_id_companies_id_fk": {
-          "name": "pick_batches_company_id_companies_id_fk",
-          "tableFrom": "pick_batches",
-          "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "pick_batches_taken_by_users_id_fk": {
-          "name": "pick_batches_taken_by_users_id_fk",
-          "tableFrom": "pick_batches",
-          "tableTo": "users",
-          "columnsFrom": [
-            "taken_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -2184,6 +2124,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -2234,6 +2180,19 @@
           "tableTo": "suppliers",
           "columnsFrom": [
             "supplier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "receivings_assigned_to_users_id_fk": {
+          "name": "receivings_assigned_to_users_id_fk",
+          "tableFrom": "receivings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -2363,6 +2322,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -2391,6 +2356,19 @@
           "tableTo": "customers",
           "columnsFrom": [
             "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "returns_assigned_to_users_id_fk": {
+          "name": "returns_assigned_to_users_id_fk",
+          "tableFrom": "returns",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"

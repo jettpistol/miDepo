@@ -22,7 +22,7 @@ export async function scanIntoBox(c: Ctx, orderId: number, code: string, quantit
     const [line] = await tx.select().from(orderLines).where(and(eq(orderLines.orderId, orderId), eq(orderLines.productId, p.id)));
     if (!line || line.picked === 0) throw new UserError("PACK-04", `"${articleName(p.title)}" no está entre lo preparado para el pedido ${order.number}.`);
     const left = line.picked - line.packed;
-    if (left === 0) throw new UserError("PACK-05", `Ya empacaste todas las unidades de "${articleName(p.title)}".`);
+    if (left === 0) throw new UserError("PACK-05", `Ya están empacadas todas las unidades de "${articleName(p.title)}".`);
     if (n > left) throw new UserError("PACK-06", `De "${articleName(p.title)}" quedan ${left} por empacar, no ${n}.`);
     let [box] = await tx.select().from(boxes).where(and(eq(boxes.orderId, orderId), eq(boxes.status, "open")));
     if (!box) {
@@ -76,5 +76,5 @@ export async function finishPacking(c: Ctx, orderId: number) {
   if (ofOrder.some((k) => k.status === "open")) throw new UserError("PACK-11", "Cierra la caja abierta antes de terminar.");
   if (ofOrder.length === 0 && lines.some((l) => l.picked > 0)) throw new UserError("PACK-12", "Todavía no hay ninguna caja.");
   await c.db.update(orders).set({ status: "packed" }).where(eq(orders.id, orderId));
-  return `Pedido ${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}. Ya se puede cargar en Fierro.`;
+  return `Pedido ${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}.`;
 }
