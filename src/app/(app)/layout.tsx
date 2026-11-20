@@ -13,18 +13,19 @@ import { NAV } from "@/lib/hotkeys";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { saveTheme } from "./cuenta/actions";
 import { counts, orders, receivings, returns } from "@/db/schema";
-import { MENU } from "@/lib/menu";
+import { menuFor } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { db, user, company } = await requireSession();
-  const groups = MENU.map((g) => ({ ...g, items: g.items.filter((i) => can(user.role, i.minRole ?? "operator")) })).filter((g) => g.items.length > 0);
+  const groups = menuFor(user.role, company, can);
 
   // How much waits in each queue, shown beside it in the sidebar.
   const c = company.id;
   const n = (q: Promise<{ n: number }[]>) => q.then((r) => r[0].n);
-  const [toPick, toReceive, toPack, toReturn, toCount] = await Promise.all([
+  const [toPick, toControl, toReceive, toPack, toReturn, toCount] = await Promise.all([
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), inArray(orders.status, ["pending", "in_picking"])))),
+    company.controlMinUnits == null ? 0 : n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "to_control")))),
     n(db.select({ n: count() }).from(receivings).where(and(eq(receivings.companyId, c), inArray(receivings.status, ["pending", "in_progress"])))),
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "picked")))),
     n(db.select({ n: count() }).from(returns).where(and(eq(returns.companyId, c), eq(returns.status, "in_progress")))),
@@ -33,7 +34,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // What the top search offers before anything is typed: the screens this person can open.
   const altKey = Object.fromEntries(Object.entries(NAV).map(([d, href]) => [href, `Alt + ${d}`]));
   const starters: SearchRow[] = groups.flatMap((g) => g.items.map((i) => ({ key: i.href, group: g.group, title: i.name, path: [], href: i.href, icon: i.icon, keys: altKey[i.href] })));
-  const queueCounts = { "/picking": toPick, "/recepcion": toReceive, "/empaque": toPack, "/devoluciones": toReturn, "/conteos": toCount };
+  const queueCounts = { "/picking": toPick, "/control": toControl, "/recepcion": toReceive, "/empaque": toPack, "/devoluciones": toReturn, "/conteos": toCount };
 
   return (
     <>

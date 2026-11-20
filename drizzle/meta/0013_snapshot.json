@@ -1,5 +1,5 @@
 {
-  "id": "7123e2cb-d7b1-4d83-b162-149be27c8fc4",
+  "id": "bb203bc9-f7c9-4966-a22b-46625f9d8c71",
   "prevId": "6dcf20a4-ce2b-4e81-921b-258f7b66b913",
   "version": "7",
   "dialect": "postgresql",
@@ -475,6 +475,19 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "control_min_units": {
+          "name": "control_min_units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "same_person_checks": {
+          "name": "same_person_checks",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         },
         "created_at": {
           "name": "created_at",
@@ -1290,6 +1303,13 @@
           "notNull": true,
           "default": 0
         },
+        "checked": {
+          "name": "checked",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "packed": {
           "name": "packed",
           "type": "integer",
@@ -1416,6 +1436,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "controlled_by": {
+          "name": "controlled_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "packed_by": {
+          "name": "packed_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -1533,6 +1565,32 @@
           "tableTo": "users",
           "columnsFrom": [
             "assigned_to"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "orders_controlled_by_users_id_fk": {
+          "name": "orders_controlled_by_users_id_fk",
+          "tableFrom": "orders",
+          "tableTo": "users",
+          "columnsFrom": [
+            "controlled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "orders_packed_by_users_id_fk": {
+          "name": "orders_packed_by_users_id_fk",
+          "tableFrom": "orders",
+          "tableTo": "users",
+          "columnsFrom": [
+            "packed_by"
           ],
           "columnsTo": [
             "id"
@@ -2565,123 +2623,6 @@
           ]
         }
       },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.stock_loads": {
-      "name": "stock_loads",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "company_id": {
-          "name": "company_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "number": {
-          "name": "number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "file_name": {
-          "name": "file_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lines": {
-          "name": "lines",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "units": {
-          "name": "units",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "undone_at": {
-          "name": "undone_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "stock_loads_company_id_number_idx": {
-          "name": "stock_loads_company_id_number_idx",
-          "columns": [
-            {
-              "expression": "company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "number",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "stock_loads_company_id_companies_id_fk": {
-          "name": "stock_loads_company_id_companies_id_fk",
-          "tableFrom": "stock_loads",
-          "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "stock_loads_created_by_users_id_fk": {
-          "name": "stock_loads_created_by_users_id_fk",
-          "tableFrom": "stock_loads",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

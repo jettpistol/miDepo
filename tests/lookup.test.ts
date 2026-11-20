@@ -6,13 +6,14 @@ process.env.PGLITE_DIR = "memory://";
 delete process.env.DATABASE_URL;
 
 import { getDb, runMigrations, type DB } from "@/db";
-import { companies, products, locations } from "@/db/schema";
+import { companies, customers, orderLines, orders, products, locations } from "@/db/schema";
 import { createCompany, createUser } from "@/db/seed";
 import { runLookup } from "@/lib/lookup";
 import { UserError } from "@/lib/errors";
 import { sync } from "@/lib/fierro";
 import type { Ctx } from "@/lib/flows/common";
 import { move } from "@/lib/flows/move";
+import { checkUnit } from "@/lib/flows/control";
 import { moveStock } from "@/lib/stock";
 
 let db: DB;
@@ -90,5 +91,27 @@ describe("rehearsing a new count", () => {
   it("counts the locations in the range before creating it", async () => {
     expect((await rehearsal({ ctx: "new-count", prefix: "a-01" })).statuses.prefix).toEqual({ tone: "ok", text: "2 ubicaciones" });
     expect((await rehearsal({ ctx: "new-count", prefix: "Z" })).statuses.prefix?.tone).toBe("danger");
+  });
+});
+
+describe("rehearsing a control", () => {
+  it("blocks beforehand exactly what the action would reject afterwards", async () => {
+    const [customer] = await db.select().from(customers).where(eq(customers.companyId, c.companyId)).limit(1);
+    const [o] = await db.insert(orders).values({ companyId: c.companyId, fierroId: "CTRL-T", number: "P-CTRL", customerId: customer.id, status: "to_control" }).returning();
+    await db.insert(orderLines).values({ orderId: o.id, productId: book.id, quantity: 3, picked: 3, checked: 1 });
+    const id = String(o.id);
+    const cases = [
+      { product: another.barcode, quantity: "1", field: "product" },
+      { product: book.barcode, quantity: "3", field: "quantity" },
+    ];
+    for (const { field, ...d } of cases) {
+      expect((await rehearsal({ ctx: "control", id, ...d })).statuses[field]?.tone, field).toBe("danger");
+      await expect(checkUnit(c, o.id, d.product, d.quantity)).rejects.toBeInstanceOf(UserError);
+    }
+    const ok = await rehearsal({ ctx: "control", id, product: book.barcode, quantity: "2" });
+    expect(ok.statuses.product).toEqual({ tone: "ok", text: `${articleName(book.title)} · quedan 2 por controlar` });
+    await expect(checkUnit(c, o.id, book.barcode, 2)).resolves.toContain(articleName(book.title));
+    expect((await rehearsal({ ctx: "control", id, product: book.barcode, quantity: "1" })).statuses.product?.tone).toBe("danger");
+    await expect(checkUnit(c, o.id, book.barcode, 1)).rejects.toBeInstanceOf(UserError);
   });
 });

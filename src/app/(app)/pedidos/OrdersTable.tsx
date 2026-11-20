@@ -6,6 +6,7 @@ import { orderScreen } from "@/lib/lists";
 export const ORDER_STATE: Record<OrderStatus, { label: string; tone: Tone }> = {
   pending: { label: "Por preparar", tone: "neutral" },
   in_picking: { label: "En picking", tone: "accent" },
+  to_control: { label: "Por controlar", tone: "warn" },
   picked: { label: "Por empacar", tone: "warn" },
   packed: { label: "Empacado", tone: "accent" },
   shipped: { label: "Despachado", tone: "ok" },
@@ -14,7 +15,7 @@ export const ORDER_STATE: Record<OrderStatus, { label: string; tone: Tone }> = {
 
 type Row = { o: typeof orders.$inferSelect; customer: string; units: number };
 
-/** Orders of any state. Each opens where it is worked on: picking, or packing once picked. */
+/** Orders of any state. Each opens where it is worked on: picking, control, or packing. */
 export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[]; showCustomer?: boolean; empty: { title: string; text?: string } }) {
   const columns = showCustomer ? 6 : 5;
   return (
@@ -59,7 +60,7 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
               <td className="hidden whitespace-nowrap text-muted sm:table-cell">{shortDate(o.date)}</td>
               <td className="w-px">
                 <span className="flex gap-1">
-                  {o.urgent && ["pending", "in_picking", "picked"].includes(o.status) && <Badge tone="danger">Urgente</Badge>}
+                  {o.urgent && ["pending", "in_picking", "to_control", "picked"].includes(o.status) && <Badge tone="danger">Urgente</Badge>}
                   <Badge tone={ORDER_STATE[o.status].tone}>{ORDER_STATE[o.status].label}</Badge>
                 </span>
               </td>

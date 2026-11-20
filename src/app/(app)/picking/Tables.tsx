@@ -7,6 +7,7 @@ import { customers, orderLines, orders, pickTasks, locations, users } from "@/db
 import type { requireSession } from "@/lib/session";
 import { take } from "./actions";
 import { hotkey } from "@/lib/hotkeys";
+import { shortages } from "@/lib/flows/picking";
 
 type Db = Awaited<ReturnType<typeof requireSession>>["db"];
 
@@ -43,7 +44,8 @@ export async function loadOpenOrders(db: Db, companyId: number) {
       .groupBy(pickTasks.orderId);
     for (const x of stops) nextShelf.set(x.orderId, x.code);
   }
-  return { inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null })), pending };
+  const short = await shortages(db, companyId, pending.map((f) => f.p.id));
+  return { inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null })), pending: pending.map((f) => ({ ...f, short: short.get(f.p.id) ?? 0 })) };
 }
 
 type OpenOrders = Awaited<ReturnType<typeof loadOpenOrders>>;
@@ -104,12 +106,13 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
             <th className="hidden md:table-cell">Localidad</th>
             <th className="hidden text-right sm:table-cell">Artículos</th>
             <th className="hidden text-right sm:table-cell">Unidades</th>
+            <th className="hidden sm:table-cell">Faltantes</th>
             <th className="hidden md:table-cell">Fecha</th>
             <th />
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, customer, city, lines, units }, i) => (
+          {rows.map(({ p, customer, city, lines, units, short }, i) => (
             <tr key={p.id}>
               <td>
                 <Link href={`/picking/${p.id}`} className="link doc-number">
@@ -134,10 +137,16 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
                   <span className="sm:hidden">{units} u. · </span>
                   {city}
                 </span>
+                {short > 0 && (
+                  <span className="mt-1 block sm:hidden">
+                    <Badge tone="danger">Sin stock · {short}</Badge>
+                  </span>
+                )}
               </td>
               <td className="hidden text-muted md:table-cell">{city}</td>
               <td className="hidden text-right sm:table-cell">{lines}</td>
               <td className="hidden text-right font-semibold sm:table-cell">{units}</td>
+              <td className="hidden w-px whitespace-nowrap sm:table-cell">{short > 0 && <Badge tone="danger">Sin stock · {short}</Badge>}</td>
               <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(p.date)}</td>
               <td className="w-px text-right">
                 <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm" hotkey={i === 0 ? "primary" : undefined} reason={fierroWarning(p) ?? undefined}>

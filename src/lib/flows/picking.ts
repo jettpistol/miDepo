@@ -5,6 +5,7 @@ import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
 import { articleName } from "@/lib/article";
+import { goesToControl, settingsOf } from "./control";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
@@ -71,6 +72,22 @@ export async function planRoute(tx: Executor, companyId: number, orderId: number
   return tasks;
 }
 
+/**
+ * Units of each pending order that would come out short if it were taken now, one order at a
+ * time (orders do not compete with each other here). Same rule as planRoute, in two queries.
+ */
+export async function shortages(tx: Executor, companyId: number, orderIds: number[]) {
+  const result = new Map<number, number>();
+  if (orderIds.length === 0) return result;
+  const lines = await tx.select().from(orderLines).where(inArray(orderLines.orderId, orderIds));
+  const freeOnes = await available(tx, companyId, [...new Set(lines.map((l) => l.productId))]);
+  for (const l of lines) {
+    const { missing } = distribute(freeOnes.get(l.productId) ?? [], l.quantity);
+    if (missing > 0) result.set(l.orderId, (result.get(l.orderId) ?? 0) + missing);
+  }
+  return result;
+}
+
 /** The operator takes a pending order: the route through the shelves is built. */
 export async function takeOrder(c: Ctx, orderId: number) {
   const p = await orderOf(c, orderId);
@@ -91,10 +108,14 @@ export async function takeOrder(c: Ctx, orderId: number) {
   });
 }
 
-async function checkEnd(tx: Executor, orderId: number) {
+/** When no stop is left, the order goes to Control or straight to packing, as the company set it. Returns where it went. */
+async function checkEnd(tx: Executor, orderId: number): Promise<false | "to_control" | "picked"> {
   const [remains] = await tx.select({ id: pickTasks.id }).from(pickTasks).where(and(eq(pickTasks.orderId, orderId), eq(pickTasks.status, "pending"))).limit(1);
-  if (!remains) await tx.update(orders).set({ status: "picked" }).where(and(eq(orders.id, orderId), eq(orders.status, "in_picking")));
-  return !remains;
+  if (remains) return false;
+  const [o] = await tx.select({ companyId: orders.companyId, units: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number) }).from(orders).leftJoin(orderLines, eq(orderLines.orderId, orders.id)).where(eq(orders.id, orderId)).groupBy(orders.id);
+  const next = goesToControl(await settingsOf(tx, o.companyId), o.units) ? "to_control" : "picked";
+  await tx.update(orders).set({ status: next }).where(and(eq(orders.id, orderId), eq(orders.status, "in_picking")));
+  return next;
 }
 
 async function taskOf(c: Ctx, taskId: number) {
@@ -125,7 +146,8 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
     const end = await checkEnd(tx, order.id);
-    return end ? `Pedido ${order.number} completo. Llévalo a empaque.` : `${n} × ${articleName(p.title)} ✓`;
+    if (end) return `Pedido ${order.number} completo. Llévalo a ${end === "to_control" ? "control" : "empaque"}.`;
+    return `${n} × ${articleName(p.title)} ✓`;
   });
 }
 
@@ -165,9 +187,15 @@ export async function markShort(c: Ctx, taskId: number) {
 
 // ───────────── Going back ─────────────
 
-/** Picking can be changed until packing starts: after that, units are in boxes. */
+/** What was picked changed: the order is being picked again, and any Control count starts over. */
+async function backToPicking(tx: Executor, orderId: number) {
+  const back = await tx.update(orders).set({ status: "in_picking", controlledBy: null }).where(and(eq(orders.id, orderId), inArray(orders.status, ["to_control", "picked"]))).returning({ id: orders.id });
+  if (back.length > 0) await tx.update(orderLines).set({ checked: 0 }).where(eq(orderLines.orderId, orderId));
+}
+
+/** Picking can be changed until packing starts: after that, units are in boxes. Waiting in Control counts as before packing. */
 function stillPicking(order: typeof orders.$inferSelect) {
-  if (order.status !== "in_picking" && order.status !== "picked") throw new UserError("PICK-08", `El pedido ${order.number} ya pasó por empaque. Su picking ya no se puede cambiar.`);
+  if (order.status !== "in_picking" && order.status !== "to_control" && order.status !== "picked") throw new UserError("PICK-08", `El pedido ${order.number} ya pasó por empaque. Su picking ya no se puede cambiar.`);
 }
 
 /**
@@ -187,7 +215,7 @@ export async function releaseOrder(c: Ctx, orderId: number, { anyone = false } =
   const [box] = await c.db.select({ id: boxes.id }).from(boxes).where(eq(boxes.orderId, orderId)).limit(1);
   if (box) throw new UserError("PICK-11", "Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo.");
   return c.db.transaction(async (tx) => {
-    const released = await tx.update(orders).set({ status: "pending", takenBy: null }).where(and(eq(orders.id, orderId), eq(orders.status, order.status))).returning({ id: orders.id });
+    const released = await tx.update(orders).set({ status: "pending", takenBy: null, controlledBy: null }).where(and(eq(orders.id, orderId), eq(orders.status, order.status))).returning({ id: orders.id });
     if (released.length === 0) throw new UserError("PICK-12", "El pedido cambió mientras tanto. Recarga la página.");
     const tasks = await tx.select().from(pickTasks).where(eq(pickTasks.orderId, orderId));
     const prep = await zone(tx, c.companyId, "staging");
@@ -200,7 +228,7 @@ export async function releaseOrder(c: Ctx, orderId: number, { anyone = false } =
     }
     const inMissing = tasks.reduce((s, t) => s + t.sentToMissing, 0);
     await tx.delete(pickTasks).where(eq(pickTasks.orderId, orderId));
-    await tx.update(orderLines).set({ picked: 0 }).where(eq(orderLines.orderId, orderId));
+    await tx.update(orderLines).set({ picked: 0, checked: 0 }).where(eq(orderLines.orderId, orderId));
     const parts = [`Pedido ${order.number} soltado: vuelve a Pendientes.`];
     if (back > 0) parts.push(`Devuelve ${back === 1 ? "la unidad tomada" : `las ${back} unidades tomadas`} a su ubicación.`);
     if (inMissing > 0) parts.push(`${inMissing === 1 ? "La unidad no encontrada sigue" : `Las ${inMissing} unidades no encontradas siguen`} en Faltantes.`);
@@ -228,7 +256,7 @@ export async function unpick(c: Ctx, taskId: number) {
     await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: prep.id, toId: task.locationId, quantity: task.picked, reason: "undo", reference: order.number, userId: c.userId });
     await tx.update(pickTasks).set({ picked: 0, status: "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: line.picked - task.picked }).where(eq(orderLines.id, line.id));
-    await tx.update(orders).set({ status: "in_picking" }).where(and(eq(orders.id, order.id), eq(orders.status, "picked")));
+    await backToPicking(tx, order.id);
     return `Deshecho: ${task.picked} ${task.picked === 1 ? "unidad vuelve" : "unidades vuelven"} a ${loc?.code ?? "su ubicación"}. La parada queda pendiente.`;
   });
 }
@@ -251,7 +279,7 @@ export async function undoShort(c: Ctx, taskId: number) {
     }
     if (replacements.length > 0) await tx.delete(pickTasks).where(inArray(pickTasks.id, replacements.map((r) => r.id)));
     await tx.update(pickTasks).set({ status: "pending", sentToMissing: 0 }).where(eq(pickTasks.id, task.id));
-    await tx.update(orders).set({ status: "in_picking" }).where(and(eq(orders.id, order.id), eq(orders.status, "picked")));
+    await backToPicking(tx, order.id);
     return "Deshecho: la parada vuelve al recorrido.";
   });
 }
