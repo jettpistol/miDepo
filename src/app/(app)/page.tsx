@@ -5,6 +5,7 @@ import { ActivityChart, Card, Meter, StageBar, StatTile, ZoneBars } from "@/comp
 import { Icon } from "@/components/Icon";
 import { PageHeader, Progress, ShelfMark, plural, shortDate } from "@/components/ui";
 import { pendingExports } from "@/lib/flows/exports";
+import { controlInUse } from "@/lib/flows/control";
 import { hotkey } from "@/lib/hotkeys";
 import { can, requireSession } from "@/lib/session";
 import { assignablePeople, isMine, lastPickedOrder, isUnassigned, KIND, movedToday, openTasks, orderStages, weekActivity, zoneStock, type Task } from "@/lib/work";
@@ -74,7 +75,7 @@ export default async function Home() {
   const e = company.id;
   const supervisor = can(user.role, "supervisor");
 
-  const [tasks, stages, days, zones, moved, people, exports, openOrders, lastPicked] = await Promise.all([
+  const [tasks, stages, days, zones, moved, people, exports, openOrders, lastPicked, controlOn] = await Promise.all([
     openTasks(db, e),
     orderStages(db, e),
     weekActivity(db, e),
@@ -84,6 +85,7 @@ export default async function Home() {
     supervisor ? pendingExports(db, e) : Promise.resolve([]),
     loadOpenOrders(db, e),
     lastPickedOrder(db, e, user.id),
+    controlInUse(db, company),
   ]);
 
   // Yours first: the order you are picking right now, then the rest by age.
@@ -181,7 +183,7 @@ export default async function Home() {
         </Card>
 
         <Card title="Pedidos abiertos" count={stages.reduce((s, x) => s + x.n, 0)} link={{ href: "/picking", text: "Picking" }}>
-          <StageBar stages={stages.filter((s) => s.key !== "to_control" || s.n > 0 || company.controlMinUnits != null).map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
+          <StageBar stages={stages.filter((s) => s.key !== "to_control" || s.n > 0 || controlOn).map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
         </Card>
 
         <Card title="Últimos 7 días" count={days.reduce((s, d) => s + d.received + d.picked + d.shipped, 0)}>

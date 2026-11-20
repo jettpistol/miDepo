@@ -1,6 +1,6 @@
 # Ajustes
 
-En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión. Los administradores también eligen cómo se controlan los pedidos de toda la empresa.
+En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión.
 
 ## Cómo llegar
 
@@ -63,20 +63,16 @@ Si no recuerdas la contraseña actual, pide a un administrador que te asigne una
 
 ## Control de pedidos
 
-Solo para administradores. Vale para toda la empresa.
+Solo administradores. Vale para toda la empresa.
 
-
-Antes de empacar, lo preparado se cuenta de nuevo. Elige dónde:
-
-| Opción | Qué pasa |
+| Paso de control | Qué pasa |
 |---|---|
-| **En el empaque** | Quien empaca escanea cada unidad al ponerla en la caja. No hay pantalla Control. |
-| **Paso de control, todos los pedidos** | Todo pedido preparado pasa por [Control](Control) antes de Empaque. |
-| **Paso de control, pedidos grandes** | Solo los pedidos desde la cantidad de unidades que escribas pasan por Control. Los demás se controlan en el empaque. |
+| **En empaque** | El empaque escanea cada unidad. Sin pantalla Control. |
+| **Todos los pedidos** | Todo pedido pasa por [Control](Control). |
+| **Pedidos grandes** | Pasan por Control los pedidos desde las unidades indicadas. |
 
-**Quién controla:**
+**Quién controla:** **Cualquiera**, u **Otra persona** que no sea quien preparó. Con **Otra persona**, un supervisor puede permitirlo en un pedido puntual.
 
-- **Puede ser quien preparó:** cualquiera controla o empaca cualquier pedido. Sirve para turnos con poca gente.
-- **Siempre otra persona:** quien preparó un pedido no puede controlarlo. Si el pedido no pasa por Control, tampoco puede empacarlo.
+**Control obligatorio:** se marca en la página del cliente. Sus pedidos pasan siempre por Control.
 
-Los cambios valen para los pedidos que terminen el picking desde ese momento. Si pasas el control al empaque, los pedidos que esperaban en Control van directo a Empaque.
+Los cambios valen para los pedidos que terminen el picking después. Al pasar a **En empaque**, los pedidos en Control pasan a Empaque, salvo los de clientes con control obligatorio.

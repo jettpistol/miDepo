@@ -3,12 +3,13 @@ import { Accounts } from "@/components/Accounts";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/ui";
 import { menuFor } from "@/lib/menu";
+import { controlInUse } from "@/lib/flows/control";
 import { can, requireSession } from "@/lib/session";
 
 export const metadata = { title: "Menú" };
 
 export default async function More() {
-  const { user, company } = await requireSession();
+  const { db, user, company } = await requireSession();
   return (
     <>
       <PageHeader title="Menú" subtitle={company.name} />
@@ -18,7 +19,7 @@ export default async function More() {
           <Accounts showCurrent />
         </div>
       </section>
-      {menuFor(user.role, company, can).map((g) => {
+      {menuFor(user.role, await controlInUse(db, company), can).map((g) => {
         // Ajustes is already the first row of "Tu cuenta".
         const items = g.items.filter((i) => i.href !== "/cuenta");
         if (items.length === 0) return null;
