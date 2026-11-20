@@ -4,7 +4,8 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Icon } from "@/components/Icon";
 import { Code, PageHeader, shortDate, Badge, ShelfMark } from "@/components/ui";
-import { fierroStock, movements, products, stock, locations, users, type MovementReason } from "@/db/schema";
+import { fierroStock, movements, products, stock, locations, users } from "@/db/schema";
+import { MOVEMENT_REASON_NAME } from "@/lib/lists";
 import { requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
 import { articleName } from "@/lib/article";
@@ -13,7 +14,7 @@ import { CodeWithCopy } from "@/components/CopyButton";
 const money = (cents: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(cents / 100);
 const kg = (g: number) => `${(g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
 
-const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Reposición", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
+const REASON = MOVEMENT_REASON_NAME;
 
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -97,7 +98,12 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
             {moves.length > 0 && (
               <section className="min-w-0">
-                <h2 className="section-title">Últimos movimientos</h2>
+                <h2 className="section-title flex items-baseline justify-between gap-3">
+                  Últimos movimientos
+                  <Link href={`/movimientos?q=${encodeURIComponent(p.barcode)}`} className="text-sm font-medium text-accent-text hover:underline">
+                    Ver todos
+                  </Link>
+                </h2>
                 <div className="table-wrap">
                   <table className="data-table">
                     <thead>

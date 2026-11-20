@@ -3,7 +3,6 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
-import { focusQuietly } from "@/lib/quiet-focus";
 
 /** Stock search: results appear as you type, without pressing the button. */
 export function StockSearch({ initial }: { initial: string }) {
@@ -18,7 +17,6 @@ export function StockSearch({ initial }: { initial: string }) {
         className="field"
         placeholder="Nombre, autor, ISBN, SKU o ubicación"
         aria-label="Buscar"
-        ref={(el) => { if (el && !el.dataset.opened) { el.dataset.opened = "1"; focusQuietly(el); } }}
         autoComplete="off"
         onChange={(e) => {
           const q = e.target.value.trim();

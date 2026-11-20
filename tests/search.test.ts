@@ -101,6 +101,7 @@ describe("Inventario", () => {
     expect((await searchInventory(db, companyId, r.number))[0]).toMatchObject({ kind: "document", href: `/recepcion/${r.id}`, exact: true });
     const [s] = await db.select().from(suppliers).where(eq(suppliers.id, r.supplierId));
     expect((await searchInventory(db, companyId, s.name)).map((h) => h.href)).toContain(`/recepcion/${r.id}`);
+    expect((await searchInventory(db, companyId, s.name)).find((h) => h.kind === "party")).toMatchObject({ title: s.name, href: `/proveedores/${s.id}` });
   });
 
   it("never shows another company's data", async () => {

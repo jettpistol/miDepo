@@ -19,6 +19,15 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
     ],
   },
   {
+    group: "Registros",
+    items: [
+      { href: "/pedidos", name: "Pedidos", icon: "orders", help: "Todos los pedidos, en cualquier estado" },
+      { href: "/proveedores", name: "Proveedores", icon: "supplier", help: "Quién envía mercadería y sus recepciones" },
+      { href: "/clientes", name: "Clientes", icon: "customer", help: "Clientes, sus pedidos y devoluciones" },
+      { href: "/movimientos", name: "Movimientos", icon: "history", help: "Cada entrada, salida y cambio de lugar" },
+    ],
+  },
+  {
     group: "Gestión",
     items: [
       { href: "/ubicaciones", name: "Ubicaciones", icon: "locations", help: "Nombres y etiquetas de ubicaciones", minRole: "supervisor" },

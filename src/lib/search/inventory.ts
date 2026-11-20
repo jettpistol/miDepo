@@ -6,7 +6,7 @@ import { locationName } from "@/lib/stock";
 
 /** One row of the "Inventario" tab: an article, a location or a document. */
 export type InventoryHit = {
-  kind: "product" | "location" | "document";
+  kind: "product" | "location" | "document" | "party";
   title: string;
   /** Under the title: "Stock · Brian Azzarello", "Recepción · Ovnipress · abierta". */
   path: string[];
@@ -32,8 +32,8 @@ const units = (n: number) => (n === 1 ? "1 unidad" : `${n} unidades`);
 const clean = (q: string) => q.replace(/[%_\\]/g, "");
 
 /**
- * Articles, locations and documents matching what was typed. A supplier's or customer's name
- * finds their documents (they have no screen of their own). Scans come first.
+ * Articles, locations, suppliers, customers and documents matching what was typed. A supplier's
+ * or customer's name also finds their documents. Scans come first.
  */
 export async function searchInventory(db: DB, companyId: number, q: string): Promise<InventoryHit[]> {
   const text = clean(q.trim());
@@ -41,7 +41,7 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
   const upper = text.toUpperCase();
   const c = companyId;
 
-  const [found, places, ords, recs, rets, cnts] = await Promise.all([
+  const [found, places, ords, recs, rets, cnts, sups, custs] = await Promise.all([
     db
       .select({ id: products.id, title: products.title, author: products.author, barcode: products.barcode, isbn: products.isbn, code: products.internalCode })
       .from(products)
@@ -81,6 +81,8 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
       .where(and(eq(counts.companyId, c), containsText(counts.name, text)))
       .orderBy(desc(counts.date))
       .limit(3),
+    db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(and(eq(suppliers.companyId, c), containsText(suppliers.name, text))).orderBy(asc(suppliers.name)).limit(3),
+    db.select({ id: customers.id, name: customers.name, city: customers.city }).from(customers).where(and(eq(customers.companyId, c), containsText(customers.name, text))).orderBy(asc(customers.name)).limit(3),
   ]);
 
   const totals = new Map<number, number>();
@@ -121,6 +123,8 @@ export async function searchInventory(db: DB, companyId: number, q: string): Pro
       aside: units(onShelf.get(l.id) ?? 0),
       exact: l.code === upper,
     })),
+    ...sups.map((x) => ({ kind: "party" as const, title: x.name, path: ["Proveedores"], href: `/proveedores/${x.id}` })),
+    ...custs.map((x) => ({ kind: "party" as const, title: x.name, path: ["Clientes", ...(x.city ? [x.city] : [])], href: `/clientes/${x.id}` })),
     ...ords.map((o) => ({
       kind: "document" as const,
       title: `Pedido ${o.number}`,

@@ -47,6 +47,8 @@ Para cada uno:
 
 > Un pedido **sale del stock del depósito solo cuando lo marcas como cargado**. Hasta entonces sus artículos figuran en la zona "Pedidos preparados".
 
+Lo ya marcado como cargado está en **Cargados** (arriba a la derecha en Fierro), del último al primero, con la fecha en que se marcó. Desde ahí se puede volver a descargar el CSV de cada documento.
+
 ### Formato de los archivos
 
 - **Conteo:** `código,cantidad,ubicación`, sin encabezado. Es el formato de la importación de tomas de inventario de Fierro.

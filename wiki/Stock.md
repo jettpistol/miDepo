@@ -13,7 +13,7 @@ La ficha muestra:
 - **En el depósito:** el total físico, sumando todas las ubicaciones.
 - **Según Fierro:** lo que cree la oficina. Si no coincide, puede haber documentos sin cargar o un error de stock.
 - **Ubicaciones:** cada ubicación o zona, con su cantidad.
-- **Últimos movimientos:** fecha, motivo, origen y destino, cantidad y usuario de cada movimiento de ese artículo. **Fuera del depósito** indica que el movimiento vino de afuera (una recepción) o salió (un despacho).
+- **Últimos movimientos:** fecha, motivo, origen y destino, cantidad y usuario de cada movimiento de ese artículo. **Fuera del depósito** indica que el movimiento vino de afuera (una recepción) o salió (un despacho). **Ver todos** abre su historial completo en [Movimientos](Movimientos).
 
 ## Ver qué hay en una ubicación
 

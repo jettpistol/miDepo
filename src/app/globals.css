@@ -153,15 +153,6 @@ body {
 .field-group .bg-accent:focus-visible {
   outline: none;
 }
-/* A field focused when the screen opens (see src/lib/quiet-focus.ts) shows no highlight until the person acts. */
-.focus-quiet :focus-visible,
-.focus-quiet .field-group:has(:focus-visible) {
-  outline: none;
-}
-.focus-quiet .field:focus,
-.focus-quiet .field-group:has(:focus-visible) {
-  border-color: var(--line-strong);
-}
 /* On the blue bar, the focus ring takes the bar's text colour. */
 .bg-accent:focus-visible,
 .bg-accent :focus-visible {

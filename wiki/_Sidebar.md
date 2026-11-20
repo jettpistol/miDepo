@@ -18,6 +18,12 @@
 - [Mover](Mover)
 - [Stock](Stock)
 
+### Registros
+
+- [Pedidos](Pedidos)
+- [Proveedores y clientes](Proveedores-y-clientes)
+- [Movimientos](Movimientos)
+
 ### Gestión
 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas)

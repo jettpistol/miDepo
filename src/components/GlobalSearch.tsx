@@ -18,7 +18,7 @@ const TABS: { id: Tab; name: string }[] = [
 export type SearchRow = { key: string; group?: string; title: string; path: string[]; href: string; icon?: IconName; shelf?: string; aside?: string; keys?: string; excerpt?: string; exact?: boolean };
 type Group = { name?: string; rows: SearchRow[] };
 /** What a screen is called in a path → its icon, for documents. */
-const SCREEN_ICON: Record<string, IconName> = { Picking: "picking", Empaque: "packing", Recepción: "receiving", Devoluciones: "return", Conteos: "count" };
+const SCREEN_ICON: Record<string, IconName> = { Picking: "picking", Empaque: "packing", Recepción: "receiving", Devoluciones: "return", Conteos: "count", Proveedores: "supplier", Clientes: "customer" };
 
 const RECENT_KEY = "midepo.search.recent";
 const RECENT_MAX = 6;
@@ -126,6 +126,7 @@ export function GlobalSearch({ starters }: { starters: SearchRow[] }) {
     const all: Group[] = [
       { name: "Artículos", rows: products },
       { name: "Ubicaciones", rows: rows("location") },
+      { name: "Proveedores y clientes", rows: rows("party") },
       { name: "Documentos", rows: rows("document") },
     ].filter((g) => g.rows.length > 0);
     // The group holding an exact match (a scan) goes first, so Enter opens it.

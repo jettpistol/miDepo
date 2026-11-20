@@ -34,12 +34,13 @@ Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que
 2. Abre **Proveedor** y elígelo de la lista. Puedes escribir parte del nombre para encontrarlo.
 3. Toca **Crear recepción**, escanea todo y cierra.
 
-**Si el proveedor no está en la lista:** escribe el nombre completo. Si no coincide con ninguno, aparece **Crear proveedor**; tócalo y confirma. Antes revisa bien: si el nombre se parece mucho a uno que ya existe, miDepo no lo deja crear y te muestra cuál es. Los proveedores que envía Fierro aparecen automáticamente.
+**Si el proveedor no está en la lista:** los proveedores que envía Fierro aparecen automáticamente al sincronizar. Si falta uno, un supervisor puede crearlo: escribe el nombre completo y, si no coincide con ninguno, aparece **Crear proveedor**; tócalo y confirma. Si el nombre se parece mucho a uno que ya existe, miDepo no lo deja crear y te muestra cuál es. Los operarios no ven **Crear proveedor**: avísale a tu supervisor. Ver [Proveedores y clientes](Proveedores-y-clientes).
 
 ## Qué pasa al cerrar
 
 - Lo recibido entra al stock en la zona **Recepción**. Todavía no está en su ubicación.
 - Aparece en [Reposición](Reposicion) para llevarlo a su ubicación.
+- Queda en **Cerradas**, abajo en Recepción. Ahí están todas las recepciones cerradas; busca por número o proveedor.
 - La recepción cerrada **no se puede volver a abrir**. Si te equivocaste, avisa a tu supervisor: se corrige con un [conteo](Conteos).
 
 > Los artículos que vuelven de un cliente **no** van por Recepción: van por [Devoluciones](Devoluciones), porque hay que revisar en qué estado están.

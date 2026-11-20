@@ -45,6 +45,8 @@ src/lib/flows/*.ts        Warehouse rules, one file per flow. Plain functions ta
 src/lib/stock.ts          moveStock(): the only place stock quantities change; always logs a movement.
 src/lib/flows/adjustments.ts  Stock changes with nobody on the other side (write-offs, found stock):
                           every one is an adjustment document with a cause. Never a fake order.
+src/lib/lists.ts          The register lists (suppliers, customers, orders, movements, documents by
+                          supplier or customer): read-only, paged. Tested in tests/lists.test.ts.
 src/lib/lookup.ts         The as-you-type check behind /api/lookup. It must accept and reject
                           exactly what the flow would; tests/lookup.test.ts checks that they agree.
 src/lib/action.ts         action(role, fn): wraps a flow as a server action (session, role,
@@ -61,11 +63,11 @@ src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins
                           /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
 src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
 src/components/           ScanForm (scan fields + live check), Select, NewButton, RowMenu (⋯ row options), Hint, ProductCards (cover cards +
-                          view switch), ui.tsx
+                          view switch), ListTools (Pager, FilterTabs) and LiveSearch for paged lists, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
 src/lib/search/           The top search (src/components/GlobalSearch.tsx, /api/search): functions.ts lists
                           screens, actions and settings with their synonyms; inventory.ts finds articles,
-                          locations and documents; the manual is searched by section in src/lib/wiki.ts.
+                          locations, suppliers, customers and documents; the manual is searched by section in src/lib/wiki.ts.
                           A new screen, action or setting gets an entry in functions.ts.
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
                           buttons with hotkey("primary") etc.; F1 lists what is marked.
@@ -108,7 +110,6 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 
 ## Open items
 
-- Who may create suppliers: today any operator (they work the dock). The owner may want supervisors only.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).
 - The sidebar runs five count queries per page; not measured on a hosted database.
 - See also "What is not done" in `README.md`.
