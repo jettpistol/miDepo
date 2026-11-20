@@ -24,6 +24,8 @@ const PATHS = {
   plus: "M12 5v14M5 12h14",
   ok: "m5 12.500 4.500 4.500L19 7.500",
   warn: "M12 4 2.500 20h19L12 4Zm0 6v4.500M12 17.500h.01",
+  cards: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
+  rows: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
 } as const;
 
 export type IconName = keyof typeof PATHS;

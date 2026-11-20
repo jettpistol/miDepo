@@ -5,6 +5,7 @@ import { Code, PageHeader, Badge, ShelfMark, EmptyRow } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { containsText } from "@/lib/lookup";
 import { requireSession } from "@/lib/session";
+import { ProductCards, ViewSwitch } from "@/components/ProductCards";
 import { StockSearch } from "./StockSearch";
 
 export const metadata = { title: "Stock" };
@@ -14,7 +15,7 @@ const PAGE = 50;
 const fmt = (n: number) => n.toLocaleString("es-AR");
 
 export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
-  const { db, company } = await requireSession();
+  const { db, company, user } = await requireSession();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
@@ -53,10 +54,24 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
         </Link>
       )}
 
-      <h2 className="section-title">
-        {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
-      </h2>
-      <div className="table-wrap">
+      <div className="mb-2 flex flex-wrap items-end justify-between gap-x-6">
+        <h2 className="section-title mb-0 py-2 lg:py-1.5">
+          {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
+        </h2>
+        <ViewSwitch view={user.listView} />
+      </div>
+      {user.listView === "cards" ? (
+        <ProductCards
+          items={found.map((p) => ({ product: p, quantity: totals.get(p.id) ?? 0, extra: p.type !== "book" && <Badge>{TYPE_LABEL[p.type]}</Badge> }))}
+          empty={
+            <>
+              <p className="font-semibold">{q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}</p>
+              <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{q ? "Prueba con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}</p>
+            </>
+          }
+        />
+      ) : (
+        <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
@@ -101,6 +116,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
             </tbody>
           </table>
         </div>
+      )}
       {total > PAGE && (
         <nav aria-label="Páginas" className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
           <span>

@@ -19,6 +19,12 @@ La ficha muestra:
 
 Escribe o escanea el código del estante en el buscador (por ejemplo `A-03-2`) y toca **Ver qué hay**.
 
+## Tarjetas o lista
+
+Los títulos se ven en **Tarjetas**, con la portada, o en **Lista**, más compacta. Cambia con las pestañas arriba de los títulos. miDepo recuerda tu elección en todos tus dispositivos, y vale para el stock y para los estantes.
+
+Las portadas llegan de Fierro al sincronizar. Un título sin portada muestra un recuadro vacío.
+
 ## Las zonas especiales
 
 Además de los estantes, hay seis zonas:

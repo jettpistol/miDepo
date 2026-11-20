@@ -49,13 +49,14 @@ src/lib/action.ts         action(role, fn): wraps a flow as a server action (ses
                           error-to-message, revalidate). Each screen's actions.ts uses it.
 src/lib/fierro/           The Fierro boundary (FierroConnector) and the simulator. A real
                           connector implements the same interface; nothing else changes.
+src/lib/covers.ts         List-size cover thumbnails, made once at Fierro sync (never resized per request).
 src/lib/session.ts        Multi-account sessions per device; requireSession() for pages.
 src/lib/fonts.ts, color.ts  Per-user font and accent; applied in src/app/layout.tsx.
 src/app/(app)/<screen>/   One folder per screen: page.tsx (server), actions.ts, small client parts.
 src/app/(app)/layout.tsx  Shell: top bar, sidebar with queue counts, phone bottom bar.
 src/app/(print)/          A4 print layouts (labels, packing list).
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/.
-src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
+src/components/           ScanForm (scan fields + live check), Select, NewButton, ProductCards (cover cards + view switch), ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
                           buttons with hotkey("primary") etc.; F1 lists what is marked.
