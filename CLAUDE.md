@@ -63,6 +63,10 @@ src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview al
 src/components/           ScanForm (scan fields + live check), Select, NewButton, Hint, ProductCards (cover cards +
                           view switch), ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
+src/lib/search/           The top search (src/components/GlobalSearch.tsx, /api/search): functions.ts lists
+                          screens, actions and settings with their synonyms; inventory.ts finds articles,
+                          locations and documents; the manual is searched by section in src/lib/wiki.ts.
+                          A new screen, action or setting gets an entry in functions.ts.
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
                           buttons with hotkey("primary") etc.; F1 lists what is marked.
 src/app/globals.css       Design tokens and component classes (btn, field, data-table…).
@@ -105,7 +109,6 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 ## Open items
 
 - Who may create suppliers: today any operator (they work the dock). The owner may want supervisors only.
-- Stock has two search boxes (top bar, and the page's own live one); the owner was offered hiding the top-bar one there.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).
 - The sidebar runs five count queries per page; not measured on a hosted database.
 - See also "What is not done" in `README.md`.

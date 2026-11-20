@@ -73,7 +73,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
       )}
       {list.length === 120 && <p className="mt-3 text-sm text-muted">Se muestran las primeras 120.</p>}
 
-      <section className="mt-10 lg:mt-8 max-w-5xl">
+      <section id="generador" className="mt-10 lg:mt-8 max-w-5xl">
         <h2 className="section-title">Generador de ubicaciones</h2>
         {company.locationScheme ? (
           <p className="mb-5">
@@ -83,7 +83,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         <Generator action={generate} initial={(company.locationScheme as Scheme | null) ?? null} />
       </section>
 
-      <section className="mt-10 lg:mt-8">
+      <section id="suelta" className="mt-10 lg:mt-8">
         <h2 className="section-title">Agregar una ubicación suelta</h2>
         <ActionForm action={createStandalone} button="Agregar" className="flex flex-wrap items-start gap-3">
           <input name="code" className="field max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />

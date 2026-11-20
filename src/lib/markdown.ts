@@ -14,11 +14,25 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 export const isInternal = (href: string) => /^[\w-]+(#[\w-]*)?$/.test(href);
 const SAFE = /^(https?:|mailto:|\/(?!\/)|#)/i;
 
+/** "Si el libro no está" → "si-el-libro-no-esta": the anchor of a section. */
+export const slug = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
 export function renderMarkdown(md: string) {
   const marked = new Marked({ gfm: true });
   marked.use({
     renderer: {
       html: ({ text }) => escapeHtml(text),
+      // Section headings get an id, so the top search can open a page at the right section.
+      heading({ tokens, depth, text }) {
+        const id = depth === 2 ? ` id="${slug(text)}"` : "";
+        return `<h${depth}${id}>${this.parser.parseInline(tokens)}</h${depth}>\n`;
+      },
       // Links between wiki pages ("Picking") become /ayuda/Picking.
       link({ href, tokens }) {
         const inner = this.parser.parseInline(tokens);

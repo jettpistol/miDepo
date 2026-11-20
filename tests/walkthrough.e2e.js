@@ -146,7 +146,8 @@ async function warning(p, field, value) {
   step('  recount → ' + await scan(q, { product: rows[0].code }, rows[0].expected - 1));
   await q.click('button:has-text("Terminar esta ubicación")'); await q.waitForURL(countUrl); await second.close();
   await p.goto(countUrl); await p.waitForSelector('text=Recontada');
-  await p.keyboard.press('F9'); await p.waitForSelector('text=Conteo cerrado'); step('  count approved after the recount: ok');
+  // Keys work once the page is live, not as soon as the server's HTML shows.
+  await p.waitForLoadState('networkidle'); await p.keyboard.press('F9'); await p.waitForSelector('text=Conteo cerrado'); step('  count approved after the recount: ok');
 
   // Write-offs: the picking shortage above left units in FALTANTES
   await p.goto(BASE + '/bajas'); await p.waitForSelector('text=Faltantes y dañados'); await shot('write-offs');
@@ -187,6 +188,17 @@ async function warning(p, field, value) {
   step('sidebar has Ajustes: ' + ((await p.$('aside a[href="/cuenta"]')) ? 'ok' : fail('missing')));
 
   // Per-user colour
+  // Top search: a function, a scanned barcode, a manual section
+  await p.goto(BASE + '/'); await p.waitForLoadState('networkidle'); await p.keyboard.press('Control+k'); await p.keyboard.type('color');
+  await p.waitForSelector('[role=option]:has-text("Color de acento")'); await shot('search-functions');
+  await p.keyboard.press('Enter'); await p.waitForURL(BASE + '/cuenta#apariencia'); step('search "color" → /cuenta#apariencia');
+  await p.keyboard.press('Control+k'); await p.keyboard.type(rows[0].code);
+  await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Inventario")'); await p.waitForSelector('[role=option][aria-selected=true]:has-text("unidad")'); await shot('search-scan');
+  await p.keyboard.press('Enter'); await p.waitForURL(/\/stock\/\d+$/); step('search scan → ' + p.url().replace(BASE, ''));
+  await p.keyboard.press('/'); await p.keyboard.type('articulo no esta'); await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Guías")');
+  await p.keyboard.press('Tab'); await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Funciones")'); await p.keyboard.press('Shift+Tab');
+  await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Guías")'); await p.waitForSelector('[role=option]:has-text("Si el artículo no está")'); await shot('search-guides');
+  await p.keyboard.press('Escape');
   await p.goto(BASE + '/cuenta'); await p.click('button[aria-label="Magenta"]'); await p.click('form button:has-text("Oscuro")'); await shot('account-magenta-dark');
   await p.click('button:has-text("Guardar apariencia")'); await p.waitForSelector('text=Apariencia guardada'); await p.goto(BASE + '/'); await shot('home-magenta');
   step('saved accent: ' + await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
