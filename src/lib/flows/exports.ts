@@ -77,8 +77,8 @@ export async function fileFor(db: DB, companyId: number, type: ExportType, id: n
   if (type === "receiving") {
     const [r] = await db.select({ number: receivings.number, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, companyId)));
     if (!r) throw new UserError("EXP-02", "No se encontró esa recepción.");
-    const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
-    return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido"]) };
+    const rows = await db.select({ isbn: products.isbn, internalCode: products.internalCode, title: products.title, expected: receivingLines.expected, received: receivingLines.received, damaged: receivingLines.damaged }).from(receivingLines).innerJoin(products, eq(products.id, receivingLines.productId)).where(eq(receivingLines.receivingId, id)).orderBy(asc(products.title));
+    return { name: `recepcion-${r.number}.csv`, contents: csv(rows.map((f) => [r.number, r.supplier, fierroCode(f), f.title, f.expected, f.received, f.damaged]), ["recepcion", "proveedor", "codigo", "titulo", "esperado", "recibido", "danados"]) };
   }
   if (type === "return") {
     const [d] = await db.select({ number: returns.number, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, companyId)));

@@ -63,11 +63,25 @@ export async function setReceived(c: Ctx, receivingId: number, productId: number
   const n = Number(received);
   if (!Number.isInteger(n) || n < 0) throw new UserError("RCV-09", "Escribe un número de cero para arriba.");
   await open(c, receivingId);
+  const [l] = await c.db.select().from(receivingLines).where(and(eq(receivingLines.receivingId, receivingId), eq(receivingLines.productId, productId)));
+  if (l && n < l.damaged) throw new UserError("RCV-18", `Hay ${l.damaged} marcadas como dañadas. Corrige eso primero.`);
   await c.db.update(receivingLines).set({ received: n }).where(and(eq(receivingLines.receivingId, receivingId), eq(receivingLines.productId, productId)));
   return "Cantidad corregida.";
 }
 
-/** Closes the receiving: what was received enters stock in the Receiving zone, ready to put away. */
+/** How many of a title's received units arrived damaged. They stay received; on closing they go to DANADOS. */
+export async function setDamaged(c: Ctx, receivingId: number, productId: number, damaged: unknown) {
+  const n = Number(damaged);
+  if (!Number.isInteger(n) || n < 0) throw new UserError("RCV-09", "Escribe un número de cero para arriba.");
+  await open(c, receivingId);
+  const [l] = await c.db.select().from(receivingLines).where(and(eq(receivingLines.receivingId, receivingId), eq(receivingLines.productId, productId)));
+  if (!l) throw new UserError("RCV-19", "Ese artículo no está en esta recepción.");
+  if (n > l.received) throw new UserError("RCV-20", `Se recibieron ${l.received}: no pueden estar dañadas más.`);
+  await c.db.update(receivingLines).set({ damaged: n }).where(eq(receivingLines.id, l.id));
+  return n === 0 ? "Sin dañadas." : `${n} dañada${n === 1 ? "" : "s"}: van a Dañados al cerrar.`;
+}
+
+/** Closes the receiving: what was received enters stock in the Receiving zone, ready to put away; what arrived damaged, in Dañados. */
 export async function closeReceiving(c: Ctx, receivingId: number) {
   const r = await open(c, receivingId);
   return c.db.transaction(async (tx) => {
@@ -75,13 +89,15 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
     const total = lines.reduce((s, l) => s + l.received, 0);
     if (total === 0) throw new UserError("RCV-10", "La recepción no tiene artículos escaneados.");
     const destination = await zone(tx, c.companyId, "receiving");
+    const damagedZone = await zone(tx, c.companyId, "damaged");
     for (const l of lines) {
-      if (l.received > 0) {
-        await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: destination.id, quantity: l.received, reason: "receiving", reference: r.number, userId: c.userId });
-      }
+      const good = l.received - l.damaged;
+      if (good > 0) await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: destination.id, quantity: good, reason: "receiving", reference: r.number, userId: c.userId });
+      if (l.damaged > 0) await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: damagedZone.id, quantity: l.damaged, reason: "receiving", reference: r.number, userId: c.userId });
     }
     await tx.update(receivings).set({ status: "closed" }).where(eq(receivings.id, receivingId));
-    return `Recepción ${r.number} cerrada. ${total} unidades por reponer.`;
+    const damaged = lines.reduce((s, l) => s + l.damaged, 0);
+    return `Recepción ${r.number} cerrada. ${total - damaged} unidades por reponer${damaged > 0 ? `, ${damaged} en Dañados` : ""}.`;
   });
 }
 
@@ -97,7 +113,7 @@ export async function cancelReceiving(c: Ctx, receivingId: number) {
   }
   await c.db.transaction(async (tx) => {
     await tx.delete(receivingLines).where(and(eq(receivingLines.receivingId, receivingId), eq(receivingLines.expected, 0)));
-    await tx.update(receivingLines).set({ received: 0 }).where(eq(receivingLines.receivingId, receivingId));
+    await tx.update(receivingLines).set({ received: 0, damaged: 0 }).where(eq(receivingLines.receivingId, receivingId));
     await tx.update(receivings).set({ status: "pending" }).where(eq(receivings.id, receivingId));
   });
   return `Recepción ${r.number} vuelve a esperar: lo escaneado se borró.`;
@@ -114,12 +130,15 @@ export async function reopenReceiving(c: Ctx, receivingId: number) {
   if (r.sentToFierro) throw new UserError("RCV-13", "Esta recepción ya se cargó en Fierro. No se puede reabrir.");
   return c.db.transaction(async (tx) => {
     const dock = await zone(tx, c.companyId, "receiving");
+    const damagedZone = await zone(tx, c.companyId, "damaged");
     const lines = await tx.select().from(receivingLines).where(eq(receivingLines.receivingId, receivingId));
     for (const l of lines) {
-      if (l.received === 0) continue;
-      const [there] = await tx.select({ n: stock.quantity }).from(stock).where(and(eq(stock.productId, l.productId), eq(stock.locationId, dock.id)));
-      if ((there?.n ?? 0) < l.received) throw new UserError("RCV-14", "Parte de lo recibido ya se guardó en una ubicación. Devuélvelo a Recepción con Mover para poder reabrir.");
-      await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: dock.id, toId: null, quantity: l.received, reason: "undo", reference: r.number, userId: c.userId });
+      for (const [where, n] of [[dock, l.received - l.damaged], [damagedZone, l.damaged]] as const) {
+        if (n === 0) continue;
+        const [there] = await tx.select({ q: stock.quantity }).from(stock).where(and(eq(stock.productId, l.productId), eq(stock.locationId, where.id)));
+        if ((there?.q ?? 0) < n) throw new UserError("RCV-14", "Parte de lo recibido ya se guardó en una ubicación. Devuélvelo a Recepción con Mover para poder reabrir.");
+        await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: where.id, toId: null, quantity: n, reason: "undo", reference: r.number, userId: c.userId });
+      }
     }
     await tx.update(receivings).set({ status: "in_progress" }).where(eq(receivings.id, receivingId));
     return `Recepción ${r.number} reabierta. Sus unidades salieron de Recepción hasta que se vuelva a cerrar.`;

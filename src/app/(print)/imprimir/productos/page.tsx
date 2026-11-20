@@ -1,20 +1,39 @@
-import { and, asc, eq, ilike, isNull } from "drizzle-orm";
-import { products } from "@/db/schema";
+import { and, asc, eq, gt, ilike, isNull } from "drizzle-orm";
+import { products, receivingLines, receivings } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { Labels } from "../../Labels";
 import { Icon } from "@/components/Icon";
 
-/** Labels for items without an ISBN (floppies, variants, packs): they carry the internal code. */
-export default async function ProductLabels({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+const MAX_LABELS = 240;
+
+/**
+ * Labels for items without an ISBN (floppies, variants, packs): they carry the internal code.
+ * With ?recepcion=<id>, one label per unit received there, ISBN or not: for covers the scanner
+ * cannot read, or reprints that share an ISBN, labelled at the receiving table.
+ */
+export default async function ProductLabels({ searchParams }: { searchParams: Promise<{ q?: string; recepcion?: string }> }) {
   const { db, company } = await requireSession();
-  const q = ((await searchParams).q ?? "").trim().replace(/[%_\\]/g, "");
+  const sp = await searchParams;
+  const receivingId = Number(sp.recepcion);
+  if (Number.isInteger(receivingId) && receivingId > 0) {
+    const lines = await db
+      .select({ code: products.barcode, title: products.title, n: receivingLines.received })
+      .from(receivingLines)
+      .innerJoin(receivings, eq(receivings.id, receivingLines.receivingId))
+      .innerJoin(products, eq(products.id, receivingLines.productId))
+      .where(and(eq(receivings.id, receivingId), eq(receivings.companyId, company.id), gt(receivingLines.received, 0)))
+      .orderBy(asc(products.title));
+    const items = lines.flatMap((l) => Array.from({ length: l.n }, () => ({ code: l.code, title: l.title }))).slice(0, MAX_LABELS);
+    return items.length > 0 ? <Labels items={items} /> : <p className="py-10 text-center">Sin unidades recibidas.</p>;
+  }
+  const q = (sp.q ?? "").trim().replace(/[%_\\]/g, "");
   const rows = q
     ? await db
         .select({ code: products.barcode, title: products.title })
         .from(products)
         .where(and(eq(products.companyId, company.id), isNull(products.isbn), ilike(products.title, `%${q.split(/\s+/).join("%")}%`)))
         .orderBy(asc(products.title))
-        .limit(240)
+        .limit(MAX_LABELS)
     : [];
   return (
     <>

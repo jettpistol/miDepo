@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Progress, Notice, Code, PageHeader, Badge } from "@/components/ui";
 import { products, receivingLines, receivings, suppliers } from "@/db/schema";
 import { requireSession } from "@/lib/session";
-import { cancel, close, correct, reopen, scan } from "../actions";
+import { cancel, close, correct, correctDamaged, reopen, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
@@ -26,6 +27,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
     .orderBy(asc(products.title));
   const expected = lines.reduce((s, x) => s + x.l.expected, 0);
   const received = lines.reduce((s, x) => s + x.l.received, 0);
+  const damaged = lines.reduce((s, x) => s + x.l.damaged, 0);
   const withDifference = lines.filter((x) => x.l.received !== x.l.expected).length;
   const open = r.status !== "closed";
 
@@ -43,6 +45,11 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
             {r.fierroId == null ? "Cancelar recepción" : "Borrar lo escaneado"}
           </ActionButton>
         )}
+        {received > 0 && (
+          <Link href={`/imprimir/productos?recepcion=${id}`} target="_blank" className="btn-soft">
+            <Icon name="print" /> Etiquetas
+          </Link>
+        )}
         {!open && !r.sentToFierro && (
           <ActionButton action={reopen} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Reabrir ${r.number}? Sus ${received} unidades salen de Recepción hasta que la cierres de nuevo.`}>
             Reabrir
@@ -56,7 +63,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
             <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar" />
             {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Sin artículos escaneados." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Sus unidades entran a Recepción para reponer."}>
+              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Sin artículos escaneados." : undefined} confirm={[withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Sus unidades entran a Recepción para reponer.", damaged > 0 && `${damaged === 1 ? "La dañada va" : `Las ${damaged} dañadas van`} a Dañados.`].filter(Boolean).join(" ")}>
                 Cerrar recepción
               </ActionButton>
             </div>
@@ -88,6 +95,7 @@ function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLi
             <th>Artículo</th>
             <th className="hidden text-right sm:table-cell">Esperado</th>
             <th className="text-right">Recibido</th>
+            <th className="text-right">Dañadas</th>
             <th />
           </tr>
         </thead>
@@ -101,6 +109,7 @@ function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLi
               </td>
               <td className="hidden text-right sm:table-cell">{l.expected || "—"}</td>
               <td className="text-right font-bold">{editable ? <EditNumber action={correct} hiddenFields={{ id, productId: l.productId }} field="received" value={l.received} /> : l.received}</td>
+              <td className={`text-right ${l.damaged > 0 ? "font-semibold text-danger" : "text-muted"}`}>{editable && l.received > 0 ? <EditNumber action={correctDamaged} hiddenFields={{ id, productId: l.productId }} field="damaged" value={l.damaged} max={l.received} label="Unidades dañadas" /> : l.damaged || "—"}</td>
               <td className="w-px text-right">
                 {l.expected === 0 ? <Badge tone="warn">No avisado</Badge> : l.received === l.expected ? <Badge tone="ok">Completo</Badge> : l.received > l.expected ? <Badge tone="warn">+{l.received - l.expected}</Badge> : l.received > 0 ? <Badge tone="accent">Faltan {l.expected - l.received}</Badge> : <Badge>Pendiente</Badge>}
               </td>
