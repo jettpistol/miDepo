@@ -4,12 +4,12 @@ Picking es buscar en las ubicaciones lo que pide un pedido. miDepo genera el rec
 
 ## Tomar un pedido
 
-1. Ve a **Picking**. Los pedidos pendientes están ordenados del más antiguo al más reciente, con los **Urgentes** primero. Los que no tienen stock suficiente en estanterías muestran **Sin stock** con las unidades que saldrían como faltantes.
+1. Ve a **Picking**. Los pedidos pendientes están ordenados del más antiguo al más reciente, con los **Urgentes** primero. Los que no tienen stock suficiente muestran **Sin stock** con las unidades que saldrán como faltantes.
 2. Toca **Preparar** en el primero.
 
 Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
-Si abres un pedido pendiente sin tomarlo, ves su **Recorrido previsto**: los artículos, de qué ubicación saldría cada uno y lo que no tiene stock en estanterías (saldría como faltante). Es una vista previa: el stock se reserva recién cuando tocas **Preparar este pedido**, y el recorrido se arma con lo que haya libre en ese momento.
+Un pedido pendiente muestra su **Recorrido previsto**: de qué ubicación sale cada artículo y qué no tiene stock. El stock se reserva al tocar **Preparar**, con lo que haya libre en ese momento.
 
 ## Preparar todos en un lote
 
@@ -24,7 +24,7 @@ Cómo se separa el lote en pedidos lo elige un supervisor en **Ajustes → Picki
 
 | Opción | Qué haces |
 |---|---|
-| **En empaque** | Todo va junto al carro. En [Empaque](Empaque) se separa por pedido, escaneando cada libro en la caja de su pedido. |
+| **En empaque** | Todo va junto al carro. En [Empaque](Empaque) se separa por pedido, escaneando cada artículo en la caja de su pedido. |
 | **Por bandeja, al tomar** | Cada pedido tiene una bandeja numerada (la lista **Bandejas** dice cuál es cuál). En cada parada la pantalla dice cuántos van en cada bandeja, y al confirmar lo repite: "Bandeja 2: 4 (PED-00002) · Bandeja 3: 8 (PED-00003)". |
 
 El cambio vale para los lotes nuevos; un lote abierto sigue como empezó.

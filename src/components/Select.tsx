@@ -279,7 +279,7 @@ export function Select({
             {canCreate && confirming && (
               <li className="border-t border-line bg-sunken px-3 py-2.5 text-sm" role="presentation">
                 <p>
-                  No hay ningún {create!.noun} con ese nombre. ¿Crear <strong>«{query.replace(/\s+/g, " ").trim()}»</strong>? Va a quedar en la lista para todos.
+                  No hay ningún {create!.noun} con ese nombre. ¿Crear <strong>«{query.replace(/\s+/g, " ").trim()}»</strong>? Quedará en la lista para todos.
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button type="button" className="btn-sm border-accent bg-accent text-on-accent hover:bg-accent-hover hover:text-on-accent" disabled={creating} onClick={() => void add()}>
