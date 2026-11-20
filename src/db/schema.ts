@@ -157,6 +157,8 @@ export const customers = pgTable(
     address: text("address"),
     city: text("city"),
     province: text("province"),
+    /** Their orders always go through Control, whatever the order's size or the company's mode (Clientes, admins). */
+    alwaysControl: boolean("always_control").notNull().default(false),
   },
   (t) => [uniqueIndex("customers_company_id_fierro_id_idx").on(t.companyId, t.fierroId)],
 );
@@ -289,6 +291,8 @@ export const orders = pgTable(
     assignedTo: integer("assigned_to").references(() => users.id),
     /** Who finished the Control step (null if the order did not go through it). */
     controlledBy: integer("controlled_by").references(() => users.id),
+    /** A supervisor who let the picker do this order's check, although the company asks for another person. */
+    sameCheckAllowedBy: integer("same_check_allowed_by").references(() => users.id),
     /** Who finished packing. */
     packedBy: integer("packed_by").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),

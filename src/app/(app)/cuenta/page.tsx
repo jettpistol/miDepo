@@ -1,7 +1,8 @@
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Code, PageHeader, shortDate } from "@/components/ui";
-import { orders, passkeys } from "@/db/schema";
+import { customers, passkeys } from "@/db/schema";
+import Link from "next/link";
 import { can, requireSession } from "@/lib/session";
 import { Select } from "@/components/Select";
 import { Avatar } from "@/components/Avatar";
@@ -18,7 +19,7 @@ export default async function Account() {
   const { db, user, company } = await requireSession();
   const keys = await db.select().from(passkeys).where(eq(passkeys.userId, user.id)).orderBy(asc(passkeys.createdAt));
   const admin = can(user.role, "admin");
-  const [{ n: waiting }] = admin ? await db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, company.id), eq(orders.status, "to_control"))) : [{ n: 0 }];
+  const alwaysControl = admin ? await db.select({ id: customers.id, name: customers.name }).from(customers).where(and(eq(customers.companyId, company.id), eq(customers.alwaysControl, true))).orderBy(asc(customers.name)) : [];
 
   const section = "grid gap-x-10 lg:gap-x-8 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
 
@@ -93,13 +94,22 @@ export default async function Account() {
 
         {admin && (
           <section id="control" className={section}>
-            <div>
-              <h2 className="section-title">Control de pedidos</h2>
-              <p className="text-sm text-muted">Para toda la empresa</p>
-            </div>
+            <h2 className="section-title">Control de pedidos</h2>
             <div>
               <ControlSettings mode={controlMode(company.controlMinUnits)} minUnits={company.controlMinUnits} samePerson={company.samePersonChecks} />
-              {waiting > 0 && company.controlMinUnits != null && <p className="mt-3 max-w-md text-sm text-muted">{waiting === 1 ? "1 pedido espera" : `${waiting} pedidos esperan`} en Control. Si el control pasa al empaque, van directo a Empaque.</p>}
+              {alwaysControl.length > 0 && (
+                <p className="mt-4 max-w-sm text-sm">
+                  <span className="text-muted">Control obligatorio: </span>
+                  {alwaysControl.map((cu, i) => (
+                    <span key={cu.id}>
+                      {i > 0 && ", "}
+                      <Link href={`/clientes/${cu.id}`} className="link">
+                        {cu.name}
+                      </Link>
+                    </span>
+                  ))}
+                </p>
+              )}
             </div>
           </section>
         )}

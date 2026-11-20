@@ -24,4 +24,6 @@ Si lo creaste por error, abre su ficha y toca **Borrar proveedor**. Solo se pued
 
 Toca un cliente para ver su dirección, todos sus pedidos y todas sus devoluciones.
 
+Un administrador puede tocar **Marcar control obligatorio**: todos los pedidos del cliente pasan por [Control](Control).
+
 Los clientes no se crean en miDepo: vienen de Fierro. Si falta uno, sincroniza (ver [Trabajar con Fierro](Trabajar-con-Fierro)).
