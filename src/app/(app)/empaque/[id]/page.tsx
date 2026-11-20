@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { Assignee } from "@/components/Assignee";
 import { close, scan, finish, empty, takeOut, reopen, reopenOrder } from "../actions";
 import { articleName } from "@/lib/article";
 
@@ -13,7 +14,8 @@ const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDi
 
 export default async function PackingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
@@ -31,6 +33,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHeader title={`Empaque ${p.number}`} subtitle={customer} back={{ href: "/empaque", text: "Empaque" }}>
+        <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>
             <Link href={`/imprimir/cajas/${id}`} target="_blank" className="btn-soft">
@@ -55,7 +58,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
         <Notice tone="ok">
           <span className="flex flex-wrap items-center justify-between gap-3">
             <span>
-              Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está cargado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo carga en Fierro."}
+              Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Despachado." : "Pendiente en Fierro."}
             </span>
             {p.status === "packed" && (
               <ActionButton action={reopenOrder} hiddenFields={{ id }} className="btn-sm" showOk={false} confirm={`¿Reabrir el empaque de ${p.number}? Deja de estar listo para cargar en Fierro hasta que lo termines de nuevo.`}>

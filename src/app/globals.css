@@ -59,6 +59,10 @@
   --zone-damaged: #b3261e;
   --zone-clearance: #0c7a70;
   --zone-staging: #1a7f43;
+  /* Chart series (categorical, fixed order; validated for colour blindness against the surface). */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
   color-scheme: light;
 }
 
@@ -84,6 +88,9 @@
   --zone-damaged: #ff8f85;
   --zone-clearance: #56cfc3;
   --zone-staging: #62d394;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
   color-scheme: dark;
 }
 
@@ -110,6 +117,9 @@
     --zone-damaged: #ff8f85;
     --zone-clearance: #56cfc3;
     --zone-staging: #62d394;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
     color-scheme: dark;
   }
 }

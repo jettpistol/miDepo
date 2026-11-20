@@ -50,7 +50,7 @@ export function ReceivingsTable({ rows, showSupplier = true, empty }: { rows: Re
               <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(r.date)}</td>
               <td className="w-px">
                 {STATE[r.status]}
-                {r.status === "closed" && !r.sentToFierro && <span className="mt-0.5 block text-xs whitespace-nowrap text-muted">Sin cargar en Fierro</span>}
+                {r.status === "closed" && !r.sentToFierro && <span className="mt-0.5 block text-xs whitespace-nowrap text-muted">Pendiente en Fierro</span>}
               </td>
             </tr>
           ))}

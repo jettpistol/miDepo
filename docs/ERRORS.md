@@ -28,6 +28,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
+| `ASG` | Assigning work to a person (the "Asignado a" control, supervisors) |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
 | `WIKI` | Editing the manual (`/ayuda/editar`), admin only |
@@ -40,7 +41,7 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 
 | Code | Message | Where | When |
 |---|---|---|---|
-| `SYS-01` | Algo salió mal. Prueba de nuevo; si sigue, avisa a tu supervisor. | `src/lib/errors.ts` · `attempt` | Any server action threw something that is not a `UserError` (a bug, a database or network failure). The real error is logged as `[SYS-01]`. |
+| `SYS-01` | Error inesperado. Prueba de nuevo; si persiste, avisa a un supervisor. | `src/lib/errors.ts` · `attempt` | Any server action threw something that is not a `UserError` (a bug, a database or network failure). The real error is logged as `[SYS-01]`. |
 
 ## AUTH: logging in and permissions
 
@@ -49,7 +50,7 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `AUTH-01` | Demasiados intentos. Espera {5} minutos y prueba de nuevo. | `src/app/ingresar/actions.ts` · `withRateLimit` | Six failed logins in a row for the same email, or the same company code from the same address. Locked for 5 minutes. |
 | `AUTH-02` | Los datos no coinciden. Revísalos y prueba de nuevo. | `src/app/ingresar/actions.ts` · `withRateLimit` | Wrong email or password, wrong company code or PIN, or the user is deactivated. It does not say which on purpose. |
 | `AUTH-03` | Completa el email y la contraseña. | `src/app/ingresar/actions.ts` · `loginWithPassword` | Email or password left empty. |
-| `AUTH-04` | Escribe el código de tu empresa. Te lo da tu supervisor. | `src/app/ingresar/actions.ts` · `loginWithPin` | PIN login with no company code. |
+| `AUTH-04` | Escribe el código de empresa. | `src/app/ingresar/actions.ts` · `loginWithPin` | PIN login with no company code. |
 | `AUTH-05` | El PIN tiene 6 dígitos. | `src/app/ingresar/actions.ts` · `loginWithPin` | The PIN typed is not exactly 6 digits. |
 | `AUTH-06` | Tu usuario no tiene permiso para hacer esto. | `src/lib/session.ts` · `requireSessionInAction` | An action needs a higher role than the user has (for example an operator generating locations). |
 
@@ -157,7 +158,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RCV-07` | Ya existe: {proveedor}. Elígelo de la lista. | `src/lib/flows/receiving.ts` · `createSupplier` | A supplier with the same name exists, ignoring case and accents. |
 | `RCV-08` | ¿Es {proveedor}? Ya existe un proveedor casi igual. Elígelo de la lista. | `src/lib/flows/receiving.ts` · `createSupplier` | A supplier with a nearly identical name exists: one or two letters apart, for names of 6 letters or more. |
 | `RCV-09` | Escribe un número de cero para arriba. | `src/lib/flows/receiving.ts` · `setReceived` | Correcting a received quantity to a negative or non-whole number. |
-| `RCV-10` | Todavía no escaneaste nada en esta recepción. | `src/lib/flows/receiving.ts` · `closeReceiving` | Closing a receiving with nothing received. |
+| `RCV-10` | La recepción no tiene artículos escaneados. | `src/lib/flows/receiving.ts` · `closeReceiving` | Closing a receiving with nothing received. |
 | `RCV-11` | No se pudo crear el proveedor. | `src/app/(app)/recepcion/actions.ts` · `addSupplier` | Creating a supplier from the dropdown failed without a message. Should not happen: any failure there already has its own code. |
 | `RCV-12` | Esta recepción todavía está abierta. | `src/lib/flows/receiving.ts` · `reopenReceiving` | Reopening a receiving that is not closed. |
 | `RCV-13` | Esta recepción ya se cargó en Fierro. No se puede reabrir. | `src/lib/flows/receiving.ts` · `reopenReceiving` | Reopening a receiving already marked as loaded in Fierro. |
@@ -171,7 +172,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | Code | Message | Where | When |
 |---|---|---|---|
 | `PICK-01` | No se encontró ese pedido. | `src/lib/flows/picking.ts` · `orderOf` | The order does not exist or belongs to another company. |
-| `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. |
+| `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. Taking an order you already have opens it instead. |
 | `PICK-03` | No se encontró esa parada del recorrido. | `src/lib/flows/picking.ts` · `taskOf` | The pick task does not exist or belongs to another company. |
 | `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf` | Confirming or marking short a stop that is already done. |
 | `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
@@ -197,7 +198,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PACK-02` | Este pedido todavía no terminó el picking. | `src/lib/flows/packing.ts` · `orderToPack` | Packing an order that is pending or still being picked. |
 | `PACK-03` | Este pedido ya está empacado. | `src/lib/flows/packing.ts` · `orderToPack` | Packing an order that is already packed (or later). |
 | `PACK-04` | "{artículo}" no está entre lo preparado para el pedido {número}. | `src/lib/flows/packing.ts` · `scanIntoBox` | The scanned book is not in the order, or none of it was picked. |
-| `PACK-05` | Ya empacaste todas las unidades de "{artículo}". | `src/lib/flows/packing.ts` · `scanIntoBox` | Every picked unit of that title is already in a box. |
+| `PACK-05` | Ya están empacadas todas las unidades de "{artículo}". | `src/lib/flows/packing.ts` · `scanIntoBox` | Every picked unit of that title is already in a box. |
 | `PACK-06` | De "{artículo}" quedan {n} por empacar, no {m}. | `src/lib/flows/packing.ts` · `scanIntoBox` | Packing more units than are left to pack. |
 | `PACK-07` | Esa caja no está abierta. | `src/lib/flows/packing.ts` · `closeBox` | Closing a box that does not exist or is already closed. |
 | `PACK-08` | La caja está vacía. | `src/lib/flows/packing.ts` · `closeBox` | Closing a box with nothing in it. |
@@ -221,7 +222,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RET-02` | No se encontró esa devolución. | `src/lib/flows/returns.ts` · `open` | The return does not exist or belongs to another company. |
 | `RET-03` | Esta devolución ya está cerrada. | `src/lib/flows/returns.ts` · `open` | Scanning into, editing or closing a return that is already closed. |
 | `RET-04` | Elige en qué estado está el artículo. | `src/lib/flows/returns.ts` · `scanReturn` | Scanning a returned book without choosing its condition. |
-| `RET-05` | Todavía no escaneaste ningún artículo. | `src/lib/flows/returns.ts` · `closeReturn` | Closing a return with no books. |
+| `RET-05` | La devolución no tiene artículos escaneados. | `src/lib/flows/returns.ts` · `closeReturn` | Closing a return with no books. |
 | `RET-06` | Esta devolución todavía está abierta. | `src/lib/flows/returns.ts` · `reopenReturn` | Reopening a return that is not closed. |
 | `RET-07` | Esta devolución ya se cargó en Fierro. No se puede reabrir. | `src/lib/flows/returns.ts` · `reopenReturn` | Reopening a return already marked as loaded in Fierro. |
 | `RET-08` | Parte de lo devuelto ya salió de {zona}. Devuélvelo ahí con Mover para poder reabrir. | `src/lib/flows/returns.ts` · `reopenReturn` | Reopening a return after some of its units were put away or moved. |
@@ -241,7 +242,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `CNT-09` | Escribe un número de cero para arriba. | `src/lib/flows/counts.ts` · `setCounted` | Correcting a counted quantity to a negative or non-whole number. |
 | `CNT-10` | Todavía no hay ninguna ubicación contada. | `src/lib/flows/counts.ts` · `closeCount` | Closing a count with no location marked as counted. |
 | `CNT-11` | Hay diferencias grandes sin recontar. Pide el recuento antes de aprobar. | `src/lib/flows/counts.ts` · `closeCount` | Approving while a counted location has a difference of 5+ units or 20%+ (from 2 units) that nobody has recounted. The screen disables the button first. |
-| `CNT-12` | Este recuento lo tiene que hacer otra persona. | `src/lib/flows/counts.ts` · `scanCount`, `markLocation` | The person who counted a location first tries to scan into it or finish it during its recount. |
+| `CNT-12` | El recuento debe hacerlo otra persona. | `src/lib/flows/counts.ts` · `scanCount`, `markLocation` | The person who counted a location first tries to scan into it or finish it during its recount. |
 | `CNT-13` | Esa ubicación todavía no se contó. | `src/lib/flows/counts.ts` · `requestRecount` | Asking for a recount of a location that is not marked as counted. |
 | `CNT-14` | Elige el motivo de lo que falta. | `src/lib/flows/counts.ts` · `closeCount` | Approving with a cause for the losses that is not in the list. Only reachable by editing the form. |
 
@@ -257,6 +258,15 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `ADJ-06` | Esa baja ya se cargó en Fierro. No se puede deshacer. | `src/lib/flows/adjustments.ts` · `undoWriteOff` | Undoing a write-off already marked as loaded in Fierro. |
 
 Writing off more units than the zone holds is refused by `STK-03`.
+
+## ASG: assigning work
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `ASG-01` | No se reconoce qué se quiere asignar. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
+| `ASG-02` | No se encontró eso para asignar. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
+| `ASG-03` | {Pedido PED-00012} ya no tiene trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
+| `ASG-04` | Elige una persona de la lista. | `src/lib/flows/assignments.ts` · `assign` | The person chosen does not exist, is deactivated, or belongs to another company. Only reachable by editing the form or a stale page. |
 
 ## EXP: Fierro documents
 

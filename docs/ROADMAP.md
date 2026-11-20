@@ -14,7 +14,7 @@ Where the project stands beyond what the README's "What is not done" lists. Last
 
 ## Questions only the owner can answer
 
-- Dropping a picking order (D33) keeps its "not here" reports in FALTANTES and asks the picker to use "Sí estaba" first if they were wrong. Should dropping undo them too? Should operators be able to drop someone else's order, or only supervisors (today)?
+- Dropping a picking order (D36) keeps its "not here" reports in FALTANTES and asks the picker to use "Sí estaba" first if they were wrong. Should dropping undo them too? Should operators be able to drop someone else's order, or only supervisors (today)?
 - Does Ovnipress really use Fierro's orders and "cajas y despachos" screens, or only invoice? (Assumed orders yes, boxes no.)
 - Is there a contact at Fierro, and would they open write access?
 - Real warehouse facts: number of titles, orders per day, staff, whether shelves are labelled, which printers exist. (Demo data assumes 6,000 titles, 80 orders and 8 operators.)

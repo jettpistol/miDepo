@@ -1,5 +1,5 @@
 {
-  "id": "043c6436-79d5-4b41-ae59-9c8f13b627f7",
+  "id": "ffff3758-a292-4e4c-b13a-1748d740f55c",
   "prevId": "fe756325-78de-442e-b604-80e27d7aebec",
   "version": "7",
   "dialect": "postgresql",
@@ -734,6 +734,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -749,6 +755,19 @@
           "tableTo": "companies",
           "columnsFrom": [
             "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "counts_assigned_to_users_id_fk": {
+          "name": "counts_assigned_to_users_id_fk",
+          "tableFrom": "counts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -956,6 +975,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -988,6 +1013,19 @@
           "tableTo": "companies",
           "columnsFrom": [
             "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "locations_assigned_to_users_id_fk": {
+          "name": "locations_assigned_to_users_id_fk",
+          "tableFrom": "locations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -1106,6 +1144,27 @@
           "columns": [
             {
               "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "movements_company_id_created_at_idx": {
+          "name": "movements_company_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "company_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1351,6 +1410,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -1435,6 +1500,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "taken_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "orders_assigned_to_users_id_fk": {
+          "name": "orders_assigned_to_users_id_fk",
+          "tableFrom": "orders",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -1574,19 +1652,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
-        },
-        "sent_to_missing": {
-          "name": "sent_to_missing",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "replaces_task_id": {
-          "name": "replaces_task_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -2059,6 +2124,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -2109,6 +2180,19 @@
           "tableTo": "suppliers",
           "columnsFrom": [
             "supplier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "receivings_assigned_to_users_id_fk": {
+          "name": "receivings_assigned_to_users_id_fk",
+          "tableFrom": "receivings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"
@@ -2238,6 +2322,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "assigned_to": {
+          "name": "assigned_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
@@ -2266,6 +2356,19 @@
           "tableTo": "customers",
           "columnsFrom": [
             "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "returns_assigned_to_users_id_fk": {
+          "name": "returns_assigned_to_users_id_fk",
+          "tableFrom": "returns",
+          "tableTo": "users",
+          "columnsFrom": [
+            "assigned_to"
           ],
           "columnsTo": [
             "id"

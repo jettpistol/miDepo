@@ -174,6 +174,8 @@ export const locations = pgTable(
     code: text("code").notNull(),
     type: text("type").$type<LocationType>().notNull().default("shelf"),
     active: boolean("active").notNull().default(true),
+    /** RECEPCION and DEVOLUCIONES only: who a supervisor gave the put-away from this zone to (null = anyone). */
+    assignedTo: integer("assigned_to").references(() => users.id),
   },
   (t) => [uniqueIndex("locations_company_id_code_idx").on(t.companyId, t.code)],
 );
@@ -224,7 +226,7 @@ export const movements = pgTable(
     userId: integer("user_id").references(() => users.id),
     createdAt: createdAt(),
   },
-  (t) => [index("movements_product_id_created_at_idx").on(t.productId, t.createdAt)],
+  (t) => [index("movements_product_id_created_at_idx").on(t.productId, t.createdAt), index("movements_company_id_created_at_idx").on(t.companyId, t.createdAt)],
 );
 
 // ───────────── Outbound: orders, picking and boxes ─────────────
@@ -243,6 +245,8 @@ export const orders = pgTable(
     status: text("status").$type<OrderStatus>().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
     takenBy: integer("taken_by").references(() => users.id),
+    /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+    assignedTo: integer("assigned_to").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
   },
   (t) => [uniqueIndex("orders_company_id_fierro_id_idx").on(t.companyId, t.fierroId), index("orders_company_id_status_idx").on(t.companyId, t.status)],
@@ -334,6 +338,8 @@ export const receivings = pgTable(
       .references(() => suppliers.id),
     status: text("status").$type<"pending" | "in_progress" | "closed">().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+    /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+    assignedTo: integer("assigned_to").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
   },
   (t) => [index("receivings_company_id_status_idx").on(t.companyId, t.status)],
@@ -360,6 +366,8 @@ export const returns = pgTable("returns", {
   customerId: integer("customer_id").notNull().references(() => customers.id),
   status: text("status").$type<"in_progress" | "closed">().notNull().default("in_progress"),
   date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+  assignedTo: integer("assigned_to").references(() => users.id),
   sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
 });
 
@@ -382,6 +390,8 @@ export const counts = pgTable("counts", {
   name: text("name").notNull(),
   status: text("status").$type<"open" | "closed">().notNull().default("open"),
   date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+  assignedTo: integer("assigned_to").references(() => users.id),
   sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
 });
 

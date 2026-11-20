@@ -80,7 +80,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 Ubicaciones {whereabouts.length > 0 && <small>{whereabouts.length}</small>}
               </h2>
               {whereabouts.length === 0 ? (
-                <p className="border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">No hay unidades en el depósito.</p>
+                <p className="border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">Sin stock.</p>
               ) : (
                 <ul className="ruled-list framed">
                   {whereabouts.map(({ s, u }) => (

@@ -11,10 +11,12 @@ import { can, requireSession } from "@/lib/session";
 import { approve, cancel, recount, reopen } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, company.id)));
   if (!k) notFound();
   const us = await db
@@ -46,9 +48,10 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Conteo cerrado: el stock ya quedó ajustado."}>
+      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."}>
+        <Assignee session={session} kind="count" id={k.id} value={k.assignedTo} open={isOpen} />
         {isOpen && can(user.role, "supervisor") && (
-          <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar el conteo "${k.name}"? Se borra todo lo contado. El stock no cambia. No se puede deshacer.`}>
+          <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar el conteo "${k.name}"? Se borra lo contado; el stock no cambia. No se puede deshacer.`}>
             Cancelar conteo
           </ActionButton>
         )}
@@ -63,7 +66,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             Revisión del supervisor {diffs.length > 0 && <small>{diffs.length}</small>}
           </h2>
           {diffs.length === 0 ? (
-            <Notice tone="ok">Lo contado hasta ahora coincide con el sistema.</Notice>
+            <Notice tone="ok">Sin diferencias.</Notice>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
@@ -116,8 +119,8 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             className="mt-4 flex flex-wrap items-end gap-2"
             resetOnOk={false}
             hotkey="finish"
-            reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes. El recuento lo hace otra persona.` : undefined}
-            confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} El ajuste no se puede deshacer: un error se corrige con otro conteo. ¿Cerrar el conteo?`}
+            reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes, por otra persona.` : undefined}
+            confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} No se puede deshacer: un error se corrige con otro conteo. ¿Cerrar el conteo?`}
           >
             <input type="hidden" name="id" value={id} />
             {plan.losses.length > 0 ? (

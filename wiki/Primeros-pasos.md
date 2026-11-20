@@ -8,9 +8,22 @@ Todo lo demás sigue en Fierro: el catálogo, los clientes, los pedidos, los rem
 
 ## La pantalla de Inicio
 
-Al iniciar sesión ves una tarjeta por cada tipo de trabajo, con un número grande: cuánto hay pendiente. Toca una tarjeta para ir a ese trabajo.
+Inicio muestra lo que tienes por hacer y cómo está el depósito.
+
+- **Arriba**, cuatro números. Un operario ve cuánto tiene asignado, cuántas unidades movió hoy, los pedidos para preparar y las unidades por reponer. Un supervisor ve los pedidos para preparar y para empacar, las tareas sin asignar y lo que falta cargar en Fierro. Toca un número para ir a esa pantalla.
+- **Asignado a ti**: los pedidos, recepciones, devoluciones, conteos y reposiciones que un supervisor te dio, más el pedido que estás preparando. Cada uno tiene su botón para seguir. Si no tienes nada asignado, aparece el pedido más viejo sin asignar.
+- **Pedidos abiertos**: una barra con cuántos pedidos hay en cada etapa, de "para preparar" a "empacados, sin cargar en Fierro".
+- **Actividad, últimos 7 días**: unidades recibidas, preparadas y despachadas por día. Pasa el mouse sobre un día para ver los números.
+- **Stock esperando en zonas**: lo que espera en Recepción y Devoluciones para reponer, en Faltantes y en Dañados.
+- **Equipo** (solo supervisores): qué tiene asignado cada persona, qué pedido está preparando y cuántas unidades movió hoy. La primera fila es lo que está sin asignar.
 
 Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir con PED-…** para retomarlo.
+
+## Asignar trabajo (supervisores)
+
+En un pedido, una recepción, una devolución, un conteo o en Reposición, arriba a la derecha está **Asignado a**. Elige a la persona y queda guardado; elige **Sin asignar** para sacárselo. Esa persona lo ve en su Inicio.
+
+Asignar dice de quién es el trabajo, pero no lo bloquea: otra persona puede seguir con él si hace falta. Los operarios ven a quién está asignado, pero no pueden cambiarlo.
 
 ## Buscar
 

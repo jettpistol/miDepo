@@ -25,14 +25,14 @@ export default async function CustomerDetail({ params, searchParams }: { params:
         <h2 className="section-title">
           Pedidos <small>{ords.all}</small>
         </h2>
-        <OrdersTable rows={ords.rows} showCustomer={false} empty={{ title: "Este cliente no tiene pedidos" }} />
+        <OrdersTable rows={ords.rows} showCustomer={false} empty={{ title: "Sin pedidos" }} />
         <Pager base={`/clientes/${c.id}`} params={{}} page={page} total={ords.total} />
       </section>
       <section>
         <h2 className="section-title">
           Devoluciones <small>{rets.total}</small>
         </h2>
-        <ReturnsTable rows={rets.rows} showCustomer={false} empty={{ title: "Este cliente no tiene devoluciones" }} />
+        <ReturnsTable rows={rets.rows} showCustomer={false} empty={{ title: "Sin devoluciones" }} />
       </section>
     </>
   );

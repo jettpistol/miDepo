@@ -28,9 +28,7 @@ export default async function Packing() {
     <>
       <PageHeader title="Empaque" />
       {rows.length === 0 ? (
-        <EmptyState icon="packing" title="No hay pedidos esperando empaque">
-          Cuando alguien termine un picking, el pedido aparece aquí.
-        </EmptyState>
+        <EmptyState icon="packing" title="Sin pedidos por empacar" />
       ) : (
         <div className="table-wrap">
           <table className="data-table">

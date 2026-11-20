@@ -6,6 +6,7 @@ import { DisabledReason } from "./Hint";
 import type { Result } from "@/lib/errors";
 import { Camera } from "./Camera";
 import { Icon } from "./Icon";
+import { toast } from "./Toast";
 import { ShelfMark } from "./ui";
 import { hotkey, type HotkeyName } from "@/lib/hotkeys";
 
@@ -389,7 +390,10 @@ function Shortcuts({ list, setValue, shelfKey }: { list: Shortcut[]; setValue: (
   );
 }
 
-/** Button that runs an action and shows its reply. With `confirm`, it asks first. */
+/**
+ * Button that runs an action and shows its reply in a popup (never inside the row or table it
+ * sits in, which may be gone once the screen refreshes). With `confirm`, it asks first.
+ */
 export function ActionButton({
   action,
   hiddenFields = {},
@@ -412,6 +416,10 @@ export function ActionButton({
   hotkey?: HotkeyName;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
+  useEffect(() => {
+    if (status.error) toast(status.error, true);
+    else if (showOk && status.ok) toast(status.ok, false);
+  }, [status, showOk]);
   return (
     <form
       action={submit}
@@ -428,11 +436,6 @@ export function ActionButton({
           {submitting ? "Un momento…" : children}
         </button>
       </DisabledReason>
-      {(status.error || (showOk && status.ok)) && (
-        <div className="basis-full">
-          <Message status={status} />
-        </div>
-      )}
     </form>
   );
 }

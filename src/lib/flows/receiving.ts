@@ -73,7 +73,7 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
   return c.db.transaction(async (tx) => {
     const lines = await tx.select().from(receivingLines).where(eq(receivingLines.receivingId, receivingId));
     const total = lines.reduce((s, l) => s + l.received, 0);
-    if (total === 0) throw new UserError("RCV-10", "Todavía no escaneaste nada en esta recepción.");
+    if (total === 0) throw new UserError("RCV-10", "La recepción no tiene artículos escaneados.");
     const destination = await zone(tx, c.companyId, "receiving");
     for (const l of lines) {
       if (l.received > 0) {
@@ -81,7 +81,7 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
       }
     }
     await tx.update(receivings).set({ status: "closed" }).where(eq(receivings.id, receivingId));
-    return `Recepción ${r.number} cerrada: ${total} unidades esperan en Recepción para reponer.`;
+    return `Recepción ${r.number} cerrada. ${total} unidades por reponer.`;
   });
 }
 

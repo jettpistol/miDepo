@@ -20,6 +20,8 @@ import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } fro
 import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
 import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
+import { assign } from "@/lib/flows/assignments";
+import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
 
 let db: DB;
 let c: Ctx;
@@ -97,7 +99,10 @@ describe("full circuit", () => {
     }
 
     await takeOrder(c, ord.id);
-    await expect(takeOrder(c, ord.id)).rejects.toThrow(/ya lo tomó/);
+    // Taking it again (an old screen, a second tap) just carries on; someone else is refused.
+    await expect(takeOrder(c, ord.id)).resolves.toMatch(/tomado/);
+    const intruder = await createUser(db, c.companyId, { name: "Intrusa", email: "intrusa@prueba.test", role: "operator", pin: "135790" });
+    await expect(takeOrder({ ...c, userId: intruder.id }, ord.id)).rejects.toThrow(/ya lo tomó/);
     const tasks = await db.select({ t: pickTasks, u: locations.code }).from(pickTasks).innerJoin(locations, eq(locations.id, pickTasks.locationId)).where(eq(pickTasks.orderId, ord.id));
     expect(tasks.reduce((s, t) => s + t.t.quantity, 0)).toBe(lines.reduce((s, l) => s + l.quantity, 0));
 
@@ -149,10 +154,10 @@ describe("full circuit", () => {
     await takeOrder(c, ord.id);
     const pend = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.status, "pending")));
     expect(pend).toHaveLength(1);
-    expect(await markShort(c, pend[0].id)).toMatch(/otra ubicación/);
+    expect(await markShort(c, pend[0].id)).toMatch(/otra ubicación/i);
     const [newPassword] = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.status, "pending")));
     expect(newPassword.locationId).not.toBe(pend[0].locationId);
-    expect(await markShort(c, newPassword.id)).toMatch(/faltante/);
+    expect(await markShort(c, newPassword.id)).toMatch(/Faltantes/);
     expect((await db.select().from(orders).where(eq(orders.id, ord.id)))[0].status).toBe("picked");
   });
 });
@@ -329,6 +334,56 @@ describe("suppliers", () => {
   });
 });
 
+describe("assignments", () => {
+  it("gives work to a person, shows it as theirs, and takes it back", async () => {
+    const ana = await createUser(db, c.companyId, { name: "Ana Asignada", email: "ana@prueba.test", role: "operator", pin: "864213" });
+    const [order] = await db.select().from(orders).where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"))).limit(1);
+    expect(await assign(c, "order", order.id, ana.id)).toMatch(/ahora es de Ana Asignada/);
+    let tasks = await openTasks(db, c.companyId);
+    const task = tasks.find((t) => t.kind === "order" && t.id === order.id)!;
+    expect(isMine(task, ana.id)).toBe(true);
+    expect(isUnassigned(task)).toBe(false);
+    expect(await assign(c, "order", order.id, null)).toMatch(/sin asignar/);
+    tasks = await openTasks(db, c.companyId);
+    expect(isUnassigned(tasks.find((t) => t.kind === "order" && t.id === order.id)!)).toBe(true);
+  });
+
+  it("assigns the put-away of a zone, and the order a person is picking is theirs", async () => {
+    const recepcion = await zone(db, c.companyId, "receiving");
+    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Reposición desde Recepción/);
+    // In a company of its own, so the pending orders later tests rely on stay pending.
+    const { e, u } = await buildCompany("Toma SA", "toma", 15);
+    const own: Ctx = { db, companyId: e.id, userId: u.id };
+    const [order] = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.status, "pending"))).limit(1);
+    await takeOrder(own, order.id);
+    const t = (await openTasks(db, e.id)).find((x) => x.kind === "order" && x.id === order.id)!;
+    // Taken: theirs while being picked (or already picked, if the shelves had nothing for it).
+    expect(t.verb === "Empacar" || (t.takenBy === u.id && isMine(t, u.id))).toBe(true);
+  });
+
+  it("refuses what cannot be assigned", async () => {
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, c.companyId), eq(locations.type, "shelf"))).limit(1);
+    await expect(assign(c, "putaway", shelf.id, null)).rejects.toThrow(/No se encontró/);
+    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/No se reconoce/);
+    const [closed] = await db.select().from(receivings).where(and(eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"))).limit(1);
+    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/ya no tiene trabajo pendiente/);
+    const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
+    const { e, u } = await buildCompany("Lejana SA", "lejana", 13);
+    await expect(assign(c, "order", order.id, u.id)).rejects.toThrow(/Elige una persona/);
+    await expect(assign({ db, companyId: e.id, userId: u.id }, "order", order.id, null)).rejects.toThrow(/No se encontró/);
+  });
+
+  it("counts orders per stage and units per day for the home page", async () => {
+    const stages = await orderStages(db, c.companyId);
+    expect(stages.map((s) => s.key)).toEqual(["pending", "in_picking", "picked", "packed"]);
+    const days = await weekActivity(db, c.companyId);
+    expect(days).toHaveLength(7);
+    expect(days[6].label).toBe("Hoy");
+    // Earlier tests received and picked units today.
+    expect(days[6].received + days[6].picked).toBeGreaterThan(0);
+  });
+});
+
 describe("several companies", () => {
   it("one company neither sees nor touches another's data", async () => {
     const { e, u } = await buildCompany("Otra SRL", "otra", 9);
@@ -382,7 +437,7 @@ describe("going back", () => {
 
     // "Not here", then "it was there after all": the units leave FALTANTES and the extra stop goes.
     const missingZone = await zone(db, u.companyId, "missing");
-    expect(await markShort(u, t0.id)).toMatch(/otra ubicación/);
+    expect(await markShort(u, t0.id)).toMatch(/otra ubicación/i);
     expect(await atLocation(t0.productId, missingZone.id)).toBe(t0.quantity);
     expect((await db.select().from(pickTasks).where(eq(pickTasks.replacesTaskId, t0.id))).length).toBe(1);
     await undoShort(u, t0.id);

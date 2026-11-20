@@ -29,7 +29,7 @@ export default async function Loaded({ searchParams }: { searchParams: Promise<{
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <EmptyRow columns={5} title="Todavía no se marcó nada como cargado" />}
+            {rows.length === 0 && <EmptyRow columns={5} title="Sin documentos cargados" />}
             {rows.map((d) => (
               <tr key={`${d.type}-${d.id}`}>
                 <td>

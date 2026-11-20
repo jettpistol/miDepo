@@ -10,12 +10,14 @@ import { cancel, close, reopen, scan, remove } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { InfoHint } from "@/components/Hint";
+import { Assignee } from "@/components/Assignee";
 
 const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
 export default async function ReturnDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ d: returns, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, company.id)));
   if (!row) notFound();
   const { d, customer } = row;
@@ -26,6 +28,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }}>
+        <Assignee session={session} kind="return" id={d.id} value={d.assignedTo} open={d.status === "in_progress"} />
         {open && (
           <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar ${d.number}? Se borra con todo lo escaneado. No se puede deshacer.`}>
             Cancelar devolución
@@ -67,7 +70,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
                 </div>
               </fieldset>
             </ScanForm>
-            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún artículo." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock en la zona de su estado.">
+            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Sin artículos escaneados." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock en la zona de su estado.">
               Cerrar devolución
             </ActionButton>
           </div>
@@ -81,7 +84,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
             ))}
           </div>
           {lines.length === 0 ? (
-            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay artículos. Escanea el primero.</p>
+            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Sin artículos.</p>
           ) : (
             <ul className="ruled-list framed">
               {lines.map(({ l, title, code }) => (

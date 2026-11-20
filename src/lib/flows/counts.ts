@@ -60,14 +60,14 @@ export async function scanCount(c: Ctx, countId: number, locationId: number, cod
   await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
   if (u.status === "counted") throw new UserError("CNT-08", "Esta ubicación ya se dio por contada.");
-  if (u.firstCountedBy === c.userId) throw new UserError("CNT-12", "Este recuento lo tiene que hacer otra persona.");
+  if (u.firstCountedBy === c.userId) throw new UserError("CNT-12", "El recuento debe hacerlo otra persona.");
   const p = await findProduct(c.db, c.companyId, code);
   const [l] = await c.db
     .insert(countLines)
     .values({ countId, locationId, productId: p.id, countedQty: n })
     .onConflictDoUpdate({ target: [countLines.countId, countLines.locationId, countLines.productId], set: { countedQty: sql`${countLines.countedQty} + ${n}` } })
     .returning();
-  return `${articleName(p.title)}: llevas ${l.countedQty}`;
+  return `${articleName(p.title)}: ${l.countedQty}`;
 }
 
 export async function setCounted(c: Ctx, countId: number, locationId: number, productId: number, countedQty: unknown) {
@@ -81,7 +81,7 @@ export async function setCounted(c: Ctx, countId: number, locationId: number, pr
 export async function markLocation(c: Ctx, countId: number, locationId: number, counted: boolean) {
   await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
-  if (counted && u.firstCountedBy === c.userId) throw new UserError("CNT-12", "Este recuento lo tiene que hacer otra persona.");
+  if (counted && u.firstCountedBy === c.userId) throw new UserError("CNT-12", "El recuento debe hacerlo otra persona.");
   await c.db
     .update(countLocations)
     .set({ status: counted ? "counted" : "pending", countedBy: counted ? c.userId : null })
@@ -126,7 +126,7 @@ export async function requestRecount(c: Ctx, countId: number, locationId: number
     await tx.delete(countLines).where(and(eq(countLines.countId, countId), eq(countLines.locationId, locationId)));
     await tx.update(countLocations).set({ status: "pending", firstCountedBy: u.countedBy, countedBy: null }).where(and(eq(countLocations.countId, countId), eq(countLocations.locationId, locationId)));
   });
-  return "Recuento pedido. Lo tiene que hacer otra persona.";
+  return "Recuento pedido, para otra persona.";
 }
 
 export type CountPlan = {
@@ -220,7 +220,7 @@ export async function closeCount(c: Ctx, countId: number, cause: string = "count
       plan.found.length && `${units(plan.found)} aparecieron`,
       plan.losses.length && `${units(plan.losses)} dados de baja`,
     ].filter(Boolean);
-    return parts.length === 0 ? "Conteo cerrado. Todo coincidía." : `Conteo cerrado: ${parts.join(", ")}.`;
+    return parts.length === 0 ? "Conteo cerrado. Sin diferencias." : `Conteo cerrado: ${parts.join(", ")}.`;
   });
 }
 

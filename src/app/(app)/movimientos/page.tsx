@@ -51,9 +51,7 @@ export default async function Movements({ searchParams }: { searchParams: Promis
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <EmptyRow columns={6} title={q || reason ? "Ningún movimiento coincide" : "Todavía no hay movimientos"}>
-                {q || reason ? undefined : "Cada recepción, reposición, picking, despacho o baja deja aquí su movimiento."}
-              </EmptyRow>
+              <EmptyRow columns={6} title={q || reason ? "Ningún movimiento coincide" : "Sin movimientos"} />
             )}
             {rows.map(({ m, productId, title, fromLoc, toLoc, who }) => (
               <tr key={m.id}>

@@ -60,7 +60,7 @@ export default async function Fierro() {
           <InfoHint text="Un pedido sale del stock solo cuando lo marcas como cargado." />
         </h2>
         {pending.length === 0 ? (
-          <EmptyState title="Fierro está al día">No hay documentos del depósito sin cargar.</EmptyState>
+          <EmptyState title="Sin documentos pendientes" />
         ) : (
           <div className="table-wrap">
             <table className="data-table">

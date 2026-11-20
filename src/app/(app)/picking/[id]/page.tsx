@@ -9,11 +9,13 @@ import { can, requireSession } from "@/lib/session";
 import { confirm, putBack, release, shortage, take, wasThere } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function PickingOrder({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ parada?: string }> }) {
   const id = Number((await params).id);
   const chosen = Number((await searchParams).parada);
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const [row] = await db
     .select({ p: orders, customer: customers.name, takenBy: users.name })
     .from(orders)
@@ -48,6 +50,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
     <>
       <PageHeader title={`Pedido ${p.number}`} subtitle={p.status !== "pending" && !mine && takenBy ? `${customer} · Lo prepara ${takenBy}` : customer} back={{ href: "/picking", text: "Picking" }}>
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
+        <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "picked"].includes(p.status)} />
         {editable && (
           <ActionButton
             action={release}
@@ -133,13 +136,13 @@ export default async function PickingOrder({ params, searchParams }: { params: P
               </section>
             ) : p.status === "picked" ? (
               <Notice tone="ok">
-                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Sale con ${plural(missing, "faltante", "faltantes")}.` : "Está completo."}</p>
+                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."}</p>
                 <Link href={`/empaque/${id}`} className="btn w-full" {...hotkey("primary")}>
                   Ir a empacar
                 </Link>
               </Notice>
             ) : (
-              <Notice tone="ok">Este pedido ya pasó por empaque.</Notice>
+              <Notice tone="ok">Pedido en empaque.</Notice>
             )}
           </div>
 

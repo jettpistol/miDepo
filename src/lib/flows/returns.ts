@@ -53,14 +53,14 @@ export async function closeReturn(c: Ctx, returnId: number) {
   const d = await open(c, returnId);
   return c.db.transaction(async (tx) => {
     const lines = await tx.select().from(returnLines).where(eq(returnLines.returnId, returnId));
-    if (lines.length === 0) throw new UserError("RET-05", "Todavía no escaneaste ningún artículo.");
+    if (lines.length === 0) throw new UserError("RET-05", "La devolución no tiene artículos escaneados.");
     const destination = await zones(tx, c.companyId);
     for (const l of lines) {
       await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: destination[l.bookCondition].id, quantity: l.quantity, reason: "return", reference: d.number, userId: c.userId });
     }
     await tx.update(returns).set({ status: "closed" }).where(eq(returns.id, returnId));
     const sellables = lines.filter((l) => l.bookCondition === "sellable").reduce((s, l) => s + l.quantity, 0);
-    return `Devolución ${d.number} cerrada. ${sellables} unidades vendibles esperan reposición.`;
+    return `Devolución ${d.number} cerrada. ${sellables} unidades vendibles por reponer.`;
   });
 }
 

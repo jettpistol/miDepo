@@ -70,8 +70,8 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
             </thead>
             <tbody>
               {openList.length === 0 && (
-                <EmptyRow columns={6} title="No hay recepciones abiertas">
-                  Las que avisa Fierro aparecen automáticamente. Si llegó algo sin aviso, toca Nueva.
+                <EmptyRow columns={6} title="Sin recepciones abiertas">
+                  Las avisadas por Fierro llegan al sincronizar.
                 </EmptyRow>
               )}
               {openList.map(({ r, supplier, titles, expected, received }, i) => (
@@ -85,13 +85,13 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
                     <span className="font-medium">{supplier}</span>
                     <span className="block text-muted md:hidden">
                       <span className="sm:hidden">
-                        {plural(titles, "artículo", "artículos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
+                        {plural(titles, "artículo", "artículos")} · {r.fierroId ? `${expected} esperadas` : "sin aviso"} ·{" "}
                       </span>
                       {shortDate(r.date)}
                     </span>
                   </td>
                   <td className="hidden text-right sm:table-cell">{titles}</td>
-                  <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{expected}</span> : <span className="text-muted">sin aviso de Fierro</span>}</td>
+                  <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{expected}</span> : <span className="text-muted">—</span>}</td>
                   <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(r.date)}</td>
                   <td>{r.status === "in_progress" ? <Badge tone="accent">En curso · {received} contadas</Badge> : <Badge>Sin empezar</Badge>}</td>
                 </tr>
@@ -106,7 +106,7 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
           Cerradas <small>{closed.total}</small>
         </h2>
         {(closed.total > 0 || q) && <LiveSearch placeholder="Número o proveedor" className="mb-3 max-w-md" />}
-        <ReceivingsTable rows={closed.rows} empty={q ? { title: `Ninguna recepción cerrada coincide con "${q}"` } : { title: "Todavía no hay recepciones cerradas" }} />
+        <ReceivingsTable rows={closed.rows} empty={q ? { title: `Ninguna recepción cerrada coincide con "${q}"` } : { title: "Sin recepciones cerradas" }} />
         <Pager base="/recepcion" params={{ q }} page={page} total={closed.total} />
       </section>
     </>
