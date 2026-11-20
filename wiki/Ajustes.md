@@ -1,6 +1,6 @@
 # Ajustes
 
-En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión. Los administradores también eligen cómo se controlan los pedidos de toda la empresa.
+En **Ajustes** cambias lo tuyo: tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión. No cambia nada para tus compañeros. Lo que vale para toda la empresa está en [Organización](Organizacion).
 
 ## Cómo llegar
 
@@ -60,23 +60,3 @@ Si pierdes un teléfono, inicia sesión desde otro dispositivo y toca **Quitar**
 - **PIN:** escribe 6 dígitos. Si miDepo dice que no está disponible, elige otro.
 
 Si no recuerdas la contraseña actual, pide a un administrador que te asigne una nueva.
-
-## Control de pedidos
-
-Solo para administradores. Vale para toda la empresa.
-
-
-Antes de empacar, lo preparado se cuenta de nuevo. Elige dónde:
-
-| Opción | Qué pasa |
-|---|---|
-| **En el empaque** | Quien empaca escanea cada unidad al ponerla en la caja. No hay pantalla Control. |
-| **Paso de control, todos los pedidos** | Todo pedido preparado pasa por [Control](Control) antes de Empaque. |
-| **Paso de control, pedidos grandes** | Solo los pedidos desde la cantidad de unidades que escribas pasan por Control. Los demás se controlan en el empaque. |
-
-**Quién controla:**
-
-- **Puede ser quien preparó:** cualquiera controla o empaca cualquier pedido. Sirve para turnos con poca gente.
-- **Siempre otra persona:** quien preparó un pedido no puede controlarlo. Si el pedido no pasa por Control, tampoco puede empacarlo.
-
-Los cambios valen para los pedidos que terminen el picking desde ese momento. Si pasas el control al empaque, los pedidos que esperaban en Control van directo a Empaque.

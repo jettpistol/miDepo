@@ -17,7 +17,8 @@ Esta página es para administradores.
 | Sincronizar y cargar en Fierro | — | Sí | Sí |
 | Crear y desactivar usuarios | — | — | Sí |
 | [Editar el manual](Editar-el-manual) | — | — | Sí |
-| [Control de pedidos](Ajustes#control-de-pedidos) | — | — | Sí |
+| [Control de pedidos](Organizacion#control-de-pedidos) | — | — | Sí |
+| [Nombre y código de empresa](Organizacion) | — | — | Sí |
 
 ## Nuevo usuario
 

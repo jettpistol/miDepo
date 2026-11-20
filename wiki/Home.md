@@ -28,13 +28,14 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas): nombrar las ubicaciones e imprimir sus etiquetas.
 - [Bajas y faltantes](Bajas-y-faltantes): lo que falta, lo roto y lo que aparece, con su motivo.
 - [Trabajar con Fierro](Trabajar-con-Fierro): sincronizar, cargar documentos y conciliar el stock.
+- [Organización](Organizacion): nombre, código de empresa, control de pedidos y lotes.
 - [Usuarios y roles](Usuarios-y-roles): quién puede iniciar sesión y qué puede hacer.
 - [Editar el manual](Editar-el-manual): adaptar estas páginas a tu depósito (administradores).
 
 ## Tu cuenta
 
 - [Iniciar sesión](Ingresar): contraseña, PIN, huella o rostro.
-- [Ajustes](Ajustes): tema claro u oscuro, color, tipografía, foto, contraseña y PIN.
+- [Ajustes](Ajustes): lo tuyo: tema claro u oscuro, color, tipografía, foto, contraseña y PIN.
 - [Instalar en el teléfono](Instalar-en-el-telefono): tener miDepo como una app.
 
 ## Si algo falla

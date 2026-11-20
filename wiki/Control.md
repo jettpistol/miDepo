@@ -2,7 +2,7 @@
 
 Control es contar de nuevo lo que se preparó, antes de empacar. Lo hace otra persona si la empresa lo pide así.
 
-Esta pantalla aparece solo si un administrador la activó en [Ajustes](Ajustes#control-de-pedidos) (para todos los pedidos o solo para los grandes). Si no está activada, el control lo hace quien empaca: el [Empaque](Empaque) escanea cada unidad de nuevo.
+Esta pantalla aparece solo si un administrador la activó en [Organización](Organizacion#control-de-pedidos) (para todos los pedidos o solo para los grandes). Si no está activada, el control lo hace quien empaca: el [Empaque](Empaque) escanea cada unidad de nuevo.
 
 ## Paso a paso
 

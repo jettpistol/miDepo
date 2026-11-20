@@ -20,7 +20,7 @@ Lo normal es preparar todos los pedidos juntos, en un solo recorrido. Toca **Pre
 - Las paradas van en orden de ubicación: pasas una sola vez por cada estante. Si el carro se llena, déjalo en PREPARACIÓN y sigue con el mismo lote.
 - Si falta stock, los pedidos más antiguos lo reciben primero.
 
-Cómo se separa el lote en pedidos lo elige un supervisor en **Ajustes → Picking por lotes**:
+Cómo se separa el lote en pedidos lo elige un supervisor en [Organización → Picking por lotes](Organizacion#picking-por-lotes):
 
 | Opción | Qué haces |
 |---|---|

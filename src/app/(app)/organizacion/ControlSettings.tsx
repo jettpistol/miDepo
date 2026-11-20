@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ActionForm } from "@/components/ScanForm";
 import { Select } from "@/components/Select";
 import type { ControlMode } from "@/lib/flows/settings";
-import { saveControl } from "./company-actions";
+import { saveControl } from "./actions";
 
 const MODES = [
   { value: "packing", label: "En el empaque", detail: "Quien empaca escanea cada unidad de nuevo." },

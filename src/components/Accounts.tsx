@@ -35,6 +35,14 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
           {showCurrent && <Icon name="arrow" className="size-4 text-muted" />}
         </Link>
       )}
+      {current && !showCurrent && current.user.role !== "operator" && (
+        <Link href="/organizacion" className={row}>
+          <span className="grid size-8 place-items-center">
+            <Icon name="organization" />
+          </span>
+          <span className="min-w-0 flex-1 truncate font-semibold">Organización</span>
+        </Link>
+      )}
       {others.length > 0 && <p className="px-2.5 pt-2 text-[13px] font-bold text-muted">Cambiar a</p>}
       {others.map((c) => (
         <form key={c.user.id} action={switchAccount}>

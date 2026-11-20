@@ -20,7 +20,7 @@ import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenP
 import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } from "@/lib/flows/returns";
 import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
 import { checkUnit, finishControl, reportMissing, restartControl } from "@/lib/flows/control";
-import { saveControlSettings } from "@/lib/flows/settings";
+import { changeOrganizationCode, renameOrganization, saveBatchSorting, saveControlSettings } from "@/lib/flows/settings";
 import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
@@ -425,6 +425,23 @@ describe("control before packing", () => {
     picker = { db, companyId: e.id, userId: u.id };
     checker = { db, companyId: e.id, userId: second.id };
     prods = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.id, p]));
+  });
+
+  it("renames the organisation and changes its code, refusing bad or taken codes", async () => {
+    const other = await createCompany(db, { name: "Otra", slug: "otra-org" });
+    const [before] = await db.select().from(companies).where(eq(companies.id, picker.companyId));
+    await expect(renameOrganization(picker, "   ")).rejects.toThrow(UserError);
+    expect(await renameOrganization(picker, "  Control   SRL ")).toBe("Control SRL");
+    await expect(changeOrganizationCode(picker, "Con Espacios")).rejects.toThrow(UserError);
+    await expect(changeOrganizationCode(picker, other.slug)).rejects.toThrow(/otra organización/);
+    expect(await changeOrganizationCode(picker, " Nuevo-2 ")).toBe("nuevo-2");
+    expect(await changeOrganizationCode(picker, "nuevo-2")).toBe("nuevo-2");
+    const [after] = await db.select().from(companies).where(eq(companies.id, picker.companyId));
+    expect([after.name, after.slug]).toEqual(["Control SRL", "nuevo-2"]);
+    expect((await db.select().from(companies).where(eq(companies.id, other.id)))[0]).toMatchObject({ name: "Otra", slug: "otra-org" });
+    await expect(saveBatchSorting(picker, "otro")).rejects.toThrow(UserError);
+    await renameOrganization(picker, before.name);
+    await changeOrganizationCode(picker, before.slug);
   });
 
   it("validates the settings", async () => {

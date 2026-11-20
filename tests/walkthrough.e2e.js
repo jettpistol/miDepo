@@ -228,6 +228,7 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/ayuda'); await shot('manual'); await p.click('article a:has-text("Picking")'); await p.waitForSelector('h1:has-text("Picking")');
   step('supervisor sees no Editar in the manual: ' + ((await p.$('a[href^="/ayuda/editar/"]')) ? fail('Editar visible') : 'ok'));
   step('supervisor cannot open the editor: ' + ((await p.goto(BASE + '/ayuda/editar/Picking'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
+  await p.goto(BASE + '/organizacion'); await p.waitForSelector('#lotes'); step('supervisor sees only batch sorting in Organización: ' + ((await p.$('#nombre, #codigo, #control')) ? fail('admin sections shown') : 'ok'));
   step('supervisor cannot open users: ' + ((await p.goto(BASE + '/usuarios'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
 
   // Light/dark from the top bar, saved at once
@@ -291,8 +292,15 @@ async function warning(p, field, value) {
   await o.click('button:has-text("Nuevo")'); await o.fill('#name', 'Prueba Recorrido'); await o.fill('#email', 'recorrido@demo.test'); await o.fill('#pin', '345678');
   await o.click('button:has-text("Crear usuario")'); await o.waitForSelector('main td:has-text("Prueba Recorrido")'); step('users: created from + Nuevo');
 
+  // Organización: company settings apart from Ajustes
+  step('Ajustes has no company settings: ' + ((await o.goto(BASE + '/cuenta'), await o.$('#control, #lotes')) ? fail('still there') : 'ok'));
+  await o.goto(BASE + '/organizacion'); await o.waitForSelector('#codigo'); await o.screenshot({ path: `${OUT}/organization.png`, fullPage: true, caret: 'initial' });
+  await o.fill('#name', 'Demo Libros'); await o.click('#nombre button:has-text("Guardar nombre")'); await o.waitForSelector('aside >> text=Demo Libros');
+  await o.fill('#slug', 'ovnipress'); o.once('dialog', (d) => d.accept()); await o.click('#codigo button:has-text("Cambiar código")'); await o.waitForSelector('#codigo [role=status]:has-text("SET-07")');
+  await o.fill('#name', 'Librería Demo'); await o.click('#nombre button:has-text("Guardar nombre")'); await o.waitForSelector('aside >> text=Librería Demo'); step('organization: renamed, taken code refused');
+
   // Batch picking: every pending order in one route, totals per shelf, split into trays
-  await o.goto(BASE + '/cuenta#lotes'); await o.click('#lotes button[aria-haspopup=listbox]'); await o.keyboard.type('bandeja'); await o.keyboard.press('Enter');
+  await o.goto(BASE + '/organizacion#lotes'); await o.click('#lotes button[aria-haspopup=listbox]'); await o.keyboard.type('bandeja'); await o.keyboard.press('Enter');
   await o.click('#lotes button:has-text("Guardar")'); await o.waitForSelector('#lotes [role=status]'); step('batch sorting → ' + (await o.textContent('#lotes [role=status]')).trim());
   await o.goto(BASE + '/picking'); await o.waitForLoadState('networkidle'); await o.screenshot({ path: `${OUT}/picking-take-all.png`, caret: 'initial' });
   o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Preparar todos")'); await o.waitForURL(/\/picking\/lote\/\d+/); await o.waitForSelector(STOP);
@@ -328,11 +336,13 @@ async function warning(p, field, value) {
   step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
 
   // Control step (demo company, so the Ovnipress circuit above is untouched).: turn it on, pick, control.
-  await o.goto(BASE + '/cuenta#control'); await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, pedidos grandes")');
+  await o.goto(BASE + '/organizacion#control'); await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, pedidos grandes")');
   await o.fill('#minUnits', '1'); step('settings, 1 unit, before the click → ' + ((await o.$eval('#minUnits', (e) => e.validationMessage)) || fail('1 unit accepted')));
   await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, todos los pedidos")'); await o.click('button:has-text("Guardar control")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
   await o.locator('#control').screenshot({ path: `${OUT}/settings.png` });
-  await o.goto(BASE + '/picking'); await o.click('button:has-text("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
+  // The batch above took every pending order: bring new ones from the simulated Fierro.
+  await o.goto(BASE + '/fierro'); await o.click('button:has-text("Simular 10 pedidos nuevos")'); await o.waitForSelector('text=Entraron 10 pedidos');
+  await o.goto(BASE + '/picking'); await o.click('main button:text-is("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
   const ctrlId = o.url().split('/').pop(); const ctrlCodes = {};
   await o.waitForSelector(STOP);
   while (await o.$(STOP)) {
@@ -348,7 +358,7 @@ async function warning(p, field, value) {
   await o.keyboard.press('F9'); await o.waitForSelector('text=Controlado por'); step('control finished');
   await o.goto(BASE + '/control'); await o.waitForSelector('text=No hay pedidos esperando control'); await o.screenshot({ path: `${OUT}/control-list.png`, caret: 'initial' });
   await o.setViewportSize({ width: 390, height: 844 });
-  for (const [path, name] of [['/control', 'm-control-list'], [`/control/${ctrlId}`, 'm-control-done'], ['/cuenta#control', 'm-settings']]) {
+  for (const [path, name] of [['/control', 'm-control-list'], [`/control/${ctrlId}`, 'm-control-done'], ['/organizacion', 'm-organization'], ['/cuenta', 'm-settings']]) {
     await o.goto(BASE + path); await o.screenshot({ path: `${OUT}/${name}.png`, fullPage: true, caret: 'initial' });
     if (await o.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) fail(`${path} scrolls sideways on a phone`);
   }
