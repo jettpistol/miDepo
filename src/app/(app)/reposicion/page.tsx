@@ -8,7 +8,7 @@ import { moveAction } from "../mover/actions";
 import { RecentMoves } from "../mover/RecentMoves";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
-import { Assignee } from "@/components/Assignee";
+import { AssigneeCell, assignees } from "@/components/Assignee";
 
 export const metadata = { title: "Reposición" };
 
@@ -18,6 +18,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
   const zone = (await searchParams).zona === "devoluciones" ? "returns" : "receiving";
   const zones = await db.select().from(locations).where(and(eq(locations.companyId, company.id), inArray(locations.type, ["receiving", "returns"])));
   const current = zones.find((z) => z.type === zone);
+  const a = await assignees(session);
 
   const pending = current
     ? await db
@@ -44,13 +45,20 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <PageHeader title="Reposición">{current && <Assignee session={session} kind="putaway" id={current.id} value={current.assignedTo} />}</PageHeader>
+      <PageHeader title="Reposición" />
+      {/* Each zone's put-away is one piece of work: its assignee sits in its tab. */}
       <div className="mb-6 flex gap-5 border-b border-line">
-        {(["receiving", "returns"] as const).map((z) => (
-          <Link key={z} href={z === "receiving" ? "/reposicion" : "/reposicion?zona=devoluciones"} aria-current={zone === z ? "page" : undefined} {...(zone !== z ? hotkey("secondary", z === "receiving" ? "Ver desde Recepción" : "Ver desde Devoluciones") : {})} className={`-mb-px border-b-2 px-0.5 py-2 text-sm transition-colors duration-150 ${zone === z ? "border-accent-text font-bold text-accent-text" : "border-transparent font-medium text-muted hover:text-ink"}`}>
-            {z === "receiving" ? "Desde Recepción" : "Desde Devoluciones"}
-          </Link>
-        ))}
+        {(["receiving", "returns"] as const).map((z) => {
+          const place = zones.find((x) => x.type === z);
+          return (
+            <div key={z} className={`-mb-px flex items-center gap-1 border-b-2 ${zone === z ? "border-accent-text" : "border-transparent"}`}>
+              <Link href={z === "receiving" ? "/reposicion" : "/reposicion?zona=devoluciones"} aria-current={zone === z ? "page" : undefined} {...(zone !== z ? hotkey("secondary", z === "receiving" ? "Ver desde Recepción" : "Ver desde Devoluciones") : {})} className={`px-0.5 py-2 text-sm transition-colors duration-150 ${zone === z ? "font-bold text-accent-text" : "font-medium text-muted hover:text-ink"}`}>
+                {z === "receiving" ? "Desde Recepción" : "Desde Devoluciones"}
+              </Link>
+              {place && (zone === z || place.assignedTo != null) && <AssigneeCell a={a} kind="putaway" id={place.id} value={place.assignedTo} open={zone === z} iconOnly />}
+            </div>
+          );
+        })}
       </div>
 
       {pending.length === 0 ? (

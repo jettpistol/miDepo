@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { plain } from "@/lib/text";
 import { Icon } from "./Icon";
 
-export type Option = { value: string; label: string; detail?: string };
+/** `icon` is drawn before the label, in the list and on the trigger (an avatar, for people). */
+export type Option = { value: string; label: string; detail?: string; icon?: ReactNode };
 
 /** Rows drawn above and below the visible part of the list. Every match stays reachable by scrolling. */
 const OVERSCAN = 8;
@@ -28,6 +29,7 @@ export function Select({
   searchPlaceholder = "Buscar…",
   empty = "Nada coincide.",
   create,
+  variant = "field",
   className = "",
 }: {
   name?: string;
@@ -45,12 +47,19 @@ export function Select({
   /** Shown when nothing matches the search. */
   empty?: string;
   create?: { noun: string; action: (name: string) => Promise<Option | { error: string }> };
+  /**
+   * "field": a form field. "inline": just the chosen icon and label, for a table cell (like Jira's assignee).
+   * "icon": only the chosen icon, with the label as its accessible name.
+   */
+  variant?: "field" | "inline" | "icon";
   className?: string;
 }) {
   const [options, setOptions] = useState(initial);
   const [own, setOwn] = useState(defaultValue);
   const value = controlled ?? own;
   const [open, setOpen] = useState(false);
+  // The list is at least 16rem wide; near the right edge it opens leftwards so the page never scrolls sideways.
+  const [toLeft, setToLeft] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -120,8 +129,10 @@ export function Select({
     setConfirming(false);
     setActive(Math.max(0, options.findIndex((o) => o.value === value)));
     setScroll(0);
+    const box = root.current?.getBoundingClientRect();
+    if (box) setToLeft(box.left + Math.max(box.width, 256) > document.documentElement.clientWidth - 8);
     setOpen(true);
-    requestAnimationFrame(() => search.current?.focus());
+    requestAnimationFrame(() => search.current?.focus({ preventScroll: true }));
   }
   function close(refocus = true) {
     setOpen(false);
@@ -148,7 +159,7 @@ export function Select({
   }
 
   return (
-    <div ref={root} className={`relative ${className}`}>
+    <div ref={root} className={`relative ${variant === "field" ? "" : "inline-flex max-w-full"} ${className}`}>
       {name && <input type="hidden" name={name} value={value} />}
       <input ref={proxy} tabIndex={-1} aria-hidden="true" value={chosen?.label ?? ""} onChange={() => {}} onFocus={() => trigger.current?.focus()} className="pointer-events-none absolute inset-0 opacity-0" required={required} />
       <button
@@ -169,14 +180,23 @@ export function Select({
             setQuery(e.key);
           }
         }}
-        className={`field flex items-center justify-between gap-2 text-left ${open ? "border-accent-text" : ""}`}
+        title={variant === "icon" ? (label ? `${label}: ${chosen?.label ?? placeholder}` : chosen?.label) : undefined}
+        className={
+          variant === "field"
+            ? `field flex items-center justify-between gap-2 text-left ${open ? "border-accent-text" : ""}`
+            : variant === "inline"
+              ? `group flex h-11 max-w-full items-center gap-2 rounded-control px-1.5 text-left transition-colors duration-150 hover:bg-sunken lg:h-8 ${open ? "bg-sunken" : ""}`
+              : `grid size-11 place-items-center rounded-full transition-colors duration-150 hover:bg-sunken lg:size-8 ${open ? "bg-sunken" : ""}`
+        }
       >
-        <span className={`min-w-0 truncate ${chosen ? "" : "text-muted"}`}>{chosen?.label ?? placeholder}</span>
-        <Icon name="chevron" className={`size-4 shrink-0 text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+        {variant !== "field" && chosen?.icon}
+        {variant !== "icon" && <span className={`${variant === "inline" ? "whitespace-nowrap" : "min-w-0 truncate"} ${chosen ? "" : "text-muted"}`}>{chosen?.label ?? placeholder}</span>}
+        {variant === "field" && <Icon name="chevron" className={`size-4 shrink-0 text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`} />}
+        {variant === "inline" && <Icon name="chevron" className={`size-3.5 shrink-0 text-muted opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${open ? "rotate-180 opacity-100" : ""}`} />}
       </button>
 
       {open && (
-        <div className="fade-in absolute top-full right-0 left-0 z-40 mt-1 min-w-64 rounded-control border border-line bg-surface shadow-floating">
+        <div className={`fade-in absolute top-full z-40 mt-1 w-full min-w-64 ${toLeft ? "right-0" : "left-0"} rounded-control border border-line bg-surface shadow-floating`}>
           <div className="relative border-b border-line p-1.5">
             <Icon name="stock" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" />
             <input
@@ -233,6 +253,7 @@ export function Select({
                   aria-posinset={i + 1}
                   className={`flex h-11 cursor-pointer items-center gap-2 px-3 text-[15px] lg:h-8 lg:text-sm ${i === active ? "bg-accent-soft" : ""}`}
                 >
+                  {o.icon}
                   <span className={`min-w-0 flex-1 truncate ${o.value === value ? "font-semibold text-accent-text" : ""}`}>{o.label}</span>
                   {o.detail && <span className="shrink-0 truncate text-xs text-muted">{o.detail}</span>}
                   {o.value === value && <Icon name="ok" className="size-4 shrink-0 text-accent-text" />}

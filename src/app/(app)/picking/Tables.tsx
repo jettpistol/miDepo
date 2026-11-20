@@ -7,6 +7,7 @@ import { customers, orderLines, orders, pickTasks, locations, users } from "@/db
 import type { requireSession } from "@/lib/session";
 import { take } from "./actions";
 import { hotkey } from "@/lib/hotkeys";
+import { AssigneeCell, type Assignees } from "@/components/Assignee";
 
 type Db = Awaited<ReturnType<typeof requireSession>>["db"];
 
@@ -93,7 +94,7 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
   );
 }
 
-export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
+export function PendingTable({ rows, a }: { rows: OpenOrders["pending"]; a: Assignees }) {
   return (
     <div className="table-wrap">
       <table className="data-table">
@@ -102,6 +103,7 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
             <th>Pedido</th>
             <th>Cliente</th>
             <th className="hidden md:table-cell">Localidad</th>
+            <th className="hidden sm:table-cell">Asignado</th>
             <th className="hidden text-right sm:table-cell">Artículos</th>
             <th className="hidden text-right sm:table-cell">Unidades</th>
             <th className="hidden md:table-cell">Fecha</th>
@@ -136,6 +138,9 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
                 </span>
               </td>
               <td className="hidden text-muted md:table-cell">{city}</td>
+              <td className="hidden sm:table-cell">
+                <AssigneeCell a={a} kind="order" id={p.id} value={p.assignedTo} />
+              </td>
               <td className="hidden text-right sm:table-cell">{lines}</td>
               <td className="hidden text-right font-semibold sm:table-cell">{units}</td>
               <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(p.date)}</td>
