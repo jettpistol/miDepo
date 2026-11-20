@@ -46,7 +46,7 @@ Un mismo teléfono o computadora admite varias cuentas abiertas, y pasar de una 
 
 ## Desactivar un usuario
 
-Toca **⋯** en su fila y luego **Desactivar**. La persona deja de poder iniciar sesión al instante, aunque tuviera la sesión abierta. Su historial queda: los movimientos que hizo siguen a su nombre. Se puede **reactivar** con **Reactivar**. Lo que tenía tomado o asignado no se libera solo: el aviso de confirmación dice cuánto es, y un supervisor puede soltar sus pedidos o reasignar sus tareas.
+Toca **⋯** en su fila y luego **Desactivar**. La persona deja de poder iniciar sesión al instante, aunque tuviera la sesión abierta. Su historial queda: los movimientos que hizo siguen a su nombre. Se puede **reactivar** con **Reactivar**. Lo que tenía tomado o asignado no se libera solo: el aviso de confirmación dice cuánto es. Un supervisor puede soltar sus pedidos o reasignar sus tareas.
 
 ## Buenas prácticas
 
