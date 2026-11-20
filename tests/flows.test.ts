@@ -15,7 +15,7 @@ import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
 import type { Ctx } from "@/lib/flows/common";
 import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving } from "@/lib/flows/receiving";
 import { move, recentMoves, undoMove } from "@/lib/flows/move";
-import { confirmPick, markShort, planRoute, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
+import { confirmPick, markShort, planRoute, shortages, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
 import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenPacking } from "@/lib/flows/packing";
 import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } from "@/lib/flows/returns";
 import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
@@ -103,6 +103,9 @@ describe("full circuit", () => {
 
     // The order's page shows the route before it is taken; taking builds exactly that route.
     const preview = await planRoute(db, c.companyId, ord.id);
+    // The picking list's shortage count agrees with the route.
+    const previewMissing = preview.filter((t) => t.locationId == null).reduce((n, t) => n + t.quantity, 0);
+    expect((await shortages(db, c.companyId, [ord.id])).get(ord.id) ?? 0).toBe(previewMissing);
     await takeOrder(c, ord.id);
     const built = await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id));
     const key = (t: { lineId: number; locationId: number | null; quantity: number }) => `${t.lineId}:${t.locationId}:${t.quantity}`;
