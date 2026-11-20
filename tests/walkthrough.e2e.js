@@ -8,6 +8,7 @@
  */
 const { chromium, devices } = require('playwright');
 const BASE = 'http://localhost:3000', OUT = process.argv[2] ?? require('node:os').tmpdir();
+const STOP = 'section[aria-label="Parada actual"]';
 const errors = [];
 const step = (m) => console.log('·', m);
 const fail = (m) => { throw new Error(m); };
@@ -20,7 +21,8 @@ async function scan(p, values, quantity) {
   for (const [name, v] of Object.entries(values)) { await p.fill(`#scan-${name}`, v); await p.press(`#scan-${name}`, 'Enter'); }
   await reply;
   // If that was the last item, the form disappears together with its message.
-  await p.waitForFunction(() => !document.querySelector('form button[disabled]'), null, { timeout: 15000 });
+  // Only the scan form's own button: other buttons on the page may be disabled with a reason.
+  await p.waitForFunction((f) => !document.querySelector(`form:has(#scan-${f}) button[disabled]`), Object.keys(values)[0], { timeout: 15000 });
   await p.waitForTimeout(150);
   return ((await p.$('[role=status]')) ? await p.textContent('[role=status]') : '(list empty)').trim().slice(0, 140);
 }
@@ -91,28 +93,39 @@ async function warning(p, field, value) {
 
   // Picking
   await p.goto(BASE + '/picking'); await shot('picking-list');
-  await p.click('button:text-is("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector('text=Próxima parada');
+  await p.click('button:text-is("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector(STOP);
   const orderId = p.url().split('/').pop(); await shot('picking-stop');
   // The browser's back button shows the list as it is now: the order is in progress, not pending.
   const taken = await p.textContent('h1'); await p.goBack(); await p.waitForURL(BASE + '/picking');
   await p.waitForFunction((n) => ![...document.querySelectorAll('main section:last-of-type tbody tr')].some((r) => r.textContent.includes(n)), taken.match(/PED-\d+/)[0], { timeout: 10000 });
-  step('back after Preparar: order no longer pending'); await p.goForward(); await p.waitForSelector('text=Próxima parada');
+  step('back after Preparar: order no longer pending'); await p.goForward(); await p.waitForSelector(STOP);
   const codes = {}; let stops = 0, first = true;
   const stopKey = () => p.evaluate(() => (document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? ''));
-  while (await p.$('text=Próxima parada')) {
+  while (await p.$(STOP)) {
     const shelf = await p.getAttribute('.shelfmark-xl', 'title');
     const title = (await p.textContent('.bg-accent p.text-lg')).trim();
-    const code = (await p.textContent('.bg-accent p.font-mono.text-sm')).trim();
+    const code = await p.getAttribute('[data-scan-code]', 'data-scan-code');
     codes[title] = code;
     if (first) {
       first = false;
       step('  wrong shelf, before the click → ' + await warning(p, 'location', shelf === 'A-01-1' ? 'A-01-2' : 'A-01-1'));
       await p.fill('#scan-location', '');
     }
-    if (stops === 2) { await p.focus('#scan-location'); await p.keyboard.press('F8'); await p.waitForSelector('[role=status]'); step('  shortage → ' + (await p.textContent('[role=status]')).trim()); await p.reload(); stops++; continue; }
+    if (stops === 2 || stops === 3) {
+      await p.focus('#scan-location'); await p.keyboard.press('F8'); await p.waitForSelector('[role=status]'); step('  shortage → ' + (await p.textContent('[role=status]')).trim()); await p.reload();
+      // The first report is undone with "Sí estaba" (back on the route); the second stays, so Bajas below has units in FALTANTES.
+      if (stops === 2) { await p.click('tbody tr:has-text("No estaba") button:has-text("Sí estaba")'); await p.waitForSelector('tbody tr:has-text("No estaba")', { state: 'detached' }); step('  undo shortage → back on the route'); }
+      stops++; continue;
+    }
     const before = await stopKey(); const msg = await scan(p, { location: shelf, product: code }); stops++;
     await p.waitForFunction((b) => ((document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? '')) !== b, before, { timeout: 15000 });
-    if (stops === 1) step('  pick ok → ' + msg);
+    if (stops === 1) {
+      step('  pick ok → ' + msg);
+      // Undo that pick: the stop is pending again, then it is picked once more.
+      await p.click('tbody tr:has-text("Tomado") button:has-text("Devolver")'); await p.waitForSelector('tbody tr:has-text("Tomado")', { state: 'detached' }); step('  undo pick → stop pending again');
+      await p.goto(`${BASE}/picking/${orderId}`); await scan(p, { location: shelf, product: code });
+      await p.waitForSelector('tbody tr:has-text("Tomado")');
+    }
   }
   step(`picking finished in ${stops} stops`); await shot('picking-done');
 
@@ -218,7 +231,7 @@ async function warning(p, field, value) {
   step('supervisor cannot open users: ' + ((await p.goto(BASE + '/usuarios'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
 
   // Light/dark from the top bar, saved at once
-  await p.goto(BASE + '/'); await p.click('summary[aria-label^="Tema:"] >> visible=true'); const saved = p.waitForResponse((r) => r.request().method() === 'POST');
+  await p.goto(BASE + '/'); await p.waitForLoadState('networkidle'); await p.click('summary[aria-label^="Tema:"] >> visible=true'); const saved = p.waitForResponse((r) => r.request().method() === 'POST');
   await p.click('details[open] button:has-text("Oscuro")'); await saved; await p.reload(); await shot('home-dark-switch');
   step('theme after reload: ' + ((await p.getAttribute('html', 'data-theme')) === 'dark' ? 'dark' : fail('not saved')));
   await p.click('summary[aria-label^="Tema:"] >> visible=true'); const back = p.waitForResponse((r) => r.request().method() === 'POST'); await p.click('details[open] button:has-text("Claro")'); await back;
@@ -242,13 +255,14 @@ async function warning(p, field, value) {
   await ctx.close();
 
   // Phone, with a PIN (another user: keeps Klein blue)
-  const phone = await browser.newContext({ ...devices['Pixel 7'] }); const m = await phone.newPage();
+  const phone = await browser.newContext({ ...devices['Pixel 7'] }); const m = await phone.newPage(); m.on('dialog', (d) => d.accept());
   m.on('pageerror', (e) => errors.push('phone pageerror: ' + e.message)); m.on('response', (r) => r.status() >= 500 && errors.push(`phone HTTP ${r.status()} ${r.url()}`));
   await m.goto(BASE + '/'); await m.screenshot({ path: `${OUT}/m-login.png`, caret: 'initial' });
   await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Iniciar sesión")'); await m.waitForURL(BASE + '/');
   await m.screenshot({ path: `${OUT}/m-home.png`, caret: 'initial' });
   step('phone accent: ' + await m.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
-  await m.goto(BASE + '/picking'); await m.click('button:text-is("Preparar")'); await m.waitForSelector('text=Próxima parada'); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
+  await m.goto(BASE + '/picking'); await m.click('button:text-is("Preparar")'); await m.waitForSelector(STOP); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
+  await m.click('button:has-text("Soltar pedido")'); await m.waitForURL(/\/picking\?soltado=/); step('drop order → ' + (await m.textContent('main')).match(/Pedido \S+ soltado[^.]*/)?.[0]);
   await m.goto(BASE + '/mas'); await m.screenshot({ path: `${OUT}/m-more.png`, caret: 'initial' });
   step('operator does not see Fierro: ' + (!(await m.textContent('main')).includes('Fierro') ? 'ok' : fail('Fierro visible')));
   await m.goto(BASE + '/fierro'); step('operator /fierro → ' + m.url());
@@ -281,14 +295,16 @@ async function warning(p, field, value) {
   await o.goto(BASE + '/cuenta#lotes'); await o.click('#lotes button[aria-haspopup=listbox]'); await o.keyboard.type('bandeja'); await o.keyboard.press('Enter');
   await o.click('#lotes button:has-text("Guardar")'); await o.waitForSelector('#lotes [role=status]'); step('batch sorting → ' + (await o.textContent('#lotes [role=status]')).trim());
   await o.goto(BASE + '/picking'); await o.waitForLoadState('networkidle'); await o.screenshot({ path: `${OUT}/picking-take-all.png`, caret: 'initial' });
-  o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Preparar todos")'); await o.waitForURL(/\/picking\/lote\/\d+/); await o.waitForSelector('text=Próxima parada');
+  o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Preparar todos")'); await o.waitForURL(/\/picking\/lote\/\d+/); await o.waitForSelector(STOP);
   await o.screenshot({ path: `${OUT}/batch.png`, fullPage: true, caret: 'initial' });
   step('batch: ' + (await o.textContent('h1')).trim() + ' · ' + (await o.textContent('main header p')).trim());
-  const bShelf = await o.getAttribute('.shelfmark-xl', 'title'); const bCode = (await o.textContent('.bg-accent p.font-mono.text-sm')).trim();
+  const bShelf = await o.getAttribute('.shelfmark-xl', 'title'); const bCode = await o.getAttribute('[data-scan-code]', 'data-scan-code');
   step('  wrong shelf, before the click → ' + await warning(o, 'location', bShelf === 'A-01-1' ? 'A-01-2' : 'A-01-1')); await o.fill('#scan-location', '');
   step('  batch pick → ' + await scan(o, { location: bShelf, product: bCode }));
+  await o.waitForSelector('main tbody button:text-is("Devolver")'); o.once('dialog', (d) => d.accept()); await o.click('main tbody button:text-is("Devolver")');
+  await o.waitForSelector('main tbody button:text-is("Devolver")', { state: 'detached' }); step('  batch undo: the stop is pending again');
   await o.goto(BASE + '/picking'); step('batch listed in Picking: ' + ((await o.$('main a[href^="/picking/lote/"]')) ? 'ok' : fail('missing')));
-  await o.setViewportSize({ width: 390, height: 844 }); await o.click('main a[href^="/picking/lote/"]'); await o.waitForSelector('text=Próxima parada');
+  await o.setViewportSize({ width: 390, height: 844 }); await o.click('main a[href^="/picking/lote/"]'); await o.waitForSelector(STOP);
   await o.screenshot({ path: `${OUT}/m-batch.png`, fullPage: true, caret: 'initial' });
   step('phone batch scrolls sideways: ' + ((await o.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
   await o.setViewportSize({ width: 1440, height: 900 });

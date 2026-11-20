@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
-import { companies, orderLines, orders, pickBatches, stock, pickTasks, locations } from "@/db/schema";
+import { boxes, companies, orderLines, orders, pickBatches, stock, pickTasks, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
@@ -135,21 +135,22 @@ export async function markShort(c: Ctx, taskId: number) {
   const { task, order } = await taskOf(c, taskId);
   const missing = task.quantity - task.picked;
   return c.db.transaction(async (tx) => {
-    await tx.update(pickTasks).set({ status: "short" }).where(eq(pickTasks.id, task.id));
+    let gone = 0;
     if (task.locationId != null) {
       const [onShelf] = await tx.select({ n: stock.quantity }).from(stock).where(and(eq(stock.productId, task.productId), eq(stock.locationId, task.locationId)));
-      const gone = Math.min(onShelf?.n ?? 0, missing);
+      gone = Math.min(onShelf?.n ?? 0, missing);
       if (gone > 0) {
         const missingZone = await zone(tx, c.companyId, "missing");
         await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: task.locationId, toId: missingZone.id, quantity: gone, reason: "missing", reference: order.number, userId: c.userId });
       }
     }
+    await tx.update(pickTasks).set({ status: "short", sentToMissing: gone }).where(eq(pickTasks.id, task.id));
     // The operator is not sent back to a place where they already reported this title was missing.
     const alreadyFailed = await tx.select({ u: pickTasks.locationId }).from(pickTasks).where(and(eq(pickTasks.lineId, task.lineId), eq(pickTasks.status, "short")));
     const freeOnes = await available(tx, c.companyId, [task.productId], new Set(alreadyFailed.map((f) => f.u)));
     const { stops, missing: uncovered } = distribute(freeOnes.get(task.productId) ?? [], missing);
     if (stops.length > 0) {
-      await tx.insert(pickTasks).values(stops.map((s) => ({ orderId: order.id, lineId: task.lineId, productId: task.productId, locationId: s.locationId, quantity: s.quantity })));
+      await tx.insert(pickTasks).values(stops.map((s) => ({ orderId: order.id, lineId: task.lineId, productId: task.productId, locationId: s.locationId, quantity: s.quantity, replacesTaskId: task.id })));
     }
     await checkEnd(tx, order.id);
     if (stops.length > 0 && uncovered === 0) return "Registrado. Otra ubicación agregada al recorrido.";
@@ -158,6 +159,99 @@ export async function markShort(c: Ctx, taskId: number) {
   });
 }
 
+
+// ───────────── Going back ─────────────
+
+/** Picking can be changed until packing starts: after that, units are in boxes. */
+function stillPicking(order: typeof orders.$inferSelect) {
+  if (order.status !== "in_picking" && order.status !== "picked") throw new UserError("PICK-08", `El pedido ${order.number} ya pasó por empaque. Su picking ya no se puede cambiar.`);
+}
+
+/**
+ * Drops an order: whatever was picked goes back to the location it came from, the route is
+ * deleted and the order returns to Pendientes for anyone to take. Reports of units not found
+ * stay in FALTANTES (they are a fact about the shelf, not about the order); each can be undone
+ * first with undoShort. Only whoever took it, or a supervisor, can drop it.
+ */
+export async function releaseOrder(c: Ctx, orderId: number, { anyone = false } = {}) {
+  const order = await orderOf(c, orderId);
+  if (order.status === "pending") throw new UserError("PICK-09", `Nadie está preparando el pedido ${order.number}.`);
+  stillPicking(order);
+  if (order.takenBy !== c.userId && !anyone) {
+    const [who] = order.takenBy ? await c.db.select({ name: users.name }).from(users).where(eq(users.id, order.takenBy)) : [];
+    throw new UserError("PICK-10", `Este pedido lo está preparando ${who?.name ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.`);
+  }
+  const [box] = await c.db.select({ id: boxes.id }).from(boxes).where(eq(boxes.orderId, orderId)).limit(1);
+  if (box) throw new UserError("PICK-11", "Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo.");
+  return c.db.transaction(async (tx) => {
+    const released = await tx.update(orders).set({ status: "pending", takenBy: null, batchId: null, tray: null }).where(and(eq(orders.id, orderId), eq(orders.status, order.status))).returning({ id: orders.id });
+    if (released.length === 0) throw new UserError("PICK-12", "El pedido cambió mientras tanto. Recarga la página.");
+    const tasks = await tx.select().from(pickTasks).where(eq(pickTasks.orderId, orderId));
+    const prep = await zone(tx, c.companyId, "staging");
+    let back = 0;
+    for (const t of tasks) {
+      if (t.picked > 0 && t.locationId != null) {
+        await moveStock(tx, { companyId: c.companyId, productId: t.productId, fromId: prep.id, toId: t.locationId, quantity: t.picked, reason: "undo", reference: order.number, userId: c.userId });
+        back += t.picked;
+      }
+    }
+    const inMissing = tasks.reduce((s, t) => s + t.sentToMissing, 0);
+    await tx.delete(pickTasks).where(eq(pickTasks.orderId, orderId));
+    await tx.update(orderLines).set({ picked: 0 }).where(eq(orderLines.orderId, orderId));
+    const parts = [`Pedido ${order.number} soltado: vuelve a Pendientes.`];
+    if (back > 0) parts.push(`Devuelve ${back === 1 ? "la unidad tomada" : `las ${back} unidades tomadas`} a su ubicación.`);
+    if (inMissing > 0) parts.push(`${inMissing === 1 ? "La unidad no encontrada sigue" : `Las ${inMissing} unidades no encontradas siguen`} en Faltantes.`);
+    return parts.join(" ");
+  });
+}
+
+async function anyTaskOf(c: Ctx, taskId: number) {
+  const [t] = await c.db.select({ task: pickTasks, order: orders }).from(pickTasks).innerJoin(orders, eq(orders.id, pickTasks.orderId)).where(and(eq(pickTasks.id, taskId), eq(orders.companyId, c.companyId)));
+  if (!t) throw new UserError("PICK-03", "No se encontró esa parada del recorrido.");
+  stillPicking(t.order);
+  return t;
+}
+
+/** Undoes a stop's pick: its units go from Preparación back to the location, and the stop is pending again. */
+export async function unpick(c: Ctx, taskId: number) {
+  const { task, order } = await anyTaskOf(c, taskId);
+  if (task.picked === 0 || task.locationId == null) throw new UserError("PICK-13", "En esta parada todavía no se tomó nada.");
+  if (task.status === "short") throw new UserError("PICK-18", "Primero deshaz el aviso de que no estaba en la ubicación.");
+  return c.db.transaction(async (tx) => {
+    const [line] = await tx.select().from(orderLines).where(eq(orderLines.id, task.lineId));
+    if (line.picked - task.picked < line.packed) throw new UserError("PICK-14", "Parte de esto ya está en una caja. Sácalo de la caja en empaque primero.");
+    const prep = await zone(tx, c.companyId, "staging");
+    const [loc] = await tx.select({ code: locations.code }).from(locations).where(eq(locations.id, task.locationId!));
+    await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: prep.id, toId: task.locationId, quantity: task.picked, reason: "undo", reference: order.number, userId: c.userId });
+    await tx.update(pickTasks).set({ picked: 0, status: "pending" }).where(eq(pickTasks.id, task.id));
+    await tx.update(orderLines).set({ picked: line.picked - task.picked }).where(eq(orderLines.id, line.id));
+    await tx.update(orders).set({ status: "in_picking" }).where(and(eq(orders.id, order.id), eq(orders.status, "picked")));
+    return `Deshecho: ${task.picked} ${task.picked === 1 ? "unidad vuelve" : "unidades vuelven"} a ${loc?.code ?? "su ubicación"}. La parada queda pendiente.`;
+  });
+}
+
+/**
+ * Undoes "No está aquí": the units sent to FALTANTES go back to the shelf, the stops
+ * miDepo added elsewhere are removed, and the stop is pending again.
+ */
+export async function undoShort(c: Ctx, taskId: number) {
+  const { task, order } = await anyTaskOf(c, taskId);
+  if (task.status !== "short" || task.locationId == null) throw new UserError("PICK-15", "Esa parada no está marcada como no encontrada.");
+  return c.db.transaction(async (tx) => {
+    const replacements = await tx.select().from(pickTasks).where(eq(pickTasks.replacesTaskId, task.id));
+    if (replacements.some((r) => r.picked > 0 || r.status !== "pending")) throw new UserError("PICK-16", "Las paradas que la reemplazaron ya avanzaron. Deshaz esas primero.");
+    if (task.sentToMissing > 0) {
+      const missingZone = await zone(tx, c.companyId, "missing");
+      const [held] = await tx.select({ n: stock.quantity }).from(stock).where(and(eq(stock.productId, task.productId), eq(stock.locationId, missingZone.id)));
+      if ((held?.n ?? 0) < task.sentToMissing) throw new UserError("PICK-17", "Esas unidades ya no están en Faltantes: se encontraron o se dieron de baja.");
+      await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: missingZone.id, toId: task.locationId, quantity: task.sentToMissing, reason: "undo", reference: order.number, userId: c.userId });
+    }
+    if (replacements.length > 0) await tx.delete(pickTasks).where(inArray(pickTasks.id, replacements.map((r) => r.id)));
+    await tx.update(pickTasks).set({ status: "pending", sentToMissing: 0 }).where(eq(pickTasks.id, task.id));
+    await tx.update(orders).set({ status: "in_picking" }).where(and(eq(orders.id, order.id), eq(orders.status, "picked")));
+    return "Deshecho: la parada vuelve al recorrido.";
+  });
+}
 
 // ───────────── Batches: several orders in one walk ─────────────
 
@@ -178,7 +272,7 @@ export async function takeAll(c: Ctx) {
       .set({ status: "in_picking", takenBy: c.userId, batchId: batch.id })
       .where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending")))
       .returning({ id: orders.id, date: orders.date });
-    if (taken.length === 0) throw new UserError("PICK-08", "No hay pedidos pendientes para preparar.");
+    if (taken.length === 0) throw new UserError("PICK-19", "No hay pedidos pendientes para preparar.");
     taken.sort((a, b) => a.date.getTime() - b.date.getTime() || a.id - b.id);
     // Oldest first: when stock is short, the oldest orders get it.
     for (const [i, o] of taken.entries()) {
@@ -192,7 +286,7 @@ export async function takeAll(c: Ctx) {
 
 async function batchOf(c: Ctx, batchId: number) {
   const [b] = await c.db.select().from(pickBatches).where(and(eq(pickBatches.id, batchId), eq(pickBatches.companyId, c.companyId)));
-  if (!b) throw new UserError("PICK-09", "No se encontró ese lote.");
+  if (!b) throw new UserError("PICK-20", "No se encontró ese lote.");
   return b;
 }
 
@@ -280,7 +374,64 @@ export async function markBatchShort(c: Ctx, d: { batchId: number; locationId: n
   await checkBatchEnd(c.db, batch.id);
   // What markShort found on other shelves is what was added to the route for this title.
   const found = Math.min(missing, (await stillToPick()) - before);
-  if (found === missing) return "Registrado. El artículo está en otra ubicación y se sumó al recorrido.";
-  if (found > 0) return `Registrado. Hay una parte en otra ubicación; ${missing - found} quedan como faltante.`;
-  return `Registrado: ${missing} quedan como faltante. Conviene contar esa ubicación.`;
+  if (found === missing) return "Registrado. Otra ubicación agregada al recorrido.";
+  if (found > 0) return `Registrado. Otra ubicación agregada al recorrido; ${missing - found} a Faltantes.`;
+  return `Registrado. ${missing} a Faltantes.`;
+}
+
+/** Every task of one stop of a batch, whatever its state. */
+async function allStopTasks(tx: Executor, batchId: number, locationId: number, productId: number) {
+  return tx
+    .select({ task: pickTasks, order: orders })
+    .from(pickTasks)
+    .innerJoin(orders, eq(orders.id, pickTasks.orderId))
+    .where(and(eq(orders.batchId, batchId), eq(pickTasks.locationId, locationId), eq(pickTasks.productId, productId)));
+}
+
+const reopenBatch = (tx: Executor, batchId: number) => tx.update(pickBatches).set({ status: "open" }).where(eq(pickBatches.id, batchId));
+
+/** Undoes what was picked at a stop of a batch: the units go back to the shelf, for every order. */
+export async function unpickBatchStop(c: Ctx, d: { batchId: number; locationId: number; productId: number }) {
+  const batch = await batchOf(c, d.batchId);
+  const picked = (await allStopTasks(c.db, batch.id, d.locationId, d.productId)).filter((t) => t.task.picked > 0 && t.task.status !== "short");
+  if (picked.length === 0) throw new UserError("PICK-13", "En esta parada todavía no se tomó nada.");
+  let units = 0;
+  for (const { task } of picked) {
+    await unpick(c, task.id);
+    units += task.picked;
+  }
+  await reopenBatch(c.db, batch.id);
+  const [loc] = await c.db.select({ code: locations.code }).from(locations).where(eq(locations.id, d.locationId));
+  return `Deshecho: ${units} ${units === 1 ? "unidad vuelve" : "unidades vuelven"} a ${loc?.code ?? "su ubicación"}. La parada queda pendiente.`;
+}
+
+/** Undoes "No está aquí" at a stop of a batch, for every order that had it. */
+export async function undoBatchShort(c: Ctx, d: { batchId: number; locationId: number; productId: number }) {
+  const batch = await batchOf(c, d.batchId);
+  const shorts = (await allStopTasks(c.db, batch.id, d.locationId, d.productId)).filter((t) => t.task.status === "short");
+  if (shorts.length === 0) throw new UserError("PICK-15", "Esa parada no está marcada como no encontrada.");
+  for (const { task } of shorts) await undoShort(c, task.id);
+  await reopenBatch(c.db, batch.id);
+  return "Deshecho: la parada vuelve al recorrido.";
+}
+
+/**
+ * Drops a whole batch: each of its orders is released as with "Soltar pedido" (picked units back
+ * to their shelves, the order back to Pendientes). Only whoever took it, or a supervisor.
+ */
+export async function releaseBatch(c: Ctx, batchId: number, { anyone = false } = {}) {
+  const batch = await batchOf(c, batchId);
+  if (batch.takenBy !== c.userId && !anyone) {
+    const [who] = await c.db.select({ name: users.name }).from(users).where(eq(users.id, batch.takenBy));
+    throw new UserError("PICK-21", `Este lote lo está preparando ${who?.name ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.`);
+  }
+  const open = await c.db.select().from(orders).where(and(eq(orders.batchId, batch.id), inArray(orders.status, ["in_picking", "picked"])));
+  const [box] = open.length > 0 ? await c.db.select({ id: boxes.id }).from(boxes).where(inArray(boxes.orderId, open.map((o) => o.id))).limit(1) : [];
+  if (box) throw new UserError("PICK-11", "Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo.");
+  const units = (await c.db.select({ n: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number) }).from(orderLines).innerJoin(orders, eq(orders.id, orderLines.orderId)).where(eq(orders.batchId, batch.id)))[0].n;
+  for (const o of open) await releaseOrder(c, o.id, { anyone: true });
+  await c.db.update(pickBatches).set({ status: "done" }).where(eq(pickBatches.id, batch.id));
+  const parts = [`Lote ${batchNumber(batch.number)} soltado: ${open.length === 1 ? "1 pedido vuelve" : `${open.length} pedidos vuelven`} a Pendientes.`];
+  if (units > 0) parts.push(`Devuelve ${units === 1 ? "la unidad tomada" : `las ${units} unidades tomadas`} a su ubicación.`);
+  return parts.join(" ");
 }

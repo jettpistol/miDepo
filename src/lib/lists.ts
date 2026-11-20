@@ -90,7 +90,7 @@ export const orderScreen = (status: OrderStatus) => (status === "pending" || sta
 
 export const MOVEMENT_REASONS = ["initial", "receiving", "putaway", "movement", "picking", "shipment", "return", "count_adjustment", "count_relocation", "missing", "found", "write_off"] as const satisfies readonly MovementReason[];
 /** What each movement reason is called on screen. */
-export const MOVEMENT_REASON_NAME = { initial: "Carga inicial", receiving: "Recepción", putaway: "Reposición", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
+export const MOVEMENT_REASON_NAME = { initial: "Carga inicial", receiving: "Recepción", putaway: "Reposición", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja", undo: "Deshecho" } as const satisfies Record<MovementReason, string>;
 export const isMovementReason = (v: string): v is MovementReason => (MOVEMENT_REASONS as readonly string[]).includes(v);
 
 /**

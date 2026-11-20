@@ -212,7 +212,9 @@ export type MovementReason =
   /** Units turned up: FALTANTES → shelf, or enter from outside when a count finds more. */
   | "found"
   /** Units leave the warehouse with no customer: damaged, lost, stolen… Always has an adjustment. */
-  | "write_off";
+  | "write_off"
+  /** Puts back an earlier movement: an undone pick, move, write-off, or a reopened receiving or return. */
+  | "undo";
 
 export const movements = pgTable(
   "movements",
@@ -304,6 +306,10 @@ export const pickTasks = pgTable(
     quantity: integer("quantity").notNull(),
     picked: integer("picked").notNull().default(0),
     status: text("status").$type<"pending" | "done" | "short">().notNull().default("pending"),
+    /** Units this stop sent to FALTANTES when the picker reported them missing; put back if that report is undone. */
+    sentToMissing: integer("sent_to_missing").notNull().default(0),
+    /** The stop whose shortage report created this one (miDepo found the title elsewhere). */
+    replacesTaskId: integer("replaces_task_id"),
   },
   (t) => [index("pick_tasks_order_id_idx").on(t.orderId)],
 );

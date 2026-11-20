@@ -12,6 +12,10 @@ Usa **Mover** cada vez que cambies artículos de una ubicación a otra: para reo
 
 El mensaje verde resume el movimiento: `12 × Artículo: A-03-2 → B-01-4`.
 
+## Deshacer un movimiento
+
+Debajo del formulario están **Tus últimos movimientos**. **Deshacer** devuelve las unidades del destino al origen, una sola vez. Si alguien ya movió esas unidades del destino, muévelas a mano. Lo mismo aparece en [Reposición](Reposicion).
+
 ## Para tener en cuenta
 
 - Se mueve **un artículo por vez**. Para vaciar una ubicación, repite por cada artículo.

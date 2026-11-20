@@ -16,6 +16,8 @@ Solo los supervisores y administradores pueden crear proveedores. Los que envía
 
 miDepo no deja crear un nombre casi igual a uno que ya existe (otras mayúsculas, acentos o una letra de diferencia) y muestra cuál es. También se puede crear desde **Recepción → Nueva**, de la misma forma.
 
+Si lo creaste por error, abre su ficha y toca **Borrar proveedor**. Solo se puede mientras no tenga recepciones, y solo con los creados en miDepo (los de Fierro se borran allí).
+
 ## Clientes
 
 **Clientes** lista a todos los clientes que llegaron de Fierro, con su localidad y cuántos pedidos y devoluciones tiene. Busca por nombre, localidad o provincia.

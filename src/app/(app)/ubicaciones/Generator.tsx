@@ -129,7 +129,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
         )}
       </div>
 
-      <ActionForm action={action} button="Crear estas ubicaciones" resetOnOk={false}>
+      <ActionForm action={action} button="Crear estas ubicaciones" resetOnOk={false} confirm={`¿Crear hasta ${total} ubicaciones? Las que ya existen no se tocan. Una ubicación creada no se borra; se puede desactivar desde su página.`}>
         <input type="hidden" name="scheme" value={JSON.stringify(scheme)} />
       </ActionForm>
     </div>

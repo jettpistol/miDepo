@@ -2,11 +2,12 @@ import { ScanForm } from "@/components/ScanForm";
 import { PageHeader } from "@/components/ui";
 import { requireSession } from "@/lib/session";
 import { moveAction } from "./actions";
+import { RecentMoves } from "./RecentMoves";
 
 export const metadata = { title: "Mover" };
 
 export default async function Move() {
-  await requireSession();
+  const { db, company, user } = await requireSession();
   return (
     <>
       <PageHeader title="Mover" />
@@ -23,6 +24,7 @@ export default async function Move() {
           button="Mover"
         />
       </div>
+      <RecentMoves db={db} companyId={company.id} userId={user.id} />
     </>
   );
 }

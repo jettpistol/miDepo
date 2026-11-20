@@ -61,6 +61,10 @@ Al aprobar, artículo por artículo:
 - **Faltan:** lo que sigue faltando se da de baja con el motivo elegido.
 - Las ubicaciones **sin contar** no se tocan.
 
+La aprobación **no se puede deshacer**: si algo quedó mal, se corrige con otro conteo de esas ubicaciones. Pedir un recuento tampoco: borra lo contado en esa ubicación.
+
+Mientras el conteo esté abierto, un supervisor puede tocar **Cancelar conteo** arriba: se borra todo lo contado y el stock no cambia.
+
 El conteo aparece en **Fierro** para cargarlo, en el mismo formato que usa Fierro para importar tomas de inventario. Las bajas y lo que apareció quedan en el historial de [Bajas y faltantes](Bajas-y-faltantes).
 
 > Mientras se cuenta una ubicación, conviene no hacer picking ni reposición en ella. Si ocurre, la diferencia aparecerá en la revisión.

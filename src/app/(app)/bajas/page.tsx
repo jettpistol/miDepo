@@ -1,9 +1,9 @@
-import { ActionForm } from "@/components/ScanForm";
+import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Select } from "@/components/Select";
 import { Code, EmptyRow, PageHeader, ShelfMark, shortDate } from "@/components/ui";
 import { adjustmentHistory, causeName, heldStock, LOSS_CAUSES, misplacedSince, WRITE_OFF_ZONES } from "@/lib/flows/adjustments";
 import { requireSession } from "@/lib/session";
-import { writeOffAction } from "./actions";
+import { undoWriteOffAction, writeOffAction } from "./actions";
 import { articleName } from "@/lib/article";
 import { InfoHint } from "@/components/Hint";
 
@@ -21,7 +21,7 @@ function WriteOffForm({ h }: { h: Held }) {
       button="Dar de baja"
       buttonClassName="btn-sm"
       className="flex flex-wrap items-center gap-2 md:justify-end [&>p[role=status]]:basis-full"
-      confirm="¿Dar de baja estas unidades? Salen del stock y quedan para cargar en Fierro."
+      confirm="¿Dar de baja estas unidades? Salen del stock y quedan para cargar en Fierro. Se puede deshacer en el historial hasta que se cargue."
     >
       <input type="hidden" name="locationId" value={h.locationId} />
       <input type="hidden" name="productId" value={h.productId} />
@@ -137,11 +137,12 @@ export default async function WriteOffs() {
                 <th className="text-right">Cantidad</th>
                 <th className="hidden sm:table-cell">Motivo</th>
                 <th className="hidden lg:table-cell">Aprobado por</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {history.length === 0 && <EmptyRow columns={6} title="Sin bajas ni ajustes." />}
-              {history.map((h) => (
+              {history.length === 0 && <EmptyRow columns={7} title="Sin bajas ni ajustes." />}
+              {history.map((h, i) => (
                 <tr key={h.id}>
                   <td className="whitespace-nowrap">
                     <span className="doc-number">{h.number}</span>
@@ -160,6 +161,13 @@ export default async function WriteOffs() {
                   </td>
                   <td className="hidden sm:table-cell">{causeName(h.cause)}</td>
                   <td className="hidden text-muted lg:table-cell">{h.approvedBy}</td>
+                  <td className="w-px text-right whitespace-nowrap">
+                    {h.countId == null && !h.sent && history[i - 1]?.adjustmentId !== h.adjustmentId && (
+                      <ActionButton action={undoWriteOffAction} hiddenFields={{ id: h.adjustmentId }} className="btn-sm" showOk={false} confirm={`¿Deshacer ${h.number}? Las unidades vuelven a ${h.location} y la baja ya no se carga en Fierro.`}>
+                        Deshacer
+                      </ActionButton>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

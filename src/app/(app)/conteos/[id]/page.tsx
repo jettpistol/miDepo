@@ -8,7 +8,7 @@ import { countLocations, counts, locations, users } from "@/db/schema";
 import { awaitingRecount, differences, needsRecount, planCount } from "@/lib/flows/counts";
 import { LOSS_CAUSES } from "@/lib/flows/adjustments";
 import { can, requireSession } from "@/lib/session";
-import { approve, recount, reopen } from "../actions";
+import { approve, cancel, recount, reopen } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
@@ -50,6 +50,11 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
     <>
       <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."}>
         <Assignee session={session} kind="count" id={k.id} value={k.assignedTo} open={isOpen} />
+        {isOpen && can(user.role, "supervisor") && (
+          <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar el conteo "${k.name}"? Se borra lo contado; el stock no cambia. No se puede deshacer.`}>
+            Cancelar conteo
+          </ActionButton>
+        )}
       </PageHeader>
       <div className="mb-8 lg:mb-6 max-w-xl">
         <Progress done={countedCount} total={us.length} unit="ubicaciones" />
@@ -92,7 +97,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
                       <td className={`text-right font-semibold ${d.countedQty < d.system ? "text-danger" : "text-ok"}`}>{d.countedQty > d.system ? "+" : ""}{d.countedQty - d.system}</td>
                       <td className="w-px text-right whitespace-nowrap">
                         {recountButtonOn.has(`${d.locationId}-${d.productId}`) ? (
-                          <ActionButton action={recount} hiddenFields={{ id, locationId: d.locationId }} className="btn-sm" showOk={false}>
+                          <ActionButton action={recount} hiddenFields={{ id, locationId: d.locationId }} className="btn-sm" showOk={false} confirm={`¿Pedir el recuento de ${d.location}? Se borra lo contado ahí y otra persona la cuenta de nuevo. No se puede deshacer.`}>
                             Pedir recuento
                           </ActionButton>
                         ) : waiting.has(d.locationId) && needsRecount(d.system, d.countedQty) ? (
@@ -115,7 +120,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             resetOnOk={false}
             hotkey="finish"
             reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes, por otra persona.` : undefined}
-            confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}
+            confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} No se puede deshacer: un error se corrige con otro conteo. ¿Cerrar el conteo?`}
           >
             <input type="hidden" name="id" value={id} />
             {plan.losses.length > 0 ? (

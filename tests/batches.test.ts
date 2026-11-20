@@ -86,7 +86,7 @@ describe("picking batches", () => {
 
     // B: 3 asked at A-01-2 but none is there; nowhere else has it, so it stays as a shortage.
     await moveStock(db, { companyId: c.companyId, productId: B.id, fromId: loc["A-01-2"], toId: null, quantity: 3, reason: "initial" });
-    expect(await markBatchShort(c, { batchId: r.id, locationId: loc["A-01-2"], productId: B.id })).toMatch(/3 quedan como faltante/);
+    expect(await markBatchShort(c, { batchId: r.id, locationId: loc["A-01-2"], productId: B.id })).toMatch(/3 a Faltantes/);
     expect((await db.select().from(orders).where(eq(orders.id, o3.id)))[0].status).toBe("picked");
     expect((await db.select().from(pickBatches).where(eq(pickBatches.id, r.id)))[0].status).toBe("done");
     expect(await stopsOf(r.id)).toHaveLength(0);
