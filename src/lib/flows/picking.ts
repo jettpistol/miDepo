@@ -55,6 +55,22 @@ function distribute(places: { locationId: number; free: number }[], quantity: nu
   return { stops, missing };
 }
 
+/**
+ * The stops taking the order would create, from the stock free right now. Taking uses it,
+ * and the order's page shows it before anyone takes the order (nothing is reserved until then).
+ */
+export async function planRoute(tx: Executor, companyId: number, orderId: number) {
+  const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
+  const freeOnes = await available(tx, companyId, lines.map((l) => l.productId));
+  const tasks: (typeof pickTasks.$inferInsert & { locationId: number | null; quantity: number })[] = [];
+  for (const l of lines) {
+    const { stops, missing } = distribute(freeOnes.get(l.productId) ?? [], l.quantity);
+    for (const s of stops) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: s.locationId, quantity: s.quantity });
+    if (missing > 0) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: null, quantity: missing, status: "short" });
+  }
+  return tasks;
+}
+
 /** The operator takes a pending order: the route through the shelves is built. */
 export async function takeOrder(c: Ctx, orderId: number) {
   const p = await orderOf(c, orderId);
@@ -66,15 +82,7 @@ export async function takeOrder(c: Ctx, orderId: number) {
       if (p.status === "in_picking" && p.takenBy === c.userId) return `Pedido ${p.number} tomado.`;
       throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
     }
-    const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
-    const freeOnes = await available(tx, c.companyId, lines.map((l) => l.productId));
-    const tasks: (typeof pickTasks.$inferInsert)[] = [];
-    for (const l of lines) {
-      const { stops, missing } = distribute(freeOnes.get(l.productId) ?? [], l.quantity);
-      for (const s of stops) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: s.locationId, quantity: s.quantity });
-      if (missing > 0) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: null, quantity: missing, status: "short" });
-    }
-    await tx.insert(pickTasks).values(tasks);
+    await tx.insert(pickTasks).values(await planRoute(tx, c.companyId, orderId));
     await checkEnd(tx, orderId);
     return `Pedido ${p.number} tomado.`;
   });
