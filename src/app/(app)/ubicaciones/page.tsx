@@ -35,7 +35,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         </Link>
       </PageHeader>
 
-      <form className="mb-4 flex max-w-md gap-2">
+      <form className="field-group mb-4 max-w-md">
         <input name="prefijo" defaultValue={prefix} className="field font-mono" placeholder="Ver las que empiezan con… (A-01)" aria-label="Filtrar por comienzo del código" autoCapitalize="characters" />
         <button className="btn-soft">Filtrar</button>
       </form>
