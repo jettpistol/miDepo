@@ -20,7 +20,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `PKEY` | Passkeys: fingerprint, face or hardware key |
 | `ACCT` | Ajustes (`/cuenta`), and the theme switch in the top bar |
 | `USER` | Usuarios (`/usuarios`), admin only |
-| `SET` | Company settings in Ajustes (`/cuenta#control`), admin only |
+| `SET` | Organización (`/organizacion`): the company's settings, for supervisors and admins |
 | `LOC` | Ubicaciones (`/ubicaciones`) |
 | `STK` | Stock, moves and scanning a book or a location (any scan screen) |
 | `RCV` | Recepción and suppliers |
@@ -90,7 +90,6 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `ACCT-08` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The uploaded photo did not arrive as a JPEG data URL. |
 | `ACCT-09` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The photo is not a JPEG, or is under 100 bytes or over 200 KB after the browser shrank it. |
 | `ACCT-10` | Ese archivo no es una imagen que pueda usar. Prueba con una foto JPG o PNG. | `src/app/(app)/cuenta/Photo.tsx` · `choose` | The browser could not open or crop the chosen file. |
-| `ACCT-11` | Elige cómo se separa el lote. | `src/app/(app)/cuenta/actions.ts` · `saveBatchSorting` | The batch sorting setting got a value that is not one of the two options. |
 
 ## USER: Usuarios (admin)
 
@@ -109,12 +108,17 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `USER-11` | Ese email o ese PIN ya lo usa otra persona. | `src/app/(app)/usuarios/actions.ts` · `create` | The database refused a duplicate email or PIN (Postgres 23505). |
 | `USER-12` | Ese PIN ya lo usa otra persona. Elige otro. | `src/app/(app)/usuarios/actions.ts` · `setAccess` | The database refused a duplicate PIN (Postgres 23505). |
 
-## SET: Ajustes
+## SET: Organización
 
 | Code | Message | Where | When |
 |---|---|---|---|
 | `SET-01` | Unidades: número entero desde 2. | `src/lib/flows/settings.ts` · `saveControlSettings` | Choosing Control for large orders without a valid threshold. |
 | `SET-02` | Elige el paso de control. | `src/lib/flows/settings.ts` · `saveControlSettings` | The form sent no valid choice of where orders are checked. |
+| `SET-03` | Elige cómo se separa el lote. | `src/lib/flows/settings.ts` · `saveBatchSorting` | The batch sorting setting got a value that is not one of the two options. Replaces `ACCT-11`. |
+| `SET-04` | Falta el nombre. | `src/lib/flows/settings.ts` · `renameOrganization` | Saving the name empty (or only spaces). |
+| `SET-05` | Nombre: máximo {80} caracteres. | `src/lib/flows/settings.ts` · `renameOrganization` | The name is longer than `MAX_NAME`. |
+| `SET-06` | Código: de 2 a 20 minúsculas, números o guiones. | `src/lib/flows/settings.ts` · `changeOrganizationCode` | The new company code is not 2–20 characters of `a-z`, `0-9` and `-` (same rule as `CLI-02`). |
+| `SET-07` | Código en uso por otra organización. | `src/lib/flows/settings.ts` · `changeOrganizationCode` | Another company already has that code. |
 
 ## LOC: Ubicaciones
 
@@ -389,3 +393,4 @@ Codes that no longer exist in the app. Never give these numbers to anything else
 
 | Code | Was | Retired |
 |---|---|---|
+| `ACCT-11` | Elige cómo se separa el lote. (`cuenta/actions.ts` · `saveBatchSorting`) | 2026-11-20: batch sorting moved to Organización, now `SET-03`. |

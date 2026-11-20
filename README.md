@@ -40,7 +40,7 @@ Ovnipress is seeded with the 118 real titles scraped from its shop (`scripts/scr
 2. **Recepción** → open a receipt, type a few of the listed codes (or scan them), close it.
 3. **Reposición** (put-away) → put those titles on a shelf such as `A-01-1`.
 4. **Picking** → *Preparar* the first order and follow the stops. The shelf code and book code to scan are shown on screen.
-5. **Control** (off by default; an admin turns it on in **Ajustes** → Control de pedidos) → another person scans the picked articles again before packing.
+5. **Control** (off by default; an admin turns it on in **Organización** → Control de pedidos) → another person scans the picked articles again before packing.
 6. **Empaque** → scan the picked books into boxes, close them, finish the order. Print the labels and packing list.
 7. **Fierro** → download the CSV, mark it as loaded, then open *Conciliar stock*.
 8. **Ajustes** (sidebar, or your name in the top bar) → change your accent colour and font (14 to choose from).

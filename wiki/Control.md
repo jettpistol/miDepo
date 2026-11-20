@@ -1,6 +1,6 @@
 # Control
 
-Segundo conteo de lo preparado, antes de empacar. Aparece si está activado en [Ajustes](Ajustes#control-de-pedidos) o si algún cliente tiene control obligatorio.
+Segundo conteo de lo preparado, antes de empacar. Aparece si está activado en [Organización](Organizacion#control-de-pedidos) o si algún cliente tiene control obligatorio.
 
 ## Paso a paso
 

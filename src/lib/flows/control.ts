@@ -7,7 +7,7 @@ import { validQuantity, type Ctx } from "./common";
 import { articleName } from "@/lib/article";
 
 /**
- * Control: before packing, a second count of what was picked. Two ways, chosen in Ajustes:
+ * Control: before packing, a second count of what was picked. Two ways, chosen in Organización:
  * - Without a Control step (controlMinUnits null), packing is the control: it scans every unit again.
  * - With it, orders with at least controlMinUnits picked units wait in Control (status to_control)
  *   until every picked unit has been scanned again.

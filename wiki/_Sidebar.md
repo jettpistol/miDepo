@@ -30,8 +30,12 @@
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas)
 - [Bajas y faltantes](Bajas-y-faltantes)
 - [Trabajar con Fierro](Trabajar-con-Fierro)
-- [Usuarios y roles](Usuarios-y-roles)
 - [Editar el manual](Editar-el-manual)
+
+### Organización
+
+- [Organización](Organizacion)
+- [Usuarios y roles](Usuarios-y-roles)
 
 ### Ayuda
 

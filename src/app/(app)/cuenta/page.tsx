@@ -1,25 +1,19 @@
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Code, PageHeader, shortDate } from "@/components/ui";
-import { customers, passkeys } from "@/db/schema";
-import Link from "next/link";
-import { can, requireSession } from "@/lib/session";
-import { Select } from "@/components/Select";
+import { passkeys } from "@/db/schema";
+import { requireSession } from "@/lib/session";
 import { Avatar } from "@/components/Avatar";
-import { changePassword, changePin, saveAppearance, saveBatchSorting, savePhoto, removePhoto, removePasskey } from "./actions";
+import { changePassword, changePin, saveAppearance, savePhoto, removePhoto, removePasskey } from "./actions";
 import { Photo } from "./Photo";
 import { Appearance } from "./Appearance";
 import { AddPasskey } from "./Passkeys";
-import { ControlSettings } from "./ControlSettings";
-import { controlMode } from "@/lib/flows/settings";
 
 export const metadata = { title: "Ajustes" };
 
 export default async function Account() {
   const { db, user, company } = await requireSession();
   const keys = await db.select().from(passkeys).where(eq(passkeys.userId, user.id)).orderBy(asc(passkeys.createdAt));
-  const admin = can(user.role, "admin");
-  const alwaysControl = admin ? await db.select({ id: customers.id, name: customers.name }).from(customers).where(and(eq(customers.companyId, company.id), eq(customers.alwaysControl, true))).orderBy(asc(customers.name)) : [];
 
   const section = "grid gap-x-10 lg:gap-x-8 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
 
@@ -92,28 +86,6 @@ export default async function Account() {
           </div>
         </section>
 
-        {admin && (
-          <section id="control" className={section}>
-            <h2 className="section-title">Control de pedidos</h2>
-            <div>
-              <ControlSettings mode={controlMode(company.controlMinUnits)} minUnits={company.controlMinUnits} samePerson={company.samePersonChecks} />
-              {alwaysControl.length > 0 && (
-                <p className="mt-4 max-w-sm text-sm">
-                  <span className="text-muted">Control obligatorio: </span>
-                  {alwaysControl.map((cu, i) => (
-                    <span key={cu.id}>
-                      {i > 0 && ", "}
-                      <Link href={`/clientes/${cu.id}`} className="link">
-                        {cu.name}
-                      </Link>
-                    </span>
-                  ))}
-                </p>
-              )}
-            </div>
-          </section>
-        )}
-
         <section id="pin" className={section}>
           <div>
             <h2 className="section-title">PIN del depósito</h2>
@@ -133,29 +105,6 @@ export default async function Account() {
           </div>
         </section>
 
-        {can(user.role, "supervisor") && (
-          <section id="lotes" className={section}>
-            <h2 className="section-title">Picking por lotes</h2>
-            <div className="max-w-sm">
-              <ActionForm action={saveBatchSorting} button="Guardar" resetOnOk={false}>
-                <div>
-                  <label htmlFor="sorting" className="field-label">
-                    Separar por pedido
-                  </label>
-                  <Select
-                    id="sorting"
-                    name="sorting"
-                    defaultValue={company.batchSorting}
-                    options={[
-                      { value: "packing", label: "En empaque", detail: "Todo el lote va a PREPARACIÓN; en empaque se separa por pedido." },
-                      { value: "trays", label: "Por bandeja, al tomar", detail: "Cada pedido tiene su bandeja; cada escaneo dice cuántos van en cuál." },
-                    ]}
-                  />
-                </div>
-              </ActionForm>
-            </div>
-          </section>
-        )}
       </div>
     </>
   );

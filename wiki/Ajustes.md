@@ -1,6 +1,6 @@
 # Ajustes
 
-En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión.
+En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión. Lo de toda la empresa está en [Organización](Organizacion).
 
 ## Cómo llegar
 
@@ -60,19 +60,3 @@ Si pierdes un teléfono, inicia sesión desde otro dispositivo y toca **Quitar**
 - **PIN:** escribe 6 dígitos. Si miDepo dice que no está disponible, elige otro.
 
 Si no recuerdas la contraseña actual, pide a un administrador que te asigne una nueva.
-
-## Control de pedidos
-
-Solo administradores. Vale para toda la empresa.
-
-| Paso de control | Qué pasa |
-|---|---|
-| **En empaque** | El empaque escanea cada unidad. Sin pantalla Control. |
-| **Todos los pedidos** | Todo pedido pasa por [Control](Control). |
-| **Pedidos grandes** | Pasan por Control los pedidos desde las unidades indicadas. |
-
-**Redundancia:** activada, quien armó el pedido no lo controla ni lo empaca. Un supervisor puede permitirlo en un pedido puntual.
-
-**Control obligatorio:** se marca en la página del cliente. Sus pedidos pasan siempre por Control.
-
-Los cambios valen para los pedidos que terminen el picking después. Al pasar a **En empaque**, los pedidos en Control pasan a Empaque, salvo los de clientes con control obligatorio.
