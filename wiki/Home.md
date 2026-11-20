@@ -13,7 +13,7 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 | Contar mercadería que llega | **Recepción** | [Recepción](Recepcion) |
 | Llevar lo recibido a su ubicación | **Reposición** | [Reposición](Reposicion) |
 | Preparar un pedido | **Picking** | [Picking](Picking) |
-| Contar de nuevo lo preparado | **Control** (si está activado) | [Control](Control) |
+| Revisar lo preparado | **Control** (si está activado) | [Control](Control) |
 | Preparar las cajas de un pedido | **Empaque** | [Empaque](Empaque) |
 | Revisar artículos que vuelven | **Devoluciones** | [Devoluciones](Devoluciones) |
 | Contar un tramo del depósito | **Conteos** | [Conteos](Conteos) |
@@ -35,7 +35,7 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 ## Tu cuenta
 
 - [Iniciar sesión](Ingresar): contraseña, PIN, huella o rostro.
-- [Ajustes](Ajustes): lo tuyo: tema claro u oscuro, color, tipografía, foto, contraseña y PIN.
+- [Ajustes](Ajustes): tema claro u oscuro, color, tipografía, foto, contraseña y PIN.
 - [Instalar en el teléfono](Instalar-en-el-telefono): tener miDepo como una app.
 
 ## Si algo falla

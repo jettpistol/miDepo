@@ -1,6 +1,6 @@
 # Ajustes
 
-En **Ajustes** cambias lo tuyo: tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión. No cambia nada para tus compañeros. Lo que vale para toda la empresa está en [Organización](Organizacion).
+En **Ajustes** cambias tu foto, cómo ves miDepo (tema, color y tipografía) y cómo inicias sesión. Lo de toda la empresa está en [Organización](Organizacion).
 
 ## Cómo llegar
 

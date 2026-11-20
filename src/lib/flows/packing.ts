@@ -10,7 +10,7 @@ async function orderToPack(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
   if (!p) throw new UserError("PACK-01", "No se encontró ese pedido.");
   if (p.status === "pending" || p.status === "in_picking") throw new UserError("PACK-02", "Este pedido todavía no terminó el picking.");
-  if (p.status === "to_control") throw new UserError("PACK-20", "Este pedido todavía no pasó por control.");
+  if (p.status === "to_control") throw new UserError("PACK-20", "Pendiente de control.");
   if (p.status !== "picked") throw new UserError("PACK-03", "Este pedido ya está empacado.");
   // When the order skipped Control, packing is the check.
   const blocked = p.controlledBy == null ? blockedCheck(await settingsOf(c.db, c.companyId), p, c.userId, "empacar") : null;

@@ -1,8 +1,9 @@
-import { and, count, eq } from "drizzle-orm";
+import Link from "next/link";
+import { and, asc, eq } from "drizzle-orm";
 import { ActionForm } from "@/components/ScanForm";
 import { Select } from "@/components/Select";
 import { PageHeader } from "@/components/ui";
-import { orders } from "@/db/schema";
+import { customers } from "@/db/schema";
 import { controlMode, MAX_NAME } from "@/lib/flows/settings";
 import { can, requireSession } from "@/lib/session";
 import { changeCode, rename, saveSorting } from "./actions";
@@ -14,7 +15,7 @@ export const metadata = { title: "Organización" };
 export default async function Organization() {
   const { db, user, company } = await requireSession("supervisor");
   const admin = can(user.role, "admin");
-  const [{ n: waiting }] = admin ? await db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, company.id), eq(orders.status, "to_control"))) : [{ n: 0 }];
+  const alwaysControl = admin ? await db.select({ id: customers.id, name: customers.name }).from(customers).where(and(eq(customers.companyId, company.id), eq(customers.alwaysControl, true))).orderBy(asc(customers.name)) : [];
 
   const section = "grid gap-x-10 lg:gap-x-8 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
 
@@ -29,8 +30,8 @@ export default async function Organization() {
               <div className="max-w-sm">
                 <ActionForm action={rename} button="Guardar nombre" resetOnOk={false}>
                   <div>
-                    <label htmlFor="name" className="field-label">
-                      Nombre de la organización
+                    <label htmlFor="name" className="sr-only">
+                      Nombre
                     </label>
                     <input id="name" name="name" defaultValue={company.name} maxLength={MAX_NAME} className="field" required autoComplete="organization" />
                   </div>
@@ -41,13 +42,13 @@ export default async function Organization() {
             <section id="codigo" className={section}>
               <div>
                 <h2 className="section-title">Código de empresa</h2>
-                <p className="text-sm text-muted">Se escribe al iniciar sesión con PIN. Los PIN y las sesiones abiertas siguen valiendo si lo cambias.</p>
+                <p className="text-sm text-muted">Para iniciar sesión con PIN. Cambiarlo no afecta los PIN ni las sesiones abiertas.</p>
               </div>
               <div className="max-w-sm">
-                <ActionForm action={changeCode} button="Cambiar código" resetOnOk={false} confirm="¿Cambiar el código? Quien inicie sesión con PIN tendrá que escribir el nuevo.">
+                <ActionForm action={changeCode} button="Cambiar código" resetOnOk={false}>
                   <div>
-                    <label htmlFor="slug" className="field-label">
-                      Código
+                    <label htmlFor="slug" className="sr-only">
+                      Código de empresa
                     </label>
                     <input id="slug" name="slug" defaultValue={company.slug} minLength={2} maxLength={20} pattern="[a-z0-9\-]{2,20}" title="Minúsculas, números y guiones, sin espacios" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="off" className="field max-w-56 font-mono" required />
                   </div>
@@ -59,7 +60,19 @@ export default async function Organization() {
               <h2 className="section-title">Control de pedidos</h2>
               <div>
                 <ControlSettings mode={controlMode(company.controlMinUnits)} minUnits={company.controlMinUnits} samePerson={company.samePersonChecks} />
-                {waiting > 0 && company.controlMinUnits != null && <p className="mt-3 max-w-md text-sm text-muted">{waiting === 1 ? "1 pedido espera" : `${waiting} pedidos esperan`} en Control. Si el control pasa al empaque, van directo a Empaque.</p>}
+                {alwaysControl.length > 0 && (
+                  <p className="mt-4 max-w-sm text-sm">
+                    <span className="text-muted">Control obligatorio: </span>
+                    {alwaysControl.map((cu, i) => (
+                      <span key={cu.id}>
+                        {i > 0 && ", "}
+                        <Link href={`/clientes/${cu.id}`} className="link">
+                          {cu.name}
+                        </Link>
+                      </span>
+                    ))}
+                  </p>
+                )}
               </div>
             </section>
           </>

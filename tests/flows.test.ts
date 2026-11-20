@@ -19,7 +19,7 @@ import { confirmPick, markShort, planRoute, shortages, releaseOrder, takeOrder, 
 import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenPacking } from "@/lib/flows/packing";
 import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } from "@/lib/flows/returns";
 import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
-import { checkUnit, finishControl, reportMissing, restartControl } from "@/lib/flows/control";
+import { allowSameCheck, checkUnit, finishControl, reportMissing, restartControl, setCustomerControl } from "@/lib/flows/control";
 import { changeOrganizationCode, renameOrganization, saveBatchSorting, saveControlSettings } from "@/lib/flows/settings";
 import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
@@ -421,7 +421,7 @@ describe("control before packing", () => {
 
   beforeAll(async () => {
     const { e, u } = await buildCompany("Control SA", "control", 13);
-    await simulateNews(db, e, "orders", 4);
+    await simulateNews(db, e, "orders", 8);
     const second = await createUser(db, e.id, { name: "Segunda", email: "segunda-control@prueba.test", role: "operator", password: "long-password" });
     picker = { db, companyId: e.id, userId: u.id };
     checker = { db, companyId: e.id, userId: second.id };
@@ -447,7 +447,7 @@ describe("control before packing", () => {
 
   it("validates the settings", async () => {
     await expect(saveControlSettings(picker, { mode: "large", minUnits: "1", samePerson: true })).rejects.toThrow(UserError);
-    await expect(saveControlSettings(picker, { mode: "large", minUnits: "", samePerson: true })).rejects.toThrow(/2 o más/);
+    await expect(saveControlSettings(picker, { mode: "large", minUnits: "", samePerson: true })).rejects.toThrow(/desde 2/);
     await expect(saveControlSettings(picker, { mode: "otro", samePerson: true })).rejects.toThrow(UserError);
   });
 
@@ -456,11 +456,11 @@ describe("control before packing", () => {
     const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
     const lines = await pickAll(picker, ord.id);
     expect((await status(ord.id)).status).toBe("to_control");
-    await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/no pasó por control/);
+    await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/Pendiente de control/);
     await expect(checkUnit(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/otra persona/);
 
     const foreign = [...prods.values()].find((p) => !lines.some((l) => l.productId === p.id))!;
-    await expect(checkUnit(checker, ord.id, foreign.barcode, 1)).rejects.toThrow(/no está entre lo preparado/);
+    await expect(checkUnit(checker, ord.id, foreign.barcode, 1)).rejects.toThrow(/no está en el pedido/);
     await expect(checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].picked + 1)).rejects.toThrow(/quedan/);
 
     // Everything is in the cart except one unit of the first title.
@@ -495,7 +495,7 @@ describe("control before packing", () => {
     await saveControlSettings(picker, { mode: "large", minUnits: String((await orderUnits(ord.id)) + 1), samePerson: false });
     const lines = await pickAll(picker, ord.id);
     expect((await status(ord.id)).status).toBe("picked");
-    await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/lo tiene que empacar otra persona/);
+    await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/Lo empaca otra persona/);
     await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).resolves.toContain("Caja 1");
 
     // When the same person is allowed, the picker can pack.
@@ -535,8 +535,40 @@ describe("control before packing", () => {
     const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
     await pickAll(picker, ord.id);
     expect((await status(ord.id)).status).toBe("to_control");
-    await expect(saveControlSettings(picker, { mode: "packing", samePerson: true })).resolves.toMatch(/1 pedido/);
+    await expect(saveControlSettings(picker, { mode: "packing", samePerson: true })).resolves.toMatch(/1 a Empaque/);
     expect((await status(ord.id)).status).toBe("picked");
+  });
+
+  it("a supervisor can let the picker check one order, but not themselves", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: false });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await pickAll(picker, ord.id);
+    const code = prods.get(lines[0].productId)!.barcode;
+    await expect(checkUnit(picker, ord.id, code, 1)).rejects.toThrow(/otra persona/);
+    await expect(allowSameCheck(picker, ord.id, true)).rejects.toThrow(/otro supervisor/);
+    await expect(allowSameCheck(checker, ord.id, true)).resolves.toMatch(/Permitido/);
+    await expect(checkUnit(picker, ord.id, code, 1)).resolves.toContain("✓");
+    await allowSameCheck(checker, ord.id, false);
+    await expect(checkUnit(picker, ord.id, code, 1)).rejects.toThrow(/otra persona/);
+    // Dropping the order clears the permission: a new picker does not inherit it.
+    await allowSameCheck(checker, ord.id, true);
+    await releaseOrder(picker, ord.id);
+    expect((await status(ord.id)).sameCheckAllowedBy).toBeNull();
+  });
+
+  it("a customer marked for control sends every order to Control, whatever the mode", async () => {
+    await saveControlSettings(picker, { mode: "packing", samePerson: true });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await expect(setCustomerControl(picker, ord.customerId, true)).resolves.toMatch(/Control obligatorio/);
+    await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("to_control");
+    // Switching the step off leaves this customer's orders in Control.
+    await saveControlSettings(picker, { mode: "packing", samePerson: true });
+    expect((await status(ord.id)).status).toBe("to_control");
+    // Taking the mark off releases them, since the company checks in packing.
+    await expect(setCustomerControl(picker, ord.customerId, false)).resolves.toMatch(/1 a Empaque/);
+    expect((await status(ord.id)).status).toBe("picked");
+    await expect(setCustomerControl(picker, -1, true)).rejects.toThrow(UserError);
   });
 });
 

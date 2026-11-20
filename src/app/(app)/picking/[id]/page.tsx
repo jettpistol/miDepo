@@ -92,11 +92,11 @@ export default async function PickingOrder({ params, searchParams }: { params: P
         <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
           <div className="min-w-0 space-y-3 lg:sticky lg:top-30">
             <p>
-              <strong>{plural(total, "unidad", "unidades")}</strong> de {plural(lines.length, "artículo", "artículos")}{p.status === "pending" && ". Todavía no lo tomó nadie; el stock se reserva al tomarlo"}.
+              <strong>{plural(total, "unidad", "unidades")}</strong> · {plural(lines.length, "artículo", "artículos")}
             </p>
-            {previewShort > 0 && <Notice tone="danger">Sin stock en estanterías para {plural(previewShort, "unidad", "unidades")}: saldrían como faltantes.</Notice>}
+            {previewShort > 0 && <Notice tone="warn">{plural(previewShort, "unidad", "unidades")} sin stock: saldrán como faltantes.</Notice>}
             <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary" reason={warning ?? undefined}>
-              Preparar este pedido
+              Preparar
             </ActionButton>
           </div>
           <section className="min-w-0">
@@ -115,7 +115,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                 <tbody>
                   {preview.map((x, i) => (
                     <tr key={i}>
-                      <td className="w-px">{x.location ? <ShelfMark code={x.location} /> : <span className="text-muted">—</span>}</td>
+                      <td className="w-px">{x.location ? <ShelfMark code={x.location} /> : <Badge tone="danger">Sin stock</Badge>}</td>
                       <td className="w-0 py-1.5! pr-0!">
                         <Cover productId={x.productId} version={x.thumb} className="h-14 w-10" />
                       </td>
@@ -126,7 +126,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                           {x.isbn && ` · ${x.isbn}`}
                         </span>
                       </td>
-                      <td className="text-right whitespace-nowrap tabular-nums">{x.location ? <span className="font-semibold">{x.quantity}</span> : <Badge tone="danger">Sin stock · {x.quantity}</Badge>}</td>
+                      <td className="text-right whitespace-nowrap tabular-nums"><span className="font-semibold">{x.quantity}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -195,7 +195,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
               </section>
             ) : p.status === "to_control" ? (
               <Notice tone="ok">
-                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."} Antes de empacar pasa por control.</p>
+                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."}</p>
                 <Link href={`/control/${id}`} className="btn w-full" {...hotkey("primary")}>
                   Ir a control
                 </Link>

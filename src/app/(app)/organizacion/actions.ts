@@ -5,12 +5,12 @@ import { changeOrganizationCode, renameOrganization, saveBatchSorting, saveContr
 
 export const rename = action("admin", async (c, f) => {
   await renameOrganization(c, txt(f, "name"));
-  return "Nombre guardado.";
+  return "Guardado.";
 });
 
 export const changeCode = action("admin", async (c, f) => {
   const slug = await changeOrganizationCode(c, txt(f, "slug"));
-  return `Código cambiado. Para iniciar sesión con PIN, ahora se escribe ${slug}.`;
+  return `Guardado. Código: ${slug}.`;
 });
 
 export const saveControl = action("admin", (c, f) => saveControlSettings(c, { mode: txt(f, "mode"), minUnits: txt(f, "minUnits"), samePerson: txt(f, "samePerson") === "yes" }));

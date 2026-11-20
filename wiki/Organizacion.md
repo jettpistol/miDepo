@@ -1,38 +1,35 @@
 # Organización
 
-En **Organización** se configura lo que vale para toda la empresa. Lo que es de cada persona (foto, colores, contraseña, PIN propio) está en [Ajustes](Ajustes).
+Lo que vale para toda la empresa. Lo de cada persona está en [Ajustes](Ajustes).
 
-La ven supervisores y administradores, en el menú, en el grupo **Organización**, o en el menú de tu nombre, arriba a la derecha. Los supervisores ven solo **Picking por lotes**.
+Supervisores y administradores, desde el menú o el menú de tu nombre. Los supervisores ven solo **Picking por lotes**.
 
 ## Nombre
 
-Solo para administradores. Es el nombre que se ve en el menú y al cambiar de cuenta. Escribe el nuevo y toca **Guardar nombre**.
+Solo administradores. Se ve en el menú y al cambiar de cuenta.
 
 ## Código de empresa
 
-Solo para administradores. Es el código que se escribe en el teléfono junto con el PIN. Va en minúsculas y sin espacios, con letras, números o guiones (de 2 a 20), y no puede ser el de otra organización.
+Solo administradores. Se escribe junto con el PIN al iniciar sesión: de 2 a 20 minúsculas, números o guiones, distinto del de otras organizaciones.
 
-Al cambiarlo, los PIN siguen siendo los mismos y las sesiones abiertas no se cierran. La próxima vez que alguien inicie sesión con PIN tendrá que escribir el **código nuevo**: avísale al equipo antes.
+Cambiarlo no afecta los PIN ni las sesiones abiertas. Al iniciar sesión con PIN se escribe el código nuevo: avisa al equipo antes.
 
 ## Control de pedidos
 
-Solo para administradores.
+Solo administradores.
 
-Antes de empacar, lo preparado se cuenta de nuevo. Elige dónde:
-
-| Opción | Qué pasa |
+| Paso de control | Qué pasa |
 |---|---|
-| **En el empaque** | Quien empaca escanea cada unidad al ponerla en la caja. No hay pantalla Control. |
-| **Paso de control, todos los pedidos** | Todo pedido preparado pasa por [Control](Control) antes de Empaque. |
-| **Paso de control, pedidos grandes** | Solo los pedidos desde la cantidad de unidades que escribas pasan por Control. Los demás se controlan en el empaque. |
+| **En empaque** | El empaque escanea cada unidad. Sin pantalla Control. |
+| **Todos los pedidos** | Todo pedido pasa por [Control](Control). |
+| **Pedidos grandes** | Pasan por Control los pedidos desde las unidades indicadas. |
 
-**Quién controla:**
+**Quién controla:** **Cualquiera**, u **Otra persona** que no sea quien preparó. Con **Otra persona**, un supervisor puede permitirlo en un pedido puntual.
 
-- **Puede ser quien preparó:** cualquiera controla o empaca cualquier pedido. Sirve para turnos con poca gente.
-- **Siempre otra persona:** quien preparó un pedido no puede controlarlo. Si el pedido no pasa por Control, tampoco puede empacarlo.
+**Control obligatorio:** se marca en la página del cliente. Sus pedidos pasan siempre por Control.
 
-Los cambios valen para los pedidos que terminen el picking desde ese momento. Si pasas el control al empaque, los pedidos que esperaban en Control van directo a Empaque.
+Los cambios valen para los pedidos que terminen el picking después. Al pasar a **En empaque**, los pedidos en Control pasan a Empaque, salvo los de clientes con control obligatorio.
 
 ## Picking por lotes
 
-Supervisores y administradores. Elige cómo se separa un lote en pedidos: **En empaque** o **Por bandeja, al tomar**. Qué cambia con cada opción está en [Picking](Picking). Vale para los lotes nuevos; un lote abierto sigue como empezó.
+Cómo se separa un lote en pedidos: **En empaque** o **Por bandeja, al tomar**. Detalle en [Picking](Picking). Vale para los lotes nuevos.
