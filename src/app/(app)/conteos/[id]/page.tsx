@@ -11,10 +11,12 @@ import { can, requireSession } from "@/lib/session";
 import { approve, recount, reopen } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function StockCount({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const [k] = await db.select().from(counts).where(and(eq(counts.id, id), eq(counts.companyId, company.id)));
   if (!k) notFound();
   const us = await db
@@ -46,7 +48,9 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."} />
+      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."}>
+        <Assignee session={session} kind="count" id={k.id} value={k.assignedTo} open={isOpen} />
+      </PageHeader>
       <div className="mb-8 lg:mb-6 max-w-xl">
         <Progress done={countedCount} total={us.length} unit="ubicaciones" />
       </div>

@@ -10,12 +10,14 @@ import { close, scan, remove } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { InfoHint } from "@/components/Hint";
+import { Assignee } from "@/components/Assignee";
 
 const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
 export default async function ReturnDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ d: returns, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, company.id)));
   if (!row) notFound();
   const { d, customer } = row;
@@ -25,7 +27,9 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }} />
+      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }}>
+        <Assignee session={session} kind="return" id={d.id} value={d.assignedTo} open={d.status === "in_progress"} />
+      </PageHeader>
       {!open && (
         <div className="mb-6">
           <Notice tone="ok">

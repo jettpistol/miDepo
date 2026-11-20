@@ -9,10 +9,12 @@ import { close, correct, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function ReceivingDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ r: receivings, supplier: suppliers.name }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.id, id), eq(receivings.companyId, company.id)));
   const r = row?.r;
   if (!r) notFound();
@@ -29,7 +31,9 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"} />
+      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"}>
+        <Assignee session={session} kind="receiving" id={r.id} value={r.assignedTo} open={r.status !== "closed"} />
+      </PageHeader>
 
       {open ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">

@@ -9,10 +9,12 @@ import { requireSession } from "@/lib/session";
 import { confirm, shortage, take } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
+import { Assignee } from "@/components/Assignee";
 
 export default async function PickingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
@@ -36,6 +38,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
     <>
       <PageHeader title={`Pedido ${p.number}`} subtitle={customer} back={{ href: "/picking", text: "Picking" }}>
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
+        <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "picked"].includes(p.status)} />
       </PageHeader>
 
       {p.status === "pending" ? (

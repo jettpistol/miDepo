@@ -12,6 +12,7 @@ Esta página es para administradores.
 | Ver pedidos, proveedores, clientes y movimientos | Sí | Sí | Sí |
 | Crear proveedores | — | Sí | Sí |
 | Crear y aprobar conteos | — | Sí | Sí |
+| Asignar trabajo a una persona | — | Sí | Sí |
 | Ubicaciones y etiquetas | — | Sí | Sí |
 | Sincronizar y cargar en Fierro | — | Sí | Sí |
 | Crear y desactivar usuarios | — | — | Sí |

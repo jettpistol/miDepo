@@ -47,6 +47,13 @@ async function warning(p, field, value) {
   await p.waitForSelector('[role=status]'); step('wrong password → ' + (await p.textContent('[role=status]')).trim());
   await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'midepo1234'); await p.click('button:has-text("Iniciar sesión")'); await p.waitForURL(BASE + '/');
 
+  // Assigning: a supervisor gives a receiving to Martín; it shows on his home page later.
+  await p.goto(BASE + '/'); await p.waitForSelector('text=Pedidos abiertos'); await shot('home-supervisor');
+  await p.goto(BASE + '/recepcion'); const assignedHref = await p.locator('tbody a[href^="/recepcion/"]').nth(2).getAttribute('href');
+  await p.goto(BASE + assignedHref); const assignedNumber = (await p.textContent('h1')).split(' ·')[0].trim();
+  await p.click('button[aria-label="Asignado a"]'); await p.keyboard.type('Martín'); await p.keyboard.press('Enter');
+  await p.waitForSelector('text=ahora es de Martín Sosa'); step(`assigned ${assignedNumber} to Martín Sosa: ok`);
+
   // Receiving
   await p.goto(BASE + '/recepcion'); await p.click('a[href^="/recepcion/"]'); await p.waitForSelector('#scan-product');
   const rows = await p.$$eval('tbody tr', (trs) => trs.map((tr) => ({ code: tr.querySelector('.code-chip').textContent, expected: Number(tr.children[1].textContent) })));
@@ -86,6 +93,10 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/picking'); await shot('picking-list');
   await p.click('button:has-text("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector('text=Próxima parada');
   const orderId = p.url().split('/').pop(); await shot('picking-stop');
+  // The browser's back button shows the list as it is now: the order is in progress, not pending.
+  const taken = await p.textContent('h1'); await p.goBack(); await p.waitForURL(BASE + '/picking');
+  await p.waitForFunction((n) => ![...document.querySelectorAll('main section:last-of-type tbody tr')].some((r) => r.textContent.includes(n)), taken.match(/PED-\d+/)[0], { timeout: 10000 });
+  step('back after Preparar: order no longer pending'); await p.goForward(); await p.waitForSelector('text=Próxima parada');
   const codes = {}; let stops = 0, first = true;
   const stopKey = () => p.evaluate(() => (document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? ''));
   while (await p.$('text=Próxima parada')) {
@@ -142,6 +153,8 @@ async function warning(p, field, value) {
   const second = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const q = await second.newPage();
   q.on('dialog', (d) => d.accept()); q.on('pageerror', (e) => errors.push('recount pageerror: ' + e.message)); q.on('response', (r) => r.status() >= 500 && errors.push(`recount HTTP ${r.status()} ${r.url()}`));
   await q.goto(BASE + '/'); await q.click('button:has-text("PIN del depósito")'); await q.fill('#company', 'ovnipress'); await q.fill('#pin', '100001'); await q.click('button:has-text("Iniciar sesión")'); await q.waitForURL(BASE + '/');
+  await q.waitForSelector('text=Asignado a ti'); await q.screenshot({ path: `${OUT}/home-operator.png`, caret: 'initial' });
+  step('  operator sees the receiving assigned to him: ' + ((await q.textContent('main')).includes(assignedNumber) ? 'ok' : fail(assignedNumber + ' not on his home page')));
   await q.goto(countUrl); await q.click('a:has-text("Contar")'); await q.waitForSelector('#scan-product');
   step('  recount → ' + await scan(q, { product: rows[0].code }, rows[0].expected - 1));
   await q.click('button:has-text("Terminar esta ubicación")'); await q.waitForURL(countUrl); await second.close();

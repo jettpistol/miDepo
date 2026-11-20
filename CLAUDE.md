@@ -111,6 +111,7 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 
 ## Open items
 
+- Assignment does not lock work (D35); the owner may want an assigned order to be off-limits to others. List screens (Picking, Recepción…) do not show the assignee yet, only detail screens and Inicio.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).
 - The sidebar runs five count queries per page; not measured on a hosted database.
 - See also "What is not done" in `README.md`.
