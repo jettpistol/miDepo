@@ -39,12 +39,13 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
         customer: customers.name,
         units: sql<number>`coalesce(sum(${orderLines.quantity}), 0)`.mapWith(Number),
         picked: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number),
+        checked: sql<number>`coalesce(sum(${orderLines.checked}), 0)`.mapWith(Number),
         packed: sql<number>`coalesce(sum(${orderLines.packed}), 0)`.mapWith(Number),
       })
       .from(orders)
       .innerJoin(customers, eq(customers.id, orders.customerId))
       .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
-      .where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "in_picking", "picked"])))
+      .where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "in_picking", "to_control", "picked"])))
       .groupBy(orders.id, customers.name)
       .orderBy(desc(orders.urgent), asc(orders.date))
       .limit(300),
@@ -91,19 +92,20 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
 
   return [
     // An order being picked in a batch is the batch's work: Inicio shows the batch instead.
-    ...orderRows.filter(({ o }) => !(o.status === "in_picking" && o.batchId != null)).map(({ o, customer, units, picked, packed }): Task => {
+    ...orderRows.filter(({ o }) => !(o.status === "in_picking" && o.batchId != null)).map(({ o, customer, units, picked, checked, packed }): Task => {
       const packing = o.status === "picked";
+      const control = o.status === "to_control";
       return {
         kind: "order",
         id: o.id,
         name: o.number,
         detail: customer,
-        href: packing ? `/empaque/${o.id}` : `/picking/${o.id}`,
+        href: packing ? `/empaque/${o.id}` : control ? `/control/${o.id}` : `/picking/${o.id}`,
         assignedTo: o.assignedTo,
         takenBy: o.status === "in_picking" ? o.takenBy : null,
-        done: packing ? packed : picked,
-        total: units,
-        verb: packing ? "Empacar" : o.status === "in_picking" ? "Seguir" : "Preparar",
+        done: packing ? packed : control ? checked : picked,
+        total: control ? picked : units,
+        verb: packing ? "Empacar" : control ? "Controlar" : o.status === "in_picking" ? "Seguir" : "Preparar",
         date: o.date,
       };
     }),
@@ -207,12 +209,13 @@ export async function orderStages(db: DB, companyId: number) {
   const rows = await db
     .select({ status: orders.status, n: count() })
     .from(orders)
-    .where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "in_picking", "picked", "packed"])))
+    .where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "in_picking", "to_control", "picked", "packed"])))
     .groupBy(orders.status);
   const n = (s: string) => rows.find((r) => r.status === s)?.n ?? 0;
   return [
     { key: "pending", label: "Para preparar", n: n("pending"), href: "/picking" },
     { key: "in_picking", label: "En preparación", n: n("in_picking"), href: "/picking" },
+    { key: "to_control", label: "Para controlar", n: n("to_control"), href: "/control" },
     { key: "picked", label: "Para empacar", n: n("picked"), href: "/empaque" },
     { key: "packed", label: "Para cargar en Fierro", n: n("packed"), href: "/fierro" },
   ];

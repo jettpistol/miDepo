@@ -60,7 +60,8 @@ export default async function PickingBatch({ params, searchParams }: { params: P
     .leftJoin(locations, eq(locations.id, pickTasks.locationId))
     .where(eq(orders.batchId, id))
     .orderBy(asc(locations.code), asc(products.title), desc(orders.urgent), asc(orders.date), asc(orders.id));
-  const open = batchOrders.filter(({ o }) => o.status === "in_picking" || o.status === "picked");
+  const open = batchOrders.filter(({ o }) => o.status === "in_picking" || o.status === "to_control" || o.status === "picked");
+  const toControl = batchOrders.some(({ o }) => o.status === "to_control");
   const [box] = open.length > 0 ? await db.select({ id: boxes.id }).from(boxes).where(inArray(boxes.orderId, open.map(({ o }) => o.id))).limit(1) : [];
 
   // One stop per shelf and title, whatever the number of orders that want it.
@@ -181,10 +182,10 @@ export default async function PickingBatch({ params, searchParams }: { params: P
           ) : (
             <Notice tone="ok">
               <p className="mb-3 text-base">
-                Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."} {trays ? "Cada pedido está en su bandeja." : "En empaque se separa por pedido."}
+                Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."} {trays ? "Cada pedido está en su bandeja." : toControl ? "En control se separa por pedido." : "En empaque se separa por pedido."}
               </p>
-              <Link href="/empaque" className="btn w-full" {...hotkey("primary")}>
-                Ir a empaque
+              <Link href={toControl ? "/control" : "/empaque"} className="btn w-full" {...hotkey("primary")}>
+                {toControl ? "Ir a control" : "Ir a empaque"}
               </Link>
             </Notice>
           )}
@@ -283,7 +284,7 @@ export default async function PickingBatch({ params, searchParams }: { params: P
                         <span className="block truncate text-sm text-muted sm:hidden">{customer}</span>
                       </td>
                       <td className="hidden sm:table-cell">{customer}</td>
-                      <td className="text-right whitespace-nowrap">{o.status === "in_picking" ? <Badge>En preparación</Badge> : o.status === "picked" ? <Badge tone="accent">Listo para empacar</Badge> : <Badge tone="ok">Empacado</Badge>}</td>
+                      <td className="text-right whitespace-nowrap">{o.status === "in_picking" ? <Badge>En preparación</Badge> : o.status === "to_control" ? <Badge tone="accent">Para control</Badge> : o.status === "picked" ? <Badge tone="accent">Listo para empacar</Badge> : <Badge tone="ok">Empacado</Badge>}</td>
                     </tr>
                   ))}
                 </tbody>

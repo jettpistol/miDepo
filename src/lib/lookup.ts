@@ -16,8 +16,8 @@ export type Shortcut = { field: string; value: string; text: string; shelfMark?:
 export type Lookup = { statuses: Record<string, FieldStatus>; suggestions: Suggestion[]; shortcuts: Shortcut[] };
 
 const LOCATION_FIELDS = ["source", "destination", "location"];
-/** In picking and packing the scan proves which book is in hand: nothing is suggested there. */
-const NO_SUGGESTIONS = ["picking", "batch-picking", "packing"];
+/** In picking, control and packing the scan proves which book is in hand: nothing is suggested there. */
+const NO_SUGGESTIONS = ["picking", "batch-picking", "control", "packing"];
 const clean = (q: string) => q.replace(/[%_\\]/g, "");
 
 /** "cronicas luna" finds "Crónicas de la Luna Roja": no accents, no capitals, words may be skipped. */
@@ -202,6 +202,20 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} por empacar` };
       if (left > 1 && quantity !== left) shortcuts.push({ field: "quantity", value: String(left), text: `Todas: ${left}` });
       if (quantity && quantity > left) statuses.quantity = { tone: "danger", text: `Quedan ${left} por empacar.` };
+    }
+  } else if (ctx === "control" && book) {
+    const [l] = await db
+      .select({ l: orderLines })
+      .from(orderLines)
+      .innerJoin(orders, eq(orders.id, orderLines.orderId))
+      .where(and(eq(orderLines.orderId, Number(v("id"))), eq(orderLines.productId, book.id), eq(orders.companyId, companyId)));
+    const left = l ? l.l.picked - l.l.checked : 0;
+    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está entre lo preparado. Devuélvelo a su ubicación.` };
+    else if (left === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}": todo controlado.` };
+    else {
+      statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} por controlar` };
+      if (left > 1 && quantity !== left) shortcuts.push({ field: "quantity", value: String(left), text: `Todas: ${left}` });
+      if (quantity && quantity > left) statuses.quantity = { tone: "danger", text: `Quedan ${left} por controlar.` };
     }
   } else if (book) {
     statuses.product = { tone: "ok", text: articleName(book.title) };

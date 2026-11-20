@@ -1,7 +1,7 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Code, PageHeader, shortDate } from "@/components/ui";
-import { passkeys } from "@/db/schema";
+import { orders, passkeys } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { Select } from "@/components/Select";
 import { Avatar } from "@/components/Avatar";
@@ -9,12 +9,16 @@ import { changePassword, changePin, saveAppearance, saveBatchSorting, savePhoto,
 import { Photo } from "./Photo";
 import { Appearance } from "./Appearance";
 import { AddPasskey } from "./Passkeys";
+import { ControlSettings } from "./ControlSettings";
+import { controlMode } from "@/lib/flows/settings";
 
 export const metadata = { title: "Ajustes" };
 
 export default async function Account() {
   const { db, user, company } = await requireSession();
   const keys = await db.select().from(passkeys).where(eq(passkeys.userId, user.id)).orderBy(asc(passkeys.createdAt));
+  const admin = can(user.role, "admin");
+  const [{ n: waiting }] = admin ? await db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, company.id), eq(orders.status, "to_control"))) : [{ n: 0 }];
 
   const section = "grid gap-x-10 lg:gap-x-8 gap-y-4 py-7 lg:grid-cols-[17rem_minmax(0,1fr)]";
 
@@ -86,6 +90,19 @@ export default async function Account() {
             </ActionForm>
           </div>
         </section>
+
+        {admin && (
+          <section id="control" className={section}>
+            <div>
+              <h2 className="section-title">Control de pedidos</h2>
+              <p className="text-sm text-muted">Para toda la empresa</p>
+            </div>
+            <div>
+              <ControlSettings mode={controlMode(company.controlMinUnits)} minUnits={company.controlMinUnits} samePerson={company.samePersonChecks} />
+              {waiting > 0 && company.controlMinUnits != null && <p className="mt-3 max-w-md text-sm text-muted">{waiting === 1 ? "1 pedido espera" : `${waiting} pedidos esperan`} en Control. Si el control pasa al empaque, van directo a Empaque.</p>}
+            </div>
+          </section>
+        )}
 
         <section id="pin" className={section}>
           <div>

@@ -90,7 +90,7 @@ const linesKey = (ls: { productId: number; quantity: number }[]) =>
  * longer lists it (it comes back if Fierro lists it again). A started order is never changed here.
  */
 async function syncOrders(tx: Executor, companyId: number, ords: FierroOrder[], productRef: Map<string, number>, customerRef: Map<string, number>, summary: Summary) {
-  const mine = await tx.select().from(orders).where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "cancelled", "in_picking", "picked", "packed"])));
+  const mine = await tx.select().from(orders).where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "cancelled", "in_picking", "to_control", "picked", "packed"])));
   const byFierroId = new Map(mine.map((o) => [o.fierroId, o]));
   const shipped = new Set((await tx.select({ f: orders.fierroId }).from(orders).where(and(eq(orders.companyId, companyId), eq(orders.status, "shipped")))).map((o) => o.f));
   const linesOf = new Map<number, { productId: number; quantity: number }[]>();

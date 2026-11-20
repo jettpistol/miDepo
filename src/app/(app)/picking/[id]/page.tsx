@@ -44,7 +44,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
   // The stop to do now: the one chosen from the list, or the next one on the route.
   const current = pending.find((x) => x.t.id === chosen) ?? pending[0];
   const after = current ? (pending[pending.indexOf(current) + 1] ?? pending[0]) : undefined;
-  const editable = p.status === "in_picking" || p.status === "picked";
+  const editable = p.status === "in_picking" || p.status === "to_control" || p.status === "picked";
   const mine = p.takenBy === user.id;
   const releaseReason = !mine && !can(user.role, "supervisor") ? `Lo está preparando ${takenBy ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.` : box ? "Ya hay cajas armadas. Vacíalas en empaque antes de soltarlo." : undefined;
   const warning = fierroWarning(p);
@@ -58,7 +58,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
       <PageHeader title={`Pedido ${p.number}`} subtitle={p.status !== "pending" && !mine && takenBy ? `${customer} · Lo prepara ${takenBy}` : customer} back={{ href: "/picking", text: "Picking" }}>
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
         <Urgency session={session} order={p} />
-        <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "picked"].includes(p.status)} />
+        <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "to_control", "picked"].includes(p.status)} />
         {editable && (
           <ActionButton
             action={release}
@@ -184,6 +184,13 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                   </div>
                 </div>
               </section>
+            ) : p.status === "to_control" ? (
+              <Notice tone="ok">
+                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."} Antes de empacar pasa por control.</p>
+                <Link href={`/control/${id}`} className="btn w-full" {...hotkey("primary")}>
+                  Ir a control
+                </Link>
+              </Notice>
             ) : p.status === "picked" ? (
               <Notice tone="ok">
                 <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."}</p>
