@@ -13,3 +13,6 @@ export function fierroWarning(o: Order): string | null {
   if (o.fierroChange === "gone") return "Ya no figura como pendiente en Fierro.";
   return null;
 }
+
+/** Fierro's "condición de venta" of an order, as Fierro writes it. */
+export const SALE_MODE = { firm: "Firme", consignment: "Consignación" } as const;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, asc, eq, inArray, min, sql, desc } from "drizzle-orm";
 import { ActionButton } from "@/components/ScanForm";
-import { Progress, shortDate, Badge, ShelfMark } from "@/components/ui";
+import { Progress, shortDate, Badge, ShelfMark, Condition, SALE_MODE } from "@/components/ui";
 import { fierroWarning } from "@/lib/orderState";
 import { customers, orderLines, orders, pickBatches, pickTasks, locations, users } from "@/db/schema";
 import { batchNumber } from "@/lib/flows/picking";
@@ -93,6 +93,7 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
           <tr>
             <th>Próxima ubicación</th>
             <th>Pedido</th>
+            <th className="hidden sm:table-cell">Condición</th>
             <th className="hidden sm:table-cell">Usuario</th>
             <th className="hidden w-[30%] min-w-36 sm:table-cell">Progreso</th>
           </tr>
@@ -114,8 +115,11 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
                 )}
                 <span className="block max-w-40 truncate text-muted sm:max-w-64">{customer}</span>
                 <span className="block text-muted sm:hidden">
-                  {picked} de {units} · {p.takenBy === userId ? "tú" : (takenBy ?? "otra persona")}
+                  {picked} de {units} · {SALE_MODE[p.saleMode]} · {p.takenBy === userId ? "tú" : (takenBy ?? "otra persona")}
                 </span>
+              </td>
+              <td className="hidden sm:table-cell">
+                <Condition mode={p.saleMode} href={`/picking/${p.id}`} />
               </td>
               <td className="hidden sm:table-cell">{p.takenBy === userId ? <strong>Tú</strong> : (takenBy ?? "Otra persona")}</td>
               <td className="hidden sm:table-cell">
@@ -137,6 +141,7 @@ export function PendingTable({ rows, a }: { rows: OpenOrders["pending"]; a: Assi
           <tr>
             <th>Pedido</th>
             <th>Cliente</th>
+            <th className="hidden sm:table-cell">Condición</th>
             <th className="hidden md:table-cell">Localidad</th>
             <th className="hidden sm:table-cell">Asignado</th>
             <th className="hidden text-right sm:table-cell">Artículos</th>
@@ -162,14 +167,10 @@ export function PendingTable({ rows, a }: { rows: OpenOrders["pending"]; a: Assi
                     <Badge tone="danger">Urgente</Badge>
                   </>
                 )}
-                {p.saleMode === "consignment" && (
-                  <>
-                    {" "}
-                    <Badge>Consignación</Badge>
-                  </>
-                )}
                 <span className="block text-muted md:hidden">
-                  <span className="sm:hidden">{units} u. · </span>
+                  <span className="sm:hidden">
+                    {units} u. · {SALE_MODE[p.saleMode]} ·{" "}
+                  </span>
                   {city}
                 </span>
                 {short > 0 && (
@@ -177,6 +178,9 @@ export function PendingTable({ rows, a }: { rows: OpenOrders["pending"]; a: Assi
                     <Badge tone="danger">Sin stock · {short}</Badge>
                   </span>
                 )}
+              </td>
+              <td className="hidden sm:table-cell">
+                <Condition mode={p.saleMode} href={`/picking/${p.id}`} />
               </td>
               <td className="hidden text-muted md:table-cell">{city}</td>
               <td className="hidden sm:table-cell">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { PageHeader, Badge, EmptyRow } from "@/components/ui";
+import { PageHeader, Badge, EmptyRow, Condition, SALE_MODE } from "@/components/ui";
 import { customers, orderLines, orders, users } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { hotkey } from "@/lib/hotkeys";
@@ -39,6 +39,7 @@ export default async function Control() {
             <tr>
               <th>Pedido</th>
               <th>Cliente</th>
+                <th className="hidden sm:table-cell">Condición</th>
               <th className="hidden sm:table-cell">Preparó</th>
               <th className="text-right">Unidades</th>
               <th>Control</th>
@@ -60,16 +61,19 @@ export default async function Control() {
                       <Badge tone="danger">Urgente</Badge>
                     </>
                   )}
-                  <span className="block text-muted sm:hidden">Preparó {pickedBy ?? "—"}</span>
+                  <span className="block text-muted sm:hidden">{SALE_MODE[p.saleMode]} · Preparó {pickedBy ?? "—"}</span>
                 </td>
-                <td className="hidden sm:table-cell">{pickedBy ?? "—"}</td>
+                <td className="hidden sm:table-cell">
+                    <Condition mode={p.saleMode} href={`/control/${p.id}`} />
+                  </td>
+                  <td className="hidden sm:table-cell">{pickedBy ?? "—"}</td>
                 <td className="text-right font-semibold">{picked}</td>
                 <td>
                   {mine(p) ? <Badge>Otra persona</Badge> : checked > 0 ? <Badge tone="accent">{checked} de {picked}</Badge> : <Badge>Sin empezar</Badge>}
                 </td>
               </tr>
             ))}
-            {rows.length === 0 && <EmptyRow columns={5} title="Sin pedidos por controlar" />}
+            {rows.length === 0 && <EmptyRow columns={6} title="Sin pedidos por controlar" />}
           </tbody>
         </table>
       </div>
