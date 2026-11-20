@@ -2,6 +2,7 @@ const PATHS = {
   home: "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10",
   receiving: "M12 3v11m0 0-4-4m4 4 4-4M4 15v4.5h16V15",
   dispatch: "M12 14V3m0 0L8 7m4-4 4 4M4 15v4.5h16V15",
+  outside: "M4 8h16v11.5H4zM9 8V5h6v3M4 13h16",
   putaway: "M4 5h16M4 12h16M4 19h16M8 5v14M16 5v14",
   picking: "M4 5h2.2l2 10h9.3l2-7H7.2M9.5 19.5h.01M17 19.5h.01",
   packing: "m12 3 8 4.3v9.4L12 21l-8-4.3V7.3L12 3Zm0 9 8-4.5M12 12 4 7.5M12 12v9",

@@ -13,6 +13,7 @@ function checkMove(source: { type: string; id: number }, destination: { type: st
   if (source.type === "staging" || destination.type === "staging") {
     throw new UserError("STK-09", "Los pedidos preparados no se mueven manualmente: salen cuando se despacha el pedido.");
   }
+  if (source.type === "outside" || destination.type === "outside") throw new UserError("STK-23", "Lo que sale del depósito o vuelve va por Salidas.");
   if (destination.type === "missing") throw new UserError("STK-11", "Nada pasa a Faltantes manualmente: solo ocurre cuando un artículo no está en su ubicación durante el picking.");
   const putaway = source.type === "receiving" || source.type === "returns";
   // A book taken out of FALTANTES turned up: it was never written off, so it simply comes back.
