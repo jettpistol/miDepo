@@ -17,7 +17,7 @@ export type Lookup = { statuses: Record<string, FieldStatus>; suggestions: Sugge
 
 const LOCATION_FIELDS = ["source", "destination", "location"];
 /** In picking and packing the scan proves which book is in hand: nothing is suggested there. */
-const NO_SUGGESTIONS = ["picking", "packing"];
+const NO_SUGGESTIONS = ["picking", "batch-picking", "packing"];
 const clean = (q: string) => q.replace(/[%_\\]/g, "");
 
 /** "cronicas luna" finds "Crónicas de la Luna Roja": no accents, no capitals, words may be skipped. */
@@ -158,6 +158,22 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: articleName(book.title) } : { tone: "danger", text: `Ese es "${articleName(book.title)}". No es el artículo de esta parada.` };
       const remaining = t.t.quantity - t.t.picked;
       if (quantity && quantity > remaining) statuses.quantity = { tone: "danger", text: `Esta parada pide ${remaining}.` };
+    }
+  } else if (ctx === "batch-picking") {
+    // A stop of a batch: one shelf and one title, the units of several orders.
+    const [stop] = await db
+      .select({ code: locations.code, n: sql<number>`coalesce(sum(${pickTasks.quantity} - ${pickTasks.picked}), 0)`.mapWith(Number) })
+      .from(pickTasks)
+      .innerJoin(orders, eq(orders.id, pickTasks.orderId))
+      .innerJoin(locations, eq(locations.id, pickTasks.locationId))
+      .where(and(eq(orders.companyId, companyId), eq(orders.batchId, Number(v("batchId"))), eq(pickTasks.status, "pending"), eq(pickTasks.locationId, Number(v("locationId"))), eq(pickTasks.productId, Number(v("productId")))))
+      .groupBy(locations.code);
+    if (stop) {
+      const u = await location(v("location"));
+      await checkLocation("location", u);
+      if (u?.active) statuses.location = u.id === Number(v("locationId")) ? { tone: "ok", text: "Es la ubicación de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${stop.code}.` };
+      if (book) statuses.product = book.id === Number(v("productId")) ? { tone: "ok", text: articleName(book.title) } : { tone: "danger", text: `Ese es "${articleName(book.title)}". No es el artículo de esta parada.` };
+      if (quantity && quantity > stop.n) statuses.quantity = { tone: "danger", text: `Esta parada pide ${stop.n}.` };
     }
   } else if (ctx === "receiving" && book) {
     const [r] = await db.select().from(receivings).where(and(eq(receivings.id, Number(v("id"))), eq(receivings.companyId, companyId)));

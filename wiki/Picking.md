@@ -9,6 +9,24 @@ Picking es buscar en las ubicaciones lo que pide un pedido. miDepo genera el rec
 
 Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
+## Preparar todos en un lote
+
+Lo normal es preparar todos los pedidos juntos, en un solo recorrido. Toca **Preparar todos** (o **F8**) arriba de la lista de pendientes y confirma.
+
+- Todos los pedidos pendientes, del más antiguo al más reciente, forman un **lote** (`LOTE-0001`) a tu nombre.
+- Cada parada pide **el total** de ese artículo en esa ubicación, sumando todos los pedidos que lo llevan ("Toma 12 para 2 pedidos").
+- Las paradas van en orden de ubicación: pasas una sola vez por cada estante. Si el carro se llena, déjalo en PREPARACIÓN y sigue con el mismo lote.
+- Si falta stock, los pedidos más antiguos lo reciben primero.
+
+Cómo se separa el lote en pedidos lo elige un supervisor en **Ajustes → Picking por lotes**:
+
+| Opción | Qué haces |
+|---|---|
+| **En empaque** | Todo va junto al carro. En [Empaque](Empaque) se separa por pedido, escaneando cada libro en la caja de su pedido. |
+| **Por bandeja, al tomar** | Cada pedido tiene una bandeja numerada (la lista **Bandejas** dice cuál es cuál). En cada parada la pantalla dice cuántos van en cada bandeja, y al confirmar lo repite: "Bandeja 2: 4 (PED-00002) · Bandeja 3: 8 (PED-00003)". |
+
+El cambio vale para los lotes nuevos; un lote abierto sigue como empezó. **No está en la ubicación** funciona igual que con un pedido solo.
+
 ## Recorrer las paradas
 
 En pantalla aparece la **próxima parada**: la ubicación en grande, el artículo y cuántas unidades tomar.
@@ -45,7 +63,7 @@ Cuando no quedan paradas, miDepo avisa **Picking terminado**. Lleva todo a la me
 
 ## Preguntas frecuentes
 
-**¿Puedo dejar un pedido por la mitad?** Sí. Queda guardado y en Inicio aparece **Seguir con PED-…**.
+**¿Puedo dejar un pedido por la mitad?** Sí. Queda guardado y en Inicio aparece **Seguir con PED-…** (o **Seguir con LOTE-…** si es un lote).
 
 **¿Por qué el recorrido pasa por dos ubicaciones para el mismo artículo?** Porque en una sola no había suficientes unidades.
 

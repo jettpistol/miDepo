@@ -38,7 +38,14 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
       </PageHeader>
 
-      {p.status === "pending" ? (
+      {p.status === "in_picking" && p.batchId != null ? (
+        <Notice tone="accent">
+          <p className="mb-3">Este pedido se prepara en un lote, junto con otros.</p>
+          <Link href={`/picking/lote/${p.batchId}`} className="btn" {...hotkey("primary")}>
+            Ir al lote
+          </Link>
+        </Notice>
+      ) : p.status === "pending" ? (
         <div className="max-w-md space-y-4 border-y border-line py-5 lg:py-4">
           <p>
             Este pedido tiene <strong>{total} unidades</strong> de {lines.length} artículos y todavía no lo tomó nadie.

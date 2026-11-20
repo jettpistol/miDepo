@@ -5,7 +5,8 @@ import { PageHeader, ShelfMark, EmptyState } from "@/components/ui";
 import { counts, returns, orders, receivings, stock, locations } from "@/db/schema";
 import { pendingExports } from "@/lib/flows/exports";
 import { can, requireSession } from "@/lib/session";
-import { InProgressTable, loadOpenOrders, PendingTable } from "./picking/Tables";
+import { BatchesTable, InProgressTable, loadOpenOrders, PendingTable } from "./picking/Tables";
+import { batchNumber } from "@/lib/flows/picking";
 
 /** A work queue: what it is, how much there is, and where to go. */
 function Queue({ href, number, title }: { href: string; number: number; title: string }) {
@@ -35,13 +36,24 @@ export default async function Home() {
     db.select({ n: sum(stock.quantity).mapWith(Number) }).from(stock).innerJoin(locations, eq(locations.id, stock.locationId)).where(and(eq(stock.companyId, e), inArray(locations.type, ["receiving", "returns"]))),
     can(user.role, "supervisor") ? pendingExports(db, e) : Promise.resolve([]),
   ]);
-  const { inProgress, pending } = openOrders;
+  const { inProgress, pending, batches } = openOrders;
   const myOrders = inProgress.filter((f) => f.p.takenBy === user.id);
+  const myBatches = batches.filter((x) => x.b.takenBy === user.id);
 
   return (
     <>
       <PageHeader title="Inicio" />
 
+      {myBatches.map(({ b, nextShelf, orders: n }) => (
+        <Link key={`b${b.id}`} href={`/picking/lote/${b.id}`} className="mb-6 flex items-center gap-4 rounded-control bg-accent px-4 py-3.5 text-on-accent transition-colors duration-150 hover:bg-accent-hover">
+          {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm opacity-85">Tienes un lote de {n} pedidos a medio preparar</span>
+            <span className="block text-lg lg:text-base leading-tight font-bold">Seguir con {batchNumber(b.number)}</span>
+          </span>
+          <Icon name="arrow" className="size-6" />
+        </Link>
+      ))}
       {myOrders.map(({ p, nextShelf }) => (
         <Link key={p.id} href={`/picking/${p.id}`} className="mb-6 flex items-center gap-4 rounded-control bg-accent px-4 py-3.5 text-on-accent transition-colors duration-150 hover:bg-accent-hover">
           {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
@@ -55,6 +67,14 @@ export default async function Home() {
 
       <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="min-w-0 space-y-8 lg:space-y-6">
+          {batches.length > 0 && (
+            <section>
+              <h2 className="section-title">
+                Lotes en preparación <small>{batches.length}</small>
+              </h2>
+              <BatchesTable rows={batches} userId={user.id} />
+            </section>
+          )}
           {inProgress.length > 0 && (
             <section>
               <h2 className="section-title">

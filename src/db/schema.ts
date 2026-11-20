@@ -30,8 +30,12 @@ export const companies = pgTable("companies", {
   simTitles: integer("sim_titles").notNull().default(500),
   simCustomers: integer("sim_customers").notNull().default(60),
   lastSync: timestamp("last_sync", { withTimezone: true }),
+  /** How a picking batch is split into orders: at packing, or into one tray per order while picking. */
+  batchSorting: text("batch_sorting").$type<BatchSorting>().notNull().default("packing"),
   createdAt: createdAt(),
 });
+
+export type BatchSorting = "packing" | "trays";
 
 export type Role = "operator" | "supervisor" | "admin";
 
@@ -227,6 +231,26 @@ export const movements = pgTable(
 
 // ───────────── Outbound: orders, picking and boxes ─────────────
 
+/**
+ * A picking batch (lote): several orders picked in one walk. The route asks for the total of each
+ * title per shelf; the units are split into orders at packing or, with trays, while picking.
+ */
+export const pickBatches = pgTable(
+  "pick_batches",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** Shown as LOTE-0001, counted per company. */
+    number: integer("number").notNull(),
+    takenBy: integer("taken_by").notNull().references(() => users.id),
+    /** The company's setting when the batch was made; changing the setting does not change open batches. */
+    sorting: text("sorting").$type<BatchSorting>().notNull(),
+    status: text("status").$type<"open" | "done">().notNull().default("open"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("pick_batches_company_id_number_idx").on(t.companyId, t.number)],
+);
+
 export type OrderStatus = "pending" | "in_picking" | "picked" | "packed" | "shipped";
 
 export const orders = pgTable(
@@ -241,6 +265,10 @@ export const orders = pgTable(
     status: text("status").$type<OrderStatus>().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
     takenBy: integer("taken_by").references(() => users.id),
+    /** The picking batch it was taken in, if any. */
+    batchId: integer("batch_id").references(() => pickBatches.id),
+    /** In a batch sorted into trays: the tray number for this order (1, 2, 3…). */
+    tray: integer("tray"),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
   },
   (t) => [uniqueIndex("orders_company_id_fierro_id_idx").on(t.companyId, t.fierroId), index("orders_company_id_status_idx").on(t.companyId, t.status)],

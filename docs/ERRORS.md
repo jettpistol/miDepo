@@ -86,6 +86,7 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `ACCT-08` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The uploaded photo did not arrive as a JPEG data URL. |
 | `ACCT-09` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The photo is not a JPEG, or is under 100 bytes or over 200 KB after the browser shrank it. |
 | `ACCT-10` | Ese archivo no es una imagen que pueda usar. Prueba con una foto JPG o PNG. | `src/app/(app)/cuenta/Photo.tsx` · `choose` | The browser could not open or crop the chosen file. |
+| `ACCT-11` | Elige cómo se separa el lote. | `src/app/(app)/cuenta/actions.ts` · `saveBatchSorting` | The batch sorting setting got a value that is not one of the two options. |
 
 ## USER: Usuarios (admin)
 
@@ -163,10 +164,12 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-01` | No se encontró ese pedido. | `src/lib/flows/picking.ts` · `orderOf` | The order does not exist or belongs to another company. |
 | `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. Taking an order you already have opens it instead. |
 | `PICK-03` | No se encontró esa parada del recorrido. | `src/lib/flows/picking.ts` · `taskOf` | The pick task does not exist or belongs to another company. |
-| `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf` | Confirming or marking short a stop that is already done. |
-| `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
-| `PICK-06` | Ese es "{artículo}". No es el artículo que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned book is not the one the stop asks for. |
-| `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} a la ubicación. | `src/lib/flows/picking.ts` · `confirmPick` | Picking more units than the stop still needs. |
+| `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf`, `confirmBatchPick`, `markBatchShort` | Confirming or marking short a stop that is already done (also a stop of a batch). |
+| `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick`, `confirmBatchPick` | The scanned location is not the stop's location. |
+| `PICK-06` | Ese es "{artículo}". No es el artículo que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick`, `confirmBatchPick` | The scanned book is not the one the stop asks for. |
+| `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} a la ubicación. | `src/lib/flows/picking.ts` · `confirmPick`, `confirmBatchPick` | Picking more units than the stop still needs. |
+| `PICK-08` | No hay pedidos pendientes para preparar. | `src/lib/flows/picking.ts` · `takeAll` | "Preparar todos" when no order is pending (someone else took them first). |
+| `PICK-09` | No se encontró ese lote. | `src/lib/flows/picking.ts` · `batchOf` | The batch does not exist or belongs to another company. |
 
 ## PACK: Empaque
 

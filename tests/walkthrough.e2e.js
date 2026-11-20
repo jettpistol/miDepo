@@ -84,7 +84,7 @@ async function warning(p, field, value) {
 
   // Picking
   await p.goto(BASE + '/picking'); await shot('picking-list');
-  await p.click('button:has-text("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector('text=Próxima parada');
+  await p.click('button:text-is("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector('text=Próxima parada');
   const orderId = p.url().split('/').pop(); await shot('picking-stop');
   // The browser's back button shows the list as it is now: the order is in progress, not pending.
   const taken = await p.textContent('h1'); await p.goBack(); await p.waitForURL(BASE + '/picking');
@@ -239,7 +239,7 @@ async function warning(p, field, value) {
   await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Iniciar sesión")'); await m.waitForURL(BASE + '/');
   await m.screenshot({ path: `${OUT}/m-home.png`, caret: 'initial' });
   step('phone accent: ' + await m.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
-  await m.goto(BASE + '/picking'); await m.click('button:has-text("Preparar")'); await m.waitForSelector('text=Próxima parada'); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
+  await m.goto(BASE + '/picking'); await m.click('button:text-is("Preparar")'); await m.waitForSelector('text=Próxima parada'); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
   await m.goto(BASE + '/mas'); await m.screenshot({ path: `${OUT}/m-more.png`, caret: 'initial' });
   step('operator does not see Fierro: ' + (!(await m.textContent('main')).includes('Fierro') ? 'ok' : fail('Fierro visible')));
   await m.goto(BASE + '/fierro'); step('operator /fierro → ' + m.url());
@@ -267,6 +267,22 @@ async function warning(p, field, value) {
   step('users: role changed → ' + (await o.textContent('dialog[open] [role=status]')).trim()); await o.keyboard.press('Escape');
   await o.click('button:has-text("Nuevo")'); await o.fill('#name', 'Prueba Recorrido'); await o.fill('#email', 'recorrido@demo.test'); await o.fill('#pin', '345678');
   await o.click('button:has-text("Crear usuario")'); await o.waitForSelector('main td:has-text("Prueba Recorrido")'); step('users: created from + Nuevo');
+
+  // Batch picking: every pending order in one route, totals per shelf, split into trays
+  await o.goto(BASE + '/cuenta#lotes'); await o.click('#lotes button[aria-haspopup=listbox]'); await o.keyboard.type('bandeja'); await o.keyboard.press('Enter');
+  await o.click('#lotes button:has-text("Guardar")'); await o.waitForSelector('#lotes [role=status]'); step('batch sorting → ' + (await o.textContent('#lotes [role=status]')).trim());
+  await o.goto(BASE + '/picking'); await o.waitForLoadState('networkidle'); await o.screenshot({ path: `${OUT}/picking-take-all.png`, caret: 'initial' });
+  o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Preparar todos")'); await o.waitForURL(/\/picking\/lote\/\d+/); await o.waitForSelector('text=Próxima parada');
+  await o.screenshot({ path: `${OUT}/batch.png`, fullPage: true, caret: 'initial' });
+  step('batch: ' + (await o.textContent('h1')).trim() + ' · ' + (await o.textContent('main header p')).trim());
+  const bShelf = await o.getAttribute('.shelfmark-xl', 'title'); const bCode = (await o.textContent('.bg-accent p.font-mono.text-sm')).trim();
+  step('  wrong shelf, before the click → ' + await warning(o, 'location', bShelf === 'A-01-1' ? 'A-01-2' : 'A-01-1')); await o.fill('#scan-location', '');
+  step('  batch pick → ' + await scan(o, { location: bShelf, product: bCode }));
+  await o.goto(BASE + '/picking'); step('batch listed in Picking: ' + ((await o.$('main a[href^="/picking/lote/"]')) ? 'ok' : fail('missing')));
+  await o.setViewportSize({ width: 390, height: 844 }); await o.click('main a[href^="/picking/lote/"]'); await o.waitForSelector('text=Próxima parada');
+  await o.screenshot({ path: `${OUT}/m-batch.png`, fullPage: true, caret: 'initial' });
+  step('phone batch scrolls sideways: ' + ((await o.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
+  await o.setViewportSize({ width: 1440, height: 900 });
   await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
   await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
   await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');

@@ -2,9 +2,10 @@ import { asc, eq } from "drizzle-orm";
 import { ActionButton, ActionForm } from "@/components/ScanForm";
 import { Code, PageHeader, shortDate } from "@/components/ui";
 import { passkeys } from "@/db/schema";
-import { requireSession } from "@/lib/session";
+import { can, requireSession } from "@/lib/session";
+import { Select } from "@/components/Select";
 import { Avatar } from "@/components/Avatar";
-import { changePassword, changePin, saveAppearance, savePhoto, removePhoto, removePasskey } from "./actions";
+import { changePassword, changePin, saveAppearance, saveBatchSorting, savePhoto, removePhoto, removePasskey } from "./actions";
 import { Photo } from "./Photo";
 import { Appearance } from "./Appearance";
 import { AddPasskey } from "./Passkeys";
@@ -104,6 +105,30 @@ export default async function Account() {
             </ActionForm>
           </div>
         </section>
+
+        {can(user.role, "supervisor") && (
+          <section id="lotes" className={section}>
+            <h2 className="section-title">Picking por lotes</h2>
+            <div className="max-w-sm">
+              <ActionForm action={saveBatchSorting} button="Guardar" resetOnOk={false}>
+                <div>
+                  <label htmlFor="sorting" className="field-label">
+                    Separar por pedido
+                  </label>
+                  <Select
+                    id="sorting"
+                    name="sorting"
+                    defaultValue={company.batchSorting}
+                    options={[
+                      { value: "packing", label: "En empaque", detail: "Todo el lote va a PREPARACIÓN; en empaque se separa por pedido." },
+                      { value: "trays", label: "Por bandeja, al tomar", detail: "Cada pedido tiene su bandeja; cada escaneo dice cuántos van en cuál." },
+                    ]}
+                  />
+                </div>
+              </ActionForm>
+            </div>
+          </section>
+        )}
       </div>
     </>
   );

@@ -2,7 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { action, txt } from "@/lib/action";
-import { passkeys, userPhotos, users } from "@/db/schema";
+import { companies, passkeys, userPhotos, users } from "@/db/schema";
 import { hashPassword, VALID_PIN, pinHmac, verifyPassword } from "@/lib/credentials";
 import { VALID_HEX } from "@/lib/color";
 import { isFont } from "@/lib/fonts";
@@ -74,4 +74,12 @@ export const removePhoto = action("operator", async (c) => {
     await tx.update(users).set({ photoVersion: null }).where(eq(users.id, c.userId));
   });
   return "Foto quitada.";
+});
+
+/** For the whole company: how picking batches are split into orders. Open batches keep theirs. */
+export const saveBatchSorting = action("supervisor", async (c, f) => {
+  const sorting = txt(f, "sorting");
+  if (sorting !== "packing" && sorting !== "trays") throw new UserError("ACCT-11", "Elige cómo se separa el lote.");
+  await c.db.update(companies).set({ batchSorting: sorting }).where(eq(companies.id, c.companyId));
+  return sorting === "trays" ? "Guardado. Los lotes nuevos se separan por bandeja." : "Guardado. Los lotes nuevos se separan en empaque.";
 });
