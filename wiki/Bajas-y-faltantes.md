@@ -45,4 +45,6 @@ Debajo de la tabla está lo de los **últimos 90 días**:
 - **Por motivo:** **Salidas** y **Entradas** de unidades por cada motivo, y cuántas estaban **mal ubicadas** (esas no son pérdida).
 - **Historial:** cada línea con su documento, artículo, ubicación, cantidad, motivo y quién la aprobó (**Aprobado por**).
 
+**Deshacer** una baja: en el historial, mientras no esté cargada en Fierro, las unidades vuelven a FALTANTES o DAÑADOS y la baja se borra. Los ajustes de un conteo no se deshacen aquí: se corrigen con otro conteo.
+
 Si un motivo crece mes a mes, o las bajas se repiten en la misma ubicación, hay algo que revisar.

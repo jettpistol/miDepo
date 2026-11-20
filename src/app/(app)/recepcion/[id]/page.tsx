@@ -5,7 +5,7 @@ import { ActionButton, ScanForm } from "@/components/ScanForm";
 import { Progress, Notice, Code, PageHeader, Badge } from "@/components/ui";
 import { products, receivingLines, receivings, suppliers } from "@/db/schema";
 import { requireSession } from "@/lib/session";
-import { close, correct, scan } from "../actions";
+import { cancel, close, correct, reopen, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
@@ -29,7 +29,24 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"} />
+      <PageHeader title={`${r.number} · ${row.supplier}`} back={{ href: "/recepcion", text: "Recepciones" }} subtitle={r.fierroId ? "Recepción avisada por Fierro" : "Recepción sin aviso"}>
+        {open && (r.fierroId == null || received > 0) && (
+          <ActionButton
+            action={cancel}
+            hiddenFields={r.fierroId == null ? { id, unannounced: 1 } : { id }}
+            className="btn-soft"
+            showOk={false}
+            confirm={r.fierroId == null ? `¿Cancelar ${r.number}? Se borra con todo lo escaneado. No se puede deshacer.` : `¿Borrar lo escaneado en ${r.number}? Vuelve a esperar como la avisó Fierro. No se puede deshacer.`}
+          >
+            {r.fierroId == null ? "Cancelar recepción" : "Borrar lo escaneado"}
+          </ActionButton>
+        )}
+        {!open && !r.sentToFierro && (
+          <ActionButton action={reopen} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Reabrir ${r.number}? Sus ${received} unidades salen de Recepción hasta que la cierres de nuevo.`}>
+            Reabrir
+          </ActionButton>
+        )}
+      </PageHeader>
 
       {open ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">
@@ -37,7 +54,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
             <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar" />
             {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
+              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Sus unidades entran a Recepción para reponer."}>
                 Cerrar recepción
               </ActionButton>
             </div>

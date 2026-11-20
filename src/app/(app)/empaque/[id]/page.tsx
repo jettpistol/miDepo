@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
-import { close, scan, finish, empty } from "../actions";
+import { close, scan, finish, empty, takeOut, reopen, reopenOrder } from "../actions";
 import { articleName } from "@/lib/article";
 
 const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 });
@@ -51,7 +51,20 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
           </Link>
         </Notice>
       )}
-      {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está cargado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo carga en Fierro."}</Notice>}
+      {ready && (
+        <Notice tone="ok">
+          <span className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está cargado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo carga en Fierro."}
+            </span>
+            {p.status === "packed" && (
+              <ActionButton action={reopenOrder} hiddenFields={{ id }} className="btn-sm" showOk={false} confirm={`¿Reabrir el empaque de ${p.number}? Deja de estar listo para cargar en Fierro hasta que lo termines de nuevo.`}>
+                Reabrir empaque
+              </ActionButton>
+            )}
+          </span>
+        </Notice>
+      )}
 
       <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
         {editable && (
@@ -89,6 +102,11 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                   <h2 className="section-title mb-0">Caja {k.number}</h2>
                   <span className="flex flex-wrap items-center justify-end gap-3">
                     {k.status === "closed" ? <Badge tone="ok">Cerrada · {kg(k.weightGrams ?? 0)} kg</Badge> : <Badge tone="accent">Abierta</Badge>}
+                    {k.status === "closed" && editable && (
+                      <ActionButton action={reopen} hiddenFields={{ boxId: k.id }} className="btn-sm" showOk={false} reason={open ? `Cierra la caja ${open.number} antes de reabrir otra.` : undefined}>
+                        Reabrir
+                      </ActionButton>
+                    )}
                     {k.status === "open" && editable && (
                       <ActionButton action={empty} hiddenFields={{ boxId: k.id }} className="btn-sm border-danger/50 text-danger hover:border-danger hover:bg-danger-soft hover:text-danger" confirm={`¿Vaciar la caja ${k.number}? Tendrás que escanear de nuevo lo que contenía.`} showOk={false}>
                         Vaciar
@@ -99,8 +117,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                 <ul className="ruled-list framed">
                   {own.map((x) => (
                     <li key={x.i.productId} className="row justify-between">
-                      <span className="min-w-0">{articleName(x.title)}</span>
+                      <span className="min-w-0 flex-1">{articleName(x.title)}</span>
                       <span className="font-semibold whitespace-nowrap">× {x.i.quantity}</span>
+                      {k.status === "open" && editable && (
+                        <ActionButton action={takeOut} hiddenFields={{ boxId: k.id, productId: x.i.productId }} className="btn-sm" showOk={false}>
+                          Sacar
+                        </ActionButton>
+                      )}
                     </li>
                   ))}
                   {own.length === 0 && <li className="row text-muted">Vacía</li>}

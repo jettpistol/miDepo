@@ -6,7 +6,7 @@ import { Notice, Code, PageHeader, Badge, type Tone } from "@/components/ui";
 import { customers, returnLines, returns, products } from "@/db/schema";
 import { BOOK_CONDITIONS } from "@/lib/flows/returns";
 import { requireSession } from "@/lib/session";
-import { close, scan, remove } from "../actions";
+import { cancel, close, reopen, scan, remove } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { InfoHint } from "@/components/Hint";
@@ -25,7 +25,18 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }} />
+      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }}>
+        {open && (
+          <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar ${d.number}? Se borra con todo lo escaneado. No se puede deshacer.`}>
+            Cancelar devolución
+          </ActionButton>
+        )}
+        {!open && !d.sentToFierro && (
+          <ActionButton action={reopen} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Reabrir ${d.number}? Sus unidades salen del stock hasta que la cierres de nuevo.`}>
+            Reabrir
+          </ActionButton>
+        )}
+      </PageHeader>
       {!open && (
         <div className="mb-6">
           <Notice tone="ok">
@@ -56,7 +67,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
                 </div>
               </fieldset>
             </ScanForm>
-            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún artículo." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock y ya no se puede corregir.">
+            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún artículo." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock en la zona de su estado.">
               Cerrar devolución
             </ActionButton>
           </div>

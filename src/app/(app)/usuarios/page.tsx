@@ -123,7 +123,7 @@ export default async function Users() {
                           label: "Cambiar PIN o contraseña",
                           title: `Acceso de ${u.name}`,
                           content: (
-                            <ActionForm action={setAccess} button="Guardar acceso" className="space-y-3" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o ambos." }}>
+                            <ActionForm action={setAccess} button="Guardar acceso" className="space-y-3" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o ambos." }} confirm={`¿Cambiar el acceso de ${u.name}? Lo que reemplaces deja de funcionar y no se puede recuperar.`}>
                               <input type="hidden" name="id" value={u.id} />
                               <div>
                                 <label className="field-label" htmlFor={`pin-${u.id}`}>
@@ -144,7 +144,7 @@ export default async function Users() {
                       ]}
                     >
                       {u.photoVersion && (
-                        <ActionButton action={removePhotoOf} hiddenFields={{ id: u.id }} className="menu-item w-full" confirm={`¿Quitar la foto de ${u.name}?`}>
+                        <ActionButton action={removePhotoOf} hiddenFields={{ id: u.id }} className="menu-item w-full" confirm={`¿Quitar la foto de ${u.name}? No se puede deshacer.`}>
                           Quitar foto
                         </ActionButton>
                       )}

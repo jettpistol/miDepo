@@ -223,3 +223,10 @@ export async function closeCount(c: Ctx, countId: number, cause: string = "count
     return parts.length === 0 ? "Conteo cerrado. Todo coincidía." : `Conteo cerrado: ${parts.join(", ")}.`;
   });
 }
+
+/** Deletes an open count and everything counted in it. Stock is untouched: only approval changes it. */
+export async function cancelCount(c: Ctx, countId: number) {
+  const k = await isOpen(c, countId);
+  await c.db.delete(counts).where(eq(counts.id, countId));
+  return `Conteo "${k.name}" cancelado. El stock no cambió.`;
+}

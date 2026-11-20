@@ -17,7 +17,7 @@ Pasa con tomos de la misma serie, que tienen tapas parecidas. Revisa el número 
 ## En el picking
 
 **El sistema dice que hay y no está.**
-Toca **No está en la ubicación**. miDepo lo busca en otra ubicación o lo registra como faltante. Avisa a tu supervisor: esa ubicación necesita un conteo.
+Toca **No está aquí**. miDepo lo busca en otra ubicación o lo registra como faltante. Avisa a tu supervisor: esa ubicación necesita un conteo.
 
 **"Ese pedido ya lo tomó otra persona."**
 Dos personas tocaron a la vez. Toma el siguiente.

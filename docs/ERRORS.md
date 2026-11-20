@@ -138,6 +138,10 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `STK-08` | La ubicación "{código}" está desactivada. | `src/lib/stock.ts` · `findLocation` | The location exists but is deactivated. |
 | `STK-09` | Los pedidos preparados no se mueven manualmente: salen cuando se despacha el pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into or out of the staging zone (picked orders) by hand. |
 | `STK-11` | Nada pasa a Faltantes manualmente: solo ocurre cuando un artículo no está en su ubicación durante el picking. | `src/lib/flows/move.ts` · `move` | Moving stock into FALTANTES by hand. Moving out of it is allowed: that is how a missing book comes back. |
+| `STK-12` | Ese movimiento no se puede deshacer desde aquí. | `src/lib/flows/move.ts` · `undoMove` | Undoing a movement that was not a manual move (picking, a count, a receiving…). Only reachable by editing the form. |
+| `STK-13` | Solo quien hizo el movimiento puede deshacerlo. | `src/lib/flows/move.ts` · `undoMove` | Undoing somebody else's move. The screen lists only your own. |
+| `STK-14` | Ese movimiento ya se deshizo. | `src/lib/flows/move.ts` · `undoMove` | Undoing the same move twice. |
+| `STK-15` | Esas unidades ya no están todas en el destino. Muévelas a mano. | `src/lib/flows/move.ts` · `undoMove` | Undoing a move after some of the units left the destination. |
 | `STK-10` | La cantidad tiene que ser un número entero mayor que cero. | `src/lib/flows/common.ts` · `validQuantity` | A scanned quantity that is not a whole number from 1 to 100,000. Used by every scan flow. |
 
 ## RCV: Recepción and suppliers
@@ -155,6 +159,12 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RCV-09` | Escribe un número de cero para arriba. | `src/lib/flows/receiving.ts` · `setReceived` | Correcting a received quantity to a negative or non-whole number. |
 | `RCV-10` | Todavía no escaneaste nada en esta recepción. | `src/lib/flows/receiving.ts` · `closeReceiving` | Closing a receiving with nothing received. |
 | `RCV-11` | No se pudo crear el proveedor. | `src/app/(app)/recepcion/actions.ts` · `addSupplier` | Creating a supplier from the dropdown failed without a message. Should not happen: any failure there already has its own code. |
+| `RCV-12` | Esta recepción todavía está abierta. | `src/lib/flows/receiving.ts` · `reopenReceiving` | Reopening a receiving that is not closed. |
+| `RCV-13` | Esta recepción ya se cargó en Fierro. No se puede reabrir. | `src/lib/flows/receiving.ts` · `reopenReceiving` | Reopening a receiving already marked as loaded in Fierro. |
+| `RCV-14` | Parte de lo recibido ya se guardó en una ubicación. Devuélvelo a Recepción con Mover para poder reabrir. | `src/lib/flows/receiving.ts` · `reopenReceiving` | Reopening a receiving when RECEPCION holds fewer units of a title than it received. |
+| `RCV-15` | No se encontró ese proveedor. | `src/lib/flows/receiving.ts` · `deleteSupplier` | The supplier does not exist or belongs to another company. |
+| `RCV-16` | Ese proveedor viene de Fierro. Se borra allí. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier that came from Fierro. The screen offers it only for suppliers created in miDepo. |
+| `RCV-17` | Ese proveedor ya tiene recepciones y no se puede borrar. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier some receiving uses. The screen disables the button first. |
 
 ## PICK: Picking
 
@@ -167,6 +177,17 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
 | `PICK-06` | Ese es "{artículo}". No es el artículo que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned book is not the one the stop asks for. |
 | `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} a la ubicación. | `src/lib/flows/picking.ts` · `confirmPick` | Picking more units than the stop still needs. |
+| `PICK-08` | El pedido {número} ya pasó por empaque. Su picking ya no se puede cambiar. | `src/lib/flows/picking.ts` · `releaseOrder`, `unpick`, `undoShort` | Dropping an order, undoing a pick or undoing a shortage report once the order is packed or shipped. |
+| `PICK-09` | Nadie está preparando el pedido {número}. | `src/lib/flows/picking.ts` · `releaseOrder` | Dropping an order that is still pending (somebody dropped it already). |
+| `PICK-10` | Este pedido lo está preparando {nombre}. Solo esa persona o un supervisor puede soltarlo. | `src/lib/flows/picking.ts` · `releaseOrder` | An operator tries to drop an order somebody else took. The screen disables the button first. |
+| `PICK-11` | Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo. | `src/lib/flows/picking.ts` · `releaseOrder` | Dropping an order whose packing has started. The screen disables the button first. |
+| `PICK-12` | El pedido cambió mientras tanto. Recarga la página. | `src/lib/flows/picking.ts` · `releaseOrder` | Two people act on the same order at the same moment and the other got there first. |
+| `PICK-13` | En esta parada todavía no se tomó nada. | `src/lib/flows/picking.ts` · `unpick` | Undoing a pick on a stop with nothing picked (for example, pressed twice). |
+| `PICK-14` | Parte de esto ya está en una caja. Sácalo de la caja en empaque primero. | `src/lib/flows/picking.ts` · `unpick` | Undoing a pick whose units are already in a box. |
+| `PICK-15` | Esa parada no está marcada como no encontrada. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report on a stop that is not short, or on a title with no stock anywhere (nothing was reported). |
+| `PICK-16` | Las paradas que la reemplazaron ya avanzaron. Deshaz esas primero. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after the extra stop miDepo added elsewhere was picked or reported short too. |
+| `PICK-17` | Esas unidades ya no están en Faltantes: se encontraron o se dieron de baja. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after a supervisor wrote the units off or somebody moved them out of FALTANTES. |
+| `PICK-18` | Primero deshaz el aviso de que no estaba en la ubicación. | `src/lib/flows/picking.ts` · `unpick` | Undoing a partial pick on a stop that was then reported short. |
 
 ## PACK: Empaque
 
@@ -184,6 +205,13 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PACK-10` | Quedan {n} unidades preparadas sin empacar. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing with picked units not yet in a box. |
 | `PACK-11` | Cierra la caja abierta antes de terminar. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing with a box still open. |
 | `PACK-12` | Todavía no hay ninguna caja. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing an order with picked units but no boxes. |
+| `PACK-13` | No se encontró esa caja. | `src/lib/flows/packing.ts` · `removeFromBox`, `reopenBox` | The box does not exist or belongs to another company. Only reachable by editing the form. |
+| `PACK-14` | Esa caja está cerrada. Reábrela para sacar algo. | `src/lib/flows/packing.ts` · `removeFromBox` | Taking a title out of a closed box. |
+| `PACK-15` | Ese artículo no está en la caja. | `src/lib/flows/packing.ts` · `removeFromBox` | Taking out a title that is not in the box (for example, pressed twice). |
+| `PACK-16` | Esa caja ya está abierta. | `src/lib/flows/packing.ts` · `reopenBox` | Reopening a box that is open. |
+| `PACK-17` | La caja {n} está abierta. Ciérrala antes de reabrir otra. | `src/lib/flows/packing.ts` · `reopenBox` | Reopening a box while another box of the order is open. The screen disables the button first. |
+| `PACK-18` | Este pedido ya se cargó en Fierro y salió del depósito. No se puede reabrir. | `src/lib/flows/packing.ts` · `reopenPacking` | Reopening packing of a shipped order. |
+| `PACK-19` | Este pedido todavía no se terminó de empacar. | `src/lib/flows/packing.ts` · `reopenPacking` | Reopening packing of an order that is not packed. |
 
 ## RET: Devoluciones
 
@@ -194,6 +222,9 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RET-03` | Esta devolución ya está cerrada. | `src/lib/flows/returns.ts` · `open` | Scanning into, editing or closing a return that is already closed. |
 | `RET-04` | Elige en qué estado está el artículo. | `src/lib/flows/returns.ts` · `scanReturn` | Scanning a returned book without choosing its condition. |
 | `RET-05` | Todavía no escaneaste ningún artículo. | `src/lib/flows/returns.ts` · `closeReturn` | Closing a return with no books. |
+| `RET-06` | Esta devolución todavía está abierta. | `src/lib/flows/returns.ts` · `reopenReturn` | Reopening a return that is not closed. |
+| `RET-07` | Esta devolución ya se cargó en Fierro. No se puede reabrir. | `src/lib/flows/returns.ts` · `reopenReturn` | Reopening a return already marked as loaded in Fierro. |
+| `RET-08` | Parte de lo devuelto ya salió de {zona}. Devuélvelo ahí con Mover para poder reabrir. | `src/lib/flows/returns.ts` · `reopenReturn` | Reopening a return after some of its units were put away or moved. |
 
 ## CNT: Conteos
 
@@ -221,6 +252,9 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `ADJ-01` | Solo se da de baja lo que está en Faltantes o en Dañados. | `src/lib/flows/adjustments.ts` · `writeOff` | Writing off from a location that is not FALTANTES or DANADOS, or from another company's. Only reachable by editing the form. |
 | `ADJ-02` | Elige el motivo de la baja. | `src/lib/flows/adjustments.ts` · `writeOff` | Writing off with no cause, or with "Apareció", which is not a loss. |
 | `ADJ-03` | Ese artículo no está en el catálogo. | `src/lib/flows/adjustments.ts` · `writeOff` | The title does not exist or belongs to another company. Only reachable by editing the form. |
+| `ADJ-04` | No se encontró esa baja. | `src/lib/flows/adjustments.ts` · `undoWriteOff` | The adjustment does not exist or belongs to another company. |
+| `ADJ-05` | Ese ajuste es parte de un conteo aprobado y no se puede deshacer. | `src/lib/flows/adjustments.ts` · `undoWriteOff` | Undoing an adjustment made by a count. The screen offers undo only for write-offs. |
+| `ADJ-06` | Esa baja ya se cargó en Fierro. No se puede deshacer. | `src/lib/flows/adjustments.ts` · `undoWriteOff` | Undoing a write-off already marked as loaded in Fierro. |
 
 Writing off more units than the zone holds is refused by `STK-03`.
 

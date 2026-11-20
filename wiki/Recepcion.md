@@ -41,6 +41,10 @@ Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que
 - Lo recibido entra al stock en la zona **Recepción**. Todavía no está en su ubicación.
 - Aparece en [Reposición](Reposicion) para llevarlo a su ubicación.
 - Queda en **Cerradas**, abajo en Recepción. Ahí están todas las recepciones cerradas; busca por número o proveedor.
-- La recepción cerrada **no se puede volver a abrir**. Si te equivocaste, avisa a tu supervisor: se corrige con un [conteo](Conteos).
+- Si te equivocaste, toca **Reabrir**: sus unidades salen de Recepción hasta que la cierres de nuevo. Se puede mientras no esté cargada en Fierro y mientras todo siga en Recepción (si ya repusiste algo, devuélvelo a Recepción con [Mover](Mover) o deshazlo en **Tus últimos movimientos**). Una vez cargada en Fierro, se corrige con un [conteo](Conteos).
+
+## Cancelar
+
+Mientras esté abierta, **Cancelar recepción** borra una recepción sin aviso con todo lo escaneado. En una avisada por Fierro, **Borrar lo escaneado** la deja como llegó: esperando, sin nada recibido. Ninguna de las dos se puede deshacer.
 
 > Los artículos que vuelven de un cliente **no** van por Recepción: van por [Devoluciones](Devoluciones), porque hay que revisar en qué estado están.

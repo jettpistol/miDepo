@@ -36,7 +36,7 @@ En la computadora, **Ctrl + K** (en Mac, **⌘ + K**) o **/** llevan al buscador
 ## Tres reglas que evitan casi todos los problemas
 
 1. **Siempre escanea.** No confirmes de memoria: la ubicación y el artículo se leen con el lector o la cámara.
-2. **Si no está, dilo.** En picking, toca **No está en la ubicación**. No busques por tu cuenta en otra ubicación sin registrarlo en miDepo.
+2. **Si no está, dilo.** En picking, toca **No está aquí**. No busques por tu cuenta en otra ubicación sin registrarlo en miDepo.
 3. **No muevas artículos sin registrarlo.** Si cambias algo de ubicación, usa [Mover](Mover). Un artículo movido sin registrarlo es un artículo perdido.
 
 ## Roles

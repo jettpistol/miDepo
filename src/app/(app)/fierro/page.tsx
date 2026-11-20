@@ -91,7 +91,7 @@ export default async function Fierro() {
                         <a href={`/api/export/${p.type}/${p.id}`} className="btn-sm" download>
                           <Icon name="download" className="size-4" /> CSV
                         </a>
-                        <ActionButton action={submit} hiddenFields={{ type: p.type, id: p.id }} className="btn-sm" confirm={`¿Ya cargaste ${p.number} en Fierro?`}>
+                        <ActionButton action={submit} hiddenFields={{ type: p.type, id: p.id }} className="btn-sm" confirm={`¿Ya cargaste ${p.number} en Fierro? No se puede deshacer${p.type === "order" ? ": el pedido sale del depósito" : ""}.`}>
                           Marcar como cargado
                         </ActionButton>
                       </span>
