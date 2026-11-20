@@ -12,11 +12,13 @@ import { can, requireSession } from "@/lib/session";
 import { create } from "./actions";
 import { SupplierSelect } from "./SupplierSelect";
 import { hotkey } from "@/lib/hotkeys";
+import { AssigneeCell, assignees } from "@/components/Assignee";
 
 export const metadata = { title: "Recepción" };
 
 export default async function Receivings({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const supplierList = await db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, company.id)).orderBy(asc(suppliers.name));
@@ -35,6 +37,7 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
     .groupBy(receivings.id, suppliers.name)
     .orderBy(asc(receivings.date));
   const openList = rows;
+  const a = await assignees(session);
   const page = requestedPage(sp.pagina);
   const closed = await receivingRows(db, company.id, eq(receivings.status, "closed"), paging(page), q);
 
@@ -62,6 +65,7 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
               <tr>
                 <th>Recepción</th>
                 <th>Origen</th>
+                <th className="hidden sm:table-cell">Asignado</th>
                 <th className="hidden text-right sm:table-cell">Artículos</th>
                 <th className="hidden text-right sm:table-cell">Esperadas</th>
                 <th className="hidden md:table-cell">Fecha</th>
@@ -70,7 +74,7 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
             </thead>
             <tbody>
               {openList.length === 0 && (
-                <EmptyRow columns={6} title="Sin recepciones abiertas">
+                <EmptyRow columns={7} title="Sin recepciones abiertas">
                   Las avisadas por Fierro llegan al sincronizar.
                 </EmptyRow>
               )}
@@ -89,6 +93,9 @@ export default async function Receivings({ searchParams }: { searchParams: Promi
                       </span>
                       {shortDate(r.date)}
                     </span>
+                  </td>
+                  <td className="hidden sm:table-cell">
+                    <AssigneeCell a={a} kind="receiving" id={r.id} value={r.assignedTo} />
                   </td>
                   <td className="hidden text-right sm:table-cell">{titles}</td>
                   <td className="hidden text-right sm:table-cell">{r.fierroId ? <span className="font-semibold">{expected}</span> : <span className="text-muted">—</span>}</td>

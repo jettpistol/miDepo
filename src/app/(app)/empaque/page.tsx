@@ -4,11 +4,14 @@ import { PageHeader, Badge, plural, EmptyState, Condition, SALE_MODE } from "@/c
 import { customers, orderLines, orders } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { hotkey } from "@/lib/hotkeys";
+import { AssigneeCell, assignees } from "@/components/Assignee";
 
 export const metadata = { title: "Empaque" };
 
 export default async function Packing() {
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
+  const a = await assignees(session);
   const rows = await db
     .select({
       p: orders,
@@ -41,6 +44,7 @@ export default async function Packing() {
                 <th>Pedido</th>
                 <th>Cliente</th>
                 <th className="hidden sm:table-cell">Condición</th>
+                <th className="hidden sm:table-cell">Asignado</th>
                 <th className="hidden text-right sm:table-cell">Preparadas</th>
                 <th className="hidden text-right sm:table-cell">Faltantes</th>
                 <th>Cajas</th>
@@ -69,6 +73,9 @@ export default async function Packing() {
                   </td>
                   <td className="hidden sm:table-cell">
                     <Condition mode={p.saleMode} href={`/empaque/${p.id}`} />
+                  </td>
+                  <td className="hidden sm:table-cell">
+                    <AssigneeCell a={a} kind="order" id={p.id} value={p.assignedTo} />
                   </td>
                   <td className="hidden text-right font-semibold sm:table-cell">{picked}</td>
                   <td className={`hidden text-right sm:table-cell ${picked < order ? "font-semibold text-danger" : "text-muted"}`}>{picked < order ? order - picked : "—"}</td>

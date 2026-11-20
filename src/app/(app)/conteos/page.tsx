@@ -4,6 +4,7 @@ import { LiveSearch } from "@/components/LiveSearch";
 import { Pager, paging, requestedPage } from "@/components/ListTools";
 import { containsText } from "@/lib/lookup";
 import { ActionForm } from "@/components/ScanForm";
+import { AssigneeCell, assignees } from "@/components/Assignee";
 import { Progress, PageHeader, shortDate, Badge, EmptyRow } from "@/components/ui";
 import { countLocations, counts } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
@@ -14,7 +15,9 @@ import { hotkey } from "@/lib/hotkeys";
 export const metadata = { title: "Conteos" };
 
 export default async function Counts({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
+  const a = await assignees(session);
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const page = requestedPage(sp.pagina);
@@ -59,6 +62,7 @@ export default async function Counts({ searchParams }: { searchParams: Promise<{
             <thead>
               <tr>
                 <th>Conteo</th>
+                <th className="hidden sm:table-cell">Asignado</th>
                 <th className="hidden w-[30%] min-w-40 sm:table-cell">Ubicaciones contadas</th>
                 <th className="hidden md:table-cell">Creado</th>
                 <th>Estado</th>
@@ -66,7 +70,7 @@ export default async function Counts({ searchParams }: { searchParams: Promise<{
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <EmptyRow columns={4} title={q ? `Ningún conteo coincide con "${q}"` : "Sin conteos"} />
+                <EmptyRow columns={5} title={q ? `Ningún conteo coincide con "${q}"` : "Sin conteos"} />
               )}
               {rows.map(({ k, total, countedCount }) => (
                 <tr key={k.id}>
@@ -80,6 +84,9 @@ export default async function Counts({ searchParams }: { searchParams: Promise<{
                       </span>
                       {shortDate(k.date)}
                     </span>
+                  </td>
+                  <td className="hidden sm:table-cell">
+                    <AssigneeCell a={a} kind="count" id={k.id} value={k.assignedTo} open={k.status === "open"} />
                   </td>
                   <td className="hidden sm:table-cell">
                     <Progress done={countedCount} total={total} />
