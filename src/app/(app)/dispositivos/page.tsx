@@ -114,7 +114,7 @@ export default async function Devices() {
         <section id="conexiones" className={section}>
           <h2 className="section-title flex items-center gap-1 self-start">
             Conexiones
-            <InfoHint text="Impresión directa por USB, serie o Bluetooth: en una próxima versión. Hoy se imprime con el diálogo del sistema o con las impresoras demo." />
+            <InfoHint text="Impresión directa por USB, serie o Bluetooth: próxima versión. Hoy: diálogo del sistema o impresoras demo." />
           </h2>
           <BrowserDevices />
         </section>

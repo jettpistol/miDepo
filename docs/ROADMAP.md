@@ -10,7 +10,8 @@ Where the project stands beyond what the README's "What is not done" lists. Last
 4. **Audit company isolation.** Companies share one database and every query must filter by company. A few paths are covered by tests; there has been no systematic audit of every screen and action.
 5. **A real Fierro connector** behind `FierroConnector`. Start read-only (the B2B API for catalogue and availability, or the "acceso a datos" views for stock and sales) and keep CSV for write-back. The CSV layouts for orders, receipts, returns and write-offs are guesses; only the count export follows a format Fierro documents.
 6. **A thin standalone mode** for warehouses without Fierro: CSV import of catalogue and orders, plus a printable delivery note. Designed for, not built.
-7. Smaller: a screen to create companies, password reset, a translation file instead of Spanish text inside the pages, SINLI file import and export, tolerance for short wifi drops, continuous integration and a linter.
+7. **Comments on more documents** (D56). The table and component are generic; each screen is a few lines. Most useful first: receivings (what the supplier sent wrong, a damaged carton), returns (why the customer returned it), count locations (why a location differs, read before approving), adjustments (the story behind a write-off), Salidas (what was agreed with the fair or bookstore) and articles ("comes shrink-wrapped"). Waiting for the owner to choose.
+8. Smaller: a screen to create companies, password reset, a translation file instead of Spanish text inside the pages, SINLI file import and export, tolerance for short wifi drops, continuous integration and a linter.
 
 ## Gaps review against the market research (2026-11-20)
 
@@ -32,12 +33,14 @@ Still missing, roughly in order of value:
 Researched in [hardware/README.md](hardware/README.md), which numbers the owner's six original items as phases; below is the order of work. Each step waits for the owner's go-ahead.
 
 1. **Research.** Done (2026-11-20).
-2. **Done (2026-11-20, D56 to D59): labels prepared for one click, through the print dialog.** A label model in millimetres, every standard size, the label catalogue (item label at receiving, box label at packing, location and totem labels, return condition sticker, test label), a queue of prepared labels with reprint, a test label with a ruler, demo printers and scanners behind an admin test mode, the device panel, and the Spanish manual pages (supported models, setup, troubleshooting). Also the scan clean-up: keyboard-layout fixes, add-ons dropped, UPC-A and ISBN-10 accepted.
+2. **Done (2026-11-20, D59 to D62): labels prepared for one click, through the print dialog.** A label model in millimetres, every standard size, the label catalogue (item label at receiving, box label at packing, location and totem labels, return condition sticker, test label), a queue of prepared labels with reprint, a test label with a ruler, demo printers and scanners behind an admin test mode, the device panel, and the Spanish manual pages (supported models, setup, troubleshooting). Also the scan clean-up: keyboard-layout fixes, add-ons dropped, UPC-A and ISBN-10 accepted.
 3. **Direct printing from Chrome:** ZPL and TSPL over WebUSB, Web Serial and Web Bluetooth. Android first; on Windows only COM-port and Bluetooth printers, plus an optional driver swap a supervisor does.
 4. **Done with step 2: printers per computer:** a computer identity, a default printer per computer and label type, a company printer list for supervisors and admins.
 5. **Windows helper** for wifi, network and driver-installed USB printers. Design only, in the research; not to be built until the owner says so.
 
 ## Questions only the owner can answer
+
+- Comments (D56): which documents take them next? Are 5 minutes to edit and 2,000 characters right? Should anyone be told when a comment is left (a count in the sidebar, mentions)?
 
 - Dropping a picking order (D36) keeps its "not here" reports in FALTANTES and asks the picker to use "Sí estaba" first if they were wrong. Should dropping undo them too? Should operators be able to drop someone else's order, or only supervisors (today)?
 - Does Ovnipress really use Fierro's orders and "cajas y despachos" screens, or only invoice? (Assumed orders yes, boxes no.)
@@ -47,4 +50,5 @@ Researched in [hardware/README.md](hardware/README.md), which numbers the owner'
 - Salidas (D55): is what sells at a fair or a consignment bookstore invoiced in Fierro (so miDepo sends nothing), and should losses at a stand be told apart from sales at closing?
 - Despacho (D54): should loading a box require the remito number? Today only the carrier is required. Is ZPL needed, or does printing the 10 × 15 PDF to the Zebra driver do?
 - Opening stock (D46): should a second load be refused once the warehouse is live, or is loading in parts fine?
+- Notifications (D57, D58): is 17:00 the right closing hour for the end-of-day notice, and should it skip weekends? Is 2 hours without a pick the right moment to call an order stalled? Both are constants in `src/lib/notifications.ts`; a setting in Organización is easy if they differ.
 - Stock losses (D19 to D22 in [DECISIONS.md](DECISIONS.md)): should count losses go through FALTANTES first instead of being written off at approval? Are the recount thresholds (5 units or 20%) right for Ovnipress? Should large write-offs need an admin? Today any supervisor approves.

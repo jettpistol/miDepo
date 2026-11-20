@@ -70,6 +70,8 @@ src/lib/lists.ts          The register lists (suppliers, customers, orders, move
                           supplier or customer): read-only, paged. Tested in tests/lists.test.ts.
 src/lib/lookup.ts         The as-you-type check behind /api/lookup. It must accept and reject
                           exactly what the flow would; tests/lookup.test.ts checks that they agree.
+src/lib/notifications.ts  Notification kinds, who gets each, notify()/resolve() and the clock-based
+                          checks (no progress, end of day). Flows call notify(); see D57, D58.
 src/lib/action.ts         action(role, fn): wraps a flow as a server action (session, role,
                           error-to-message, revalidate). Each screen's actions.ts uses it.
 src/lib/fierro/           The Fierro boundary (FierroConnector) and the simulator. A real
@@ -85,9 +87,11 @@ src/app/(label)/          Label print views (PrintView: size, printer, Imprimir)
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
                           /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
 src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
-src/components/           ScanForm (scan fields + live check), Select, NewButton, RowMenu (⋯ row options), Hint, ProductCards (cover cards +
+src/components/           ScanForm (scan fields + live check), Select, NewButton, Bell, RowMenu (⋯ row options), Hint, ProductCards (cover cards +
                           view switch), ListTools (Pager, FilterTabs) and LiveSearch for paged lists, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
+src/components/comments/  Comments on any document: <Comments> on its screen, <CommentCount> in
+                          its list. Rules in src/lib/flows/comments.ts (kinds in SUBJECTS).
 src/lib/search/           The top search (src/components/GlobalSearch.tsx, /api/search): functions.ts lists
                           screens, actions and settings with their synonyms; inventory.ts finds articles,
                           locations, suppliers, customers and documents; the manual is searched by section in src/lib/wiki.ts.

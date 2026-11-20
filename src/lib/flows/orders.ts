@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { orders } from "@/db/schema";
 import { UserError } from "../errors";
 import type { Ctx } from "./common";
+import { notify, orderHref } from "../notifications";
 
 /**
  * Marks an order to go first in Picking and Empaque, or takes the mark off. Only while there is
@@ -16,5 +17,9 @@ export async function setUrgent(c: Ctx, orderId: number, urgent: boolean) {
     .where(and(eq(orders.id, orderId), inArray(orders.status, ["pending", "in_picking", "to_control", "picked"])))
     .returning({ id: orders.id });
   if (changed.length === 0) throw new UserError("ORD-02", `El pedido ${o.number} ya está empacado: la urgencia no cambia nada.`);
+  // Whoever has it hears; an order nobody has yet just moves up the queue.
+  if (urgent && !o.urgent) {
+    await notify(c.db, c.companyId, { kind: "urgent", title: "Pedido urgente", body: o.number, href: orderHref(o) }, { actorId: c.userId, to: [o.assignedTo, o.status === "in_picking" ? o.takenBy : null] });
+  }
   return urgent ? `${o.number}: urgente.` : `${o.number}: sin urgencia.`;
 }

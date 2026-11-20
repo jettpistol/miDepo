@@ -4,10 +4,12 @@ import { Code, PageHeader, shortDate } from "@/components/ui";
 import { passkeys } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { Avatar } from "@/components/Avatar";
-import { changePassword, changePin, saveAppearance, savePhoto, removePhoto, removePasskey } from "./actions";
+import { saveNotifications, changePassword, changePin, saveAppearance, savePhoto, removePhoto, removePasskey } from "./actions";
 import { Photo } from "./Photo";
 import { Appearance } from "./Appearance";
 import { AddPasskey } from "./Passkeys";
+import { Toggle } from "@/components/Toggle";
+import { KINDS, kindsFor } from "@/lib/notifications";
 
 export const metadata = { title: "Ajustes" };
 
@@ -39,6 +41,17 @@ export default async function Account() {
         <section id="apariencia" className={section}>
           <h2 className="section-title">Apariencia</h2>
           <Appearance action={saveAppearance} accent={user.accent} theme={user.theme} font={user.font} />
+        </section>
+
+        <section id="avisos" className={`${section} scroll-mt-16`}>
+          <h2 className="section-title">Avisos</h2>
+          <div className="max-w-sm">
+            <ActionForm action={saveNotifications} button="Guardar" resetOnOk={false} className="space-y-1">
+              {kindsFor(user.role).map((k) => (
+                <Toggle key={k} name={`notice-${k}`} label={KINDS[k].name} hint={KINDS[k].when} defaultChecked={!user.mutedNotifications.includes(k)} />
+              ))}
+            </ActionForm>
+          </div>
         </section>
 
         <section id="llaves" className={section}>

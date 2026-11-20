@@ -22,6 +22,10 @@ En **Despacho** se registra qué sale del depósito, con qué transporte y con q
 - **Cargaste una caja que no iba:** abre el pedido y toca **Descargar** en esa caja. El pedido deja de figurar como despachado.
 - **Hay que cambiar el transporte o el remito de un pedido ya despachado:** descarga una caja, corrige y vuelve a cargarla.
 
+## Comentarios
+
+Al final de la pantalla, los mismos del picking y el empaque. Ver [Comentarios](Comentarios).
+
 ## Para tener en cuenta
 
 El stock sale del depósito cuando el pedido se marca como cargado en [Fierro](Trabajar-con-Fierro), no al despachar. Despacho registra la salida física: quién cargó cada caja y cuándo.

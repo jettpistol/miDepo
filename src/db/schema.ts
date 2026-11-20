@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -31,6 +32,8 @@ export const companies = pgTable("companies", {
   simTitles: integer("sim_titles").notNull().default(500),
   simCustomers: integer("sim_customers").notNull().default(60),
   lastSync: timestamp("last_sync", { withTimezone: true }),
+  /** Local date (YYYY-MM-DD) of the last end-of-day notice, so it goes out once a day. */
+  dayEndOn: text("day_end_on"),
   /** How a picking batch is split into orders: at packing, or into one tray per order while picking. */
   batchSorting: text("batch_sorting").$type<BatchSorting>().notNull().default("packing"),
   /**
@@ -69,6 +72,8 @@ export const users = pgTable(
     active: boolean("active").notNull().default(true),
     /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
     photoVersion: integer("photo_version"),
+    /** Kinds of notification this person turned off (ids in src/lib/notifications.ts). */
+    mutedNotifications: jsonb("muted_notifications").$type<string[]>().notNull().default([]),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("users_company_id_pin_hmac_idx").on(t.companyId, t.pinHmac)],
@@ -297,6 +302,8 @@ export const orders = pgTable(
     status: text("status").$type<OrderStatus>().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
     takenBy: integer("taken_by").references(() => users.id),
+    /** When the picker took it; a stalled order is noticed from here. */
+    takenAt: timestamp("taken_at", { withTimezone: true }),
     /** The picking batch it was taken in, if any. */
     batchId: integer("batch_id").references(() => pickBatches.id),
     /** In a batch sorted into trays: the tray number for this order (1, 2, 3…). */
@@ -610,6 +617,61 @@ export const stockLoads = pgTable(
     undoneAt: timestamp("undone_at", { withTimezone: true }),
   },
   (t) => [uniqueIndex("stock_loads_company_id_number_idx").on(t.companyId, t.number)],
+);
+
+// ───────────── Comments ─────────────
+
+/** What a comment can be attached to. Add a kind here and in SUBJECTS (src/lib/flows/comments.ts). */
+export type CommentSubject = "order";
+
+/**
+ * A note people leave on a document, for the next person who works on it. One level of threads:
+ * a reply points at a top-level comment (parentId), never at another reply. Only the author can
+ * edit or delete it, and only for a few minutes, to fix a slip; after that it is part of the record.
+ */
+export const comments = pgTable(
+  "comments",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    subjectType: text("subject_type").$type<CommentSubject>().notNull(),
+    subjectId: integer("subject_id").notNull(),
+    /** null = starts a thread; otherwise the top-level comment it answers. */
+    parentId: integer("parent_id").references((): AnyPgColumn => comments.id),
+    authorId: integer("author_id").notNull().references(() => users.id),
+    body: text("body").notNull(),
+    createdAt: createdAt(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+  },
+  (t) => [index("comments_company_id_subject_idx").on(t.companyId, t.subjectType, t.subjectId), index("comments_parent_id_idx").on(t.parentId)],
+);
+
+// ───────────── Notifications ─────────────
+
+/**
+ * One row per recipient. Only for work that needs someone's time (see src/lib/notifications.ts),
+ * never for every scan. `key` names the thing the notice is about: an unread notice with the same
+ * key is updated instead of repeated, and it is removed when the thing is dealt with.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    href: text("href").notNull(),
+    key: text("key"),
+    createdAt: createdAt(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("notifications_user_id_created_at_idx").on(t.userId, t.createdAt),
+    index("notifications_company_id_key_idx").on(t.companyId, t.key),
+    uniqueIndex("notifications_user_id_key_unread_idx").on(t.userId, t.key).where(sql`${t.readAt} is null`),
+  ],
 );
 
 export const now = sql`now()`;

@@ -48,6 +48,10 @@ Como el color, la tipografía es solo tuya. Los códigos (ubicaciones, ISBN, nú
 - **Claro:** fondo blanco. Mejor con mucha luz.
 - **Oscuro:** fondo oscuro. Cansa menos en lugares con poca luz.
 
+## Avisos
+
+Un interruptor por cada aviso de tu rol: apágalo para dejar de recibirlo y toca **Guardar**. Qué avisa cada uno: [Avisos](Avisos).
+
 ## Huella, rostro o llave
 
 Toca **Registrar este dispositivo** para iniciar sesión sin escribir nada. Se hace una vez por dispositivo. Más detalle en [Iniciar sesión](Ingresar).

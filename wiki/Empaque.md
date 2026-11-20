@@ -33,6 +33,10 @@ Con al menos una caja cerrada aparecen dos botones:
 - **"… no está entre lo preparado para el pedido":** ese artículo no es de este pedido. Sepáralo y avisa.
 - **"Ya empacaste todas las unidades de …":** sobra un artículo. Vuelve a contar la caja.
 
+## Comentarios
+
+Los del picking y el control están al final de la pantalla. Ver [Comentarios](Comentarios).
+
 ## Qué pasa después
 
 El pedido queda **empacado** y pasa a [Despacho](Despacho) para cargar sus cajas. También aparece en la pantalla **Fierro** del supervisor, para cargarlo en Fierro. Los artículos siguen contando como stock del depósito hasta que se marca como cargado en Fierro: solo entonces salen.

@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/ui";
+import { commentCounts } from "@/lib/flows/comments";
 import { FilterTabs, Pager, paging, requestedPage } from "@/components/ListTools";
 import { LiveSearch } from "@/components/LiveSearch";
 import type { OrderStatus } from "@/db/schema";
@@ -32,6 +33,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
       />
       <OrdersTable
         rows={r.rows}
+        comments={await commentCounts(db, company.id, "order", r.rows.map((x) => x.o.id))}
         empty={q ? { title: `Ningún pedido coincide con "${q}"` } : status ? { title: `Sin pedidos: ${ORDER_STATE[status].label}` } : { title: "Sin pedidos", text: "Llegan de Fierro al sincronizar." }}
       />
       <Pager base="/pedidos" params={params} page={page} total={r.total} />

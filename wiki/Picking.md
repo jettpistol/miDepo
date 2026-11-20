@@ -81,6 +81,10 @@ Mientras el pedido no pase a empaque, todo se puede deshacer desde el recorrido:
 
 Cuando no quedan paradas, miDepo avisa **Recorrido terminado**. Lleva todo a la mesa de empaque y toca **Ir a empacar**, o deja que lo empaque otra persona desde [Empaque](Empaque).
 
+## Comentarios
+
+Al final de la pantalla, para avisos a quien siga con el pedido. Ver [Comentarios](Comentarios).
+
 ## Preguntas frecuentes
 
 **¿Puedo dejar un pedido por la mitad?** Sí. Queda guardado y en Inicio aparece **Seguir con PED-…** (o **Seguir con LOTE-…** si es un lote). Si no lo vas a terminar tú, toca **Soltar pedido** para que vuelva a Pendientes.

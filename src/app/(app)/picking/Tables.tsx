@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CommentCount } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { and, asc, eq, inArray, min, sql, desc } from "drizzle-orm";
 import { ActionButton } from "@/components/ScanForm";
 import { Progress, shortDate, Badge, ShelfMark, Condition, SALE_MODE } from "@/components/ui";
@@ -75,9 +77,10 @@ export async function loadOpenOrders(db: Db, companyId: number) {
     for (const x of stops) batchShelf.set(x.batchId!, x.code);
   }
   const short = await shortages(db, companyId, pending.map((f) => f.p.id));
+  const notes = await commentCounts(db, companyId, "order", rows.map((f) => f.p.id));
   return {
-    inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null })),
-    pending: pending.map((f) => ({ ...f, short: short.get(f.p.id) ?? 0 })),
+    inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null, comments: notes.get(f.p.id) })),
+    pending: pending.map((f) => ({ ...f, short: short.get(f.p.id) ?? 0, comments: notes.get(f.p.id) })),
     batches: batches.map((x) => ({ ...x, nextShelf: batchShelf.get(x.b.id) ?? null })),
   };
 }
@@ -99,14 +102,15 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, customer, takenBy, units, picked, nextShelf }) => (
+          {rows.map(({ p, customer, takenBy, units, picked, nextShelf, comments }) => (
             <tr key={p.id} className={p.takenBy === userId ? "bg-accent-soft" : ""}>
               <td>{nextShelf ? <ShelfMark code={nextShelf} size="md" /> : <Badge tone="ok">Recorrido terminado</Badge>}</td>
               <td>
                 {/* F2 carries on with your own order first (it is marked earlier on the page than "Preparar"). */}
                 <Link href={`/picking/${p.id}`} className="link doc-number" {...(p.id === rows.find((r) => r.p.takenBy === userId)?.p.id ? hotkey("primary", `Seguir con el pedido ${p.number}`) : {})}>
                   {p.number}
-                </Link>
+                </Link>{" "}
+                <CommentCount n={comments} />
                 {p.urgent && (
                   <>
                     {" "}
@@ -152,12 +156,13 @@ export function PendingTable({ rows, a }: { rows: OpenOrders["pending"]; a: Assi
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, customer, city, lines, units, short }, i) => (
+          {rows.map(({ p, customer, city, lines, units, short, comments }, i) => (
             <tr key={p.id}>
               <td>
                 <Link href={`/picking/${p.id}`} className="link doc-number">
                   {p.number}
-                </Link>
+                </Link>{" "}
+                <CommentCount n={comments} />
               </td>
               <td>
                 <span className="font-medium">{customer}</span>

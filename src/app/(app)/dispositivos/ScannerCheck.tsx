@@ -21,7 +21,7 @@ type Reading = { raw: string; fast: boolean; enter: boolean; notes: string[]; re
 function analyse(raw: string, fast: boolean, enter: boolean, layoutDash: string | null): Reading {
   const notes: string[] = [];
   if (!enter) notes.push("Sin Enter al final: activa el sufijo Enter (CR) en el lector.");
-  if (/^\][A-Za-z][0-9A-Za-z]/.test(raw)) notes.push("Prefijo AIM: miDepo lo quita. Desactívalo en el lector si sobra.");
+  if (/^\][A-Za-z][0-9A-Za-z]/.test(raw)) notes.push("Prefijo AIM: miDepo lo quita. Desactívalo en el lector.");
   if (/'/.test(raw) || (layoutDash && layoutDash !== "-" && /\?/.test(raw))) notes.push('"-" llegó como "\'": el lector escribe como teclado de EE. UU. miDepo lo corrige; en el lector, elige el país del teclado igual al de Windows.');
   if (/^\d{15}$|^\d{18}$/.test(raw)) notes.push("Suplemento EAN: miDepo lo ignora. Desactívalo en el lector (Supplementals: Ignore).");
   if (/[a-zñ]/.test(raw) && raw === raw.toLowerCase() && /[a-z]/i.test(raw)) notes.push("En minúsculas: Bloq Mayús activado o lector en minúsculas.");

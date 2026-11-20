@@ -10,7 +10,7 @@ import { UserError, attempt, withCode } from "@/lib/errors";
  */
 
 const ROOT = path.resolve(__dirname, "..");
-const AREAS = ["SYS", "AUTH", "PKEY", "ACCT", "USER", "SET", "LOC", "STK", "RCV", "ORD", "PICK", "DSP", "TRF", "CTRL", "PACK", "RET", "CNT", "ADJ", "ASG", "EXP", "CAM", "LBL", "PRN", "DEV", "WIKI", "CFG", "CLI"];
+const AREAS = ["SYS", "AUTH", "PKEY", "ACCT", "USER", "SET", "LOC", "STK", "RCV", "ORD", "PICK", "DSP", "TRF", "CTRL", "PACK", "RET", "CNT", "ADJ", "ASG", "CMT", "EXP", "CAM", "LBL", "PRN", "DEV", "WIKI", "CFG", "CLI"];
 const CODE = new RegExp(`\\b(?:${AREAS.join("|")})-\\d{2}\\b`, "g");
 
 function sourceFiles(dir: string): string[] {

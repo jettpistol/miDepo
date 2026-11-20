@@ -2,11 +2,10 @@
 
 import { action, num, txt } from "@/lib/action";
 import { UserError } from "@/lib/errors";
-import { sync } from "@/lib/fierro";
-import { isExportType, markSent, simulateNews } from "@/lib/flows/exports";
+import { isExportType, markSent, simulateNews, syncFromFierro } from "@/lib/flows/exports";
 
 export const syncNow = action("supervisor", async (c) => {
-  const r = await sync(c.db, c.company);
+  const r = await syncFromFierro(c, c.company);
   const parts = [`${r.titles} artículos`, `${r.customers} clientes`, `${r.newOrders} pedidos nuevos`];
   if (r.changedOrders) parts.push(`${r.changedOrders} pedidos actualizados`);
   if (r.cancelledOrders) parts.push(`${r.cancelledOrders} anulados`);
@@ -19,7 +18,7 @@ export const syncNow = action("supervisor", async (c) => {
 export const simulate = action("supervisor", async (c, f) => {
   const what = txt(f, "what") === "receipts" ? "receipts" : "orders";
   const howManyOf = Math.min(50, Math.max(1, num(f, "howManyOf") || 1));
-  const r = await simulateNews(c.db, c.company, what, howManyOf);
+  const r = await simulateNews(c.db, c.company, what, howManyOf, c.userId);
   return what === "orders" ? `Entraron ${r.newOrders} pedidos nuevos desde el Fierro simulado.` : `Fierro avisó ${r.newReceipts} recepciones nuevas.`;
 });
 

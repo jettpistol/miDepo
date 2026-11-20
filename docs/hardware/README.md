@@ -2,7 +2,7 @@
 
 Research done 2026-11-20 to plan labels, direct printing, the device panel, demo devices and the hardware manual. The per-topic notes behind it, with every source, are in [research/](research/). Owner decisions taken before the research: Chrome on Windows and Android only; labels prepared for one click, never printed silently; all standard sizes; no carrier labels yet; printers configured by supervisors and admins, default printer per computer; demo devices also in production behind a test mode; no paid services; the Windows helper is designed, not built; scan fields quietly fix keyboard-layout errors; EAN add-ons are not used.
 
-**Built so far (2026-11-20, `docs/DECISIONS.md` D56 to D59):** the label model, sizes and the ZPL/TSPL/HTML renderers; labels prepared by each step in Etiquetas; computers and their printer per kind of label; Dispositivos; test mode with demo printers and a demo scanner; the scan clean-up; the manual pages `wiki/Etiquetas.md` and `wiki/Impresoras-y-lectores.md`. Next: direct printing (WebUSB, Web Serial, Web Bluetooth) behind `sendLabels` in `src/lib/flows/printers.ts`.
+**Built so far (2026-11-20, `docs/DECISIONS.md` D59 to D62):** the label model, sizes and the ZPL/TSPL/HTML renderers; labels prepared by each step in Etiquetas; computers and their printer per kind of label; Dispositivos; test mode with demo printers and a demo scanner; the scan clean-up; the manual pages `wiki/Etiquetas.md` and `wiki/Impresoras-y-lectores.md`. Next: direct printing (WebUSB, Web Serial, Web Bluetooth) behind `sendLabels` in `src/lib/flows/printers.ts`.
 
 ## In one paragraph
 

@@ -5,6 +5,7 @@
 - [Iniciar sesión](Ingresar)
 - [Cómo escanear](Como-escanear)
 - [Atajos de teclado](Atajos-de-teclado)
+- [Comentarios](Comentarios)
 - [Instalar en el teléfono](Instalar-en-el-telefono)
 
 ### Trabajo del día
@@ -42,6 +43,7 @@
 
 ### Ayuda
 
+- [Avisos](Avisos)
 - [Ajustes](Ajustes)
 - [Impresoras y lectores](Impresoras-y-lectores)
 - [Problemas frecuentes](Problemas-frecuentes)

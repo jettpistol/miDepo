@@ -103,6 +103,20 @@ async function warning(p, field, value) {
   const taken = await p.textContent('h1'); await p.goBack(); await p.waitForURL(BASE + '/picking');
   await p.waitForFunction((n) => ![...document.querySelectorAll('main section:last-of-type tbody tr')].some((r) => r.textContent.includes(n)), taken.match(/PED-\d+/)[0], { timeout: 10000 });
   step('back after Preparar: order no longer pending'); await p.goForward(); await p.waitForSelector(STOP);
+
+  // Comments: post, reply, fix a slip; the count shows in the header and the list
+  const box = 'textarea[placeholder="Comentario"]', replyBox = 'textarea[placeholder="Respuesta"]';
+  step('empty comment, before the click → button ' + ((await p.isDisabled('button:text-is("Comentar")')) ? 'off' : fail('button on with an empty box')));
+  await p.fill(box, 'Todo en una sola caja'); await p.press(box, 'Control+Enter');
+  await p.waitForSelector('#comentarios article:has-text("una sola caja")');
+  await p.click('#comentarios button:text-is("Responder")'); await p.fill(replyBox, 'Entra justo'); await p.press(replyBox, 'Control+Enter');
+  await p.waitForSelector('#comentarios .border-l-2 article:has-text("Entra justo")');
+  await p.click('#comentarios .border-l-2 button:text-is("Editar")'); await p.fill('#comentarios .border-l-2 textarea', 'Entra justo, con relleno'); await p.press('#comentarios .border-l-2 textarea', 'Control+Enter');
+  await p.waitForSelector('#comentarios article:has-text("(editado)")'); step('comment, reply and edit → ' + (await p.$$('#comentarios article')).length + ' comments');
+  await p.reload(); step('header link → ' + await p.getAttribute('a[href="#comentarios"]', 'title'));
+  await p.locator('#comentarios').scrollIntoViewIfNeeded(); await shot('comments');
+  await p.goto(BASE + '/picking'); step('list count → ' + ((await p.$(`tr:has(a[href="/picking/${orderId}"]) [title="2 comentarios"]`)) ? 'shown' : fail('no count in the list')));
+  await p.goto(`${BASE}/picking/${orderId}`); await p.waitForSelector(STOP);
   const codes = {}; let stops = 0, first = true;
   const stopKey = () => p.evaluate(() => (document.querySelector('.bg-accent p.text-lg')?.textContent ?? '') + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? ''));
   while (await p.$(STOP)) {
@@ -135,6 +149,7 @@ async function warning(p, field, value) {
 
   // Packing (F2 on a finished route goes to packing)
   await p.keyboard.press('F2'); await p.waitForURL(`${BASE}/empaque/${orderId}`); await p.waitForSelector('#scan-product');
+  step('packing shows the same comments: ' + ((await p.$$('#comentarios article')).length === 2 ? 'ok' : fail('comments missing in packing')));
   const lines = await p.$$eval('table tbody tr', (trs) => trs.map((tr) => ({ title: tr.querySelector('td span.font-medium').textContent.trim(), picked: Number(tr.children[2].textContent) })));
   let n = 0;
   for (const l of lines.filter((l) => l.picked > 0)) {

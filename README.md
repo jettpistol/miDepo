@@ -60,6 +60,7 @@ npm run db:reset
 | Put-away | Move received or returned stock to shelves, with a suggestion of where the title already lives. |
 | Picking | One picker per order, a route sorted by shelf, validation of shelf and title on every stop, shortages re-routed to another shelf or moved to the FALTANTES zone. |
 | Packing | Scan into boxes, real or estimated weight, A4 box labels and packing list. |
+| Comments | Threads on each order, shared by its Picking, Control, Empaque and Despacho screens, with a count beside the order in every order list. The author can edit or delete for 5 minutes. Built so other documents can take comments too. |
 | Returns | Start with **+ Nueva** and a customer from the list; grade each copy as *vendible*, *saldo* or *dañado*; each grade goes to its own zone. |
 | Cycle counts | Blind counts by shelf range, supervisor review of differences, a recount by another person for large differences (5+ units or 20%+). On approval, misplaced units move between shelves, found units come back from FALTANTES or enter as found, and losses are written off with a cause. |
 | Write-offs | **Bajas**: write off what sits in FALTANTES or DANADOS with a cause (theft or loss, damage, entry error, internal use…). Every adjustment is a numbered document with its approver, sent to Fierro as a stock write-off, never as a fake order. Units in and out by cause over 90 days, misplaced units shown apart. |
@@ -77,6 +78,7 @@ npm run db:reset
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
 | Search | The top bar searches everything, in three tabs: **Funciones** (screens, actions, settings, with synonyms and typo tolerance), **Inventario** (titles, shelves, suppliers, customers, orders, receivings, returns, counts; a scanned code goes first) and **Guías** (the manual, opened at the matching section). Ctrl/⌘+K or `/`; full screen on a phone. |
+| Notifications | A bell in the top bar for work that needs someone's time, not every scan: work assigned to you, urgent orders, comments and replies, recounts, counts ready to approve, packed orders not loaded in Fierro, shortages, receivings with differences, orders with no progress, started orders changed in Fierro, an end-of-day summary of what is still open, write-offs (admins) and new work from Fierro. Each goes only to whoever acts on it; each person turns kinds off in Ajustes. In-app only, no phone push. |
 | Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (search bar, readable without logging in). |
 
 ## How it fits with Fierro
@@ -140,7 +142,7 @@ src/lib/lookup.ts       Checks a scan form as you type (behind /api/lookup)
 src/lib/color.ts        Accent colour and contrast handling
 src/app/(app)/          One folder per screen
 src/app/(print)/        A4 print layouts
-src/components/         Scan form, dropdown (Select), New button, camera reader, navigation
+src/components/         Scan form, dropdown (Select), New button, camera reader, navigation, comments
 wiki/                   User manual (GitHub wiki format)
 tests/                  Workflow tests
 docs/HOSTING.md         How to put it online

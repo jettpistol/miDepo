@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CommentCount } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { and, asc, eq, sql, desc } from "drizzle-orm";
 import { PageHeader, Badge, plural, EmptyState, Condition, SALE_MODE } from "@/components/ui";
 import { customers, orderLines, orders } from "@/db/schema";
@@ -29,6 +31,7 @@ export default async function Packing() {
 
   // When the order skipped Control, packing is the check: the picker may not do it if the company says so.
   const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.controlledBy == null && p.sameCheckAllowedBy == null && p.takenBy === user.id;
+  const notes = await commentCounts(db, company.id, "order", rows.map((r) => r.p.id));
   const first = rows.findIndex((r) => !mine(r.p));
 
   return (
@@ -56,7 +59,8 @@ export default async function Packing() {
                   <td>
                     <Link href={`/empaque/${p.id}`} className="link doc-number" {...(i === first ? hotkey("primary", `Empacar ${p.number}`) : {})}>
                       {p.number}
-                    </Link>
+                    </Link>{" "}
+                    <CommentCount n={notes.get(p.id)} />
                   </td>
                   <td>
                     <span className="font-medium">{customer}</span>

@@ -1,11 +1,12 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
-import { boxes, companies, customers, orderLines, orders, pickBatches, stock, pickTasks, locations, users } from "@/db/schema";
+import { boxes, companies, customers, orderLines, orders, pickBatches, products, stock, pickTasks, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
 import { articleName } from "@/lib/article";
 import { goesToControl, settingsOf } from "./control";
+import { notifyShortage, resolve } from "../notifications";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
@@ -96,7 +97,7 @@ export async function takeOrder(c: Ctx, orderId: number) {
   if (p.status === "pending" && p.fierroChange) throw new UserError("PICK-21", `Fierro cambió el pedido ${p.number}. Sincroniza antes de prepararlo.`);
   return c.db.transaction(async (tx) => {
     // The status change goes first and is conditional: if two people act at once, only one wins.
-    const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
+    const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId, takenAt: new Date() }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
     if (taken.length === 0) {
       // Already yours (an old screen, or a second tap): carry on with it.
       if (p.status === "in_picking" && p.takenBy === c.userId) return `${p.number} tomado.`;
@@ -161,6 +162,8 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: u.id, toId: prep.id, quantity: n, reason: "picking", reference: order.number, userId: c.userId });
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
+    // Picking again: a "no progress" notice about this order no longer holds.
+    await resolve(tx, c.companyId, `stalled_picking:${order.id}:`, { prefix: true });
     const end = await checkEnd(tx, order.id);
     if (end) return `${order.number} completo. Llévalo a ${end === "to_control" ? "control" : "empaque"}.`;
     return `${n} × ${articleName(p.title)} ✓`;
@@ -183,6 +186,11 @@ export async function markShort(c: Ctx, taskId: number) {
       if (gone > 0) {
         const missingZone = await zone(tx, c.companyId, "missing");
         await moveStock(tx, { companyId: c.companyId, productId: task.productId, fromId: task.locationId, toId: missingZone.id, quantity: gone, reason: "missing", reference: order.number, userId: c.userId });
+        const [[where], [what]] = await Promise.all([
+          tx.select({ code: locations.code }).from(locations).where(eq(locations.id, task.locationId)),
+          tx.select({ title: products.title }).from(products).where(eq(products.id, task.productId)),
+        ]);
+        await notifyShortage(tx, c.companyId, c.userId, { order: order.number, quantity: gone, article: articleName(what.title), where: where.code, key: `shortage:task:${task.id}` });
       }
     }
     await tx.update(pickTasks).set({ status: "short", sentToMissing: gone }).where(eq(pickTasks.id, task.id));
@@ -295,6 +303,7 @@ export async function undoShort(c: Ctx, taskId: number) {
     }
     if (replacements.length > 0) await tx.delete(pickTasks).where(inArray(pickTasks.id, replacements.map((r) => r.id)));
     await tx.update(pickTasks).set({ status: "pending", sentToMissing: 0 }).where(eq(pickTasks.id, task.id));
+    await resolve(tx, c.companyId, `shortage:task:${task.id}`);
     await backToPicking(tx, order.id);
     return "Deshecho: la parada vuelve al recorrido.";
   });
@@ -316,7 +325,7 @@ export async function takeAll(c: Ctx) {
     // Conditional, like takeOrder: an order someone else takes at the same moment stays theirs.
     const taken = await tx
       .update(orders)
-      .set({ status: "in_picking", takenBy: c.userId, batchId: batch.id })
+      .set({ status: "in_picking", takenBy: c.userId, takenAt: new Date(), batchId: batch.id })
       // Not the ones a single "Preparar" would refuse: changed in Fierro, or with titles not in the catalogue.
       .where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"), isNull(orders.fierroChange), eq(orders.unknownLines, 0)))
       .returning({ id: orders.id, date: orders.date, urgent: orders.urgent });
@@ -389,6 +398,7 @@ export async function confirmBatchPick(c: Ctx, d: { batchId: number; locationId:
       await moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: u.id, toId: prep.id, quantity: take, reason: "picking", reference: order.number, userId: c.userId });
       await tx.update(pickTasks).set({ picked: task.picked + take, status: take === task.quantity - task.picked ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
       await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${take}` }).where(eq(orderLines.id, task.lineId));
+      await resolve(tx, c.companyId, `stalled_picking:${order.id}:`, { prefix: true });
       await checkEnd(tx, order.id);
       const same = shares.find((s) => s.order === order.number);
       if (same) same.quantity += take;
