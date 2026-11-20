@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import { Code } from "./ui";
+import { articleName } from "@/lib/article";
 import { setListView } from "@/app/(app)/stock/actions";
 
 export type ListView = "cards" | "table";
@@ -50,7 +51,7 @@ export function ProductCards({ items, empty }: { items: CardItem[]; empty?: Reac
           <Cover productId={p.id} version={p.thumbVersion} />
           <div className="flex min-w-0 flex-1 flex-col">
             <Link href={`/stock/${p.id}`} className="link line-clamp-2 font-semibold after:absolute after:inset-0">
-              {p.title}
+              {articleName(p.title)}
             </Link>
             {p.author && <span className="truncate text-sm text-muted lg:text-xs">{p.author}</span>}
             <span className="mt-auto flex items-end justify-between gap-2 pt-1">

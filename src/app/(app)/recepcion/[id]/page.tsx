@@ -8,6 +8,7 @@ import { requireSession } from "@/lib/session";
 import { close, correct, scan } from "../actions";
 import { EditNumber } from "./EditNumber";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 
 export default async function ReceivingDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -75,7 +76,7 @@ function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLi
           {lines.map(({ l, title, code }) => (
             <tr key={l.id}>
               <td>
-                <span className="block font-medium">{title}</span>
+                <span className="block font-medium">{articleName(title)}</span>
                 <Code>{code}</Code>
                 {l.expected > 0 && <span className="mt-0.5 block text-muted sm:hidden">Esperado: {l.expected}</span>}
               </td>

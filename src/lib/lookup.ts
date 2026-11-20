@@ -3,6 +3,7 @@ import type { DB } from "@/db";
 import { orderLines, orders, products, receivingLines, receivings, stock, pickTasks, locations } from "@/db/schema";
 import { MAX_COUNT_LOCATIONS } from "./flows/counts";
 import { locationName } from "./stock";
+import { articleName } from "@/lib/article";
 
 /**
  * Rehearsal of a scan form: checks what was typed with the same rules as the real action,
@@ -125,14 +126,14 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       if (source?.active) {
         const present = places.find((l) => l.id === source!.id)?.quantity ?? 0;
         if (present === 0) {
-          statuses.product = { tone: "danger", text: `"${book.title}" no está en ${locationName(source)}.` };
+          statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está en ${locationName(source)}.` };
         } else {
-          statuses.product = { tone: "ok", text: `${book.title} · hay ${present} en ${locationName(source)}` };
+          statuses.product = { tone: "ok", text: `${articleName(book.title)} · hay ${present} en ${locationName(source)}` };
           if (present > 1 && quantity !== present) shortcuts.push({ field: "quantity", value: String(present), text: `Todas: ${present}` });
           if (quantity && quantity > present) statuses.quantity = { tone: "danger", text: `En ${locationName(source)} hay ${present}.` };
         }
       } else {
-        statuses.product = { tone: "ok", text: book.title };
+        statuses.product = { tone: "ok", text: articleName(book.title) };
       }
       // What solves the problem, one tap away: where to take it from and where it already lives.
       if (ctx === "move" && (!source || statuses.product.tone === "danger")) {
@@ -154,22 +155,22 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       const u = await location(v("location"));
       await checkLocation("location", u);
       if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Es la ubicación de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
-      if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: book.title } : { tone: "danger", text: `Ese es "${book.title}". No es el artículo de esta parada.` };
+      if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: articleName(book.title) } : { tone: "danger", text: `Ese es "${articleName(book.title)}". No es el artículo de esta parada.` };
       const remaining = t.t.quantity - t.t.picked;
       if (quantity && quantity > remaining) statuses.quantity = { tone: "danger", text: `Esta parada pide ${remaining}.` };
     }
   } else if (ctx === "receiving" && book) {
     const [r] = await db.select().from(receivings).where(and(eq(receivings.id, Number(v("id"))), eq(receivings.companyId, companyId)));
-    statuses.product = { tone: "ok", text: book.title };
+    statuses.product = { tone: "ok", text: articleName(book.title) };
     if (r) {
       const [l] = await db.select().from(receivingLines).where(and(eq(receivingLines.receivingId, r.id), eq(receivingLines.productId, book.id)));
       if (l && l.expected > 0) {
-        statuses.product = { tone: "ok", text: `${book.title} · van ${l.received} de ${l.expected}` };
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · van ${l.received} de ${l.expected}` };
         if (quantity && l.received + quantity > l.expected) statuses.quantity = { tone: "warn", text: `Con estas son ${l.received + quantity - l.expected} de más.` };
       } else if (l) {
-        statuses.product = { tone: "ok", text: `${book.title} · van ${l.received}` };
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · van ${l.received}` };
       } else if (r.fierroId) {
-        statuses.product = { tone: "warn", text: `${book.title} · no está en el aviso de esta recepción` };
+        statuses.product = { tone: "warn", text: `${articleName(book.title)} · no está en el aviso de esta recepción` };
       }
     }
   } else if (ctx === "packing" && book) {
@@ -179,15 +180,15 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       .innerJoin(orders, eq(orders.id, orderLines.orderId))
       .where(and(eq(orderLines.orderId, Number(v("id"))), eq(orderLines.productId, book.id), eq(orders.companyId, companyId)));
     const left = l ? l.l.picked - l.l.packed : 0;
-    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${book.title}" no está entre lo preparado para este pedido.` };
-    else if (left === 0) statuses.product = { tone: "danger", text: `Ya empacaste todas las unidades de "${book.title}".` };
+    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está entre lo preparado para este pedido.` };
+    else if (left === 0) statuses.product = { tone: "danger", text: `Ya empacaste todas las unidades de "${articleName(book.title)}".` };
     else {
-      statuses.product = { tone: "ok", text: `${book.title} · quedan ${left} por empacar` };
+      statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} por empacar` };
       if (left > 1 && quantity !== left) shortcuts.push({ field: "quantity", value: String(left), text: `Todas: ${left}` });
       if (quantity && quantity > left) statuses.quantity = { tone: "danger", text: `Quedan ${left} por empacar.` };
     }
   } else if (book) {
-    statuses.product = { tone: "ok", text: book.title };
+    statuses.product = { tone: "ok", text: articleName(book.title) };
   }
 
   // Suggestions for the field being typed in.
@@ -220,10 +221,10 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
           .where(and(eq(stock.locationId, source.id), gt(stock.quantity, 0), q ? matchesProduct(q) : undefined))
           .orderBy(asc(products.title))
           .limit(8);
-        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: f.title, detail: `${f.barcode} · hay ${f.quantity}` });
+        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: articleName(f.title), detail: `${f.barcode} · hay ${f.quantity}` });
       } else if (q.length >= 2) {
         const rows = await db.select({ barcode: products.barcode, title: products.title, author: products.author }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(q))).orderBy(asc(products.title)).limit(8);
-        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: f.title, detail: codes(f) });
+        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: articleName(f.title), detail: codes(f) });
       }
     }
   }

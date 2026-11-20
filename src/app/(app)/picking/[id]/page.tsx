@@ -8,6 +8,7 @@ import { customers, orderLines, orders, products, pickTasks, locations } from "@
 import { requireSession } from "@/lib/session";
 import { confirm, shortage, take } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 
 export default async function PickingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -56,7 +57,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                 <div className="rounded-control bg-accent p-5 lg:p-4 text-on-accent">
                   <p className="mb-2.5 text-sm font-semibold opacity-85">Próxima parada · quedan {pending.length}</p>
                   <ShelfMark code={nextStop.location} size="xl" onAccent />
-                  <p className="mt-4 text-lg lg:text-base leading-snug font-semibold">{nextStop.title}</p>
+                  <p className="mt-4 text-lg lg:text-base leading-snug font-semibold">{articleName(nextStop.title)}</p>
                   <p className="font-mono text-sm font-bold opacity-85">{nextStop.code}</p>
                   <p className="mt-3 text-base">
                     Toma <span className="text-3xl lg:text-2xl font-bold">{nextStop.t.quantity - nextStop.t.picked}</span>
@@ -97,7 +98,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   {shortages.map(({ t, title, location }) => (
                     <li key={t.id} className="row justify-between">
                       <span>
-                        <span className="block font-medium">{title}</span>
+                        <span className="block font-medium">{articleName(title)}</span>
                         <span className="block text-sm text-muted">{location ? `No estaba en ${location}` : "Sin stock en ninguna ubicación"}</span>
                       </span>
                       <Badge tone="danger">Faltan {t.quantity - t.picked}</Badge>
@@ -113,7 +114,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   {pending.slice(1).map(({ t, title, location }) => (
                     <li key={t.id} className="row">
                       <ShelfMark code={location} />
-                      <span className="min-w-0 flex-1 truncate">{title}</span>
+                      <span className="min-w-0 flex-1 truncate">{articleName(title)}</span>
                       <span className="font-semibold">× {t.quantity - t.picked}</span>
                     </li>
                   ))}
@@ -127,7 +128,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   {doneTasks.map(({ t, title, location }) => (
                     <li key={t.id} className="row text-muted">
                       <ShelfMark code={location} />
-                      <span className="min-w-0 flex-1 truncate">{title}</span>
+                      <span className="min-w-0 flex-1 truncate">{articleName(title)}</span>
                       <span className="flex items-center gap-1 font-semibold text-ok">
                         <Icon name="ok" className="size-4" /> {t.picked}
                       </span>

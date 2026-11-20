@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { articleName } from "@/lib/article";
 import { eq } from "drizzle-orm";
 
 process.env.PGLITE_DIR = "memory://";
@@ -45,7 +46,7 @@ describe("rehearsing a move", () => {
   it("says which book it is, how many there are, and offers to move them all", async () => {
     const r = await rehearsal({ ctx: "move", source: "a-01-1", product: book.barcode, quantity: "1" });
     expect(r.statuses.source?.tone).toBe("ok");
-    expect(r.statuses.product).toEqual({ tone: "ok", text: `${book.title} · hay 7 en A-01-1` });
+    expect(r.statuses.product).toEqual({ tone: "ok", text: `${articleName(book.title)} · hay 7 en A-01-1` });
     expect(r.shortcuts).toContainEqual({ field: "quantity", value: "7", text: "Todas: 7" });
   });
 
@@ -73,7 +74,7 @@ describe("rehearsing a move", () => {
     const d = { source: "A-01-1", product: book.barcode, destination: "B-01-1", quantity: "2" };
     const r = await rehearsal({ ctx: "move", ...d });
     expect(Object.values(r.statuses).some((e) => e.tone === "danger")).toBe(false);
-    await expect(move(c, d)).resolves.toContain(book.title);
+    await expect(move(c, d)).resolves.toContain(articleName(book.title));
   });
 
   it("suggests only titles at the source and searches without accents", async () => {

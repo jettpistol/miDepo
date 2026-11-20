@@ -9,6 +9,7 @@ import { can, requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
 import { ProductCards, ViewSwitch } from "@/components/ProductCards";
 import { toggle } from "../actions";
+import { articleName } from "@/lib/article";
 
 export default async function LocationDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -59,7 +60,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
                     <tr key={p.id}>
                       <td>
                         <Link href={`/stock/${p.id}`} className="link">
-                          {p.title}
+                          {articleName(p.title)}
                         </Link>
                         <span className="mt-0.5 block sm:hidden">
                           <Code>{p.barcode}</Code>

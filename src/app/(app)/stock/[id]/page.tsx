@@ -7,6 +7,7 @@ import { Code, PageHeader, shortDate, Badge, ShelfMark } from "@/components/ui";
 import { fierroStock, movements, products, stock, locations, users, type MovementReason } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { locationName } from "@/lib/stock";
+import { articleName } from "@/lib/article";
 
 const money = (cents: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(cents / 100);
 const kg = (g: number) => `${(g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
@@ -37,7 +38,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <PageHeader title={p.title} back={{ href: "/stock", text: "Stock" }} subtitle={[p.author, p.imprint].filter(Boolean).join(" · ")} />
+      <PageHeader title={articleName(p.title)} back={{ href: "/stock", text: "Stock" }} subtitle={[p.author, p.imprint].filter(Boolean).join(" · ")} />
       <div className={p.coverUrl ? "grid gap-6 sm:grid-cols-[12rem_minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)] sm:items-start" : ""}>
         {p.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- local covers, already small
@@ -68,7 +69,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             </dl>
           </div>
 
-          <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+          <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 2xl:grid-cols-[minmax(0,22rem)_1fr] 2xl:items-start">
             <section>
               <h2 className="section-title">
                 Ubicaciones {whereabouts.length > 0 && <small>{whereabouts.length}</small>}

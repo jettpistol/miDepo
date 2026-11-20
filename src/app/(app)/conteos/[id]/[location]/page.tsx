@@ -6,6 +6,7 @@ import { countLines, countLocations, counts, products, locations } from "@/db/sc
 import { requireSession } from "@/lib/session";
 import { EditNumber } from "../../../recepcion/[id]/EditNumber";
 import { correct, scan, complete } from "../../actions";
+import { articleName } from "@/lib/article";
 
 export default async function CountLocation({ params }: { params: Promise<{ id: string; location: string }> }) {
   const { id: idText, location } = await params;
@@ -55,7 +56,7 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
             {lines.map(({ l, title, code }) => (
               <li key={l.productId} className="row justify-between">
                 <span className="min-w-0">
-                  <span className="block font-medium">{title}</span>
+                  <span className="block font-medium">{articleName(title)}</span>
                   <Code>{code}</Code>
                 </span>
                 {open ? <EditNumber action={correct} hiddenFields={{ id, locationId, productId: l.productId }} field="countedQty" value={l.countedQty} /> : <span className="text-base font-semibold tabular-nums">{l.countedQty}</span>}

@@ -7,6 +7,7 @@ import { containsText } from "@/lib/lookup";
 import { requireSession } from "@/lib/session";
 import { ProductCards, ViewSwitch } from "@/components/ProductCards";
 import { StockSearch } from "./StockSearch";
+import { articleName } from "@/lib/article";
 
 export const metadata = { title: "Stock" };
 
@@ -91,7 +92,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
                 <tr key={p.id}>
                   <td>
                     <Link href={`/stock/${p.id}`} className="link">
-                      {p.title}
+                      {articleName(p.title)}
                     </Link>
                     {p.type !== "book" && (
                       <>
