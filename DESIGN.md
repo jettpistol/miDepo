@@ -187,7 +187,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **New button** (`<NewButton>`): "+ Nueva" in the page header, opening a small panel with the form, like Jira's Create.
 - **Always-on tables**: list screens keep their table even when empty, with one `<EmptyRow>` that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
-- **Product cards** (`<ProductCards>`, owner request 2026-11-20): the default view of product lists (Stock, a shelf's contents). A ruled grid, flat like a table: each cell has the list cover (`<Cover>`, 56 × 80 px), title, author, code chip and units. `<ViewSwitch>` (tabs "Tarjetas" / "Lista") changes to the table, whose rows lead with a 40 × 56 px cover; the choice is saved per user. Only product lists get cards; task lists stay tables.
+- **Product cards** (`<ProductCards>`, owner request 2026-11-20): the second view of product lists (Stock, a location's contents); Lista is the default. A ruled grid, flat like a table: each cell has the list cover (`<Cover>`, 56 × 80 px), title, author, code chip and units. `<ViewSwitch>` (tabs "Lista" / "Tarjetas", the default first) switches between them; the table's rows lead with a 40 × 56 px cover. The last choice is saved per user. Only product lists get cards; task lists stay tables.
 - **`panel`**: a plain 6px bordered panel, used only around a form or a settings group. Never nested.
 - **Progress**: a 6px progress bar with "12 de 40" beside it; it turns green when complete.
 - Motion: 150ms colour transitions, and a 180ms fade for scan responses. Nothing decorative; reduced-motion is respected.

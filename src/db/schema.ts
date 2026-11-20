@@ -50,8 +50,8 @@ export const users = pgTable(
     theme: text("theme").$type<"light" | "dark" | "system">().notNull().default("system"),
     /** Interface font, one of the ids in src/lib/fonts.ts. */
     font: text("font").notNull().default("libre-franklin"),
-    /** How product lists are shown: cards with covers, or the compact table. */
-    listView: text("list_view").$type<"cards" | "table">().notNull().default("cards"),
+    /** How product lists are shown: the table (default) or cards. Saved when the person switches. */
+    listView: text("list_view").$type<"cards" | "table">().notNull().default("table"),
     active: boolean("active").notNull().default(true),
     /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
     photoVersion: integer("photo_version"),
