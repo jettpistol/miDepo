@@ -70,7 +70,7 @@ export default async function Home() {
 
   return (
     <>
-      <PageHeader title={`Hola, ${user.name.split(" ")[0]}`}>
+      <PageHeader title="Inicio">
         {supervisor && <span className="text-[13px] text-muted">{company.lastSync ? `Fierro sincronizado ${shortDate(company.lastSync)}` : "Fierro todavía no se sincronizó"}</span>}
       </PageHeader>
 
@@ -96,7 +96,7 @@ export default async function Home() {
         ) : (
           <>
             <StatTile icon="ok" value={mine.length} label="Asignado a ti" tone={mine.length > 0 ? "accent" : "neutral"} />
-            <StatTile icon="move" value={moved.get(user.id) ?? 0} label="Unidades que moviste hoy" />
+            <StatTile icon="move" value={moved.get(user.id) ?? 0} label="Unidades movidas hoy" />
             <StatTile icon="picking" value={n("pending")} label="Pedidos para preparar" href="/picking" />
             <StatTile icon="putaway" value={putAway} label="Unidades por reponer" href="/reposicion" />
           </>
@@ -116,16 +116,16 @@ export default async function Home() {
             </>
           ) : (
             <div className="py-2">
-              <p className="font-semibold">No tienes nada asignado</p>
+              <p className="font-semibold">Nada asignado</p>
               {next ? (
                 <>
-                  <p className="mt-0.5 mb-2 text-sm text-muted">Lo que sigue en la cola, sin dueño:</p>
+                  <p className="mt-0.5 mb-2 text-sm text-muted">Próximo pedido sin asignar</p>
                   <ul className="divide-y divide-line border-y border-line">
                     <TaskRow t={next} first={picking.length === 0} />
                   </ul>
                 </>
               ) : (
-                <p className="mt-0.5 text-sm text-muted">Tampoco hay pedidos sin dueño en la cola.</p>
+                <p className="mt-0.5 text-sm text-muted">No hay pedidos sin asignar.</p>
               )}
             </div>
           )}

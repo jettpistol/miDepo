@@ -6,6 +6,7 @@ import { connector } from "@/lib/fierro";
 import { EXPORT_NAME, pendingExports } from "@/lib/flows/exports";
 import { requireSession } from "@/lib/session";
 import { submit, simulate, syncNow } from "./actions";
+import { InfoHint } from "@/components/Hint";
 
 export const metadata = { title: "Fierro" };
 
@@ -17,6 +18,9 @@ export default async function Fierro() {
   return (
     <>
       <PageHeader title="Fierro">
+        <Link href="/fierro/cargados" className="btn-soft">
+          <Icon name="history" className="size-4" /> Cargados
+        </Link>
         <Link href="/fierro/conciliacion" className="btn-soft">
           Conciliar stock
         </Link>
@@ -25,12 +29,12 @@ export default async function Fierro() {
       {simulated && (
         <div className="mb-6">
           <Notice tone="warn">
-            <strong>Modo de prueba:</strong> este depósito está conectado a un Fierro simulado con datos inventados. Nada de lo que hagas acá llega a un Fierro real.
+            <strong>Modo de prueba:</strong> este depósito está conectado a un Fierro simulado con datos inventados. Nada de lo que hagas aquí llega a un Fierro real.
           </Notice>
         </div>
       )}
 
-      <section className="mb-8 lg:mb-6">
+      <section id="traer" className="mb-8 lg:mb-6">
         <h2 className="section-title">Traer novedades de Fierro</h2>
         <p className="mb-3 max-w-[70ch] text-sm text-muted">Última sincronización: {company.lastSync ? shortDate(company.lastSync) : "nunca"}</p>
         <div className="flex flex-wrap gap-2">
@@ -43,20 +47,20 @@ export default async function Fierro() {
                 Simular 10 pedidos nuevos
               </ActionButton>
               <ActionButton action={simulate} hiddenFields={{ what: "receipts", howManyOf: 1 }} className="btn-soft">
-                Simular un ingreso avisado
+                Simular una recepción avisada
               </ActionButton>
             </>
           )}
         </div>
       </section>
 
-      <section>
+      <section id="cargar">
         <h2 className="section-title">
           Para cargar en Fierro <small>{pending.length}</small>
+          <InfoHint text="Un pedido sale del stock solo cuando lo marcas como cargado." />
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock recién cuando lo marcas como cargado.</p>
         {pending.length === 0 ? (
-          <EmptyState title="Fierro está al día">No hay documentos del depósito sin informar.</EmptyState>
+          <EmptyState title="Fierro está al día">No hay documentos del depósito sin cargar.</EmptyState>
         ) : (
           <div className="table-wrap">
             <table className="data-table">

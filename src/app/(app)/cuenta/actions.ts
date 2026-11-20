@@ -13,15 +13,24 @@ export const saveAppearance = action("operator", async (c, f) => {
   const theme = txt(f, "theme");
   const font = txt(f, "font");
   if (!VALID_HEX.test(accent)) throw new UserError("ACCT-01", "Ese color no es válido.");
-  if (!isFont(font)) throw new UserError("ACCT-02", "Elige una letra de la lista.");
+  if (!isFont(font)) throw new UserError("ACCT-02", "Elige una tipografía de la lista.");
+  await c.db.update(users).set({ accent: accent.toUpperCase(), theme: validTheme(theme), font }).where(eq(users.id, c.userId));
+  return "Apariencia guardada. Se aplica en todos tus dispositivos.";
+});
+
+function validTheme(theme: string) {
   if (theme !== "light" && theme !== "dark" && theme !== "system") throw new UserError("ACCT-03", "Elige un tema.");
-  await c.db.update(users).set({ accent: accent.toUpperCase(), theme, font }).where(eq(users.id, c.userId));
-  return "Guardado. Así vas a ver miDepo en todos tus dispositivos.";
+  return theme;
+}
+
+/** The light/dark switch in the top bar: saved at once, without opening Ajustes. */
+export const saveTheme = action("operator", async (c, f) => {
+  await c.db.update(users).set({ theme: validTheme(txt(f, "theme")) }).where(eq(users.id, c.userId));
 });
 
 export const changePassword = action("operator", async (c, f) => {
   const newPassword = txt(f, "newPassword");
-  if (c.user.passwordHash && !verifyPassword(txt(f, "current"), c.user.passwordHash)) throw new UserError("ACCT-04", "La contraseña actual no es esa.");
+  if (c.user.passwordHash && !verifyPassword(txt(f, "current"), c.user.passwordHash)) throw new UserError("ACCT-04", "La contraseña actual no es correcta.");
   if (newPassword.length < 8) throw new UserError("ACCT-05", "La contraseña nueva necesita al menos 8 caracteres.");
   await c.db.update(users).set({ passwordHash: hashPassword(newPassword) }).where(eq(users.id, c.userId));
   return "Contraseña cambiada.";
@@ -29,7 +38,7 @@ export const changePassword = action("operator", async (c, f) => {
 
 export const changePin = action("operator", async (c, f) => {
   const pin = txt(f, "pin").trim();
-  if (!VALID_PIN.test(pin)) throw new UserError("ACCT-06", "El PIN son exactamente 6 números.");
+  if (!VALID_PIN.test(pin)) throw new UserError("ACCT-06", "El PIN debe tener exactamente 6 dígitos.");
   try {
     await c.db.update(users).set({ pinHmac: pinHmac(c.companyId, pin) }).where(eq(users.id, c.userId));
   } catch {

@@ -5,7 +5,11 @@ import { Code, PageHeader, Badge, ShelfMark, EmptyRow } from "@/components/ui";
 import { products, stock, locations } from "@/db/schema";
 import { containsText } from "@/lib/lookup";
 import { requireSession } from "@/lib/session";
+import { Cover, ProductCards, ViewSwitch } from "@/components/ProductCards";
+import { CodeWithCopy } from "@/components/CopyButton";
+import { ColumnHandle, ResizableTable } from "@/components/ResizableTable";
 import { StockSearch } from "./StockSearch";
+import { articleName } from "@/lib/article";
 
 export const metadata = { title: "Stock" };
 
@@ -14,7 +18,7 @@ const PAGE = 50;
 const fmt = (n: number) => n.toLocaleString("es-AR");
 
 export default async function Stock({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
-  const { db, company } = await requireSession();
+  const { db, company, user } = await requireSession();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
@@ -53,30 +57,63 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
         </Link>
       )}
 
-      <h2 className="section-title">
-        {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
-      </h2>
-      <div className="table-wrap">
+      <div className="mb-2 flex flex-wrap items-end justify-between gap-x-6">
+        <h2 className="section-title mb-0 py-2 lg:py-1.5">
+          {q ? "Resultados" : "Todos los artículos"} <small>{fmt(total)}</small>
+        </h2>
+        <ViewSwitch view={user.listView} />
+      </div>
+      {user.listView === "cards" ? (
+        <ProductCards
+          items={found.map((p) => ({ product: p, quantity: totals.get(p.id) ?? 0, extra: p.type !== "book" && <Badge>{TYPE_LABEL[p.type]}</Badge> }))}
+          empty={
+            <>
+              <p className="font-semibold">{q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}</p>
+              <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}</p>
+            </>
+          }
+        />
+      ) : (
+        <ResizableTable id="stock">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Título</th>
-                <th className="hidden md:table-cell">Autor</th>
-                <th className="hidden sm:table-cell">Código</th>
+                <th className="w-0">
+                  <span className="sr-only">Portada</span>
+                </th>
+                <th>
+                  Artículo
+                  <ColumnHandle />
+                </th>
+                <th className="hidden lg:table-cell">
+                  Autor
+                  <ColumnHandle />
+                </th>
+                <th className="hidden sm:table-cell">
+                  SKU
+                  <ColumnHandle />
+                </th>
+                <th className="hidden md:table-cell">
+                  ISBN
+                  <ColumnHandle />
+                </th>
                 <th className="text-right">Unidades</th>
               </tr>
             </thead>
             <tbody>
               {found.length === 0 && (
-                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}>
-                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
+                <EmptyRow columns={6} title={q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}>
+                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}
                 </EmptyRow>
               )}
               {found.map((p) => (
                 <tr key={p.id}>
+                  <td className="w-0 py-1.5! pr-0!">
+                    <Cover productId={p.id} version={p.thumbVersion} className="h-14 w-10" />
+                  </td>
                   <td>
                     <Link href={`/stock/${p.id}`} className="link">
-                      {p.title}
+                      {articleName(p.title)}
                     </Link>
                     {p.type !== "book" && (
                       <>
@@ -84,23 +121,25 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
                         <Badge>{TYPE_LABEL[p.type]}</Badge>
                       </>
                     )}
-                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted md:hidden">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted lg:hidden">
                       <span className="sm:hidden">
-                        <Code>{p.barcode}</Code>
+                        <Code>{p.internalCode}</Code>
                       </span>
                       {p.author}
                     </span>
                   </td>
-                  <td className="hidden text-muted md:table-cell">{p.author}</td>
+                  <td className="hidden text-muted lg:table-cell">{p.author}</td>
                   <td className="hidden sm:table-cell">
-                    <Code>{p.barcode}</Code>
+                    <CodeWithCopy value={p.internalCode} what="SKU" />
                   </td>
+                  <td className="hidden md:table-cell">{p.isbn ? <CodeWithCopy value={p.isbn} what="ISBN" /> : <span className="text-muted">—</span>}</td>
                   <td className={`text-right text-base font-bold tabular-nums ${totals.get(p.id) ? "" : "text-muted/60"}`}>{totals.get(p.id) ?? 0}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </ResizableTable>
+      )}
       {total > PAGE && (
         <nav aria-label="Páginas" className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
           <span>

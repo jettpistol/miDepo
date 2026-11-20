@@ -2,6 +2,7 @@ import { and, asc, eq, ilike, isNull } from "drizzle-orm";
 import { products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { Labels } from "../../Labels";
+import { Icon } from "@/components/Icon";
 
 /** Labels for items without an ISBN (floppies, variants, packs): they carry the internal code. */
 export default async function ProductLabels({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
@@ -17,11 +18,13 @@ export default async function ProductLabels({ searchParams }: { searchParams: Pr
     : [];
   return (
     <>
-      <form className="no-print mb-4 flex max-w-md gap-2">
-        <input name="q" defaultValue={q} placeholder="Buscar por título (solo artículos sin ISBN)" className="w-full rounded-lg border border-neutral-400 px-3 py-2" />
-        <button className="rounded-lg border border-neutral-400 px-3 py-2 font-semibold">Buscar</button>
+      <form className="field-group search-box no-print mb-4" role="search">
+        <input name="q" defaultValue={q} placeholder="Buscar por nombre (solo artículos sin ISBN)" aria-label="Buscar por nombre" className="field" />
+        <button className="btn" aria-label="Buscar">
+          <Icon name="stock" />
+        </button>
       </form>
-      {q ? <Labels items={rows} /> : <p className="py-10 text-center">Busca una serie o un título para armar sus etiquetas.</p>}
+      {q ? <Labels items={rows} /> : <p className="py-10 text-center">Busca una serie o un artículo para generar sus etiquetas.</p>}
     </>
   );
 }

@@ -17,4 +17,10 @@ describe("Ovnipress demo catalogue (scraped)", () => {
     expect(isbns.every((i) => /^\d{13}$/.test(i))).toBe(true);
     expect(new Set(catalog.map((t) => t.title)).size).toBe(catalog.length);
   });
+  it("keeps authors clean: names separated by commas, no other fields or HTML codes mixed in", () => {
+    for (const t of catalog) {
+      if (!t.author) continue;
+      expect(t.author, t.title).not.toMatch(/FORMATO|ISBN|Peso|\||&[a-z#0-9]+;|,\s*$|^\s|\s$/i);
+    }
+  });
 });

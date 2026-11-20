@@ -10,6 +10,7 @@
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cleanAuthor, cleanFormat, decode } from "./ovnipress-fields.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SHOP = "https://www.ovnipress.net";
@@ -21,17 +22,6 @@ const get = async (url) => {
   if (!res.ok) throw new Error(`[CLI-06] La tienda respondió ${res.status} en ${url}`);
   return res;
 };
-const decode = (s) =>
-  s
-    .replace(/&nbsp;/g, " ")
-    .replace(/&bull;/g, "·")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&([aeiouAEIOU])(acute|grave|uml|circ);/g, (_, v, a) => v.normalize("NFD") + { acute: "́", grave: "̀", uml: "̈", circ: "̂" }[a])
-    .replace(/&ntilde;/g, "ñ").replace(/&Ntilde;/g, "Ñ")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-    .normalize("NFC");
 const text = (html) => decode(html.replace(/<(script|style|text)[\s\S]*?<\/\1>/gi, "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<[^>]+>/g, "")).replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
 const ldBlocks = (html, kind) =>
   [...html.matchAll(new RegExp(`<script type="application/ld\\+json" data-component='structured-data\\.${kind}'>([\\s\\S]*?)</script>`, "g"))].flatMap((m) => {
@@ -78,8 +68,8 @@ for (const [i, c] of candidates.entries()) {
       ...c,
       title: c.name,
       line: crumbs.length >= 4 ? crumbs[2] : (crumbs[1] ?? null),
-      author: pick(/Autor(?:es)?:\s*([^\n]+)/i)?.replace(/\s*·\s*/g, ", ") ?? null,
-      format: pick(/Formato:\s*([^\n]+)/i),
+      author: cleanAuthor(pick(/Autor(?:es)?:\s*([^\n]+)/i)),
+      format: cleanFormat(pick(/Formato:\s*([^\n]+)/i)),
       isbn: isbn && isbn.length === 13 ? isbn : null,
       weightGrams: grams >= 20 && grams <= 5000 ? grams : 300,
       image,

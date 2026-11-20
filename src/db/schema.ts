@@ -50,6 +50,8 @@ export const users = pgTable(
     theme: text("theme").$type<"light" | "dark" | "system">().notNull().default("system"),
     /** Interface font, one of the ids in src/lib/fonts.ts. */
     font: text("font").notNull().default("libre-franklin"),
+    /** How product lists are shown: the table (default) or cards. Saved when the person switches. */
+    listView: text("list_view").$type<"cards" | "table">().notNull().default("table"),
     active: boolean("active").notNull().default(true),
     /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
     photoVersion: integer("photo_version"),
@@ -110,6 +112,8 @@ export const products = pgTable(
     weightGrams: integer("weight_grams").notNull().default(300),
     /** Cover picture (a path under /public or a URL); null when Fierro has none. */
     coverUrl: text("cover_url"),
+    /** null = no thumbnail yet. Changes with every new thumbnail, so the browser does not show the old one. */
+    thumbVersion: integer("thumb_version"),
     active: boolean("active").notNull().default(true),
   },
   (t) => [
@@ -119,6 +123,18 @@ export const products = pgTable(
     index("products_company_id_internal_code_idx").on(t.companyId, t.internalCode),
   ],
 );
+
+/**
+ * Small copy of each cover for lists, made once from `products.cover_url` (src/lib/covers.ts),
+ * so lists never load or resize the original. In its own table so product queries stay light.
+ */
+export const productThumbs = pgTable("product_thumbs", {
+  productId: integer("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
+  /** The cover_url it was made from: a different one means it must be made again. */
+  source: text("source").notNull(),
+  /** WebP, base64. */
+  data: text("data").notNull(),
+});
 
 export const customers = pgTable(
   "customers",
@@ -439,3 +455,25 @@ export const adjustmentLines = pgTable(
 );
 
 export const now = sql`now()`;
+
+// ───────────── Manual ─────────────
+
+/**
+ * A company's own version of a manual page (wiki/<page>.md), written by an administrator in
+ * /ayuda/editar. That company's users read this instead of the file; everyone else, and anyone
+ * not logged in, reads the file. Deleting the row puts the original back.
+ */
+export const wikiEdits = pgTable(
+  "wiki_edits",
+  {
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** File name without .md, e.g. "Picking". */
+    page: text("page").notNull(),
+    markdown: text("markdown").notNull(),
+    /** Hash of the file this edit started from: when the file changes later, the editor says so. */
+    baseHash: text("base_hash").notNull(),
+    updatedBy: integer("updated_by").notNull().references(() => users.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.companyId, t.page] })],
+);

@@ -35,7 +35,7 @@ export const TEMPLATES: { id: string; name: string; description: string; audienc
     id: "unit-level",
     name: "Estantería numerada · Nivel",
     description: "Cada estantería tiene un número corrido y cada nivel el suyo.",
-    audience: "Depósitos chicos o sin pasillos definidos: un salón con estanterías contra las paredes.",
+    audience: "Depósitos pequeños o sin pasillos definidos: un salón con estanterías contra las paredes.",
     scheme: {
       id: "unit-level",
       separator: "-",
@@ -65,7 +65,7 @@ export const TEMPLATES: { id: string; name: string; description: string; audienc
     id: "shelf-level-position",
     name: "Estante · Nivel · Posición",
     description: "Además del nivel, numera cada hueco del estante de izquierda a derecha.",
-    audience: "Quien guarda muchos títulos distintos por estante y quiere encontrar cada uno sin buscar.",
+    audience: "Quien guarda muchos artículos distintos por estante y quiere encontrar cada uno sin buscar.",
     scheme: {
       id: "shelf-level-position",
       separator: "-",

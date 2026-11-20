@@ -131,6 +131,8 @@ html {
   accent-color: var(--accent-text);
   caret-color: var(--accent-text);
   scrollbar-color: var(--line-strong) transparent;
+  /* A link to a section (#apariencia) lands below the sticky top bar. */
+  scroll-padding-top: 4.5rem;
 }
 body {
   min-height: 100dvh;
@@ -151,6 +153,15 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent-text);
   outline-offset: 2px;
+}
+/* A field group draws one ring around itself; its parts draw none (unlayered, to win over the rule above). */
+.field-group:has(:focus-visible) {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+.field-group :focus-visible,
+.field-group .bg-accent:focus-visible {
+  outline: none;
 }
 /* On the blue bar, the focus ring takes the bar's text colour. */
 .bg-accent:focus-visible,
@@ -181,6 +192,27 @@ h3 {
   }
   .btn-danger {
     @apply border border-danger/50 bg-surface text-danger hover:bg-danger-soft;
+  }
+  /* A field with its button attached on the right edge (search boxes, scan fields with the camera,
+     a single field and its submit): one control, one border, one focus ring. The border can take a
+     tone (border-ok, border-danger) like a field. Search boxes add search-box for their standard width. */
+  .field-group {
+    @apply relative flex w-full items-stretch rounded-control border border-line-strong bg-surface transition-colors duration-150 hover:border-ink/60 has-[:focus-visible]:border-accent-text;
+  }
+  .field-group > .field {
+    @apply min-h-[42px] min-w-0 flex-1 rounded-l-[5px] rounded-r-none border-0 bg-transparent lg:min-h-[30px];
+  }
+  .field-group button {
+    @apply min-h-[42px] shrink-0 rounded-l-none rounded-r-[5px] border-0 px-4 lg:min-h-[30px] lg:px-3;
+  }
+  .field-group .btn-soft {
+    @apply border-l border-line-strong;
+  }
+  .field-group > span {
+    @apply flex;
+  }
+  .search-box {
+    @apply max-w-xl;
   }
   .field-label {
     @apply mb-1.5 block text-sm font-semibold text-ink lg:mb-1 lg:text-xs lg:text-muted;
@@ -311,6 +343,28 @@ h3 {
   .doc-number {
     @apply font-mono text-[1.08em] font-bold whitespace-nowrap;
   }
+  /* Square icon button, e.g. a row's "⋯" menu. */
+  .btn-icon {
+    @apply inline-flex size-11 cursor-pointer items-center justify-center rounded-control text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink aria-expanded:bg-sunken aria-expanded:text-ink lg:size-7;
+  }
+  /* Copy a code beside it (SKU, ISBN). */
+  .btn-copy {
+    @apply inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-label text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink lg:size-6;
+  }
+  /* Drag handle at the right edge of a resizable table's header (ResizableTable). */
+  .data-table th:has(> .column-handle) {
+    @apply relative;
+  }
+  .column-handle {
+    @apply absolute top-0 -right-1 bottom-0 z-10 hidden w-2 cursor-col-resize after:absolute after:inset-y-1.5 after:left-1/2 after:w-px after:bg-line-strong after:opacity-0 after:transition-opacity hover:after:opacity-100 lg:block;
+  }
+  /* One option in a row menu. */
+  .menu-item {
+    @apply flex min-h-11 w-full cursor-pointer items-center px-3 text-left text-[15px] text-ink transition-colors duration-150 hover:bg-sunken disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-8 lg:text-sm;
+  }
+  .menu-item.danger {
+    @apply text-danger;
+  }
   /* Button for the last cell of a table row. */
   .btn-sm {
     @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1 text-sm font-semibold whitespace-nowrap text-ink transition-colors duration-150 hover:border-accent-text hover:bg-accent-soft hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-7 lg:px-2.5 lg:py-0.5 lg:text-[13px] lg:font-medium;
@@ -403,4 +457,10 @@ h3 {
 }
 .manual-index a {
   @apply block rounded-control px-2 py-1 font-medium no-underline hover:bg-sunken;
+}
+
+/* While a column is being dragged wider or thinner. */
+body.resizing-columns {
+  cursor: col-resize;
+  user-select: none;
 }

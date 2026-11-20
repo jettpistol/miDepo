@@ -8,6 +8,7 @@ import { customers, orderLines, orders, products, pickTasks, locations } from "@
 import { requireSession } from "@/lib/session";
 import { confirm, shortage, take } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
 
 export default async function PickingOrder({ params }: { params: Promise<{ id: string }> }) {
@@ -43,7 +44,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
       {p.status === "pending" ? (
         <div className="max-w-md space-y-4 border-y border-line py-5 lg:py-4">
           <p>
-            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} títulos y todavía no lo tomó nadie.
+            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} artículos y todavía no lo tomó nadie.
           </p>
           <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary">
             Preparar este pedido
@@ -59,7 +60,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                 <div className="rounded-control bg-accent p-5 lg:p-4 text-on-accent">
                   <p className="mb-2.5 text-sm font-semibold opacity-85">Próxima parada · quedan {pending.length}</p>
                   <ShelfMark code={nextStop.location} size="xl" onAccent />
-                  <p className="mt-4 text-lg lg:text-base leading-snug font-semibold">{nextStop.title}</p>
+                  <p className="mt-4 text-lg lg:text-base leading-snug font-semibold">{articleName(nextStop.title)}</p>
                   <p className="font-mono text-sm font-bold opacity-85">{nextStop.code}</p>
                   <p className="mt-3 text-base">
                     Toma <span className="text-3xl lg:text-2xl font-bold">{nextStop.t.quantity - nextStop.t.picked}</span>
@@ -70,14 +71,14 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   context="picking"
                   hiddenFields={{ taskId: nextStop.t.id }}
                   fields={[
-                    { name: "location", label: "Estante", help: "Escanea el cartel" },
-                    { name: "product", label: "Libro" },
+                    { name: "location", label: "Ubicación", help: "Escanea la etiqueta" },
+                    { name: "product", label: "Artículo" },
                   ]}
                   quantity={nextStop.t.quantity - nextStop.t.picked}
                   button="Confirmar"
                 />
-                <ActionButton action={shortage} hotkey="secondary" hiddenFields={{ taskId: nextStop.t.id }} className="btn-soft w-full" confirm={`¿Seguro que en ${nextStop.location} no ${nextStop.t.quantity - nextStop.t.picked === 1 ? "está la unidad que falta" : `están las ${nextStop.t.quantity - nextStop.t.picked} unidades que faltan`}? miDepo va a buscar el título en otro estante.`}>
-                  No está en el estante
+                <ActionButton action={shortage} hotkey="secondary" hiddenFields={{ taskId: nextStop.t.id }} className="btn-soft w-full" confirm={`¿Seguro que en ${nextStop.location} no ${nextStop.t.quantity - nextStop.t.picked === 1 ? "está la unidad que falta" : `están las ${nextStop.t.quantity - nextStop.t.picked} unidades que faltan`}? miDepo buscará el artículo en otra ubicación.`}>
+                  No está en la ubicación
                 </ActionButton>
               </>
             ) : p.status === "picked" ? (
@@ -100,8 +101,8 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   {shortages.map(({ t, title, location }) => (
                     <li key={t.id} className="row justify-between">
                       <span>
-                        <span className="block font-medium">{title}</span>
-                        <span className="block text-sm text-muted">{location ? `No estaba en ${location}` : "Sin stock en estanterías"}</span>
+                        <span className="block font-medium">{articleName(title)}</span>
+                        <span className="block text-sm text-muted">{location ? `No estaba en ${location}` : "Sin stock en ninguna ubicación"}</span>
                       </span>
                       <Badge tone="danger">Faltan {t.quantity - t.picked}</Badge>
                     </li>
@@ -111,12 +112,12 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             )}
             {pending.length > 1 && (
               <section>
-                <h2 className="section-title">Después</h2>
+                <h2 className="section-title">Próximas paradas</h2>
                 <ul className="ruled-list framed">
                   {pending.slice(1).map(({ t, title, location }) => (
                     <li key={t.id} className="row">
                       <ShelfMark code={location} />
-                      <span className="min-w-0 flex-1 truncate">{title}</span>
+                      <span className="min-w-0 flex-1 truncate">{articleName(title)}</span>
                       <span className="font-semibold">× {t.quantity - t.picked}</span>
                     </li>
                   ))}
@@ -125,12 +126,12 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             )}
             {doneTasks.length > 0 && (
               <section>
-                <h2 className="section-title">Ya tomado</h2>
+                <h2 className="section-title">Tomado</h2>
                 <ul className="ruled-list framed">
                   {doneTasks.map(({ t, title, location }) => (
                     <li key={t.id} className="row text-muted">
                       <ShelfMark code={location} />
-                      <span className="min-w-0 flex-1 truncate">{title}</span>
+                      <span className="min-w-0 flex-1 truncate">{articleName(title)}</span>
                       <span className="flex items-center gap-1 font-semibold text-ok">
                         <Icon name="ok" className="size-4" /> {t.picked}
                       </span>

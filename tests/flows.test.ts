@@ -108,7 +108,7 @@ describe("full circuit", () => {
     const other = t0.u === "A-01-2" ? "A-02-1" : "A-01-2";
     await expect(confirmPick(c, { taskId: t0.t.id, location: other, product: prods.get(t0.t.productId)!.barcode, quantity: 1 })).rejects.toThrow(/otra ubicación/);
     const foreign = [...prods.values()].find((p) => p.id !== t0.t.productId)!;
-    await expect(confirmPick(c, { taskId: t0.t.id, location: t0.u, product: foreign.barcode, quantity: 1 })).rejects.toThrow(/No es el título/);
+    await expect(confirmPick(c, { taskId: t0.t.id, location: t0.u, product: foreign.barcode, quantity: 1 })).rejects.toThrow(/No es el artículo/);
     await expect(confirmPick(c, { taskId: t0.t.id, location: t0.u, product: prods.get(t0.t.productId)!.barcode, quantity: t0.t.quantity + 1 })).rejects.toThrow(/pide/);
 
     for (const t of [t0, ...rest]) await confirmPick(c, { taskId: t.t.id, location: t.u, product: prods.get(t.t.productId)!.barcode, quantity: t.t.quantity });

@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "miDepo", template: "%s · miDepo" },
-  description: "El depósito de libros, ordenado. Funciona junto a Fierro.",
+  description: "El depósito, en orden. Funciona junto a Fierro.",
   appleWebApp: { capable: true, title: "miDepo", statusBarStyle: "default" },
 };
 

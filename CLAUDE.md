@@ -20,8 +20,10 @@ These came from the owner directly; keep to them unless told otherwise.
 - **Say problems before the click.** Validate as the user types, suggest valid values, disable what cannot work with the reason beside it. The server still validates everything.
 - **The database is the source of truth.** Suppliers, customers, products, stock and locations are chosen from what exists, never typed as free text. Creating one is a separate, confirmed action that refuses near-duplicates (see `createSupplier`).
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
+- **Notes go in hints, not on the screen.** Why a button is disabled (`reason` on `ActionButton`/`ActionForm`, or `DisabledReason`) and side notes (`InfoHint`, an ⓘ beside a heading or option) open on hover, focus or tap (`src/components/Hint.tsx`). Status notices (`Notice`) and facts the user needs to act stay visible.
 - **Dropdowns are the app's own `<Select>`** with a search box that stays open; never a system `<select>`.
 - **List screens show their table even when empty** (one `EmptyRow`), with a "+ Nueva" button (`NewButton`) for creating.
+- **Article names are shown in capitals** everywhere (lists, article page, scan feedback, messages, printouts) through `articleName()` in `src/lib/article.ts`. The stored name keeps its case, and the CSV files for Fierro use it as stored.
 - **Tú, never voseo**, in the app, its messages and the manual.
 - **The app never speaks as "I".** Messages are impersonal: "No se encontró ese pedido", "No se pudo leer esa imagen", not "No encuentro…", "No pude…". `tests/copy.test.ts` refuses it.
 - The owner prefers concise replies, with assumptions stated up front, and asks questions before large changes.
@@ -43,20 +45,30 @@ src/lib/flows/*.ts        Warehouse rules, one file per flow. Plain functions ta
 src/lib/stock.ts          moveStock(): the only place stock quantities change; always logs a movement.
 src/lib/flows/adjustments.ts  Stock changes with nobody on the other side (write-offs, found stock):
                           every one is an adjustment document with a cause. Never a fake order.
+src/lib/lists.ts          The register lists (suppliers, customers, orders, movements, documents by
+                          supplier or customer): read-only, paged. Tested in tests/lists.test.ts.
 src/lib/lookup.ts         The as-you-type check behind /api/lookup. It must accept and reject
                           exactly what the flow would; tests/lookup.test.ts checks that they agree.
 src/lib/action.ts         action(role, fn): wraps a flow as a server action (session, role,
                           error-to-message, revalidate). Each screen's actions.ts uses it.
 src/lib/fierro/           The Fierro boundary (FierroConnector) and the simulator. A real
                           connector implements the same interface; nothing else changes.
+src/lib/covers.ts         List-size cover thumbnails, made once at Fierro sync (never resized per request).
 src/lib/session.ts        Multi-account sessions per device; requireSession() for pages.
 src/lib/fonts.ts, color.ts  Per-user font and accent; applied in src/app/layout.tsx.
 src/app/(app)/<screen>/   One folder per screen: page.tsx (server), actions.ts, small client parts.
 src/app/(app)/layout.tsx  Shell: top bar, sidebar with queue counts, phone bottom bar.
 src/app/(print)/          A4 print layouts (labels, packing list).
-src/app/(manual)/         The manual site at /ayuda, rendered from wiki/.
-src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
+src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
+                          /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
+src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
+src/components/           ScanForm (scan fields + live check), Select, NewButton, RowMenu (⋯ row options), Hint, ProductCards (cover cards +
+                          view switch), ListTools (Pager, FilterTabs) and LiveSearch for paged lists, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
+src/lib/search/           The top search (src/components/GlobalSearch.tsx, /api/search): functions.ts lists
+                          screens, actions and settings with their synonyms; inventory.ts finds articles,
+                          locations, suppliers, customers and documents; the manual is searched by section in src/lib/wiki.ts.
+                          A new screen, action or setting gets an entry in functions.ts.
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
                           buttons with hotkey("primary") etc.; F1 lists what is marked.
 src/app/globals.css       Design tokens and component classes (btn, field, data-table…).
@@ -98,9 +110,7 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 
 ## Open items
 
-- Assignment does not lock work (D26); the owner may want an assigned order to be off-limits to others. List screens (Picking, Recepción…) do not show the assignee yet, only detail screens and Inicio.
-- Who may create suppliers: today any operator (they work the dock). The owner may want supervisors only.
-- Stock has two search boxes (top bar, and the page's own live one); the owner was offered hiding the top-bar one there.
+- Assignment does not lock work (D34); the owner may want an assigned order to be off-limits to others. List screens (Picking, Recepción…) do not show the assignee yet, only detail screens and Inicio.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).
 - The sidebar runs five count queries per page; not measured on a hosted database.
 - See also "What is not done" in `README.md`.

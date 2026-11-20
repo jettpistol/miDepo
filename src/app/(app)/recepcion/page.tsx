@@ -1,18 +1,24 @@
 import Link from "next/link";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, ne, sql } from "drizzle-orm";
+import { LiveSearch } from "@/components/LiveSearch";
+import { Pager, paging, requestedPage } from "@/components/ListTools";
+import { ReceivingsTable } from "./ReceivingsTable";
+import { receivingRows } from "@/lib/lists";
 import { ActionForm } from "@/components/ScanForm";
 import { NewButton } from "@/components/NewButton";
 import { PageHeader, shortDate, Badge, plural, EmptyRow } from "@/components/ui";
 import { receivingLines, receivings, suppliers } from "@/db/schema";
-import { requireSession } from "@/lib/session";
+import { can, requireSession } from "@/lib/session";
 import { create } from "./actions";
 import { SupplierSelect } from "./SupplierSelect";
 import { hotkey } from "@/lib/hotkeys";
 
 export const metadata = { title: "Recepción" };
 
-export default async function Receivings() {
-  const { db, company } = await requireSession();
+export default async function Receivings({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
+  const { db, company, user } = await requireSession();
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
   const supplierList = await db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(eq(suppliers.companyId, company.id)).orderBy(asc(suppliers.name));
   const rows = await db
     .select({
@@ -25,12 +31,12 @@ export default async function Receivings() {
     .from(receivings)
     .innerJoin(suppliers, eq(suppliers.id, receivings.supplierId))
     .leftJoin(receivingLines, eq(receivingLines.receivingId, receivings.id))
-    .where(and(eq(receivings.companyId, company.id)))
+    .where(and(eq(receivings.companyId, company.id), ne(receivings.status, "closed")))
     .groupBy(receivings.id, suppliers.name)
-    .orderBy(desc(receivings.date))
-    .limit(60);
-  const openList = rows.filter((f) => f.r.status !== "closed").reverse();
-  const closedList = rows.filter((f) => f.r.status === "closed").slice(0, 8);
+    .orderBy(asc(receivings.date));
+  const openList = rows;
+  const page = requestedPage(sp.pagina);
+  const closed = await receivingRows(db, company.id, eq(receivings.status, "closed"), paging(page), q);
 
   return (
     <>
@@ -41,7 +47,7 @@ export default async function Receivings() {
               <label htmlFor="supplier" className="field-label">
                 Proveedor
               </label>
-              <SupplierSelect options={supplierList.map((x) => ({ value: String(x.id), label: x.name }))} />
+              <SupplierSelect options={supplierList.map((x) => ({ value: String(x.id), label: x.name }))} canCreate={can(user.role, "supervisor")} />
             </div>
           </ActionForm>
         </NewButton>
@@ -56,7 +62,7 @@ export default async function Receivings() {
               <tr>
                 <th>Recepción</th>
                 <th>Origen</th>
-                <th className="hidden text-right sm:table-cell">Títulos</th>
+                <th className="hidden text-right sm:table-cell">Artículos</th>
                 <th className="hidden text-right sm:table-cell">Esperadas</th>
                 <th className="hidden md:table-cell">Fecha</th>
                 <th>Estado</th>
@@ -65,7 +71,7 @@ export default async function Receivings() {
             <tbody>
               {openList.length === 0 && (
                 <EmptyRow columns={6} title="No hay recepciones abiertas">
-                  Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, toca Nueva.
+                  Las que avisa Fierro aparecen automáticamente. Si llegó algo sin aviso, toca Nueva.
                 </EmptyRow>
               )}
               {openList.map(({ r, supplier, titles, expected, received }, i) => (
@@ -79,7 +85,7 @@ export default async function Receivings() {
                     <span className="font-medium">{supplier}</span>
                     <span className="block text-muted md:hidden">
                       <span className="sm:hidden">
-                        {plural(titles, "título", "títulos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
+                        {plural(titles, "artículo", "artículos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
                       </span>
                       {shortDate(r.date)}
                     </span>
@@ -95,23 +101,14 @@ export default async function Receivings() {
         </div>
       </section>
 
-      {closedList.length > 0 && (
-        <section className="mt-8 lg:mt-6">
-          <h2 className="section-title">Últimas cerradas</h2>
-          <ul className="ruled-list framed">
-            {closedList.map(({ r, supplier, received }) => (
-              <li key={r.id}>
-                <Link href={`/recepcion/${r.id}`} className="row justify-between">
-                  <span className="min-w-0">
-                    <span className="doc-number">{r.number}</span> · {supplier}
-                  </span>
-                  <span className="text-sm whitespace-nowrap text-muted">{received} unidades</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <section id="cerradas" className="mt-8 lg:mt-6">
+        <h2 className="section-title">
+          Cerradas <small>{closed.total}</small>
+        </h2>
+        {(closed.total > 0 || q) && <LiveSearch placeholder="Número o proveedor" className="mb-3 max-w-md" />}
+        <ReceivingsTable rows={closed.rows} empty={q ? { title: `Ninguna recepción cerrada coincide con "${q}"` } : { title: "Todavía no hay recepciones cerradas" }} />
+        <Pager base="/recepcion" params={{ q }} page={page} total={closed.total} />
+      </section>
     </>
   );
 }

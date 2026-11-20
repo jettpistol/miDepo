@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
+import { LiveSearch } from "@/components/LiveSearch";
+import { Pager, paging, requestedPage } from "@/components/ListTools";
+import { containsText } from "@/lib/lookup";
 import { ActionForm } from "@/components/ScanForm";
-import { Progress, PageHeader, shortDate, Badge, EmptyState } from "@/components/ui";
+import { Progress, PageHeader, shortDate, Badge, EmptyRow } from "@/components/ui";
 import { countLocations, counts } from "@/db/schema";
 import { can, requireSession } from "@/lib/session";
 import { create } from "./actions";
@@ -10,9 +13,13 @@ import { hotkey } from "@/lib/hotkeys";
 
 export const metadata = { title: "Conteos" };
 
-export default async function Counts() {
+export default async function Counts({ searchParams }: { searchParams: Promise<{ q?: string; pagina?: string }> }) {
   const { db, company, user } = await requireSession();
-  const rows = await db
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
+  const page = requestedPage(sp.pagina);
+  const filter = and(eq(counts.companyId, company.id), q ? containsText(counts.name, q) : undefined);
+  const [[{ n: total }], rows] = await Promise.all([db.select({ n: count() }).from(counts).where(filter), db
     .select({
       k: counts,
       total: sql<number>`count(${countLocations.locationId})`.mapWith(Number),
@@ -20,16 +27,17 @@ export default async function Counts() {
     })
     .from(counts)
     .leftJoin(countLocations, eq(countLocations.countId, counts.id))
-    .where(eq(counts.companyId, company.id))
+    .where(filter)
     .groupBy(counts.id)
-    .orderBy(desc(counts.date))
-    .limit(40);
+    .orderBy(desc(counts.date), desc(counts.id))
+    .limit(paging(page).limit)
+    .offset(paging(page).offset)]);
 
   return (
     <>
       <PageHeader title="Conteos" />
       {can(user.role, "supervisor") && (
-        <section className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
+        <section id="nuevo" className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
           <h2 className="section-title">Nuevo conteo</h2>
           <ActionForm action={create} button="Crear conteo" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
             <div>
@@ -42,12 +50,11 @@ export default async function Counts() {
           </ActionForm>
         </section>
       )}
-      {rows.length === 0 ? (
-        <EmptyState icon="count" title="No hay conteos">
-          {can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
-        </EmptyState>
-      ) : (
-        <div className="table-wrap">
+      <h2 className="section-title">
+        Conteos <small>{total}</small>
+      </h2>
+      {(total > 0 || q) && <LiveSearch placeholder="Nombre del conteo" className="mb-3 max-w-md" />}
+      <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
@@ -58,6 +65,11 @@ export default async function Counts() {
               </tr>
             </thead>
             <tbody>
+              {rows.length === 0 && (
+                <EmptyRow columns={4} title={q ? `Ningún conteo coincide con "${q}"` : "No hay conteos"}>
+                  {q ? undefined : can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor cree un conteo, aparecerá aquí."}
+                </EmptyRow>
+              )}
               {rows.map(({ k, total, countedCount }) => (
                 <tr key={k.id}>
                   <td>
@@ -75,13 +87,13 @@ export default async function Counts() {
                     <Progress done={countedCount} total={total} />
                   </td>
                   <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(k.date)}</td>
-                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">Para revisar</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
+                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">En revisión</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      )}
+      <Pager base="/conteos" params={{ q }} page={page} total={total} />
     </>
   );
 }

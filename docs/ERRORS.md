@@ -18,7 +18,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `SYS` | Unexpected failures (any screen) |
 | `AUTH` | Logging in (`/ingresar`) and permissions |
 | `PKEY` | Passkeys: fingerprint, face or hardware key |
-| `ACCT` | Mi cuenta (`/cuenta`) |
+| `ACCT` | Ajustes (`/cuenta`), and the theme switch in the top bar |
 | `USER` | Usuarios (`/usuarios`), admin only |
 | `LOC` | Ubicaciones (`/ubicaciones`) |
 | `STK` | Stock, moves and scanning a book or a location (any scan screen) |
@@ -31,6 +31,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `ASG` | Assigning work to a person (the "Asignado a" control, supervisors) |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
+| `WIKI` | Editing the manual (`/ayuda/editar`), admin only |
 | `CFG` | Server configuration (environment variables) |
 | `CLI` | Developer scripts: `npm run db:setup`, `company:create`, `scripts/` |
 
@@ -50,7 +51,7 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `AUTH-02` | Los datos no coinciden. Revísalos y prueba de nuevo. | `src/app/ingresar/actions.ts` · `withRateLimit` | Wrong email or password, wrong company code or PIN, or the user is deactivated. It does not say which on purpose. |
 | `AUTH-03` | Completa el email y la contraseña. | `src/app/ingresar/actions.ts` · `loginWithPassword` | Email or password left empty. |
 | `AUTH-04` | Escribe el código de tu empresa. Te lo da tu supervisor. | `src/app/ingresar/actions.ts` · `loginWithPin` | PIN login with no company code. |
-| `AUTH-05` | El PIN tiene 6 números. | `src/app/ingresar/actions.ts` · `loginWithPin` | The PIN typed is not exactly 6 digits. |
+| `AUTH-05` | El PIN tiene 6 dígitos. | `src/app/ingresar/actions.ts` · `loginWithPin` | The PIN typed is not exactly 6 digits. |
 | `AUTH-06` | Tu usuario no tiene permiso para hacer esto. | `src/lib/session.ts` · `requireSessionInAction` | An action needs a higher role than the user has (for example an operator generating locations). |
 
 ## PKEY: passkeys
@@ -58,30 +59,30 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | Code | Message | Where | When |
 |---|---|---|---|
 | `PKEY-01` | El intento venció. Prueba de nuevo. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | Logging in with a passkey took more than 5 minutes, or the challenge cookie is missing or was tampered with. |
-| `PKEY-02` | Esta llave no está registrada en miDepo. Entra de otra forma y regístrala en Mi cuenta. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The passkey offered by the device is unknown, or its user is deactivated. |
+| `PKEY-02` | Esta llave no está registrada en miDepo. Inicia sesión de otra forma y regístrala en Ajustes. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The passkey offered by the device is unknown, or its user is deactivated. |
 | `PKEY-03` | No se pudo verificar la llave. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The signature check ran and did not pass. |
 | `PKEY-04` | No se pudo verificar la llave. | `src/app/api/passkeys/[step]/route.ts` · `login-verify` | The signature check itself failed (malformed reply, wrong origin or domain). |
-| `PKEY-05` | Primero hay que ingresar. | `src/app/api/passkeys/[step]/route.ts` · `POST` | Registering a passkey with no session (HTTP 401). |
+| `PKEY-05` | Primero inicia sesión. | `src/app/api/passkeys/[step]/route.ts` · `POST` | Registering a passkey with no session (HTTP 401). |
 | `PKEY-06` | El intento venció. Prueba de nuevo. | `src/app/api/passkeys/[step]/route.ts` · `register-verify` | Registering a passkey took more than 5 minutes, or the challenge cookie is missing or was tampered with. |
 | `PKEY-07` | No se pudo registrar la llave. | `src/app/api/passkeys/[step]/route.ts` · `register-verify` | The registration check ran and did not pass. |
 | `PKEY-08` | No se pudo registrar la llave. | `src/app/api/passkeys/[step]/route.ts` · `register-verify` | The registration check failed, or saving the passkey failed. |
 | `PKEY-09` | Paso desconocido. | `src/app/api/passkeys/[step]/route.ts` · `POST` | A request to a passkey step that does not exist (HTTP 404). Only reachable by calling the API by hand. |
-| `PKEY-10` | Se canceló el ingreso con huella o llave. | `src/app/ingresar/LoginForm.tsx` · `withPasskey` | The user cancelled the device's passkey prompt, or it timed out. Shown in the browser. |
-| `PKEY-11` | No se pudo entrar con huella o llave. | `src/app/ingresar/LoginForm.tsx` · `withPasskey` | The browser failed without a message (no passkey support, no network). Shown in the browser. |
+| `PKEY-10` | Se canceló el inicio de sesión con huella o llave. | `src/app/ingresar/LoginForm.tsx` · `withPasskey` | The user cancelled the device's passkey prompt, or it timed out. Shown in the browser. |
+| `PKEY-11` | No se pudo iniciar sesión con huella o llave. | `src/app/ingresar/LoginForm.tsx` · `withPasskey` | The browser failed without a message (no passkey support, no network). Shown in the browser. |
 | `PKEY-12` | Se canceló el registro. | `src/app/(app)/cuenta/Passkeys.tsx` · `AddPasskey` | The user cancelled the device's prompt while adding a passkey. |
 | `PKEY-13` | Este dispositivo ya tiene una llave registrada para tu usuario. | `src/app/(app)/cuenta/Passkeys.tsx` · `AddPasskey` | The device already holds a passkey for this user. |
 | `PKEY-14` | Este dispositivo no permite registrar una llave. | `src/app/(app)/cuenta/Passkeys.tsx` · `AddPasskey` | The browser failed without a message (no passkey support, no network). |
 
-## ACCT: Mi cuenta
+## ACCT: Ajustes
 
 | Code | Message | Where | When |
 |---|---|---|---|
 | `ACCT-01` | Ese color no es válido. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The accent colour is not a `#RRGGBB` value. Only reachable by editing the form by hand. |
-| `ACCT-02` | Elige una letra de la lista. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The font is not one of the offered ones. |
-| `ACCT-03` | Elige un tema. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The theme is not light, dark or system. |
-| `ACCT-04` | La contraseña actual no es esa. | `src/app/(app)/cuenta/actions.ts` · `changePassword` | Changing the password with the wrong current password. |
+| `ACCT-02` | Elige una tipografía de la lista. | `src/app/(app)/cuenta/actions.ts` · `saveAppearance` | The font is not one of the offered ones. |
+| `ACCT-03` | Elige un tema. | `src/app/(app)/cuenta/actions.ts` · `validTheme` | The theme sent by Ajustes or the top-bar switch is not light, dark or system. |
+| `ACCT-04` | La contraseña actual no es correcta. | `src/app/(app)/cuenta/actions.ts` · `changePassword` | Changing the password with the wrong current password. |
 | `ACCT-05` | La contraseña nueva necesita al menos 8 caracteres. | `src/app/(app)/cuenta/actions.ts` · `changePassword` | New password shorter than 8 characters. |
-| `ACCT-06` | El PIN son exactamente 6 números. | `src/app/(app)/cuenta/actions.ts` · `changePin` | New PIN is not exactly 6 digits. |
+| `ACCT-06` | El PIN debe tener exactamente 6 dígitos. | `src/app/(app)/cuenta/actions.ts` · `changePin` | New PIN is not exactly 6 digits. |
 | `ACCT-07` | Ese PIN no está disponible. Elige otro. | `src/app/(app)/cuenta/actions.ts` · `changePin` | Someone else in the company already uses that PIN (or saving failed). |
 | `ACCT-08` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The uploaded photo did not arrive as a JPEG data URL. |
 | `ACCT-09` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The photo is not a JPEG, or is under 100 bytes or over 200 KB after the browser shrank it. |
@@ -92,15 +93,15 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | Code | Message | Where | When |
 |---|---|---|---|
 | `USER-01` | La contraseña necesita al menos 8 caracteres. | `src/app/(app)/usuarios/actions.ts` · `validatePassword` | Creating a user or setting their access with a password under 8 characters. |
-| `USER-02` | El PIN son exactamente 6 números. | `src/app/(app)/usuarios/actions.ts` · `validatePin` | Creating a user or setting their access with a PIN that is not 6 digits. |
+| `USER-02` | El PIN debe tener exactamente 6 dígitos. | `src/app/(app)/usuarios/actions.ts` · `validatePin` | Creating a user or setting their access with a PIN that is not 6 digits. |
 | `USER-03` | No se encontró a esa persona. | `src/app/(app)/usuarios/actions.ts` · `ofCompany` | The user does not exist or belongs to another company. |
 | `USER-04` | Completa el nombre y un email válido. | `src/app/(app)/usuarios/actions.ts` · `create` | Name empty or email not shaped like an email. |
 | `USER-05` | Elige un rol. | `src/app/(app)/usuarios/actions.ts` · `create` | Creating a user with no valid role. |
-| `USER-06` | Dale una contraseña, un PIN o las dos cosas para que pueda entrar. | `src/app/(app)/usuarios/actions.ts` · `create` | Creating a user with neither password nor PIN. |
+| `USER-06` | Asigna una contraseña, un PIN o ambos para que pueda iniciar sesión. | `src/app/(app)/usuarios/actions.ts` · `create` | Creating a user with neither password nor PIN. |
 | `USER-07` | Elige un rol. | `src/app/(app)/usuarios/actions.ts` · `changeRole` | Changing a role to one that does not exist. |
-| `USER-08` | No puedes cambiar tu propio rol. Pídeselo a otro administrador. | `src/app/(app)/usuarios/actions.ts` · `changeRole` | An admin tried to change their own role. |
-| `USER-09` | No puedes darte de baja a ti mismo. | `src/app/(app)/usuarios/actions.ts` · `toggleActive` | An admin tried to deactivate themselves. |
-| `USER-10` | Escribe una contraseña nueva, un PIN nuevo o las dos cosas. | `src/app/(app)/usuarios/actions.ts` · `setAccess` | Saving access with both fields empty. |
+| `USER-08` | No puedes cambiar tu propio rol. Debe hacerlo otro administrador. | `src/app/(app)/usuarios/actions.ts` · `changeRole` | An admin tried to change their own role. |
+| `USER-09` | No puedes desactivar tu propio usuario. | `src/app/(app)/usuarios/actions.ts` · `toggleActive` | An admin tried to deactivate themselves. |
+| `USER-10` | Escribe una contraseña nueva, un PIN nuevo o ambos. | `src/app/(app)/usuarios/actions.ts` · `setAccess` | Saving access with both fields empty. |
 | `USER-11` | Ese email o ese PIN ya lo usa otra persona. | `src/app/(app)/usuarios/actions.ts` · `create` | The database refused a duplicate email or PIN (Postgres 23505). |
 | `USER-12` | Ese PIN ya lo usa otra persona. Elige otro. | `src/app/(app)/usuarios/actions.ts` · `setAccess` | The database refused a duplicate PIN (Postgres 23505). |
 
@@ -113,8 +114,8 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `LOC-01` | No se pudo leer el esquema. Recarga la página y prueba de nuevo. | `src/app/(app)/ubicaciones/actions.ts` · `generate` | The scheme sent by the generator is not valid JSON (stale page, edited form). |
 | `LOC-02` | El código admite letras, números, guiones y puntos (hasta 20 caracteres, sin espacios ni Ñ). | `src/app/(app)/ubicaciones/actions.ts` · `createStandalone` | A single location code with characters that are not allowed, or over 20 characters. |
 | `LOC-03` | La ubicación {código} ya existe. | `src/app/(app)/ubicaciones/actions.ts` · `createStandalone` | Creating a location whose code already exists. |
-| `LOC-04` | Esa ubicación no se puede dar de baja. | `src/app/(app)/ubicaciones/actions.ts` · `toggle` | The location does not exist or is a zone (RECEPCION, DEVOLUCIONES…), not a shelf. |
-| `LOC-05` | Todavía hay libros en esta ubicación. Muévelos antes de darla de baja. | `src/app/(app)/ubicaciones/actions.ts` · `toggle` | Deactivating a shelf that still holds stock. |
+| `LOC-04` | Esa ubicación no se puede desactivar. | `src/app/(app)/ubicaciones/actions.ts` · `toggle` | The location does not exist or is a zone (RECEPCION, DEVOLUCIONES…), not a shelf. |
+| `LOC-05` | Todavía hay artículos en esta ubicación. Muévelos antes de desactivarla. | `src/app/(app)/ubicaciones/actions.ts` · `toggle` | Deactivating a shelf that still holds stock. |
 | `LOC-06` | El esquema necesita entre 1 y 5 tramos. | `src/lib/locations.ts` · `validateScheme` | The scheme has no segments or more than 5. |
 | `LOC-07` | El separador puede ser guion, punto, barra, guion bajo o nada. | `src/lib/locations.ts` · `validateScheme` | Separator is not `-`, `.`, `/`, `_`, a space or empty. |
 | `LOC-08` | Cada tramo necesita un nombre. | `src/lib/locations.ts` · `validateScheme` | A segment has an empty name. |
@@ -130,14 +131,14 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 |---|---|---|---|
 | `STK-01` | La cantidad tiene que ser un número mayor que cero. | `src/lib/stock.ts` · `moveStock` | A stock movement with a quantity that is not a positive whole number. Normally caught earlier by `STK-10`. |
 | `STK-02` | El origen y el destino son la misma ubicación. | `src/lib/stock.ts` · `moveStock` | Moving stock from a location to itself. |
-| `STK-03` | No hay tantas unidades de ese título en la ubicación de origen. | `src/lib/stock.ts` · `moveStock` | Taking more units of a title than the source location holds. |
-| `STK-04` | Escanea o escribe el código del libro. | `src/lib/stock.ts` · `findProduct` | The book field is empty. |
-| `STK-05` | El código "{código}" no está en el catálogo. Si es un título nuevo, pide que sincronicen con Fierro. | `src/lib/stock.ts` · `findProduct` | No title of the company has that barcode, ISBN or internal code. |
+| `STK-03` | No hay tantas unidades de ese artículo en la ubicación de origen. | `src/lib/stock.ts` · `moveStock` | Taking more units of a title than the source location holds. |
+| `STK-04` | Escanea o escribe el código del artículo. | `src/lib/stock.ts` · `findProduct` | The book field is empty. |
+| `STK-05` | El código "{código}" no está en el catálogo. Si es un artículo nuevo, pide que sincronicen con Fierro. | `src/lib/stock.ts` · `findProduct` | No title of the company has that barcode, ISBN or internal code. |
 | `STK-06` | Escanea o escribe la ubicación. | `src/lib/stock.ts` · `findLocation` | The location field is empty. |
 | `STK-07` | No existe la ubicación "{código}". | `src/lib/stock.ts` · `findLocation` | No location of the company has that code. |
-| `STK-08` | La ubicación "{código}" está dada de baja. | `src/lib/stock.ts` · `findLocation` | The location exists but is deactivated. |
-| `STK-09` | Los pedidos preparados no se mueven a mano: salen cuando se despacha el pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into or out of the staging zone (picked orders) by hand. |
-| `STK-11` | Nada pasa a Faltantes a mano: pasa solo cuando un libro no está en el estante al preparar un pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into FALTANTES by hand. Moving out of it is allowed: that is how a missing book comes back. |
+| `STK-08` | La ubicación "{código}" está desactivada. | `src/lib/stock.ts` · `findLocation` | The location exists but is deactivated. |
+| `STK-09` | Los pedidos preparados no se mueven manualmente: salen cuando se despacha el pedido. | `src/lib/flows/move.ts` · `move` | Moving stock into or out of the staging zone (picked orders) by hand. |
+| `STK-11` | Nada pasa a Faltantes manualmente: solo ocurre cuando un artículo no está en su ubicación durante el picking. | `src/lib/flows/move.ts` · `move` | Moving stock into FALTANTES by hand. Moving out of it is allowed: that is how a missing book comes back. |
 | `STK-10` | La cantidad tiene que ser un número entero mayor que cero. | `src/lib/flows/common.ts` · `validQuantity` | A scanned quantity that is not a whole number from 1 to 100,000. Used by every scan flow. |
 
 ## RCV: Recepción and suppliers
@@ -164,9 +165,9 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. |
 | `PICK-03` | No se encontró esa parada del recorrido. | `src/lib/flows/picking.ts` · `taskOf` | The pick task does not exist or belongs to another company. |
 | `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf` | Confirming or marking short a stop that is already done. |
-| `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Fíjate el cartel. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
-| `PICK-06` | Ese es "{título}". No es el título que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned book is not the one the stop asks for. |
-| `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} al estante. | `src/lib/flows/picking.ts` · `confirmPick` | Picking more units than the stop still needs. |
+| `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
+| `PICK-06` | Ese es "{artículo}". No es el artículo que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned book is not the one the stop asks for. |
+| `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} a la ubicación. | `src/lib/flows/picking.ts` · `confirmPick` | Picking more units than the stop still needs. |
 
 ## PACK: Empaque
 
@@ -175,15 +176,15 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PACK-01` | No se encontró ese pedido. | `src/lib/flows/packing.ts` · `orderToPack` | The order does not exist or belongs to another company. |
 | `PACK-02` | Este pedido todavía no terminó el picking. | `src/lib/flows/packing.ts` · `orderToPack` | Packing an order that is pending or still being picked. |
 | `PACK-03` | Este pedido ya está empacado. | `src/lib/flows/packing.ts` · `orderToPack` | Packing an order that is already packed (or later). |
-| `PACK-04` | "{título}" no está entre lo preparado para el pedido {número}. | `src/lib/flows/packing.ts` · `scanIntoBox` | The scanned book is not in the order, or none of it was picked. |
-| `PACK-05` | Ya empacaste todas las unidades de "{título}". | `src/lib/flows/packing.ts` · `scanIntoBox` | Every picked unit of that title is already in a box. |
-| `PACK-06` | De "{título}" quedan {n} por empacar, no {m}. | `src/lib/flows/packing.ts` · `scanIntoBox` | Packing more units than are left to pack. |
+| `PACK-04` | "{artículo}" no está entre lo preparado para el pedido {número}. | `src/lib/flows/packing.ts` · `scanIntoBox` | The scanned book is not in the order, or none of it was picked. |
+| `PACK-05` | Ya empacaste todas las unidades de "{artículo}". | `src/lib/flows/packing.ts` · `scanIntoBox` | Every picked unit of that title is already in a box. |
+| `PACK-06` | De "{artículo}" quedan {n} por empacar, no {m}. | `src/lib/flows/packing.ts` · `scanIntoBox` | Packing more units than are left to pack. |
 | `PACK-07` | Esa caja no está abierta. | `src/lib/flows/packing.ts` · `closeBox` | Closing a box that does not exist or is already closed. |
 | `PACK-08` | La caja está vacía. | `src/lib/flows/packing.ts` · `closeBox` | Closing a box with nothing in it. |
 | `PACK-09` | Solo se puede vaciar una caja abierta. | `src/lib/flows/packing.ts` · `emptyBox` | Emptying a box that does not exist or is closed. |
 | `PACK-10` | Quedan {n} unidades preparadas sin empacar. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing with picked units not yet in a box. |
 | `PACK-11` | Cierra la caja abierta antes de terminar. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing with a box still open. |
-| `PACK-12` | Todavía no armaste ninguna caja. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing an order with picked units but no boxes. |
+| `PACK-12` | Todavía no hay ninguna caja. | `src/lib/flows/packing.ts` · `finishPacking` | Finishing packing an order with picked units but no boxes. |
 
 ## RET: Devoluciones
 
@@ -192,17 +193,17 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RET-01` | Elige un cliente de la lista. | `src/lib/flows/returns.ts` · `createReturn` | Starting a return with no customer, or one from another company. |
 | `RET-02` | No se encontró esa devolución. | `src/lib/flows/returns.ts` · `open` | The return does not exist or belongs to another company. |
 | `RET-03` | Esta devolución ya está cerrada. | `src/lib/flows/returns.ts` · `open` | Scanning into, editing or closing a return that is already closed. |
-| `RET-04` | Elige en qué estado está el libro. | `src/lib/flows/returns.ts` · `scanReturn` | Scanning a returned book without choosing its condition. |
-| `RET-05` | Todavía no escaneaste ningún libro. | `src/lib/flows/returns.ts` · `closeReturn` | Closing a return with no books. |
+| `RET-04` | Elige en qué estado está el artículo. | `src/lib/flows/returns.ts` · `scanReturn` | Scanning a returned book without choosing its condition. |
+| `RET-05` | Todavía no escaneaste ningún artículo. | `src/lib/flows/returns.ts` · `closeReturn` | Closing a return with no books. |
 
 ## CNT: Conteos
 
 | Code | Message | Where | When |
 |---|---|---|---|
-| `CNT-01` | Ponle un nombre al conteo (por ejemplo: Pasillo A, noviembre). | `src/lib/flows/counts.ts` · `createCount` | Creating a count with no name. |
+| `CNT-01` | Escribe un nombre para el conteo (por ejemplo: Pasillo A, noviembre). | `src/lib/flows/counts.ts` · `createCount` | Creating a count with no name. |
 | `CNT-02` | Escribe con qué empiezan las ubicaciones a contar (por ejemplo: A-01). | `src/lib/flows/counts.ts` · `createCount` | Creating a count with no location prefix. |
 | `CNT-03` | No hay ubicaciones que empiecen con "{prefijo}". | `src/lib/flows/counts.ts` · `createCount` | No active shelf starts with that prefix. |
-| `CNT-04` | Son más de {300} ubicaciones. Parte el conteo en tramos más chicos. | `src/lib/flows/counts.ts` · `createCount` | The prefix covers more shelves than one count allows. |
+| `CNT-04` | Son más de {300} ubicaciones. Divide el conteo en tramos más pequeños. | `src/lib/flows/counts.ts` · `createCount` | The prefix covers more shelves than one count allows. |
 | `CNT-05` | No se encontró ese conteo. | `src/lib/flows/counts.ts` · `isOpen` | The count does not exist or belongs to another company. |
 | `CNT-06` | Este conteo ya está cerrado. | `src/lib/flows/counts.ts` · `isOpen` | Scanning into, editing or closing a count that is already closed. |
 | `CNT-07` | Esa ubicación no es parte de este conteo. | `src/lib/flows/counts.ts` · `countLocation` | The location is not one of the count's locations. |
@@ -220,7 +221,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 |---|---|---|---|
 | `ADJ-01` | Solo se da de baja lo que está en Faltantes o en Dañados. | `src/lib/flows/adjustments.ts` · `writeOff` | Writing off from a location that is not FALTANTES or DANADOS, or from another company's. Only reachable by editing the form. |
 | `ADJ-02` | Elige el motivo de la baja. | `src/lib/flows/adjustments.ts` · `writeOff` | Writing off with no cause, or with "Apareció", which is not a loss. |
-| `ADJ-03` | Ese título no está en el catálogo. | `src/lib/flows/adjustments.ts` · `writeOff` | The title does not exist or belongs to another company. Only reachable by editing the form. |
+| `ADJ-03` | Ese artículo no está en el catálogo. | `src/lib/flows/adjustments.ts` · `writeOff` | The title does not exist or belongs to another company. Only reachable by editing the form. |
 
 Writing off more units than the zone holds is refused by `STK-03`.
 
@@ -241,14 +242,14 @@ Writing off more units than the zone holds is refused by `STK-03`.
 | `EXP-02` | No se encontró esa recepción. | `src/lib/flows/exports.ts` · `fileFor` | Same, for a receiving. |
 | `EXP-03` | No se encontró esa devolución. | `src/lib/flows/exports.ts` · `fileFor` | Same, for a return. |
 | `EXP-04` | No se encontró ese conteo. | `src/lib/flows/exports.ts` · `fileFor` | Same, for a count. |
-| `EXP-05` | Ese pedido no está listo para documentar. | `src/lib/flows/exports.ts` · `markSent` | Marking an order as sent to Fierro when it is not packed (or was already sent). |
-| `EXP-06` | Esa recepción no está pendiente de envío. | `src/lib/flows/exports.ts` · `markSent` | Marking a receiving as sent when it is not closed and pending (or was already sent). |
-| `EXP-07` | Esa devolución no está pendiente de envío. | `src/lib/flows/exports.ts` · `markSent` | Same, for a return. |
-| `EXP-08` | Ese conteo no está pendiente de envío. | `src/lib/flows/exports.ts` · `markSent` | Same, for a count. |
+| `EXP-05` | Ese pedido no está listo para cargar en Fierro. | `src/lib/flows/exports.ts` · `markSent` | Marking an order as sent to Fierro when it is not packed (or was already sent). |
+| `EXP-06` | Esa recepción no está pendiente de carga en Fierro. | `src/lib/flows/exports.ts` · `markSent` | Marking a receiving as sent when it is not closed and pending (or was already sent). |
+| `EXP-07` | Esa devolución no está pendiente de carga en Fierro. | `src/lib/flows/exports.ts` · `markSent` | Same, for a return. |
+| `EXP-08` | Ese conteo no está pendiente de carga en Fierro. | `src/lib/flows/exports.ts` · `markSent` | Same, for a count. |
 | `EXP-09` | Documento desconocido. | `src/app/(app)/fierro/actions.ts` · `submit` | Marking as sent a document type that does not exist. Only reachable by editing the form. |
 | `EXP-10` | No autorizado | `src/app/api/export/[type]/[id]/route.ts` · `GET` | Downloading a CSV without a session or below supervisor (HTTP 401). Shown as plain text in the browser. |
 | `EXP-12` | No se encontró esa baja. | `src/lib/flows/exports.ts` · `fileFor` | Downloading the CSV of a write-off that does not exist or belongs to another company. |
-| `EXP-13` | Esa baja no está pendiente de envío. | `src/lib/flows/exports.ts` · `markSent` | Marking as sent a write-off already sent, or one that belongs to a count (it goes with the count). |
+| `EXP-13` | Esa baja no está pendiente de carga en Fierro. | `src/lib/flows/exports.ts` · `markSent` | Marking as sent a write-off already sent, or one that belongs to a count (it goes with the count). |
 | `EXP-11` | No existe | `src/app/api/export/[type]/[id]/route.ts` · `GET` | Downloading a CSV for a document type that does not exist (HTTP 404). |
 
 The CSV download route also returns `EXP-01` to `EXP-04` and `EXP-12` as plain text with HTTP 404.
@@ -259,6 +260,15 @@ The CSV download route also returns `EXP-01` to `EXP-04` and `EXP-12` as plain t
 |---|---|---|---|
 | `CAM-01` | miDepo no tiene permiso para usar la cámara. Habilítalo en los ajustes del navegador y vuelve a intentar. | `src/components/Camera.tsx` · `Camera` | The user or the browser denied camera access. |
 | `CAM-02` | No se pudo abrir la cámara en este dispositivo. Puedes escribir el código a mano. | `src/components/Camera.tsx` · `Camera` | No camera, no camera API (for example plain HTTP), or the barcode reader failed to load. |
+
+## WIKI: editing the manual
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `WIKI-01` | Esa página del manual no existe. | `src/lib/wiki.ts` · `saveEdit` | Saving a page whose name is not a file in `wiki/`. Only reachable by editing the form by hand. |
+| `WIKI-02` | La página necesita un título: una línea que empiece con # y un espacio. | `src/lib/wiki.ts` · `saveEdit` | The text has no `# Title` line. The editor disables Guardar first and says why. |
+| `WIKI-03` | La página es demasiado larga: el máximo es {max} caracteres. | `src/lib/wiki.ts` · `saveEdit` | The text is over 100,000 characters. The editor disables Guardar first. |
+| `WIKI-04` | Esa página del manual no existe. | `src/lib/wiki.ts` · `restoreOriginal` | Restoring a page whose name is not a file in `wiki/`. Only reachable by editing the form by hand. |
 
 ## CFG: server configuration
 

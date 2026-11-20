@@ -3,6 +3,7 @@ import type { DB } from "@/db";
 import { orderLines, orders, products, receivingLines, receivings, stock, pickTasks, locations } from "@/db/schema";
 import { MAX_COUNT_LOCATIONS } from "./flows/counts";
 import { locationName } from "./stock";
+import { articleName } from "@/lib/article";
 
 /**
  * Rehearsal of a scan form: checks what was typed with the same rules as the real action,
@@ -45,7 +46,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         rows.length === 0
           ? { tone: "danger", text: `Ninguna ubicación empieza con "${pre}".` }
           : rows.length > MAX_COUNT_LOCATIONS
-            ? { tone: "danger", text: `Son más de ${MAX_COUNT_LOCATIONS}. Parte el conteo en tramos más chicos.` }
+            ? { tone: "danger", text: `Son más de ${MAX_COUNT_LOCATIONS}. Divide el conteo en tramos más pequeños.` }
             : { tone: "ok", text: rows.length === 1 ? "1 ubicación" : `${rows.length} ubicaciones` };
     }
     return { statuses, suggestions, shortcuts };
@@ -90,16 +91,16 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       if (!prefixMatch) statuses[field] = { tone: "danger", text: `No existe la ubicación "${text.toUpperCase()}".` };
       return;
     }
-    if (!u.active) return void (statuses[field] = { tone: "danger", text: `"${u.code}" está dada de baja.` });
+    if (!u.active) return void (statuses[field] = { tone: "danger", text: `"${u.code}" está desactivada.` });
     const [present] = await db.select({ titles: sql<number>`count(*)`.mapWith(Number), n: sql<number>`coalesce(sum(${stock.quantity}), 0)`.mapWith(Number) }).from(stock).where(and(eq(stock.locationId, u.id), gt(stock.quantity, 0)));
     const name = u.type === "shelf" ? "" : `${locationName(u)} · `;
-    statuses[field] = { tone: "ok", text: present.n === 0 ? `${name}Vacía` : `${name}${present.titles === 1 ? "1 título" : `${present.titles} títulos`} · ${units(present.n)}` };
+    statuses[field] = { tone: "ok", text: present.n === 0 ? `${name}Vacía` : `${name}${present.titles === 1 ? "1 artículo" : `${present.titles} artículos`} · ${units(present.n)}` };
   }
   /** If the code belongs to no book and resembles none either, say so. */
   async function flagUnknown(text: string) {
     if (text.length < 3) return;
     const [similar] = await db.select({ id: products.id }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(text))).limit(1);
-    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un título nuevo, sincroniza con Fierro.` };
+    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un artículo nuevo, sincroniza con Fierro.` };
   }
 
   const n = Number(v("quantity"));
@@ -115,24 +116,24 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     await checkLocation("source", source);
     await checkLocation("destination", destination);
     for (const [field, u] of [["source", source], ["destination", destination]] as const) {
-      if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven a mano." };
+      if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven manualmente." };
     }
-    if (destination?.active && destination.type === "missing") statuses.destination = { tone: "danger", text: "Nada pasa a Faltantes a mano." };
-    if (source && destination && source.id === destination.id) statuses.destination = { tone: "danger", text: "Es el mismo lugar que el origen." };
+    if (destination?.active && destination.type === "missing") statuses.destination = { tone: "danger", text: "Nada pasa a Faltantes manualmente." };
+    if (source && destination && source.id === destination.id) statuses.destination = { tone: "danger", text: "Es la misma ubicación que el origen." };
 
     if (book) {
       const places = await whereIs(book.id);
       if (source?.active) {
         const present = places.find((l) => l.id === source!.id)?.quantity ?? 0;
         if (present === 0) {
-          statuses.product = { tone: "danger", text: `"${book.title}" no está en ${locationName(source)}.` };
+          statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está en ${locationName(source)}.` };
         } else {
-          statuses.product = { tone: "ok", text: `${book.title} · hay ${present} en ${locationName(source)}` };
+          statuses.product = { tone: "ok", text: `${articleName(book.title)} · hay ${present} en ${locationName(source)}` };
           if (present > 1 && quantity !== present) shortcuts.push({ field: "quantity", value: String(present), text: `Todas: ${present}` });
           if (quantity && quantity > present) statuses.quantity = { tone: "danger", text: `En ${locationName(source)} hay ${present}.` };
         }
       } else {
-        statuses.product = { tone: "ok", text: book.title };
+        statuses.product = { tone: "ok", text: articleName(book.title) };
       }
       // What solves the problem, one tap away: where to take it from and where it already lives.
       if (ctx === "move" && (!source || statuses.product.tone === "danger")) {
@@ -140,7 +141,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       }
       if (!v("destination")) {
         const livesAt = places.find((l) => l.type === "shelf" && l.id !== source?.id);
-        if (livesAt) shortcuts.push({ field: "destination", value: livesAt.code, text: "Ya hay en", shelfMark: true });
+        if (livesAt) shortcuts.push({ field: "destination", value: livesAt.code, text: "Ubicación actual", shelfMark: true });
       }
     }
   } else if (ctx === "picking") {
@@ -153,23 +154,23 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     if (t) {
       const u = await location(v("location"));
       await checkLocation("location", u);
-      if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Es el estante de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
-      if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: book.title } : { tone: "danger", text: `Ese es "${book.title}". No es el título de esta parada.` };
+      if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Es la ubicación de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
+      if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: articleName(book.title) } : { tone: "danger", text: `Ese es "${articleName(book.title)}". No es el artículo de esta parada.` };
       const remaining = t.t.quantity - t.t.picked;
       if (quantity && quantity > remaining) statuses.quantity = { tone: "danger", text: `Esta parada pide ${remaining}.` };
     }
   } else if (ctx === "receiving" && book) {
     const [r] = await db.select().from(receivings).where(and(eq(receivings.id, Number(v("id"))), eq(receivings.companyId, companyId)));
-    statuses.product = { tone: "ok", text: book.title };
+    statuses.product = { tone: "ok", text: articleName(book.title) };
     if (r) {
       const [l] = await db.select().from(receivingLines).where(and(eq(receivingLines.receivingId, r.id), eq(receivingLines.productId, book.id)));
       if (l && l.expected > 0) {
-        statuses.product = { tone: "ok", text: `${book.title} · van ${l.received} de ${l.expected}` };
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · van ${l.received} de ${l.expected}` };
         if (quantity && l.received + quantity > l.expected) statuses.quantity = { tone: "warn", text: `Con estas son ${l.received + quantity - l.expected} de más.` };
       } else if (l) {
-        statuses.product = { tone: "ok", text: `${book.title} · van ${l.received}` };
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · van ${l.received}` };
       } else if (r.fierroId) {
-        statuses.product = { tone: "warn", text: `${book.title} · no está avisado en este ingreso` };
+        statuses.product = { tone: "warn", text: `${articleName(book.title)} · no está en el aviso de esta recepción` };
       }
     }
   } else if (ctx === "packing" && book) {
@@ -179,15 +180,15 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       .innerJoin(orders, eq(orders.id, orderLines.orderId))
       .where(and(eq(orderLines.orderId, Number(v("id"))), eq(orderLines.productId, book.id), eq(orders.companyId, companyId)));
     const left = l ? l.l.picked - l.l.packed : 0;
-    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${book.title}" no está entre lo preparado para este pedido.` };
-    else if (left === 0) statuses.product = { tone: "danger", text: `Ya empacaste todas las unidades de "${book.title}".` };
+    if (!l || l.l.picked === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está entre lo preparado para este pedido.` };
+    else if (left === 0) statuses.product = { tone: "danger", text: `Ya empacaste todas las unidades de "${articleName(book.title)}".` };
     else {
-      statuses.product = { tone: "ok", text: `${book.title} · quedan ${left} por empacar` };
+      statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} por empacar` };
       if (left > 1 && quantity !== left) shortcuts.push({ field: "quantity", value: String(left), text: `Todas: ${left}` });
       if (quantity && quantity > left) statuses.quantity = { tone: "danger", text: `Quedan ${left} por empacar.` };
     }
   } else if (book) {
-    statuses.product = { tone: "ok", text: book.title };
+    statuses.product = { tone: "ok", text: articleName(book.title) };
   }
 
   // Suggestions for the field being typed in.
@@ -202,7 +203,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         for (const l of await whereIs(book.id, field === "destination")) {
           if (!l.code.startsWith(pre) || (field === "destination" && l.id === source?.id)) continue;
           seen.add(l.code);
-          suggestions.push({ value: l.code, type: "location", title: l.code, detail: field === "source" ? `${l.quantity} de este título` : `ya hay ${l.quantity}` });
+          suggestions.push({ value: l.code, type: "location", title: l.code, detail: field === "source" ? `${l.quantity} de este artículo` : `ya hay ${l.quantity}` });
         }
       }
       if (pre) {
@@ -220,10 +221,10 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
           .where(and(eq(stock.locationId, source.id), gt(stock.quantity, 0), q ? matchesProduct(q) : undefined))
           .orderBy(asc(products.title))
           .limit(8);
-        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: f.title, detail: `${f.barcode} · hay ${f.quantity}` });
+        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: articleName(f.title), detail: `${f.barcode} · hay ${f.quantity}` });
       } else if (q.length >= 2) {
         const rows = await db.select({ barcode: products.barcode, title: products.title, author: products.author }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(q))).orderBy(asc(products.title)).limit(8);
-        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: f.title, detail: codes(f) });
+        for (const f of rows) suggestions.push({ value: f.barcode, type: "product", title: articleName(f.title), detail: codes(f) });
       }
     }
   }

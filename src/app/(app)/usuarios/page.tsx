@@ -1,7 +1,9 @@
 import { asc, eq } from "drizzle-orm";
 import { Avatar } from "@/components/Avatar";
+import { NewButton } from "@/components/NewButton";
+import { RowMenu } from "@/components/RowMenu";
 import { ActionButton, ActionForm } from "@/components/ScanForm";
-import { Code, PageHeader, Badge } from "@/components/ui";
+import { Code, PageHeader, Badge, EmptyRow, plural } from "@/components/ui";
 import { users } from "@/db/schema";
 import { Select } from "@/components/Select";
 import { requireSession } from "@/lib/session";
@@ -11,114 +13,152 @@ export const metadata = { title: "Usuarios" };
 
 const ROLES = [
   { id: "operator", name: "Operario", help: "Hace el trabajo del depósito." },
-  { id: "supervisor", name: "Supervisor", help: "Además arma conteos, ubicaciones y habla con Fierro." },
-  { id: "admin", name: "Administrador", help: "Además maneja los usuarios." },
+  { id: "supervisor", name: "Supervisor", help: "Además crea conteos y ubicaciones, y gestiona la conexión con Fierro." },
+  { id: "admin", name: "Administrador", help: "Además gestiona los usuarios." },
 ] as const;
+const roleOptions = ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }));
 
 export default async function Users() {
   const { db, company, user } = await requireSession("admin");
   const list = await db.select().from(users).where(eq(users.companyId, company.id)).orderBy(asc(users.name));
+  // Given with every PIN: the PIN only works together with the company code.
+  const pinNote = (
+    <p className="text-sm text-muted lg:text-xs">
+      Con PIN se inicia sesión con el código de empresa <Code>{company.slug}</Code>.
+    </p>
+  );
 
   return (
     <>
-      <PageHeader title="Usuarios" subtitle={
-          <>
-            {list.filter((u) => u.active).length} personas · código de empresa para entrar con PIN: <Code>{company.slug}</Code>
-          </>
-        }
-      />
-
-      <ul className="ruled-list framed">
-        {list.map((u) => (
-          <li key={u.id} className="px-2 py-3 lg:py-2 lg:px-3">
-            <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${u.active ? "" : "text-muted"}`}>
-              <span className="flex min-w-0 items-center gap-3">
-                <Avatar person={u} className="size-9 text-sm" />
-                <span className="min-w-0">
-                  <span className="block font-semibold">
-                    {u.name} {u.id === user.id && <span className="font-normal text-muted">(tú)</span>}
-                  </span>
-                  <span className="block truncate text-sm text-muted">{u.email}</span>
-                </span>
-              </span>
-              <span className="flex flex-wrap items-center gap-1.5">
-                <Badge tone="accent">{ROLES.find((r) => r.id === u.role)?.name}</Badge>
-                {u.passwordHash && <Badge>Contraseña</Badge>}
-                {u.pinHmac && <Badge>PIN</Badge>}
-                {!u.active && <Badge tone="danger">Dado de baja</Badge>}
-              </span>
+      <PageHeader title="Usuarios" subtitle={plural(list.filter((u) => u.active).length, "persona activa", "personas activas")}>
+        <NewButton label="Nuevo" title="Nuevo usuario">
+          <ActionForm action={create} button="Crear usuario" className="space-y-3" anyOf={{ fields: ["pin", "password"], message: "Asigna un PIN, una contraseña o ambos para que pueda iniciar sesión." }}>
+            <div>
+              <label htmlFor="name" className="field-label">
+                Nombre y apellido
+              </label>
+              <input id="name" name="name" className="field" required />
             </div>
-            {u.id !== user.id && (
-              <details className="mt-2 sm:pl-12">
-                <summary className="link inline-block cursor-pointer text-sm">Cambiar rol, acceso o dar de baja</summary>
-                <div className="mt-3 mb-2 grid max-w-3xl gap-x-6 gap-y-5 sm:grid-cols-2">
-                  <ActionForm action={changeRole} button="Guardar rol" className="space-y-2" resetOnOk={false}>
-                    <input type="hidden" name="id" value={u.id} />
-                    <label className="field-label" htmlFor={`rol-${u.id}`}>
-                      Rol
-                    </label>
-                    <Select id={`rol-${u.id}`} name="role" defaultValue={u.role} options={ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }))} />
-                  </ActionForm>
-                  <ActionForm action={setAccess} button="Guardar acceso" className="space-y-2" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o las dos cosas." }}>
-                    <input type="hidden" name="id" value={u.id} />
-                    <label className="field-label" htmlFor={`pin-${u.id}`}>
-                      PIN nuevo y/o contraseña nueva
-                    </label>
-                    <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 números" className="field font-mono" placeholder="PIN de 6 números" autoComplete="off" />
-                    <input name="password" type="password" minLength={8} className="field" placeholder="Contraseña (8 o más)" aria-label="Contraseña nueva" autoComplete="new-password" />
-                  </ActionForm>
-                  <div className="flex flex-wrap items-start gap-2">
-                    {u.photoVersion && (
-                      <ActionButton action={removePhotoOf} hiddenFields={{ id: u.id }} className="btn-soft" confirm={`¿Quitar la foto de ${u.name}?`}>
-                        Quitar foto
-                      </ActionButton>
-                    )}
-                    <ActionButton action={toggleActive} hiddenFields={{ id: u.id }} className={u.active ? "btn-danger" : "btn-soft"} confirm={u.active ? `¿Dar de baja a ${u.name}? No va a poder entrar más.` : undefined}>
-                      {u.active ? "Dar de baja" : "Volver a habilitar"}
-                    </ActionButton>
-                  </div>
-                </div>
-              </details>
-            )}
-          </li>
-        ))}
-      </ul>
+            <div>
+              <label htmlFor="email" className="field-label">
+                Email
+              </label>
+              <input id="email" name="email" type="email" className="field" required autoComplete="off" />
+            </div>
+            <div>
+              <label htmlFor="role" className="field-label">
+                Rol
+              </label>
+              <Select id="role" name="role" defaultValue="operator" required options={roleOptions} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="pin" className="field-label">
+                  PIN
+                </label>
+                <input id="pin" name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 dígitos" className="field font-mono" placeholder="6 dígitos" autoComplete="off" />
+              </div>
+              <div>
+                <label htmlFor="password" className="field-label">
+                  Contraseña
+                </label>
+                <input id="password" name="password" type="password" minLength={8} className="field" placeholder="8 o más" autoComplete="new-password" />
+              </div>
+            </div>
+            {pinNote}
+          </ActionForm>
+        </NewButton>
+      </PageHeader>
 
-      <section className="panel mt-10 lg:mt-8 max-w-3xl p-5 lg:p-4">
-        <h2 className="section-title mb-3">Sumar a alguien</h2>
-        <ActionForm action={create} button="Crear usuario" className="grid gap-3 sm:grid-cols-2" anyOf={{ fields: ["pin", "password"], message: "Dale un PIN, una contraseña o las dos cosas para que pueda entrar." }}>
-          <div>
-            <label htmlFor="name" className="field-label">
-              Nombre y apellido
-            </label>
-            <input id="name" name="name" className="field" required />
-          </div>
-          <div>
-            <label htmlFor="email" className="field-label">
-              Email
-            </label>
-            <input id="email" name="email" type="email" className="field" required autoComplete="off" />
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="role" className="field-label">
-              Rol
-            </label>
-            <Select id="role" name="role" defaultValue="operator" required options={ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }))} />
-          </div>
-          <div>
-            <label htmlFor="pin" className="field-label">
-              PIN
-            </label>
-            <input id="pin" name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 números" className="field font-mono" placeholder="6 números" autoComplete="off" />
-          </div>
-          <div>
-            <label htmlFor="password" className="field-label">
-              Contraseña
-            </label>
-            <input id="password" name="password" type="password" minLength={8} className="field" placeholder="8 caracteres o más" autoComplete="new-password" />
-          </div>
-        </ActionForm>
-      </section>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Persona</th>
+              <th className="hidden md:table-cell">Email</th>
+              <th>Rol</th>
+              <th className="hidden sm:table-cell">Acceso</th>
+              <th className="w-0">
+                <span className="sr-only">Opciones</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.length === 0 && <EmptyRow columns={5} title="Todavía no hay usuarios" />}
+            {list.map((u) => (
+              <tr key={u.id} className={u.active ? "" : "text-muted"}>
+                <td className="w-full max-w-0 py-1.5! md:w-auto md:max-w-none">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <Avatar person={u} className={`size-7 text-[11px] ${u.active ? "" : "opacity-50"}`} />
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {u.name} {u.id === user.id && <span className="font-normal text-muted">(tú)</span>} {!u.active && <Badge tone="danger">Desactivado</Badge>}
+                      </span>
+                      <span className="block truncate text-xs text-muted md:hidden">{u.email}</span>
+                    </span>
+                  </span>
+                </td>
+                <td className="hidden truncate text-muted md:table-cell">{u.email}</td>
+                <td className="whitespace-nowrap">{ROLES.find((r) => r.id === u.role)?.name}</td>
+                <td className="hidden whitespace-nowrap text-muted sm:table-cell">{[u.passwordHash && "Contraseña", u.pinHmac && "PIN"].filter(Boolean).join(" · ") || "—"}</td>
+                <td className="py-1! text-right">
+                  {u.id !== user.id && (
+                    <RowMenu
+                      label={`Opciones de ${u.name}`}
+                      dialogs={[
+                        {
+                          label: "Cambiar rol",
+                          title: `Rol de ${u.name}`,
+                          content: (
+                            <ActionForm action={changeRole} button="Guardar rol" className="space-y-3" resetOnOk={false}>
+                              <input type="hidden" name="id" value={u.id} />
+                              <label className="field-label" htmlFor={`rol-${u.id}`}>
+                                Rol
+                              </label>
+                              <Select id={`rol-${u.id}`} name="role" defaultValue={u.role} options={roleOptions} />
+                            </ActionForm>
+                          ),
+                        },
+                        {
+                          label: "Cambiar PIN o contraseña",
+                          title: `Acceso de ${u.name}`,
+                          content: (
+                            <ActionForm action={setAccess} button="Guardar acceso" className="space-y-3" anyOf={{ fields: ["pin", "password"], message: "Escribe un PIN nuevo, una contraseña nueva o ambos." }}>
+                              <input type="hidden" name="id" value={u.id} />
+                              <div>
+                                <label className="field-label" htmlFor={`pin-${u.id}`}>
+                                  PIN nuevo
+                                </label>
+                                <input id={`pin-${u.id}`} name="pin" inputMode="numeric" maxLength={6} pattern="\d{6}" title="6 dígitos" className="field font-mono" placeholder="6 dígitos" autoComplete="off" />
+                              </div>
+                              <div>
+                                <label className="field-label" htmlFor={`password-${u.id}`}>
+                                  Contraseña nueva
+                                </label>
+                                <input id={`password-${u.id}`} name="password" type="password" minLength={8} className="field" placeholder="8 caracteres o más" autoComplete="new-password" />
+                              </div>
+                              {pinNote}
+                            </ActionForm>
+                          ),
+                        },
+                      ]}
+                    >
+                      {u.photoVersion && (
+                        <ActionButton action={removePhotoOf} hiddenFields={{ id: u.id }} className="menu-item w-full" confirm={`¿Quitar la foto de ${u.name}?`}>
+                          Quitar foto
+                        </ActionButton>
+                      )}
+                      <ActionButton action={toggleActive} hiddenFields={{ id: u.id }} className={`menu-item w-full ${u.active ? "danger" : ""}`} confirm={u.active ? `¿Desactivar a ${u.name}? Ya no podrá iniciar sesión.` : undefined}>
+                        {u.active ? "Desactivar" : "Reactivar"}
+                      </ActionButton>
+                    </RowMenu>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

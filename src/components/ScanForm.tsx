@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Shortcut, Lookup, FieldStatus } from "@/lib/lookup";
+import { DisabledReason } from "./Hint";
 import type { Result } from "@/lib/errors";
 import { Camera } from "./Camera";
 import { Icon } from "./Icon";
@@ -143,7 +144,8 @@ export function ScanForm({
   }, [inputs]);
 
   useEffect(() => {
-    if (!status.ok && !status.error) return focusFirstEmpty();
+    // On opening the screen nothing has focus: the cursor goes into a field only when the person clicks or taps it.
+    if (!status.ok && !status.error) return;
     beep(status.error ? "error" : "ok");
     const els = inputs();
     if (status.ok) {
@@ -253,13 +255,13 @@ export function ScanForm({
             <label htmlFor={`scan-${c.name}`} className="field-label">
               {c.label}
             </label>
-            <div className="relative flex gap-2">
+            <div className={`field-group ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}>
               <input
                 id={`scan-${c.name}`}
                 name={c.name}
                 data-scan-field
                 defaultValue={c.value ?? ""}
-                className={`field font-mono font-bold placeholder:font-sans placeholder:font-normal ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}
+                className="field font-mono font-bold placeholder-shown:font-sans placeholder-shown:font-normal"
                 placeholder={c.help ?? "Escanea o escribe"}
                 autoCapitalize="characters"
                 autoCorrect="off"
@@ -296,7 +298,7 @@ export function ScanForm({
                   if (ev.currentTarget.value.trim()) advance(i);
                 }}
               />
-              <button type="button" className="btn-soft px-3" aria-label={`Leer ${c.label.toLowerCase()} con la cámara`} onClick={() => setCameraFor(c.name)}>
+              <button type="button" className="btn-soft" aria-label={`Leer ${c.label.toLowerCase()} con la cámara`} onClick={() => setCameraFor(c.name)}>
                 <Icon name="camera" />
               </button>
               {context && (
@@ -410,7 +412,6 @@ export function ActionButton({
   hotkey?: HotkeyName;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
-  const id = useId();
   return (
     <form
       action={submit}
@@ -422,14 +423,11 @@ export function ActionButton({
       {Object.entries(hiddenFields).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
-      <button className={className} disabled={submitting || Boolean(reason)} aria-describedby={reason ? id : undefined} {...(key ? hotkey(key, typeof children === "string" ? children : undefined) : {})}>
-        {submitting ? "Un momento…" : children}
-      </button>
-      {reason && (
-        <p id={id} className="basis-full text-sm text-muted">
-          {reason}
-        </p>
-      )}
+      <DisabledReason reason={reason} className={/\bw-full\b/.test(className) ? "flex w-full" : "inline-flex"}>
+        <button className={className} disabled={submitting || Boolean(reason)} {...(key ? hotkey(key, typeof children === "string" ? children : undefined) : {})}>
+          {submitting ? "Un momento…" : children}
+        </button>
+      </DisabledReason>
       {(status.error || (showOk && status.ok)) && (
         <div className="basis-full">
           <Message status={status} />
@@ -451,6 +449,7 @@ export function ActionForm({
   confirm,
   reason,
   buttonClassName = "btn",
+  attached = false,
 }: {
   action: Action;
   children: ReactNode;
@@ -466,13 +465,21 @@ export function ActionForm({
   /** If the form cannot be sent yet, why: the button is disabled and says so. */
   reason?: string;
   buttonClassName?: string;
+  /** One field and its button as a single control (field-group); the message goes below. */
+  attached?: boolean;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const form = useRef<HTMLFormElement>(null);
-  const reasonId = useId();
   useEffect(() => {
     if (status.ok && resetOnOk) form.current?.reset();
   }, [status, resetOnOk]);
+  const submitButton = (
+    <DisabledReason reason={reason} className={/\bw-full\b/.test(buttonClassName) ? "flex w-full" : "inline-flex"}>
+      <button className={buttonClassName} disabled={submitting || Boolean(reason)} {...(key ? hotkey(key, button) : {})}>
+        {submitting ? "Un momento…" : button}
+      </button>
+    </DisabledReason>
+  );
   return (
     <form
       ref={form}
@@ -490,14 +497,16 @@ export function ActionForm({
         inputs[0]?.reportValidity();
       }}
     >
-      {children}
-      <button className={buttonClassName} disabled={submitting || Boolean(reason)} aria-describedby={reason ? reasonId : undefined} {...(key ? hotkey(key, button) : {})}>
-        {submitting ? "Un momento…" : button}
-      </button>
-      {reason && (
-        <p id={reasonId} className="basis-full text-sm text-muted">
-          {reason}
-        </p>
+      {attached ? (
+        <div className="field-group">
+          {children}
+          {submitButton}
+        </div>
+      ) : (
+        <>
+          {children}
+          {submitButton}
+        </>
       )}
       <Message status={status} />
     </form>
