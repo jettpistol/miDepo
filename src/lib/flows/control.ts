@@ -92,7 +92,7 @@ export async function reportMissing(c: Ctx, orderId: number, lineId: number) {
       left -= off;
     }
   });
-  return `Anotado: ${missing === 1 ? "1 unidad queda" : `${missing} unidades quedan`} como faltante.`;
+  return `Registrado: ${missing === 1 ? "1 unidad queda" : `${missing} unidades quedan`} como faltante.`;
 }
 
 export async function finishControl(c: Ctx, orderId: number) {
