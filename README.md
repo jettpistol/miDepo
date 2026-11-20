@@ -74,6 +74,7 @@ npm run db:reset
 | Phones | Installable as an app (PWA). Camera barcode scanning; USB and Bluetooth scanners work as keyboards. |
 | Companies | Several companies in one deployment, fully separated. |
 | Search | The top bar searches everything, in three tabs: **Funciones** (screens, actions, settings, with synonyms and typo tolerance), **Inventario** (titles, shelves, suppliers, customers, orders, receivings, returns, counts; a scanned code goes first) and **Guías** (the manual, opened at the matching section). Ctrl/⌘+K or `/`; full screen on a phone. |
+| Notifications | A bell in the top bar for work that needs someone's time, not every scan: work assigned to you, urgent orders, recounts, counts ready to approve, packed orders not loaded in Fierro, shortages, receivings with differences, orders with no progress, started orders changed in Fierro, an end-of-day summary of what is still open, write-offs (admins) and new work from Fierro. Each goes only to whoever acts on it; each person turns kinds off in Ajustes. In-app only, no phone push. |
 | Manual | A Spanish user manual in [`wiki/`](wiki/Home.md), also served as its own searchable site at `/ayuda` (search bar, readable without logging in). |
 
 ## How it fits with Fierro

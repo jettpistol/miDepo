@@ -8,6 +8,7 @@ import { fierroCode, csv } from "../fierro/csv";
 import type { FierroDocument } from "../fierro/types";
 import { moveStock, zone } from "../stock";
 import type { Ctx } from "./common";
+import { announceSync, refreshToLoad } from "../notifications";
 import { causeName } from "./adjustments";
 
 export const EXPORT_TYPES = ["order", "receiving", "return", "count", "adjustment"] as const;
@@ -132,6 +133,7 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
       }
       doc.type = "shipment";
       doc.reference = flagged[0].number;
+      await refreshToLoad(tx, c.companyId, c.userId, "update");
     } else if (type === "receiving") {
       const flagged = await tx.update(receivings).set({ sentToFierro: now }).where(and(eq(receivings.id, id), eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"), isNull(receivings.sentToFierro))).returning();
       if (flagged.length === 0) throw new UserError("EXP-06", "Esa recepción no está pendiente de carga en Fierro.");
@@ -168,11 +170,20 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
 }
 
 /** Simulated Fierro only: makes new orders or receipts appear "on the other side". */
-export async function simulateNews(db: DB, company: Company, what: "orders" | "receipts", howManyOf: number) {
+/** Brings what is new in Fierro and tells whoever has work from it. */
+export async function syncFromFierro(c: Ctx, company: Company) {
+  const r = await sync(c.db, company);
+  await announceSync(c.db, c.companyId, c.userId, r);
+  return r;
+}
+
+export async function simulateNews(db: DB, company: Company, what: "orders" | "receipts", howManyOf: number, actorId: number | null = null) {
   const [current] = await db
     .update(companies)
     .set(what === "orders" ? { simOrders: sql`${companies.simOrders} + ${howManyOf}` } : { simReceipts: sql`${companies.simReceipts} + ${howManyOf}` })
     .where(eq(companies.id, company.id))
     .returning();
-  return sync(db, current);
+  const r = await sync(db, current);
+  await announceSync(db, company.id, actorId, r);
+  return r;
 }

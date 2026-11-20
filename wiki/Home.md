@@ -37,6 +37,7 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 ## Tu cuenta
 
 - [Iniciar sesión](Ingresar): contraseña, PIN, huella o rostro.
+- [Avisos](Avisos): la campana, qué avisa y a quién.
 - [Ajustes](Ajustes): tema claro u oscuro, color, tipografía, foto, contraseña y PIN.
 - [Instalar en el teléfono](Instalar-en-el-telefono): tener miDepo como una app.
 

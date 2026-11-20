@@ -3,6 +3,7 @@ import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { counts, locations, orders, receivings, returns, users } from "@/db/schema";
 import { UserError } from "../errors";
 import type { Ctx } from "./common";
+import { notify } from "../notifications";
 
 /** What a supervisor can give to a person. "putaway" is a zone (RECEPCION or DEVOLUCIONES): its put-away. */
 export type AssignKind = "order" | "receiving" | "return" | "count" | "putaway";
@@ -22,23 +23,24 @@ async function target(c: Ctx, kind: AssignKind, id: number) {
   switch (kind) {
     case "order": {
       const [o] = await c.db.select().from(orders).where(mine(orders));
-      return o && { save, label: `${o.number}`, open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
+      const href = o && (o.status === "to_control" ? `/control/${o.id}` : o.status === "picked" ? `/empaque/${o.id}` : `/picking/${o.id}`);
+      return o && { save, label: `${o.number}`, href, open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
     }
     case "receiving": {
       const [r] = await c.db.select().from(receivings).where(mine(receivings));
-      return r && { save, label: `${r.number}`, open: r.status !== "closed" };
+      return r && { save, label: `${r.number}`, href: `/recepcion/${r.id}`, open: r.status !== "closed" };
     }
     case "return": {
       const [d] = await c.db.select().from(returns).where(mine(returns));
-      return d && { save, label: `${d.number}`, open: d.status === "in_progress" };
+      return d && { save, label: `${d.number}`, href: `/devoluciones/${d.id}`, open: d.status === "in_progress" };
     }
     case "count": {
       const [k] = await c.db.select().from(counts).where(mine(counts));
-      return k && { save, label: `Conteo ${k.name}`, open: k.status === "open" };
+      return k && { save, label: `Conteo ${k.name}`, href: `/conteos/${k.id}`, open: k.status === "open" };
     }
     case "putaway": {
       const [z] = await c.db.select().from(locations).where(and(mine(locations), inArray(locations.type, ["receiving", "returns"])));
-      return z && { save, label: z.type === "receiving" ? "Reposición desde Recepción" : "Reposición desde Devoluciones", open: true };
+      return z && { save, label: z.type === "receiving" ? "Reposición desde Recepción" : "Reposición desde Devoluciones", href: "/reposicion", open: true };
     }
   }
 }
@@ -59,5 +61,9 @@ export async function assign(c: Ctx, kind: string, id: number, userId: number | 
     name = u.name;
   }
   await t.save(userId);
+  if (userId != null) {
+    const [who] = await c.db.select({ name: users.name }).from(users).where(eq(users.id, c.userId));
+    await notify(c.db, c.companyId, { kind: "assigned", title: "Asignado a ti", body: `${t.label} · ${who?.name ?? ""}`.replace(/ · $/, ""), href: t.href }, { actorId: c.userId, to: [userId] });
+  }
   return name ? `Asignado a ${name}.` : "Sin asignar.";
 }

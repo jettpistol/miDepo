@@ -1,5 +1,6 @@
 const PATHS = {
   home: "M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10",
+  bell: "M6 16.500V11a6 6 0 0 1 12 0v5.500l1.500 1.500h-15L6 16.500ZM10 20.500a2.200 2.200 0 0 0 4 0",
   receiving: "M12 3v11m0 0-4-4m4 4 4-4M4 15v4.5h16V15",
   dispatch: "M12 14V3m0 0L8 7m4-4 4 4M4 15v4.5h16V15",
   outside: "M4 8h16v11.5H4zM9 8V5h6v3M4 13h16",

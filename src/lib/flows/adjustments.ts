@@ -4,6 +4,7 @@ import { adjustmentLines, adjustments, locations, movements, products, stock, us
 import { UserError } from "../errors";
 import { moveStock } from "../stock";
 import { nextNumber, validQuantity, type Ctx } from "./common";
+import { notify } from "../notifications";
 import { articleName } from "@/lib/article";
 
 /**
@@ -38,6 +39,12 @@ export async function recordAdjustment(tx: Executor, c: Ctx, lines: AdjustmentLi
   return a;
 }
 
+/** Administrators hear of every write-off, with who approved it. */
+export async function notifyWriteOff(tx: Executor, c: Ctx, parts: string[]) {
+  const [who] = await tx.select({ name: users.name }).from(users).where(eq(users.id, c.userId));
+  await notify(tx, c.companyId, { kind: "write_off", title: "Baja de stock", body: [...parts, who?.name ?? ""].filter(Boolean).join(" · "), href: "/bajas" }, { actorId: c.userId });
+}
+
 /** Writes off units held in FALTANTES or DANADOS: they leave the warehouse with a cause. */
 export async function writeOff(c: Ctx, d: { locationId: number; productId: number; quantity: unknown; cause: string }) {
   const n = validQuantity(d.quantity);
@@ -49,6 +56,7 @@ export async function writeOff(c: Ctx, d: { locationId: number; productId: numbe
   return c.db.transaction(async (tx) => {
     const a = await recordAdjustment(tx, c, [{ productId: p.id, locationId: u.id, quantity: -n, cause: d.cause as AdjustmentCause }]);
     await moveStock(tx, { companyId: c.companyId, productId: p.id, fromId: u.id, toId: null, quantity: n, reason: "write_off", reference: a.number, userId: c.userId });
+    await notifyWriteOff(tx, c, [a.number, `${n} × ${articleName(p.title)}`, u.code, causeName(d.cause)]);
     return `${a.number}: ${n} × ${articleName(p.title)} dado de baja (${causeName(d.cause).toLowerCase()}).`;
   });
 }

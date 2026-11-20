@@ -3,7 +3,8 @@ import type { Executor } from "@/db";
 import { countLines, countLocations, counts, products, stock, locations, type AdjustmentCause } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
-import { isLossCause, recordAdjustment, type AdjustmentLine } from "./adjustments";
+import { causeName, isLossCause, notifyWriteOff, recordAdjustment, type AdjustmentLine } from "./adjustments";
+import { notify, plural, resolve } from "../notifications";
 import { validQuantity, type Ctx } from "./common";
 import { articleName } from "@/lib/article";
 
@@ -79,14 +80,31 @@ export async function setCounted(c: Ctx, countId: number, locationId: number, pr
 }
 
 export async function markLocation(c: Ctx, countId: number, locationId: number, counted: boolean) {
-  await isOpen(c, countId);
+  const k = await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
   if (counted && u.firstCountedBy === c.userId) throw new UserError("CNT-12", "El recuento debe hacerlo otra persona.");
   await c.db
     .update(countLocations)
     .set({ status: counted ? "counted" : "pending", countedBy: counted ? c.userId : null })
     .where(and(eq(countLocations.countId, countId), eq(countLocations.locationId, locationId)));
+  if (counted) {
+    await resolve(c.db, c.companyId, `recount:${countId}:${locationId}`);
+    await notifyIfReady(c, k);
+  } else {
+    await resolve(c.db, c.companyId, `count_ready:${countId}`);
+  }
   return counted ? "Ubicación contada." : "Ubicación reabierta.";
+}
+
+/** When the last location of a count is counted, the supervisors hear it can be reviewed. */
+async function notifyIfReady(c: Ctx, k: typeof counts.$inferSelect) {
+  const [pending] = await c.db.select({ id: countLocations.locationId }).from(countLocations).where(and(eq(countLocations.countId, k.id), eq(countLocations.status, "pending"))).limit(1);
+  if (pending) return;
+  const diffs = await differences(c.db, k.id);
+  const differing = new Set(diffs.filter((d) => d.countedQty !== d.system).map((d) => d.locationId)).size;
+  const recount = (await awaitingRecount(c.db, k.id, diffs)).size;
+  const parts = [k.name, differing === 0 ? "sin diferencias" : plural(differing, "ubicación con diferencias", "ubicaciones con diferencias"), recount > 0 && `${recount} para recontar`].filter(Boolean);
+  await notify(c.db, c.companyId, { kind: "count_ready", title: "Conteo para aprobar", body: parts.join(" · "), href: `/conteos/${k.id}`, key: `count_ready:${k.id}` }, { actorId: c.userId });
 }
 
 export type Difference = { locationId: number; location: string; productId: number; title: string; code: string; system: number; countedQty: number };
@@ -119,12 +137,20 @@ export async function differences(db: Executor, countId: number): Promise<Differ
  * stays blind) and whoever counted first cannot do the recount.
  */
 export async function requestRecount(c: Ctx, countId: number, locationId: number) {
-  await isOpen(c, countId);
+  const k = await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
   if (u.status !== "counted" || !u.countedBy) throw new UserError("CNT-13", "Esa ubicación todavía no se contó.");
   await c.db.transaction(async (tx) => {
     await tx.delete(countLines).where(and(eq(countLines.countId, countId), eq(countLines.locationId, locationId)));
     await tx.update(countLocations).set({ status: "pending", firstCountedBy: u.countedBy, countedBy: null }).where(and(eq(countLocations.countId, countId), eq(countLocations.locationId, locationId)));
+    await resolve(tx, c.companyId, `count_ready:${countId}`);
+    const [where] = await tx.select({ code: locations.code }).from(locations).where(eq(locations.id, locationId));
+    await notify(
+      tx,
+      c.companyId,
+      { kind: "recount", title: "Recuento", body: `${k.name} · ${where.code}`, href: `/conteos/${countId}`, key: `recount:${countId}:${locationId}` },
+      { actorId: c.userId, except: [u.countedBy] },
+    );
   });
   return "Recuento pedido, para otra persona.";
 }
@@ -209,7 +235,13 @@ export async function closeCount(c: Ctx, countId: number, cause: string = "count
       await move(l.productId, l.locationId, null, l.quantity, "write_off");
       lines.push({ productId: l.productId, locationId: l.locationId, quantity: -l.quantity, cause: cause as AdjustmentCause });
     }
-    if (lines.length > 0) await recordAdjustment(tx, c, lines, countId);
+    if (lines.length > 0) {
+      const a = await recordAdjustment(tx, c, lines, countId);
+      const lost = plan.losses.reduce((s, l) => s + l.quantity, 0);
+      if (lost > 0) await notifyWriteOff(tx, c, [a.number, `Conteo ${k.name}`, plural(lost, "unidad", "unidades"), causeName(cause)]);
+    }
+    await resolve(tx, c.companyId, `count_ready:${countId}`);
+    await resolve(tx, c.companyId, `recount:${countId}:`, { prefix: true });
 
     // Locations left uncounted are removed from the count: they are not adjusted.
     await tx.delete(countLocations).where(and(eq(countLocations.countId, countId), eq(countLocations.status, "pending")));
@@ -228,5 +260,7 @@ export async function closeCount(c: Ctx, countId: number, cause: string = "count
 export async function cancelCount(c: Ctx, countId: number) {
   const k = await isOpen(c, countId);
   await c.db.delete(counts).where(eq(counts.id, countId));
+  await resolve(c.db, c.companyId, `count_ready:${countId}`);
+  await resolve(c.db, c.companyId, `recount:${countId}:`, { prefix: true });
   return `Conteo "${k.name}" cancelado. El stock no cambió.`;
 }

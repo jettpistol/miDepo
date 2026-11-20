@@ -8,6 +8,8 @@ import { Dropdown } from "@/components/Dropdown";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
 import { Hotkeys } from "@/components/Hotkeys";
+import { Bell } from "@/components/Bell";
+import { inbox, runTimedChecks } from "@/lib/notifications";
 import { GlobalSearch, type SearchRow } from "@/components/GlobalSearch";
 import { NAV } from "@/lib/hotkeys";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
@@ -25,13 +27,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // How much waits in each queue, shown beside it in the sidebar.
   const c = company.id;
   const n = (q: Promise<{ n: number }[]>) => q.then((r) => r[0].n);
-  const [toPick, toControl, toReceive, toPack, toReturn, toCount] = await Promise.all([
+  await runTimedChecks(db, c);
+  const [toPick, toControl, toReceive, toPack, toReturn, toCount, notices] = await Promise.all([
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), inArray(orders.status, ["pending", "in_picking"])))),
     !controlOn ? 0 : n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "to_control")))),
     n(db.select({ n: count() }).from(receivings).where(and(eq(receivings.companyId, c), inArray(receivings.status, ["pending", "in_progress"])))),
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "picked")))),
     n(db.select({ n: count() }).from(returns).where(and(eq(returns.companyId, c), eq(returns.status, "in_progress")))),
     n(db.select({ n: count() }).from(counts).where(and(eq(counts.companyId, c), eq(counts.status, "open")))),
+    inbox(db, user.id),
   ]);
   // What the top search offers before anything is typed: the screens this person can open.
   const altKey = Object.fromEntries(Object.entries(NAV).map(([d, href]) => [href, `Alt + ${d}`]));
@@ -48,10 +52,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <GlobalSearch starters={starters} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted lg:hidden">{company.name}</span>
 
-          <div className="ml-auto flex items-center gap-1 lg:hidden">
+          <div className="ml-auto flex items-center">
+            <Bell key={`bell-${user.id}`} initial={notices} />
+          </div>
+          <div className="flex items-center gap-1 lg:hidden">
             <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
           </div>
-          <div className="ml-auto hidden items-center gap-1 lg:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
             <Link href="/ayuda" title="Manual · F1: atajos de teclado" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
               <Icon name="help" className="size-5" />

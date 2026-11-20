@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
-import { companies, customers, orderLines, orders, pickTasks } from "@/db/schema";
+import { companies, customers, orderLines, orders, pickTasks, products } from "@/db/schema";
+import { notifyShortage } from "../notifications";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
@@ -93,6 +94,8 @@ export async function reportMissing(c: Ctx, orderId: number, lineId: number) {
     const [from, to] = [await zone(tx, c.companyId, "staging"), await zone(tx, c.companyId, "missing")];
     await moveStock(tx, { companyId: c.companyId, productId: line.productId, fromId: from.id, toId: to.id, quantity: missing, reason: "missing", reference: order.number, userId: c.userId });
     await tx.update(orderLines).set({ picked: line.checked }).where(eq(orderLines.id, line.id));
+    const [what] = await tx.select({ title: products.title }).from(products).where(eq(products.id, line.productId));
+    await notifyShortage(tx, c.companyId, c.userId, { order: order.number, quantity: missing, article: articleName(what.title), where: "control", key: `shortage:line:${line.id}` });
     // The route says what is in Preparación: take the units off its stops too, so undoing the picking later returns only what is there.
     let left = missing;
     for (const t of await tx.select().from(pickTasks).where(and(eq(pickTasks.lineId, line.id), gt(pickTasks.picked, 0))).orderBy(desc(pickTasks.id))) {

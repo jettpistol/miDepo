@@ -72,6 +72,7 @@ const more: Feature[] = [
   { title: "Cargar stock inicial", path: ["Stock", "Stock inicial"], href: "/stock/carga-inicial", icon: "download", words: "importar planilla csv excel arranque inventario inicial existencias", minRole: "admin" },
   { title: "Mover toda una ubicación", path: ["Mover", "Toda la ubicación"], href: "/mover?modo=todo", icon: "move", words: "vaciar estante reubicar masivo todo contenido traspaso bulk" },
   { title: "Nueva salida", path: ["Salidas", "+ Nueva"], href: "/salidas#nueva", icon: "plus", words: "feria evento stand consignacion llevar", keys: KEYS.create },
+  { title: "Avisos", path: [], href: "/avisos", icon: "bell", words: "notificaciones alertas campana novedades pendientes notifications" },
   { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nueva", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
   // Settings: sections of Ajustes (personal) and Organización (the company).
   { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },
@@ -80,6 +81,7 @@ const more: Feature[] = [
   { title: "Tema claro u oscuro", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "modo oscuro noche dark light" },
   { title: "Huella, rostro o llave", path: ["Ajustes"], href: "/cuenta#llaves", icon: "account", words: "passkey llave de acceso biometria touch id face id" },
   { title: "Control de pedidos", path: ["Organización"], href: "/organizacion#control", icon: "check", words: "controlar verificar revisar doble chequeo segunda persona empaque pedidos grandes", minRole: "admin" },
+  { title: "Elegir avisos", path: ["Ajustes", "Avisos"], href: "/cuenta#avisos", icon: "bell", words: "notificaciones silenciar desactivar alertas campana" },
   { title: "Cambiar contraseña", path: ["Ajustes", "Contraseña"], href: "/cuenta#contrasena", icon: "account", words: "clave password" },
   { title: "Picking por lotes", path: ["Organización"], href: "/organizacion#lotes", icon: "picking", words: "lote bandeja separar pedidos empaque batch oleada", minRole: "supervisor" },
   { title: "Nombre de la organización", path: ["Organización"], href: "/organizacion#nombre", icon: "organization", words: "empresa renombrar razon social", minRole: "admin" },

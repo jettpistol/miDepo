@@ -4,6 +4,7 @@ import { distance, plain } from "../text";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { nextNumber, validQuantity, type Ctx } from "./common";
+import { notify, plural } from "../notifications";
 import { articleName } from "@/lib/article";
 
 async function open(c: Ctx, id: number) {
@@ -97,6 +98,16 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
     }
     await tx.update(receivings).set({ status: "closed" }).where(eq(receivings.id, receivingId));
     const damaged = lines.reduce((s, l) => s + l.damaged, 0);
+    // Over, short and unannounced only mean something against Fierro's notice; damage always does.
+    const announced = r.fierroId != null;
+    const over = announced ? lines.reduce((s, l) => s + (l.expected > 0 ? Math.max(0, l.received - l.expected) : 0), 0) : 0;
+    const short = announced ? lines.reduce((s, l) => s + Math.max(0, l.expected - l.received), 0) : 0;
+    const unannounced = announced ? lines.filter((l) => l.expected === 0 && l.received > 0).length : 0;
+    const found = [over > 0 && `${over} de más`, short > 0 && `${short} de menos`, unannounced > 0 && plural(unannounced, "artículo sin aviso", "artículos sin aviso"), damaged > 0 && plural(damaged, "dañada", "dañadas")].filter(Boolean);
+    if (found.length > 0) {
+      const [s] = await tx.select({ name: suppliers.name }).from(suppliers).where(eq(suppliers.id, r.supplierId));
+      await notify(tx, c.companyId, { kind: "receiving_differences", title: "Recepción con diferencias", body: `${r.number} · ${s.name} · ${found.join(", ")}`, href: `/recepcion/${receivingId}` }, { actorId: c.userId });
+    }
     return `${r.number} cerrada. ${total - damaged} unidades por reponer${damaged > 0 ? `, ${damaged} en Dañados` : ""}.`;
   });
 }

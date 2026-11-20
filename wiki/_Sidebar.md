@@ -41,6 +41,7 @@
 
 ### Ayuda
 
+- [Avisos](Avisos)
 - [Ajustes](Ajustes)
 - [Problemas frecuentes](Problemas-frecuentes)
 - [Glosario](Glosario)

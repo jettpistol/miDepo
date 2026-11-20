@@ -3,6 +3,7 @@ import { boxItems, boxes, orderLines, orders, products } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { refreshToLoad } from "../notifications";
 import { articleName } from "@/lib/article";
 import { blockedCheck, settingsOf } from "./control";
 
@@ -81,6 +82,7 @@ export async function finishPacking(c: Ctx, orderId: number) {
   if (ofOrder.some((k) => k.status === "open")) throw new UserError("PACK-11", "Cierra la caja abierta antes de terminar.");
   if (ofOrder.length === 0 && lines.some((l) => l.picked > 0)) throw new UserError("PACK-12", "Todavía no hay ninguna caja.");
   await c.db.update(orders).set({ status: "packed", packedBy: c.userId }).where(eq(orders.id, orderId));
+  await refreshToLoad(c.db, c.companyId, c.userId, "replace");
   return `${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}.`;
 }
 
@@ -121,5 +123,6 @@ export async function reopenPacking(c: Ctx, orderId: number) {
   if (p.status !== "packed") throw new UserError("PACK-19", "Este pedido todavía no se terminó de empacar.");
   const reopened = await c.db.update(orders).set({ status: "picked" }).where(and(eq(orders.id, orderId), eq(orders.status, "packed"))).returning({ id: orders.id });
   if (reopened.length === 0) throw new UserError("PACK-18", "Este pedido ya se cargó en Fierro y salió del depósito. No se puede reabrir.");
+  await refreshToLoad(c.db, c.companyId, c.userId, "update");
   return `${p.number} reabierto en empaque.`;
 }

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { inFloating } from "./Select";
 
 /** A <details> that also closes on an outside tap, on Escape, or when the screen changes. */
-export function Dropdown({ className, children }: { className?: string; children: ReactNode }) {
+export function Dropdown({ className, children, onToggle }: { className?: string; children: ReactNode; onToggle?: (open: boolean) => void }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
 
@@ -27,7 +27,7 @@ export function Dropdown({ className, children }: { className?: string; children
   }, []);
 
   return (
-    <details ref={ref} className={className}>
+    <details ref={ref} className={className} onToggle={onToggle && ((e) => onToggle(e.currentTarget.open))}>
       {children}
     </details>
   );

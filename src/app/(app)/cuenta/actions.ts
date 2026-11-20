@@ -7,6 +7,15 @@ import { hashPassword, VALID_PIN, pinHmac, verifyPassword } from "@/lib/credenti
 import { VALID_HEX } from "@/lib/color";
 import { isFont } from "@/lib/fonts";
 import { UserError } from "@/lib/errors";
+import { kindsFor } from "@/lib/notifications";
+
+/** Each switch sends "yes" or "no"; kinds of other roles stay as they were. */
+export const saveNotifications = action("operator", async (c, f) => {
+  const mine: string[] = kindsFor(c.user.role);
+  const muted = [...c.user.mutedNotifications.filter((k) => !mine.includes(k)), ...mine.filter((k) => txt(f, `notice-${k}`) === "no")];
+  await c.db.update(users).set({ mutedNotifications: muted }).where(eq(users.id, c.userId));
+  return "Guardado.";
+});
 
 export const saveAppearance = action("operator", async (c, f) => {
   const accent = txt(f, "accent");
