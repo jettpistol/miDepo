@@ -31,8 +31,19 @@ export const companies = pgTable("companies", {
   simTitles: integer("sim_titles").notNull().default(500),
   simCustomers: integer("sim_customers").notNull().default(60),
   lastSync: timestamp("last_sync", { withTimezone: true }),
+  /** How a picking batch is split into orders: at packing, or into one tray per order while picking. */
+  batchSorting: text("batch_sorting").$type<BatchSorting>().notNull().default("packing"),
+  /**
+   * Control step between picking and packing (Organización). null = no separate step: packing is the
+   * control, since it scans every unit again. N = orders with at least N picked units go to Control.
+   */
+  controlMinUnits: integer("control_min_units"),
+  /** Whether whoever picked an order may also control it (or pack it, when packing is the control). */
+  samePersonChecks: boolean("same_person_checks").notNull().default(true),
   createdAt: createdAt(),
 });
+
+export type BatchSorting = "packing" | "trays";
 
 export type Role = "operator" | "supervisor" | "admin";
 
@@ -51,6 +62,8 @@ export const users = pgTable(
     theme: text("theme").$type<"light" | "dark" | "system">().notNull().default("system"),
     /** Interface font, one of the ids in src/lib/fonts.ts. */
     font: text("font").notNull().default("libre-franklin"),
+    /** How product lists are shown: the table (default) or cards. Saved when the person switches. */
+    listView: text("list_view").$type<"cards" | "table">().notNull().default("table"),
     active: boolean("active").notNull().default(true),
     /** null = no photo. Changes with every new photo, so the browser does not show the old one. */
     photoVersion: integer("photo_version"),
@@ -111,6 +124,8 @@ export const products = pgTable(
     weightGrams: integer("weight_grams").notNull().default(300),
     /** Cover picture (a path under /public or a URL); null when Fierro has none. */
     coverUrl: text("cover_url"),
+    /** null = no thumbnail yet. Changes with every new thumbnail, so the browser does not show the old one. */
+    thumbVersion: integer("thumb_version"),
     active: boolean("active").notNull().default(true),
   },
   (t) => [
@@ -120,6 +135,18 @@ export const products = pgTable(
     index("products_company_id_internal_code_idx").on(t.companyId, t.internalCode),
   ],
 );
+
+/**
+ * Small copy of each cover for lists, made once from `products.cover_url` (src/lib/covers.ts),
+ * so lists never load or resize the original. In its own table so product queries stay light.
+ */
+export const productThumbs = pgTable("product_thumbs", {
+  productId: integer("product_id").primaryKey().references(() => products.id, { onDelete: "cascade" }),
+  /** The cover_url it was made from: a different one means it must be made again. */
+  source: text("source").notNull(),
+  /** WebP, base64. */
+  data: text("data").notNull(),
+});
 
 export const customers = pgTable(
   "customers",
@@ -131,6 +158,8 @@ export const customers = pgTable(
     address: text("address"),
     city: text("city"),
     province: text("province"),
+    /** Their orders always go through Control, whatever the order's size or the company's mode (Clientes, admins). */
+    alwaysControl: boolean("always_control").notNull().default(false),
   },
   (t) => [uniqueIndex("customers_company_id_fierro_id_idx").on(t.companyId, t.fierroId)],
 );
@@ -148,8 +177,12 @@ export const fierroStock = pgTable(
 
 // ───────────── What miDepo owns: locations and physical stock ─────────────
 
-/** "missing" (FALTANTES) holds units a picker could not find: still owned, not yet written off. */
-export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging" | "missing";
+/**
+ * "missing" (FALTANTES) holds units a picker could not find: still owned, not yet written off.
+ * "outside": a place away from the building that still holds owned stock (a fair stand, a bookstore
+ * with books on consignment). Stock gets there and back only through a transfer (Salidas).
+ */
+export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging" | "missing" | "outside";
 
 export const locations = pgTable(
   "locations",
@@ -159,6 +192,10 @@ export const locations = pgTable(
     code: text("code").notNull(),
     type: text("type").$type<LocationType>().notNull().default("shelf"),
     active: boolean("active").notNull().default(true),
+    /** Outside locations only: what it is ("Stand Comic-Con 2026"). */
+    name: text("name"),
+    /** RECEPCION and DEVOLUCIONES only: who a supervisor gave the put-away from this zone to (null = anyone). */
+    assignedTo: integer("assigned_to").references(() => users.id),
   },
   (t) => [uniqueIndex("locations_company_id_code_idx").on(t.companyId, t.code)],
 );
@@ -191,7 +228,14 @@ export type MovementReason =
   /** Units turned up: FALTANTES → shelf, or enter from outside when a count finds more. */
   | "found"
   /** Units leave the warehouse with no customer: damaged, lost, stolen… Always has an adjustment. */
-  | "write_off";
+  | "write_off"
+  /** Puts back an earlier movement: an undone pick, move, write-off, or a reopened receiving or return. */
+  | "undo"
+  /** A transfer takes units to an outside location (a fair, a bookstore), and brings them back to RECEPCION. */
+  | "transfer_out"
+  | "transfer_back"
+  /** Units that did not come back from an outside location when its transfer was closed: sold there. */
+  | "sold_outside";
 
 export const movements = pgTable(
   "movements",
@@ -207,12 +251,37 @@ export const movements = pgTable(
     userId: integer("user_id").references(() => users.id),
     createdAt: createdAt(),
   },
-  (t) => [index("movements_product_id_created_at_idx").on(t.productId, t.createdAt)],
+  (t) => [index("movements_product_id_created_at_idx").on(t.productId, t.createdAt), index("movements_company_id_created_at_idx").on(t.companyId, t.createdAt)],
 );
 
 // ───────────── Outbound: orders, picking and boxes ─────────────
 
-export type OrderStatus = "pending" | "in_picking" | "picked" | "packed" | "shipped";
+/**
+ * A picking batch (lote): several orders picked in one walk. The route asks for the total of each
+ * title per shelf; the units are split into orders at packing or, with trays, while picking.
+ */
+export const pickBatches = pgTable(
+  "pick_batches",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** Shown as LOTE-0001, counted per company. */
+    number: integer("number").notNull(),
+    takenBy: integer("taken_by").notNull().references(() => users.id),
+    /** The company's setting when the batch was made; changing the setting does not change open batches. */
+    sorting: text("sorting").$type<BatchSorting>().notNull(),
+    status: text("status").$type<"open" | "done">().notNull().default("open"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("pick_batches_company_id_number_idx").on(t.companyId, t.number)],
+);
+
+/** to_control: picked, waiting for the Control step (only when the company has it on). picked: ready to pack.
+ * "cancelled": no longer pending in Fierro before anyone started it. It comes back if Fierro lists it again. */
+export type OrderStatus = "pending" | "in_picking" | "to_control" | "picked" | "packed" | "shipped" | "cancelled";
+
+/** What Fierro changed in an order that was already started; applied once the order is released. */
+export type FierroChange = "changed" | "gone";
 
 export const orders = pgTable(
   "orders",
@@ -226,7 +295,32 @@ export const orders = pgTable(
     status: text("status").$type<OrderStatus>().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
     takenBy: integer("taken_by").references(() => users.id),
+    /** The picking batch it was taken in, if any. */
+    batchId: integer("batch_id").references(() => pickBatches.id),
+    /** In a batch sorted into trays: the tray number for this order (1, 2, 3…). */
+    tray: integer("tray"),
+    /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+    assignedTo: integer("assigned_to").references(() => users.id),
+    /** Who finished the Control step (null if the order did not go through it). */
+    controlledBy: integer("controlled_by").references(() => users.id),
+    /** A supervisor who let the picker do this order's check, although the company asks for another person. */
+    sameCheckAllowedBy: integer("same_check_allowed_by").references(() => users.id),
+    /** Who finished packing. */
+    packedBy: integer("packed_by").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
+    /** Dispatch: who carries it, its tracking number and the remito it travels with (issued in Fierro). */
+    carrierId: integer("carrier_id").references(() => carriers.id),
+    trackingNumber: text("tracking_number"),
+    remitoNumber: text("remito_number"),
+    /** When its last box was scanned onto the vehicle, and by whom. */
+    dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
+    dispatchedBy: integer("dispatched_by").references(() => users.id),
+    /** Set by sync when Fierro edited the order, or stopped listing it, after picking started. */
+    fierroChange: text("fierro_change").$type<FierroChange>(),
+    /** A supervisor marked it to go first (same-day delivery, a cutoff). Queues sort urgent first, then oldest. */
+    urgent: boolean("urgent").notNull().default(false),
+    /** Lines Fierro sent for articles not in the catalogue. Such an order cannot be taken until they are known. */
+    unknownLines: integer("unknown_lines").notNull().default(0),
   },
   (t) => [uniqueIndex("orders_company_id_fierro_id_idx").on(t.companyId, t.fierroId), index("orders_company_id_status_idx").on(t.companyId, t.status)],
 );
@@ -239,6 +333,8 @@ export const orderLines = pgTable(
     productId: integer("product_id").notNull().references(() => products.id),
     quantity: integer("quantity").notNull(),
     picked: integer("picked").notNull().default(0),
+    /** Units counted again in the Control step. */
+    checked: integer("checked").notNull().default(0),
     packed: integer("packed").notNull().default(0),
   },
   (t) => [index("order_lines_order_id_idx").on(t.orderId)],
@@ -257,6 +353,10 @@ export const pickTasks = pgTable(
     quantity: integer("quantity").notNull(),
     picked: integer("picked").notNull().default(0),
     status: text("status").$type<"pending" | "done" | "short">().notNull().default("pending"),
+    /** Units this stop sent to FALTANTES when the picker reported them missing; put back if that report is undone. */
+    sentToMissing: integer("sent_to_missing").notNull().default(0),
+    /** The stop whose shortage report created this one (miDepo found the title elsewhere). */
+    replacesTaskId: integer("replaces_task_id"),
   },
   (t) => [index("pick_tasks_order_id_idx").on(t.orderId)],
 );
@@ -270,6 +370,9 @@ export const boxes = pgTable(
     number: integer("number").notNull(),
     weightGrams: integer("weight_grams"),
     status: text("status").$type<"open" | "closed">().notNull().default("open"),
+    /** Scanned onto the vehicle at dispatch. */
+    loadedAt: timestamp("loaded_at", { withTimezone: true }),
+    loadedBy: integer("loaded_by").references(() => users.id),
   },
   (t) => [index("boxes_order_id_idx").on(t.orderId)],
 );
@@ -285,6 +388,19 @@ export const boxItems = pgTable(
 );
 
 // ───────────── Inbound: receivings and returns ─────────────
+
+/** Who carries dispatched orders (Andreani, OCA, a messenger…). Master data: chosen from the list, created on purpose. */
+export const carriers = pgTable(
+  "carriers",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    name: text("name").notNull(),
+    createdBy: integer("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("carriers_company_id_name_idx").on(t.companyId, sql`lower(${t.name})`)],
+);
 
 /** Who sends stock in. Filled from Fierro on sync; a receiving can only name one of these. */
 export const suppliers = pgTable(
@@ -313,6 +429,8 @@ export const receivings = pgTable(
       .references(() => suppliers.id),
     status: text("status").$type<"pending" | "in_progress" | "closed">().notNull().default("pending"),
     date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+    /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+    assignedTo: integer("assigned_to").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
   },
   (t) => [index("receivings_company_id_status_idx").on(t.companyId, t.status)],
@@ -326,11 +444,48 @@ export const receivingLines = pgTable(
     productId: integer("product_id").notNull().references(() => products.id),
     expected: integer("expected").notNull().default(0),
     received: integer("received").notNull().default(0),
+    /** Of the received units, how many arrived damaged: on closing they go to DANADOS, not RECEPCION. */
+    damaged: integer("damaged").notNull().default(0),
   },
   (t) => [uniqueIndex("receiving_lines_receiving_id_product_id_idx").on(t.receivingId, t.productId)],
 );
 
 export type BookCondition = "sellable" | "damaged" | "clearance";
+
+/**
+ * A transfer (Salida): stock leaving for an outside location and what comes back. "sending" while
+ * units are being taken there, "away" once it left (with its remito), "closed" when it is settled:
+ * what did not come back is recorded as sold there.
+ */
+export const transfers = pgTable(
+  "transfers",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    number: text("number").notNull(),
+    locationId: integer("location_id").notNull().references(() => locations.id),
+    status: text("status").$type<"sending" | "away" | "closed">().notNull().default("sending"),
+    remitoNumber: text("remito_number"),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    createdAt: createdAt(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("transfers_company_id_number_idx").on(t.companyId, t.number)],
+);
+
+export const transferLines = pgTable(
+  "transfer_lines",
+  {
+    id: serial("id").primaryKey(),
+    transferId: integer("transfer_id").notNull().references(() => transfers.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    sent: integer("sent").notNull().default(0),
+    returned: integer("returned").notNull().default(0),
+    sold: integer("sold").notNull().default(0),
+  },
+  (t) => [uniqueIndex("transfer_lines_transfer_id_product_id_idx").on(t.transferId, t.productId)],
+);
 
 export const returns = pgTable("returns", {
   id: serial("id").primaryKey(),
@@ -339,6 +494,8 @@ export const returns = pgTable("returns", {
   customerId: integer("customer_id").notNull().references(() => customers.id),
   status: text("status").$type<"in_progress" | "closed">().notNull().default("in_progress"),
   date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+  assignedTo: integer("assigned_to").references(() => users.id),
   sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
 });
 
@@ -361,6 +518,8 @@ export const counts = pgTable("counts", {
   name: text("name").notNull(),
   status: text("status").$type<"open" | "closed">().notNull().default("open"),
   date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
+  /** Who a supervisor gave this to (null = anyone). It points, it does not lock: others can still work on it. */
+  assignedTo: integer("assigned_to").references(() => users.id),
   sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
 });
 
@@ -429,6 +588,28 @@ export const adjustmentLines = pgTable(
   (t) => [index("adjustment_lines_adjustment_id_idx").on(t.adjustmentId)],
 );
 
+/**
+ * An opening stock load: the stock already on the shelves when a warehouse starts with miDepo,
+ * read from a file (code, quantity, location). Its movements have reason "initial" and this
+ * number as reference. Not an adjustment and not sent to Fierro: Fierro already counts that stock.
+ */
+export const stockLoads = pgTable(
+  "stock_loads",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    number: text("number").notNull(),
+    fileName: text("file_name"),
+    lines: integer("lines").notNull(),
+    units: integer("units").notNull(),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    createdAt: createdAt(),
+    /** Set when it was undone: its units were taken back off the shelves. */
+    undoneAt: timestamp("undone_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("stock_loads_company_id_number_idx").on(t.companyId, t.number)],
+);
+
 // ───────────── Comments ─────────────
 
 /** What a comment can be attached to. Add a kind here and in SUBJECTS (src/lib/flows/comments.ts). */
@@ -457,3 +638,25 @@ export const comments = pgTable(
 );
 
 export const now = sql`now()`;
+
+// ───────────── Manual ─────────────
+
+/**
+ * A company's own version of a manual page (wiki/<page>.md), written by an administrator in
+ * /ayuda/editar. That company's users read this instead of the file; everyone else, and anyone
+ * not logged in, reads the file. Deleting the row puts the original back.
+ */
+export const wikiEdits = pgTable(
+  "wiki_edits",
+  {
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** File name without .md, e.g. "Picking". */
+    page: text("page").notNull(),
+    markdown: text("markdown").notNull(),
+    /** Hash of the file this edit started from: when the file changes later, the editor says so. */
+    baseHash: text("base_hash").notNull(),
+    updatedBy: integer("updated_by").notNull().references(() => users.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.companyId, t.page] })],
+);

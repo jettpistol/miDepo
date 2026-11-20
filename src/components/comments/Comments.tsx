@@ -35,8 +35,8 @@ export function CommentCount({ n }: { n: number | undefined }) {
 /** In a document's header: jumps to its comments, which sit at the end of the page. */
 export function CommentsLink({ n }: { n: number }) {
   return (
-    <a href="#comentarios" className="btn-soft">
-      <Icon name="comment" /> {n === 1 ? "1 comentario" : `${n} comentarios`}
+    <a href="#comentarios" className="btn-soft" title={n === 1 ? "1 comentario" : `${n} comentarios`} aria-label={n === 1 ? "1 comentario" : `${n} comentarios`}>
+      <Icon name="comment" /> {n}
     </a>
   );
 }

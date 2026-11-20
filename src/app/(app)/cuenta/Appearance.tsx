@@ -6,7 +6,7 @@ import { PALETTE, accentVariables } from "@/lib/color";
 import { FONTS, fontVar } from "@/lib/fonts";
 
 const THEMES = [
-  { id: "system", name: "Como el dispositivo" },
+  { id: "system", name: "Según el dispositivo" },
   { id: "light", name: "Claro" },
   { id: "dark", name: "Oscuro" },
 ] as const;
@@ -29,6 +29,8 @@ export function Appearance({ action, accent: initial, theme: initialTheme, font:
   useEffect(() => {
     saved.current = { accent: initial, theme: initialTheme, font: initialFont };
   }, [initial, initialTheme, initialFont]);
+  // The top-bar switch saves the theme on its own; follow it.
+  useEffect(() => setTheme(initialTheme), [initialTheme]);
   useEffect(
     () => () => {
       const root = document.documentElement;
@@ -76,7 +78,7 @@ export function Appearance({ action, accent: initial, theme: initialTheme, font:
         </div>
       </fieldset>
       <fieldset>
-        <legend className="field-label">Letra</legend>
+        <legend className="field-label">Tipografía</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {FONTS.map((f) => (
             <button

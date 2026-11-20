@@ -44,7 +44,7 @@ export function Sidebar({ groups, counts }: { groups: { group: string; items: Me
 const BAR: MenuItem[] = [
   { href: "/", name: "Inicio", icon: "home", help: "" },
   { href: "/picking", name: "Picking", icon: "picking", help: "" },
-  { href: "/recepcion", name: "Recibir", icon: "receiving", help: "" },
+  { href: "/recepcion", name: "Recepción", icon: "receiving", help: "" },
   { href: "/stock", name: "Stock", icon: "stock", help: "" },
   { href: "/mas", name: "Más", icon: "more", help: "" },
 ];

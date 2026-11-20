@@ -28,7 +28,7 @@ const QUIET = "inline-flex min-h-11 cursor-pointer items-center rounded-control 
 function LengthNote({ length }: { length: number }) {
   const left = MAX_LENGTH - length;
   if (left >= 200) return null;
-  return <span className={`text-sm ${left < 0 ? "font-semibold text-danger" : "text-muted"}`}>{left < 0 ? `Sobran ${-left} caracteres` : `Quedan ${left} caracteres`}</span>;
+  return <span className={`text-sm ${left < 0 ? "font-semibold text-danger" : "text-muted"}`}>{left < 0 ? `Sobran ${-left}` : `Quedan ${left}`}</span>;
 }
 
 /** Textarea that sends with Ctrl+Enter (⌘+Enter on a Mac); the button stays off while it is empty or too long. */
@@ -73,7 +73,7 @@ function Composer({
   const empty = text.trim().length === 0;
   const tooLong = text.trim().length > MAX_LENGTH;
   return (
-    <form ref={form} action={submit} className="space-y-1.5" data-comment-form>
+    <form ref={form} action={submit} className="space-y-1.5">
       {Object.entries(fields).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
@@ -107,7 +107,6 @@ function Composer({
           </button>
         )}
         <LengthNote length={text.trim().length} />
-        <span className="ml-auto hidden text-xs text-muted lg:inline">Ctrl+Enter para enviar</span>
       </div>
       {status.error && <Message status={status} />}
     </form>
@@ -129,7 +128,7 @@ function useStillEditable(msLeft: number) {
 function DeleteButton({ id }: { id: number }) {
   const [status, submit, submitting] = useActionState(removeComment, {});
   return (
-    <form action={submit} className="contents" onSubmit={(e) => !window.confirm("¿Borrar este comentario?") && e.preventDefault()}>
+    <form action={submit} className="contents" onSubmit={(e) => !window.confirm("¿Borrar el comentario?") && e.preventDefault()}>
       <input type="hidden" name="id" value={id} />
       <button className={`${QUIET} hover:text-danger`} disabled={submitting}>
         Borrar
@@ -202,7 +201,7 @@ function Thread({ t, subject }: { t: ThreadItem; subject: { subjectType: Comment
           {t.replies.map((r) => (
             <Comment key={r.id} c={r} canDelete onReply={() => setReplying(true)} />
           ))}
-          {replying && <Composer action={postComment} fields={{ ...subject, parentId: t.id }} button="Responder" placeholder={`Responder a ${t.author.name}`} autoFocus onDone={() => setReplying(false)} onCancel={() => setReplying(false)} />}
+          {replying && <Composer action={postComment} fields={{ ...subject, parentId: t.id }} button="Responder" placeholder="Respuesta" autoFocus onDone={() => setReplying(false)} onCancel={() => setReplying(false)} />}
         </div>
       )}
     </li>
@@ -221,7 +220,7 @@ export function CommentThreads({ threads, subjectType, subjectId }: { threads: T
           ))}
         </ul>
       )}
-      <Composer action={postComment} fields={subject} button="Comentar" placeholder="Escribe un comentario" />
+      <Composer action={postComment} fields={subject} button="Comentar" placeholder="Comentario" />
     </div>
   );
 }

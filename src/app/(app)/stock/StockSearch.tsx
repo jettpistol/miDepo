@@ -9,15 +9,14 @@ export function StockSearch({ initial }: { initial: string }) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   return (
-    <form className="mb-6 flex max-w-xl gap-2" role="search" action="/stock">
+    <form className="field-group search-box mb-6" role="search" action="/stock">
       <input
         name="q"
         type="search"
         defaultValue={initial}
         className="field"
-        placeholder="Título, autor, ISBN, código o ubicación"
+        placeholder="Nombre, autor, ISBN, SKU o ubicación"
         aria-label="Buscar"
-        autoFocus
         autoComplete="off"
         onChange={(e) => {
           const q = e.target.value.trim();
@@ -25,7 +24,7 @@ export function StockSearch({ initial }: { initial: string }) {
           timer.current = setTimeout(() => router.replace(q ? `/stock?q=${encodeURIComponent(q)}` : "/stock", { scroll: false }), 250);
         }}
       />
-      <button className="btn px-4" aria-label="Buscar">
+      <button className="btn" aria-label="Buscar">
         <Icon name="stock" />
       </button>
     </form>

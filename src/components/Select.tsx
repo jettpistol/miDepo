@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { plain } from "@/lib/text";
 import { Icon } from "./Icon";
 
-export type Option = { value: string; label: string; detail?: string };
+/** `icon` is drawn before the label, in the list and on the trigger (an avatar, for people). */
+export type Option = { value: string; label: string; detail?: string; icon?: ReactNode };
 
-/** How many matches are drawn at once; typing narrows the rest. */
-const VISIBLE = 150;
+/** Rows drawn above and below the visible part of the list. Every match stays reachable by scrolling. */
+const OVERSCAN = 8;
 
 /**
  * Dropdown drawn by miDepo, not the system: opens a list with a search box that stays focused,
@@ -28,6 +30,7 @@ export function Select({
   searchPlaceholder = "Buscar…",
   empty = "Nada coincide.",
   create,
+  variant = "field",
   className = "",
 }: {
   name?: string;
@@ -45,12 +48,21 @@ export function Select({
   /** Shown when nothing matches the search. */
   empty?: string;
   create?: { noun: string; action: (name: string) => Promise<Option | { error: string }> };
+  /**
+   * "field": a form field. "inline": just the chosen icon and label, for a table cell (like Jira's assignee).
+   * "icon": only the chosen icon, with the label as its accessible name.
+   */
+  variant?: "field" | "inline" | "icon";
   className?: string;
 }) {
   const [options, setOptions] = useState(initial);
   const [own, setOwn] = useState(defaultValue);
   const value = controlled ?? own;
   const [open, setOpen] = useState(false);
+  // The list floats above the page (a portal with fixed position), so no table or panel can clip it.
+  // It is at least 16rem wide: near the right edge it opens leftwards, near the bottom it opens upwards.
+  const [place, setPlace] = useState<CSSProperties>({});
+  const pop = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -72,31 +84,81 @@ export function Select({
   const matches = useMemo(() => (q ? indexed.filter((o) => q.split(" ").every((w) => o.key.includes(w))) : indexed), [indexed, q]);
   // Creating is offered only when nothing on the list matches, so near-copies are picked instead of made.
   const canCreate = Boolean(create) && q.length >= 2 && matches.length === 0;
-  const rows = matches.length > VISIBLE ? matches.slice(0, VISIBLE) : matches;
+  const rows = matches;
   const total = rows.length + (canCreate ? 1 : 0);
+
+  // Only the rows in view are in the page, so long lists (thousands of products) stay fast without a cap.
+  const [scroll, setScroll] = useState(0);
+  const [viewH, setViewH] = useState(320);
+  const [rowH, setRowH] = useState(32);
+  const first = Math.max(0, Math.floor(scroll / rowH) - OVERSCAN);
+  const last = Math.min(rows.length, Math.ceil((scroll + viewH) / rowH) + OVERSCAN);
 
   // Closes on an outside click, like any menu.
   useEffect(() => {
     if (!open) return;
-    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
+    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && !pop.current?.contains(e.target as Node) && setOpen(false);
     document.addEventListener("pointerdown", away);
     return () => document.removeEventListener("pointerdown", away);
+  }, [open]);
+
+  // Follows the trigger while the page or a container scrolls, or the window resizes.
+  useEffect(() => {
+    if (!open) return;
+    const follow = (e: Event) => {
+      if (e.target instanceof Node && pop.current?.contains(e.target)) return; // the list's own scrolling
+      setPlace(placeFor(trigger.current));
+    };
+    window.addEventListener("scroll", follow, true);
+    window.addEventListener("resize", follow);
+    return () => {
+      window.removeEventListener("scroll", follow, true);
+      window.removeEventListener("resize", follow);
+    };
   }, [open]);
 
   // The required check lives on a hidden copy of the value so the browser can explain it at the trigger.
   useEffect(() => proxy.current?.setCustomValidity(required && !value ? requiredMessage : ""), [required, value, requiredMessage]);
 
+  // Measures one row (its height differs between phone and desktop) and the list's height.
   useEffect(() => {
-    list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
-  }, [active]);
+    if (!open || !list.current) return;
+    const row = list.current.querySelector<HTMLElement>('[role="option"]');
+    if (row && row.offsetHeight) setRowH(row.offsetHeight);
+    setViewH(list.current.clientHeight || 320);
+  }, [open, rows.length]);
+
+  // The list shows whole rows only: its height is a multiple of the row height (plus its 4px padding top and bottom).
+  const LIST_PAD = 8;
+  const [fit, setFit] = useState(320);
+  useEffect(() => {
+    if (!open) return;
+    const room = Math.min(320, window.innerHeight * 0.5) - LIST_PAD;
+    setFit(Math.max(3, Math.floor(room / rowH)) * rowH + LIST_PAD);
+  }, [open, rowH]);
+
+  // Keeps the active row in view, also when it is not drawn yet.
+  useEffect(() => {
+    const el = list.current;
+    if (!open || !el) return;
+    if (active >= rows.length) {
+      el.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+      return;
+    }
+    const top = active * rowH;
+    if (top < el.scrollTop) el.scrollTop = top;
+    else if (top + rowH > el.scrollTop + el.clientHeight) el.scrollTop = top + rowH - el.clientHeight + 8;
+  }, [active, open, rowH, rows.length]);
 
   function show() {
     setQuery("");
     setError(null);
     setConfirming(false);
     setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    setScroll(0);
+    setPlace(placeFor(trigger.current));
     setOpen(true);
-    requestAnimationFrame(() => search.current?.focus());
+    requestAnimationFrame(() => search.current?.focus({ preventScroll: true }));
   }
   function close(refocus = true) {
     setOpen(false);
@@ -123,7 +185,7 @@ export function Select({
   }
 
   return (
-    <div ref={root} className={`relative ${className}`}>
+    <div ref={root} className={`relative ${variant === "field" ? "" : "inline-flex w-max"} ${className}`}>
       {name && <input type="hidden" name={name} value={value} />}
       <input ref={proxy} tabIndex={-1} aria-hidden="true" value={chosen?.label ?? ""} onChange={() => {}} onFocus={() => trigger.current?.focus()} className="pointer-events-none absolute inset-0 opacity-0" required={required} />
       <button
@@ -144,108 +206,152 @@ export function Select({
             setQuery(e.key);
           }
         }}
-        className={`field flex items-center justify-between gap-2 text-left ${open ? "border-accent-text" : ""}`}
+        title={variant === "icon" ? (label ? `${label}: ${chosen?.label ?? placeholder}` : chosen?.label) : undefined}
+        className={
+          variant === "field"
+            ? `field flex items-center justify-between gap-2 text-left ${open ? "border-accent-text" : ""}`
+            : variant === "inline"
+              ? `group flex h-11 w-max items-center gap-2 rounded-control px-1.5 text-left transition-colors duration-150 hover:bg-sunken lg:h-8 ${open ? "bg-sunken" : ""}`
+              : `grid size-11 place-items-center rounded-full transition-colors duration-150 hover:bg-sunken lg:size-8 ${open ? "bg-sunken" : ""}`
+        }
       >
-        <span className={`min-w-0 truncate ${chosen ? "" : "text-muted"}`}>{chosen?.label ?? placeholder}</span>
-        <Icon name="chevron" className={`size-4 shrink-0 text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+        {variant !== "field" && chosen?.icon}
+        {variant !== "icon" && <span className={`${variant === "inline" ? "whitespace-nowrap" : "min-w-0 truncate"} ${chosen ? "" : "text-muted"}`}>{chosen?.label ?? placeholder}</span>}
+        {variant === "field" && <Icon name="chevron" className={`size-4 shrink-0 text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`} />}
+        {variant === "inline" && <Icon name="chevron" className={`size-3.5 shrink-0 text-muted opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${open ? "rotate-180 opacity-100" : ""}`} />}
       </button>
 
-      {open && (
-        <div className="fade-in absolute top-full right-0 left-0 z-40 mt-1 min-w-64 rounded-control border border-line bg-surface shadow-floating">
-          <div className="relative border-b border-line p-1.5">
-            <Icon name="stock" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" />
-            <input
-              ref={search}
-              value={query}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              role="combobox"
-              aria-expanded="true"
-              aria-controls={`${auto}-list`}
-              aria-activedescendant={total > 0 ? `${auto}-opt-${active}` : undefined}
-              autoComplete="off"
-              spellCheck={false}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-                setError(null);
-                setConfirming(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-                  e.preventDefault();
-                  if (total > 0) setActive((a) => (e.key === "ArrowDown" ? (a + 1) % total : (a - 1 + total) % total));
-                } else if (e.key === "Enter") {
-                  e.preventDefault();
-                  // Enter never creates by itself: on the create row it only asks for confirmation.
-                  if (confirming) void add();
-                  else if (total > 0) pick(active);
-                } else if (e.key === "Escape") {
-                  e.preventDefault();
-                  close();
-                } else if (e.key === "Tab") close(false);
-              }}
-              className="h-9 w-full rounded-control border border-transparent bg-sunken pr-2 pl-8 text-base outline-none placeholder:text-muted focus:border-accent-text lg:h-8 lg:text-sm"
-            />
-          </div>
-          <ul ref={list} id={`${auto}-list`} role="listbox" aria-label={label ?? placeholder} className="max-h-64 overflow-y-auto py-1">
-            {rows.map((o, i) => (
-              <li
-                key={o.value}
-                id={`${auto}-opt-${i}`}
-                data-index={i}
-                role="option"
-                aria-selected={o.value === value}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => choose(o.value)}
-                onMouseEnter={() => setActive(i)}
-                className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-[15px] lg:py-1.5 lg:text-sm ${i === active ? "bg-accent-soft" : ""}`}
-              >
-                <span className={`min-w-0 flex-1 truncate ${o.value === value ? "font-semibold text-accent-text" : ""}`}>{o.label}</span>
-                {o.detail && <span className="shrink-0 truncate text-xs text-muted">{o.detail}</span>}
-                {o.value === value && <Icon name="ok" className="size-4 shrink-0 text-accent-text" />}
-              </li>
-            ))}
-            {canCreate && (
-              <li
-                id={`${auto}-opt-${rows.length}`}
-                data-index={rows.length}
-                role="option"
-                aria-selected={false}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setConfirming(true)}
-                onMouseEnter={() => setActive(rows.length)}
-                className={`flex cursor-pointer items-center gap-2 border-t border-line px-3 py-2 text-[15px] font-medium text-accent-text lg:py-1.5 lg:text-sm ${active === rows.length ? "bg-accent-soft" : ""}`}
-              >
-                <Icon name="plus" className="size-4 shrink-0" />
-                <span className="min-w-0 truncate">{`Crear ${create!.noun} «${query.trim()}»`}</span>
-              </li>
+      {open &&
+        createPortal(
+          <div ref={pop} data-floating="" style={place} className="fade-in fixed z-50 rounded-control border border-line bg-surface shadow-floating">
+            <div className="relative border-b border-line p-1.5">
+              <Icon name="stock" className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" />
+              <input
+                ref={search}
+                value={query}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+                role="combobox"
+                aria-expanded="true"
+                aria-controls={`${auto}-list`}
+                aria-activedescendant={total > 0 ? `${auto}-opt-${active}` : undefined}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setActive(0);
+                  setScroll(0);
+                  if (list.current) list.current.scrollTop = 0;
+                  setError(null);
+                  setConfirming(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    if (total > 0) setActive((a) => (e.key === "ArrowDown" ? (a + 1) % total : (a - 1 + total) % total));
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    // Enter never creates by itself: on the create row it only asks for confirmation.
+                    if (confirming) void add();
+                    else if (total > 0) pick(active);
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    close();
+                  } else if (e.key === "Tab") close(false);
+                }}
+                className="h-9 w-full rounded-control border border-transparent bg-sunken pr-2 pl-8 text-base outline-none placeholder:text-muted focus:border-accent-text lg:h-8 lg:text-sm"
+              />
+            </div>
+            <ul ref={list} id={`${auto}-list`} role="listbox" aria-label={label ?? placeholder} onScroll={(e) => setScroll(e.currentTarget.scrollTop)} style={{ maxHeight: fit }} className="overflow-y-auto py-1">
+              {first > 0 && <li aria-hidden="true" role="presentation" style={{ height: first * rowH }} />}
+              {rows.slice(first, last).map((o, n) => {
+                const i = first + n;
+                return (
+                  <li
+                    key={o.value}
+                    id={`${auto}-opt-${i}`}
+                    data-index={i}
+                    role="option"
+                    aria-selected={o.value === value}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => choose(o.value)}
+                    onMouseEnter={() => setActive(i)}
+                    aria-setsize={rows.length}
+                    aria-posinset={i + 1}
+                    className={`flex h-11 cursor-pointer items-center gap-2 px-3 text-[15px] lg:h-8 lg:text-sm ${i === active ? "bg-accent-soft" : ""}`}
+                  >
+                    {o.icon}
+                    <span className={`min-w-0 flex-1 truncate ${o.value === value ? "font-semibold text-accent-text" : ""}`}>{o.label}</span>
+                    {o.detail && <span className="shrink-0 truncate text-xs text-muted">{o.detail}</span>}
+                    {o.value === value && <Icon name="ok" className="size-4 shrink-0 text-accent-text" />}
+                  </li>
+                );
+              })}
+              {last < rows.length && <li aria-hidden="true" role="presentation" style={{ height: (rows.length - last) * rowH }} />}
+              {canCreate && (
+                <li
+                  id={`${auto}-opt-${rows.length}`}
+                  data-index={rows.length}
+                  role="option"
+                  aria-selected={false}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setConfirming(true)}
+                  onMouseEnter={() => setActive(rows.length)}
+                  className={`flex cursor-pointer items-center gap-2 border-t border-line px-3 py-2 text-[15px] font-medium text-accent-text lg:py-1.5 lg:text-sm ${active === rows.length ? "bg-accent-soft" : ""}`}
+                >
+                  <Icon name="plus" className="size-4 shrink-0" />
+                  <span className="min-w-0 truncate">{`Crear ${create!.noun} «${query.trim()}»`}</span>
+                </li>
+              )}
+              {canCreate && confirming && (
+                <li className="border-t border-line bg-sunken px-3 py-2.5 text-sm" role="presentation">
+                  <p>
+                    No hay ningún {create!.noun} con ese nombre. ¿Crear <strong>«{query.replace(/\s+/g, " ").trim()}»</strong>? Quedará en la lista para todos.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" className="btn-sm border-accent bg-accent text-on-accent hover:bg-accent-hover hover:text-on-accent" disabled={creating} onClick={() => void add()}>
+                      {creating ? "Creando…" : "Crear"}
+                    </button>
+                    <button type="button" className="btn-sm" onClick={() => { setConfirming(false); search.current?.focus(); }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </li>
+              )}
+              {total === 0 && <li className="px-3 py-2 text-sm text-muted">{empty}</li>}
+            </ul>
+            {error && (
+              <p role="alert" className="border-t border-line px-3 py-2 text-sm font-medium text-danger">
+                {error}
+              </p>
             )}
-            {canCreate && confirming && (
-              <li className="border-t border-line bg-sunken px-3 py-2.5 text-sm" role="presentation">
-                <p>
-                  No hay ningún {create!.noun} con ese nombre. ¿Crear <strong>«{query.replace(/\s+/g, " ").trim()}»</strong>? Va a quedar en la lista para todos.
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <button type="button" className="btn-sm border-accent bg-accent text-on-accent hover:bg-accent-hover hover:text-on-accent" disabled={creating} onClick={() => void add()}>
-                    {creating ? "Creando…" : "Crear"}
-                  </button>
-                  <button type="button" className="btn-sm" onClick={() => { setConfirming(false); search.current?.focus(); }}>
-                    Cancelar
-                  </button>
-                </div>
-              </li>
-            )}
-            {total === 0 && <li className="px-3 py-2 text-sm text-muted">{empty}</li>}
-          </ul>
-          {matches.length > VISIBLE && <p className="border-t border-line px-3 py-1.5 text-xs text-muted">Se muestran {VISIBLE} de {matches.length}. Escribe para achicar la lista.</p>}
-          {error && (
-            <p role="alert" className="border-t border-line px-3 py-2 text-sm font-medium text-danger">
-              {error}
-            </p>
-          )}
-        </div>
+          </div>,
+        // Inside a modal <dialog> the list must live in it: the rest of the page is inert behind it.
+        root.current?.closest("dialog") ?? document.body,
       )}
     </div>
   );
 }
+
+/** Where the floating list goes, in viewport coordinates, next to its trigger. */
+function placeFor(el: HTMLElement | null): CSSProperties {
+  if (!el) return {};
+  const box = el.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth;
+  const vh = window.innerHeight;
+  const width = Math.max(box.width, 256);
+  const style: CSSProperties = { width, maxWidth: vw - 16 };
+  if (box.left + width > vw - 8) style.right = Math.max(8, vw - box.right);
+  else style.left = box.left;
+  // About 22rem fits the search box and the list; it opens upwards only when below is short and above has more room.
+  const below = vh - box.bottom;
+  if (below < 352 && box.top > below) style.bottom = vh - box.top + 4;
+  else style.top = box.bottom + 4;
+  return style;
+}
+
+/**
+ * Whether a click landed in a floating list (a Select's), which sits on <body>, outside the
+ * panel that holds its trigger. Panels that close on an outside click ignore those.
+ */
+export const inFloating = (target: EventTarget | null) => target instanceof Element && target.closest("[data-floating]") !== null;

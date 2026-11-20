@@ -6,14 +6,18 @@ import { Notice, Code, PageHeader, Badge, type Tone } from "@/components/ui";
 import { customers, returnLines, returns, products } from "@/db/schema";
 import { BOOK_CONDITIONS } from "@/lib/flows/returns";
 import { requireSession } from "@/lib/session";
-import { close, scan, remove } from "../actions";
+import { cancel, close, reopen, scan, remove } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { articleName } from "@/lib/article";
+import { InfoHint } from "@/components/Hint";
+import { Assignee } from "@/components/Assignee";
 
 const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
 export default async function ReturnDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ d: returns, customer: customers.name }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.id, id), eq(returns.companyId, company.id)));
   if (!row) notFound();
   const { d, customer } = row;
@@ -23,7 +27,18 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }} />
+      <PageHeader title={`${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }} meta={<Assignee session={session} kind="return" id={d.id} value={d.assignedTo} open={d.status === "in_progress"} />}>
+        {open && (
+          <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar ${d.number}? Se borra con todo lo escaneado. No se puede deshacer.`}>
+            Cancelar devolución
+          </ActionButton>
+        )}
+        {!open && !d.sentToFierro && (
+          <ActionButton action={reopen} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Reabrir ${d.number}? Sus unidades salen del stock hasta que la cierres de nuevo.`}>
+            Reabrir
+          </ActionButton>
+        )}
+      </PageHeader>
       {!open && (
         <div className="mb-6">
           <Notice tone="ok">
@@ -38,23 +53,23 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
       <div className={`grid gap-5 lg:items-start lg:gap-8 ${open ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
-            <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar">
-              <fieldset {...hotkey("option", "Cambiar el estado del libro")} data-hotkey-cycle>
+            <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar">
+              <fieldset {...hotkey("option", "Cambiar el estado del artículo")} data-hotkey-cycle>
                 <legend className="field-label">¿En qué estado está?</legend>
                 <div className="space-y-2">
                   {BOOK_CONDITIONS.map((e, i) => (
                     <label key={e.id} className="flex cursor-pointer items-start gap-3 rounded-control border border-line-strong px-3 py-2.5 transition-colors duration-150 hover:bg-sunken has-checked:border-accent-text has-checked:bg-accent-soft">
                       <input type="radio" name="bookCondition" value={e.id} defaultChecked={i === 0} className="mt-1 size-4 accent-(--accent-text)" />
-                      <span>
-                        <span className="block font-semibold">{e.name}</span>
-                        <span className="block text-sm text-muted">{e.help}</span>
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        {e.name}
+                        <InfoHint text={e.help} />
                       </span>
                     </label>
                   ))}
                 </div>
               </fieldset>
             </ScanForm>
-            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirm="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
+            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Sin artículos escaneados." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock en la zona de su estado.">
               Cerrar devolución
             </ActionButton>
           </div>
@@ -68,13 +83,13 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
             ))}
           </div>
           {lines.length === 0 ? (
-            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay libros. Escanea el primero.</p>
+            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Sin artículos.</p>
           ) : (
             <ul className="ruled-list framed">
               {lines.map(({ l, title, code }) => (
                 <li key={`${l.productId}-${l.bookCondition}`} className="row flex-wrap">
                   <span className="min-w-0 flex-1 basis-48">
-                    <span className="block font-medium">{title}</span>
+                    <span className="block font-medium">{articleName(title)}</span>
                     <Code>{code}</Code>
                   </span>
                   <Badge tone={TONE_CLASS[l.bookCondition]}>{BOOK_CONDITIONS.find((e) => e.id === l.bookCondition)?.name}</Badge>

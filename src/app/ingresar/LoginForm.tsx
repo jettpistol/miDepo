@@ -36,7 +36,7 @@ export function LoginForm() {
       window.location.href = "/";
     } catch (e) {
       const cancelled = e instanceof Error && (e.name === "NotAllowedError" || e.name === "AbortError");
-      setPasskey(cancelled ? withCode("Se canceló el ingreso con huella o llave.", "PKEY-10") : e instanceof Error && e.message ? e.message : withCode("No se pudo entrar con huella o llave.", "PKEY-11"));
+      setPasskey(cancelled ? withCode("Se canceló el inicio de sesión con huella o llave.", "PKEY-10") : e instanceof Error && e.message ? e.message : withCode("No se pudo iniciar sesión con huella o llave.", "PKEY-11"));
     }
   }
 
@@ -51,7 +51,7 @@ export function LoginForm() {
       </div>
 
       {mode === "password" ? (
-        <form action={submitPassword} className="space-y-4">
+        <form key="password" action={submitPassword} className="space-y-4">
           <div>
             <label htmlFor="email" className="field-label">Email</label>
             <input id="email" name="email" type="email" autoComplete="username webauthn" className="field" required />
@@ -60,11 +60,11 @@ export function LoginForm() {
             <label htmlFor="password" className="field-label">Contraseña</label>
             <input id="password" name="password" type="password" autoComplete="current-password" className="field" required />
           </div>
-          <button className="btn w-full" disabled={submittingPassword}>{submittingPassword ? "Entrando…" : "Entrar"}</button>
+          <button className="btn w-full" disabled={submittingPassword}>{submittingPassword ? "Un momento…" : "Iniciar sesión"}</button>
           <Message status={password} />
         </form>
       ) : (
-        <form action={submitPin} className="space-y-4" onSubmit={(e) => { try { localStorage.setItem("midepo-company", String(new FormData(e.currentTarget).get("company")).toLowerCase().trim()); } catch {} }}>
+        <form key="pin" action={submitPin} className="space-y-4" onSubmit={(e) => { try { localStorage.setItem("midepo-company", String(new FormData(e.currentTarget).get("company")).toLowerCase().trim()); } catch {} }}>
           <div>
             <label htmlFor="company" className="field-label">Código de empresa</label>
             <input id="company" name="company" value={company} onChange={(e) => setCompany(e.target.value)} autoCapitalize="none" autoCorrect="off" className="field" placeholder="Por ejemplo: ovnipress" required />
@@ -73,7 +73,7 @@ export function LoginForm() {
             <label htmlFor="pin" className="field-label">Tu PIN</label>
             <input id="pin" name="pin" type="password" inputMode="numeric" pattern="\d{6}" maxLength={6} autoComplete="off" className="field text-center font-mono text-2xl tracking-[0.5em]" placeholder="••••••" required />
           </div>
-          <button className="btn w-full" disabled={submittingPin}>{submittingPin ? "Entrando…" : "Entrar"}</button>
+          <button className="btn w-full" disabled={submittingPin}>{submittingPin ? "Un momento…" : "Iniciar sesión"}</button>
           <Message status={pin} />
         </form>
       )}
@@ -81,7 +81,7 @@ export function LoginForm() {
       <div className="flex items-center gap-3 text-sm text-muted">
         <span className="h-px flex-1 bg-line" /> o <span className="h-px flex-1 bg-line" />
       </div>
-      <button type="button" onClick={withPasskey} className="btn-soft w-full">Entrar con huella, rostro o llave</button>
+      <button type="button" onClick={withPasskey} className="btn-soft w-full">Iniciar sesión con huella, rostro o llave</button>
       {passkey && <Message status={{ error: passkey }} />}
     </div>
   );

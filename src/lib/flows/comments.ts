@@ -18,7 +18,7 @@ export const isSubject = (v: string): v is CommentSubject => Object.hasOwn(SUBJE
 function cleanBody(v: string) {
   const body = v.replace(/\r\n/g, "\n").trim();
   if (!body) throw new UserError("CMT-01", "Escribe el comentario.");
-  if (body.length > MAX_LENGTH) throw new UserError("CMT-02", `El comentario es demasiado largo: el máximo es ${MAX_LENGTH} caracteres.`);
+  if (body.length > MAX_LENGTH) throw new UserError("CMT-02", `Máximo ${MAX_LENGTH} caracteres.`);
   return body;
 }
 
@@ -28,13 +28,13 @@ export const stillEditable = (createdAt: Date, now = Date.now()) => now - create
 export async function addComment(c: Ctx, input: { subjectType: string; subjectId: number; body: string; parentId?: number | null }) {
   const { subjectType, subjectId } = input;
   if (!isSubject(subjectType) || !Number.isInteger(subjectId) || !(await SUBJECTS[subjectType](c.db, c.companyId, subjectId))) {
-    throw new UserError("CMT-03", "No se encontró dónde dejar el comentario.");
+    throw new UserError("CMT-03", "No se encontró el documento.");
   }
   const body = cleanBody(input.body);
   let parentId: number | null = null;
   if (input.parentId) {
     const [parent] = await c.db.select().from(comments).where(and(eq(comments.id, input.parentId), eq(comments.companyId, c.companyId), eq(comments.subjectType, subjectType), eq(comments.subjectId, subjectId)));
-    if (!parent) throw new UserError("CMT-04", "No se encontró ese comentario. Puede que lo hayan borrado.");
+    if (!parent) throw new UserError("CMT-04", "No se encontró el comentario.");
     parentId = parent.parentId ?? parent.id;
   }
   const [row] = await c.db.insert(comments).values({ companyId: c.companyId, subjectType, subjectId, parentId, authorId: c.userId, body }).returning();
@@ -44,9 +44,9 @@ export async function addComment(c: Ctx, input: { subjectType: string; subjectId
 /** A comment the current user may still change: their own, within the edit window. */
 async function ownRecent(c: Ctx, id: number) {
   const [row] = await c.db.select().from(comments).where(and(eq(comments.id, id), eq(comments.companyId, c.companyId)));
-  if (!row) throw new UserError("CMT-04", "No se encontró ese comentario. Puede que lo hayan borrado.");
-  if (row.authorId !== c.userId) throw new UserError("CMT-05", "Solo quien escribió el comentario puede cambiarlo.");
-  if (!stillEditable(row.createdAt)) throw new UserError("CMT-06", "Pasaron más de 5 minutos: el comentario ya no se puede cambiar. Puedes responderlo con la corrección.");
+  if (!row) throw new UserError("CMT-04", "No se encontró el comentario.");
+  if (row.authorId !== c.userId) throw new UserError("CMT-05", "Solo el autor puede cambiar el comentario.");
+  if (!stillEditable(row.createdAt)) throw new UserError("CMT-06", "Pasaron 5 minutos: el comentario ya no se puede cambiar.");
   return row;
 }
 
@@ -59,7 +59,7 @@ export async function editComment(c: Ctx, id: number, body: string) {
 export async function deleteComment(c: Ctx, id: number) {
   const row = await ownRecent(c, id);
   const [{ n }] = await c.db.select({ n: count() }).from(comments).where(eq(comments.parentId, row.id));
-  if (n > 0) throw new UserError("CMT-07", "Ese comentario ya tiene respuestas: no se puede borrar. Puedes editarlo.");
+  if (n > 0) throw new UserError("CMT-07", "Un comentario con respuestas no se puede borrar.");
   await c.db.delete(comments).where(eq(comments.id, id));
 }
 

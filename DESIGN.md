@@ -142,13 +142,13 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 - `accent-text` is the accent as text. It is computed per theme so it always reads (light: the accent itself; dark: `#9DB1F5` for Klein blue).
 - Neutrals are tinted toward blue. `page` and `surface` are white; `sunken` is the second layer (hovered rows, sidebar hover, code chips).
 - `ok`, `warn` and `danger` each have a `-soft` tint and appear only where they carry state.
-- Zone colours mark the five non-shelf zones on their labels (recepción amber, devoluciones violet, dañados red, saldos teal, preparación green).
+- Zone colours mark the six non-shelf zones on their labels (recepción amber, devoluciones violet, faltantes slate, dañados red, saldos teal, preparación green). Every zone label has its band; a zone never looks like a shelf.
 - Light and dark themes both ship. The dark theme uses a deep blue-black ground (`#090C1A`); Klein blue stays on primary buttons, the active sidebar item and shelf marks.
 
 ## Typography
 
 - **Libre Franklin** for all interface text. One family; weight and size carry hierarchy. Desktop: page titles 24px semibold, section headings 14px semibold, body and tables 14px, table headers and field labels 12px. Phones: titles 22px bold, body 15px. Fixed rem sizes, no fluid type.
-- **Each user can switch the interface font** in Mi cuenta (14 choices in `src/lib/fonts.ts`, loaded in `src/app/fonts.ts`, applied through `--font-ui`). Libre Franklin is the default. Only the default is preloaded; other files download only for the people who pick them.
+- **Each user can switch the interface font** in Ajustes (14 choices in `src/lib/fonts.ts`, loaded in `src/app/fonts.ts`, applied through `--font-ui`). Libre Franklin is the default. Only the default is preloaded; other files download only for the people who pick them.
 - **Courier Prime bold**, as typed on a label, only for codes: shelf labels, ISBNs, internal codes and document numbers. Never for prose or headings.
 - Numerals are tabular everywhere.
 - Prose (the manual) is capped at 72ch.
@@ -157,7 +157,7 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 
 - **Density follows Jira on desktop** (from `lg`, 1024px): 14px body text with 20px line height, 32px buttons and inputs (`btn`, `field`), 28px row buttons (`btn-sm`), 12px table headers and field labels, 24px semibold page titles. Free space is left free: a screen that is not full has room for the next feature.
 - **Phones keep touch sizes** (below `lg`): 44px controls and 15–16px text, because operators scan on the floor with one hand.
-- Desktop shell: a 48px white top bar (brand, stock search, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
+- Desktop shell: a 48px white top bar (brand, the search for everything, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
 - Phone shell: a 52px white top bar and a five-item bar fixed at the bottom. The rest of the menu is at `/mas`.
 - Page header: a breadcrumb (parent / ) above the title, actions on the right.
 - Work screens use two columns from `lg`: a sticky 22–24rem scan column (`lg:top-30`) and the list beside it.
@@ -180,13 +180,21 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **Ruled list** (`ul.ruled-list` with `.row` rows) and **table** (`table.data-table` inside `div.overflow-x-auto.border-y.border-line`). Use a table when rows share three or more comparable fields.
 - **Buttons**: `btn` (one primary per view), `btn-soft`, `btn-danger`, and `btn-sm` inside table rows.
 - **Fields**: `field` with a `field-label` label.
+- **Field with its button** (`div.field-group`, or `ActionForm attached` for a single field and its submit): a button that acts on one field sits on that field's right edge as one control, with one border, one focus ring and the field's height (32px desktop, 44px phone). The border takes the field's tone (`border-ok`, `border-danger`). Used by every scan field's camera button, search boxes and one-field forms such as Agregar una ubicación suelta. Search and filter boxes add `search-box` (full width up to 576px) and use the blue magnifier button, named in its `aria-label` (Buscar, Filtrar).
 - **Scan form** (`<ScanForm context>`): every keystroke is rehearsed against the server (`/api/lookup`, logic in `src/lib/lookup.ts`) with the same rules as the real action. Under each field a one-line note says what was recognised (the book's title, how much a shelf holds) or why it will not work, in `ok`, `warn` or `danger`. A field in `danger` blocks the submit. Suggestions open under the field as you type (a listbox; shelves as shelf marks). One-tap fixes sit under the field as `btn-sm` chips ("Está en", "Ya hay en", "Todas: 60"). Picking and packing validate but never suggest, because the scan there proves which book is in hand.
 - **Disabled with a reason**: an action that cannot work yet is disabled and says why in one muted line (`<ActionButton reason>`).
 - **Badge**: a small rectangular state badge in five tones. **Notice**: a bordered, tinted notice. **EmptyState**: an empty state between two hairlines that says what is missing and how it appears.
 - **Dropdown** (`<Select>`): drawn by miDepo, never the system `<select>`. Opens the full list with a search box that keeps focus, so typing narrows the list while it is open; arrows and Enter pick. Only listed values can be submitted. With `create`, a search that matches nothing offers "Crear …", which asks for confirmation; Enter alone never creates.
+- **Product codes**: every article has a **SKU** (`internal_code`) and may have an **ISBN**; lists show them in their own columns, each with a copy button (`<CodeWithCopy>`, `btn-copy`). The SKU is the warehouse's key, so it is never hidden behind the ISBN.
+- **Resizable columns** (`<ResizableTable id>` with a `<ColumnHandle />` in each resizable `<th>`): on desktop, drag a header's right edge; widths are kept in that browser (`localStorage`), and a double click goes back to automatic widths.
+- **Action replies** from an `ActionButton` (row buttons, header buttons) appear as a popup at the bottom centre (`toast()`, `<Toaster>` in the root layout), never inside a row or table: success fades after 4 s, an error stays until closed. Forms (`ActionForm`, `ScanForm`) keep their reply under the form.
+- **Row menu** (`<RowMenu>`): a "⋯" icon button (`btn-icon`) at the end of a row, with that row's options (`menu-item`, `menu-item danger`). An option with a form opens it in a modal dialog; a direct action asks for confirmation. The menu is placed on the page body, so a table's scroll box never clips it. Rows stay one line of crucial facts; everything else goes in the menu (Usuarios).
+- **Avatar without a photo**: initials on the person's accent, or, if they kept the default accent, on a palette colour picked by their id, so a list of people is not all one blue.
 - **New button** (`<NewButton>`): "+ Nueva" in the page header, opening a small panel with the form, like Jira's Create.
 - **Always-on tables**: list screens keep their table even when empty, with one `<EmptyRow>` that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
+- **Switch** (`<Toggle>`): one on/off setting, label on the left, a 36 × 20 px track on the right (accent when on, sunken when off), 44 px tall row on phones. Used instead of a dropdown when there are only two options; an optional `hint` adds an ⓘ after the label.
+- **Product cards** (`<ProductCards>`, owner request 2026-11-20): the second view of product lists (Stock, a location's contents); Lista is the default. A ruled grid, flat like a table: each cell has the list cover (`<Cover>`, 56 × 80 px), title, author, SKU chip and units. `<ViewSwitch>` (tabs "Lista" / "Tarjetas", the default first) switches between them; the table's rows lead with a 40 × 56 px cover. The last choice is saved per user. Only product lists get cards; task lists stay tables.
 - **`panel`**: a plain 6px bordered panel, used only around a form or a settings group. Never nested.
 - **Progress**: a 6px progress bar with "12 de 40" beside it; it turns green when complete.
 - Motion: 150ms colour transitions, and a 180ms fade for scan responses. Nothing decorative; reduced-motion is respected.
@@ -196,11 +204,13 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - Do lead a row with its shelf label when it has one.
 - Do keep the product's Spanish copy (tú, never voseo) and Fierro's vocabulary.
 - Do use tokens for every colour so both themes and any user accent hold.
-- Don't build a screen from a grid of same-size cards or big-number tiles.
+- Don't build a screen from a grid of same-size cards or big-number tiles. The one exception is product cards with covers, and they stay ruled and flat.
 - Don't use rounded corners above 6px, pills for containers, gradients, or coloured side stripes.
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.
 - Don't use unicode glyphs as icons; use `Icon`.
+- Don't put the cursor in a field when a screen opens (no `autoFocus`, no focus on mount): nothing is highlighted or typeable until the person clicks or taps a field. Moving the cursor after the person acts is fine (to the next empty field after a scan, back to the first on Esc, into a panel they opened).
+- Do attach a button that acts on a single field to that field's right edge (`field-group`); never leave it floating beside the field with a gap.
 - Do treat the database as the source of truth: suppliers, customers, products, stock and locations are chosen from what exists. Never accept free text for something that should already exist; creating one is a separate, confirmed action that refuses near-duplicates.
 - Do say a problem before the click: validate while typing, suggest valid values, and disable what cannot work with the reason beside it.
 - Don't explain what a screen is for under its title, or how an ordinary control works. Keep text that states a fact (a count, a state) or a consequence the user could not guess.

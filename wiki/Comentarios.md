@@ -1,31 +1,33 @@
 # Comentarios
 
-Los pedidos tienen comentarios: notas para la próxima persona que trabaje con ese pedido. Sirven para avisos como "El cliente pidió todo en una sola caja" o "Dos tomos llegaron con la tapa doblada".
+Cada pedido tiene comentarios: avisos para quien siga con él, como "Todo en una sola caja" o "Dos unidades con la tapa doblada".
 
-Los comentarios están al final de la pantalla del pedido, tanto en [Picking](Picking) como en [Empaque](Empaque): es la misma conversación. Si un pedido tiene comentarios, arriba aparece el botón **N comentarios**, que te lleva directo a ellos, y en las listas de Picking y Empaque se ve un globito con el número al lado del pedido.
+Están al final de cada pantalla del pedido: [Picking](Picking), [Control](Control), [Empaque](Empaque) y [Despacho](Despacho). Es la misma conversación en todas. Con comentarios, el pedido muestra:
 
-> Antes de preparar o empacar un pedido con globito, lee sus comentarios.
+- arriba, un botón con el globo y la cantidad, que lleva a los comentarios;
+- en las listas de pedidos, el globo con la cantidad al lado del número.
 
-## Escribir un comentario
+> Antes de empezar un pedido con globo, lee sus comentarios.
 
-1. Escribe en el cuadro **Escribe un comentario**.
-2. Toca **Comentar**. En la computadora también sirve **Ctrl + Enter** (**⌘ + Enter** en Mac).
+## Comentar
 
-Lo ven todos los de tu empresa, con tu nombre y la hora.
+Escribe en **Comentario** y toca **Comentar**. En la computadora también sirve **Ctrl + Enter** (**⌘ + Enter** en Mac).
+
+Lo ve toda la empresa, con el nombre del autor y la hora.
 
 ## Responder
 
-Toca **Responder** debajo de un comentario. La respuesta queda dentro de esa conversación, con una raya a la izquierda. Si respondes a una respuesta, queda en la misma conversación: no hay respuestas dentro de respuestas.
+**Responder** agrega la respuesta a esa conversación, con una raya a la izquierda. Responder a una respuesta la agrega a la misma conversación: no hay respuestas dentro de respuestas.
 
 ## Corregir o borrar
 
-Durante **5 minutos** después de publicarlo puedes **Editar** o **Borrar** tu comentario, para arreglar un error de tipeo o un comentario en el pedido equivocado. Un comentario editado muestra **(editado)**.
+**Editar** y **Borrar** aparecen en tus comentarios durante **5 minutos**, para corregir un error. Un comentario editado muestra **(editado)**.
 
-- Pasados los 5 minutos, el comentario ya no se cambia: queda como registro. Si te equivocaste, respóndelo con la corrección.
-- Un comentario que ya tiene respuestas no se puede borrar, pero sí editar mientras dure el plazo.
-- Nadie puede cambiar los comentarios de otra persona, tampoco un supervisor.
+- Pasados los 5 minutos, el comentario queda como registro. Para corregirlo, respóndelo.
+- Un comentario con respuestas no se puede borrar; se puede editar dentro del plazo.
+- Nadie cambia comentarios ajenos, tampoco un supervisor.
 
-## Qué no hacen
+## Límites
 
-- No avisan a nadie: hay que entrar al pedido para verlos.
-- No viajan a Fierro. Si la oficina tiene que enterarse, avísale por el canal de siempre.
+- No avisan a nadie: se ven al abrir el pedido.
+- No se cargan en Fierro.

@@ -8,19 +8,30 @@ import { getDb, runMigrations, type DB } from "@/db";
 import { adjustmentLines, adjustments, boxes, comments, companies, fierroStock, movements, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
 import { createCompany, createUser } from "@/db/seed";
 import { sync } from "@/lib/fierro";
+import { SimulatedFierro } from "@/lib/fierro/simulated";
 import { UserError } from "@/lib/errors";
 import { moveStock, zone } from "@/lib/stock";
 import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
 import type { Ctx } from "@/lib/flows/common";
-import { closeReceiving, createSupplier, createUnannouncedReceiving, scanReceiving } from "@/lib/flows/receiving";
-import { move } from "@/lib/flows/move";
-import { confirmPick, markShort, takeOrder } from "@/lib/flows/picking";
-import { closeBox, scanIntoBox, finishPacking } from "@/lib/flows/packing";
-import { closeReturn, createReturn, scanReturn } from "@/lib/flows/returns";
-import { closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
-import { writeOff } from "@/lib/flows/adjustments";
+import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving, setDamaged, setReceived } from "@/lib/flows/receiving";
+import { move, recentMoves, undoMove } from "@/lib/flows/move";
+import { confirmPick, markShort, planRoute, shortages, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
+import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenPacking } from "@/lib/flows/packing";
+import { cancelReturn, closeReturn, createReturn, reopenReturn, scanReturn } from "@/lib/flows/returns";
+import { cancelCount, closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
+import { allowSameCheck, checkUnit, finishControl, reportMissing, restartControl, setCustomerControl } from "@/lib/flows/control";
+import { changeOrganizationCode, renameOrganization, saveBatchSorting, saveControlSettings } from "@/lib/flows/settings";
+import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { addComment, commentCounts, deleteComment, editComment, EDIT_WINDOW_MS, threadsOf } from "@/lib/flows/comments";
+import { assign } from "@/lib/flows/assignments";
+import { setUrgent } from "@/lib/flows/orders";
+import { closeTransfer, createOutsideLocation, createTransfer, listTransfers, receiveBack, sendItem, sendTransfer } from "@/lib/flows/transfers";
+import { runLookup } from "@/lib/lookup";
+import { createCarrier, loadBox, setShipping, toDispatch, unloadBox } from "@/lib/flows/dispatch";
+import { applyLoad, checkLoad, listLoads, undoLoad } from "@/lib/flows/stockLoad";
+import { loadOpenOrders } from "@/app/(app)/picking/Tables";
+import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
 
 let db: DB;
 let c: Ctx;
@@ -97,8 +108,19 @@ describe("full circuit", () => {
       before.set(l.productId, await total(l.productId));
     }
 
+    // The order's page shows the route before it is taken; taking builds exactly that route.
+    const preview = await planRoute(db, c.companyId, ord.id);
+    // The picking list's shortage count agrees with the route.
+    const previewMissing = preview.filter((t) => t.locationId == null).reduce((n, t) => n + t.quantity, 0);
+    expect((await shortages(db, c.companyId, [ord.id])).get(ord.id) ?? 0).toBe(previewMissing);
     await takeOrder(c, ord.id);
-    await expect(takeOrder(c, ord.id)).rejects.toThrow(/ya lo tomó/);
+    const built = await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id));
+    const key = (t: { lineId: number; locationId: number | null; quantity: number }) => `${t.lineId}:${t.locationId}:${t.quantity}`;
+    expect(built.map(key).sort()).toEqual(preview.map(key).sort());
+    // Taking it again (an old screen, a second tap) just carries on; someone else is refused.
+    await expect(takeOrder(c, ord.id)).resolves.toMatch(/tomado/);
+    const intruder = await createUser(db, c.companyId, { name: "Intrusa", email: "intrusa@prueba.test", role: "operator", pin: "135790" });
+    await expect(takeOrder({ ...c, userId: intruder.id }, ord.id)).rejects.toThrow(/ya lo tomó/);
     const tasks = await db.select({ t: pickTasks, u: locations.code }).from(pickTasks).innerJoin(locations, eq(locations.id, pickTasks.locationId)).where(eq(pickTasks.orderId, ord.id));
     expect(tasks.reduce((s, t) => s + t.t.quantity, 0)).toBe(lines.reduce((s, l) => s + l.quantity, 0));
 
@@ -107,7 +129,7 @@ describe("full circuit", () => {
     const other = t0.u === "A-01-2" ? "A-02-1" : "A-01-2";
     await expect(confirmPick(c, { taskId: t0.t.id, location: other, product: prods.get(t0.t.productId)!.barcode, quantity: 1 })).rejects.toThrow(/otra ubicación/);
     const foreign = [...prods.values()].find((p) => p.id !== t0.t.productId)!;
-    await expect(confirmPick(c, { taskId: t0.t.id, location: t0.u, product: foreign.barcode, quantity: 1 })).rejects.toThrow(/No es el título/);
+    await expect(confirmPick(c, { taskId: t0.t.id, location: t0.u, product: foreign.barcode, quantity: 1 })).rejects.toThrow(/No es el artículo/);
     await expect(confirmPick(c, { taskId: t0.t.id, location: t0.u, product: prods.get(t0.t.productId)!.barcode, quantity: t0.t.quantity + 1 })).rejects.toThrow(/pide/);
 
     for (const t of [t0, ...rest]) await confirmPick(c, { taskId: t.t.id, location: t.u, product: prods.get(t.t.productId)!.barcode, quantity: t.t.quantity });
@@ -150,10 +172,10 @@ describe("full circuit", () => {
     await takeOrder(c, ord.id);
     const pend = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.status, "pending")));
     expect(pend).toHaveLength(1);
-    expect(await markShort(c, pend[0].id)).toMatch(/otra ubicación/);
+    expect(await markShort(c, pend[0].id)).toMatch(/otra ubicación/i);
     const [newPassword] = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.status, "pending")));
     expect(newPassword.locationId).not.toBe(pend[0].locationId);
-    expect(await markShort(c, newPassword.id)).toMatch(/faltante/);
+    expect(await markShort(c, newPassword.id)).toMatch(/Faltantes/);
     expect((await db.select().from(orders).where(eq(orders.id, ord.id)))[0].status).toBe("picked");
   });
 });
@@ -330,14 +352,238 @@ describe("suppliers", () => {
   });
 });
 
+describe("assignments", () => {
+  it("gives work to a person, shows it as theirs, and takes it back", async () => {
+    const ana = await createUser(db, c.companyId, { name: "Ana Asignada", email: "ana@prueba.test", role: "operator", pin: "864213" });
+    const [order] = await db.select().from(orders).where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"))).limit(1);
+    expect(await assign(c, "order", order.id, ana.id)).toMatch(/Asignado a Ana Asignada/);
+    let tasks = await openTasks(db, c.companyId);
+    const task = tasks.find((t) => t.kind === "order" && t.id === order.id)!;
+    expect(isMine(task, ana.id)).toBe(true);
+    expect(isUnassigned(task)).toBe(false);
+    expect(await assign(c, "order", order.id, null)).toMatch(/Sin asignar/);
+    tasks = await openTasks(db, c.companyId);
+    expect(isUnassigned(tasks.find((t) => t.kind === "order" && t.id === order.id)!)).toBe(true);
+  });
+
+  it("assigns the put-away of a zone, and the order a person is picking is theirs", async () => {
+    const recepcion = await zone(db, c.companyId, "receiving");
+    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Asignado a/);
+    // In a company of its own, so the pending orders later tests rely on stay pending.
+    const { e, u } = await buildCompany("Toma SA", "toma", 15);
+    const own: Ctx = { db, companyId: e.id, userId: u.id };
+    const [order] = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.status, "pending"))).limit(1);
+    await takeOrder(own, order.id);
+    const t = (await openTasks(db, e.id)).find((x) => x.kind === "order" && x.id === order.id)!;
+    // Taken: theirs while being picked (or already picked, if the shelves had nothing for it).
+    expect(t.verb === "Empacar" || (t.takenBy === u.id && isMine(t, u.id))).toBe(true);
+  });
+
+  it("refuses what cannot be assigned", async () => {
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, c.companyId), eq(locations.type, "shelf"))).limit(1);
+    await expect(assign(c, "putaway", shelf.id, null)).rejects.toThrow(/No se encontró/);
+    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/Tipo de tarea desconocido/);
+    const [closed] = await db.select().from(receivings).where(and(eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"))).limit(1);
+    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/sin trabajo pendiente/);
+    const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
+    const { e, u } = await buildCompany("Lejana SA", "lejana", 13);
+    await expect(assign(c, "order", order.id, u.id)).rejects.toThrow(/Elige una persona/);
+    await expect(assign({ db, companyId: e.id, userId: u.id }, "order", order.id, null)).rejects.toThrow(/No se encontró/);
+  });
+
+  it("counts orders per stage and units per day for the home page", async () => {
+    const stages = await orderStages(db, c.companyId);
+    expect(stages.map((s) => s.key)).toEqual(["pending", "in_picking", "to_control", "picked", "packed"]);
+    const days = await weekActivity(db, c.companyId);
+    expect(days).toHaveLength(7);
+    expect(days[6].label).toBe("Hoy");
+    // Earlier tests received and picked units today.
+    expect(days[6].received + days[6].picked).toBeGreaterThan(0);
+  });
+});
+
+describe("control before packing", () => {
+  let picker: Ctx;
+  let checker: Ctx;
+  let prods: Map<number, typeof products.$inferSelect>;
+  const status = async (id: number) => (await db.select().from(orders).where(eq(orders.id, id)))[0];
+
+  /** Puts the order's units on a shelf and picks them all as `who`. */
+  async function pickAll(who: Ctx, orderId: number) {
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, who.companyId), eq(locations.code, "A-01-2")));
+    for (const l of await db.select().from(orderLines).where(eq(orderLines.orderId, orderId))) {
+      await moveStock(db, { companyId: who.companyId, productId: l.productId, fromId: null, toId: shelf.id, quantity: l.quantity, reason: "initial" });
+    }
+    await takeOrder(who, orderId);
+    for (const t of await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, orderId), eq(pickTasks.status, "pending")))) {
+      const [u] = await db.select().from(locations).where(eq(locations.id, t.locationId!));
+      await confirmPick(who, { taskId: t.id, location: u.code, product: prods.get(t.productId)!.barcode, quantity: t.quantity });
+    }
+    return db.select().from(orderLines).where(eq(orderLines.orderId, orderId)).orderBy(asc(orderLines.id));
+  }
+  const orderUnits = async (id: number) => (await db.select().from(orderLines).where(eq(orderLines.orderId, id))).reduce((s, l) => s + l.quantity, 0);
+
+  beforeAll(async () => {
+    const { e, u } = await buildCompany("Control SA", "control", 13);
+    await simulateNews(db, e, "orders", 8);
+    const second = await createUser(db, e.id, { name: "Segunda", email: "segunda-control@prueba.test", role: "operator", password: "long-password" });
+    picker = { db, companyId: e.id, userId: u.id };
+    checker = { db, companyId: e.id, userId: second.id };
+    prods = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.id, p]));
+  });
+
+  it("renames the organisation and changes its code, refusing bad or taken codes", async () => {
+    const other = await createCompany(db, { name: "Otra", slug: "otra-org" });
+    const [before] = await db.select().from(companies).where(eq(companies.id, picker.companyId));
+    await expect(renameOrganization(picker, "   ")).rejects.toThrow(UserError);
+    expect(await renameOrganization(picker, "  Control   SRL ")).toBe("Control SRL");
+    await expect(changeOrganizationCode(picker, "Con Espacios")).rejects.toThrow(UserError);
+    await expect(changeOrganizationCode(picker, other.slug)).rejects.toThrow(/otra organización/);
+    expect(await changeOrganizationCode(picker, " Nuevo-2 ")).toBe("nuevo-2");
+    expect(await changeOrganizationCode(picker, "nuevo-2")).toBe("nuevo-2");
+    const [after] = await db.select().from(companies).where(eq(companies.id, picker.companyId));
+    expect([after.name, after.slug]).toEqual(["Control SRL", "nuevo-2"]);
+    expect((await db.select().from(companies).where(eq(companies.id, other.id)))[0]).toMatchObject({ name: "Otra", slug: "otra-org" });
+    await expect(saveBatchSorting(picker, "otro")).rejects.toThrow(UserError);
+    await renameOrganization(picker, before.name);
+    await changeOrganizationCode(picker, before.slug);
+  });
+
+  it("validates the settings", async () => {
+    await expect(saveControlSettings(picker, { mode: "large", minUnits: "1", samePerson: true })).rejects.toThrow(UserError);
+    await expect(saveControlSettings(picker, { mode: "large", minUnits: "", samePerson: true })).rejects.toThrow(/desde 2/);
+    await expect(saveControlSettings(picker, { mode: "otro", samePerson: true })).rejects.toThrow(UserError);
+  });
+
+  it("with the step on, a picked order waits in Control, and only someone else can check it", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: false });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("to_control");
+    await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/Pendiente de control/);
+    await expect(checkUnit(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/otra persona/);
+
+    const foreign = [...prods.values()].find((p) => !lines.some((l) => l.productId === p.id))!;
+    await expect(checkUnit(checker, ord.id, foreign.barcode, 1)).rejects.toThrow(/no está en el pedido/);
+    await expect(checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].picked + 1)).rejects.toThrow(/quedan/);
+
+    // Everything is in the cart except one unit of the first title.
+    await checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1);
+    await restartControl(checker, ord.id);
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))).every((l) => l.checked === 0)).toBe(true);
+    for (const [i, l] of lines.entries()) await checkUnit(checker, ord.id, prods.get(l.productId)!.barcode, i === 0 ? l.picked - 1 : l.picked);
+    await expect(finishControl(checker, ord.id)).rejects.toThrow(/sin controlar/);
+    await expect(reportMissing(checker, ord.id, lines[1]?.id ?? -1)).rejects.toThrow(UserError);
+
+    const staging = await zone(db, picker.companyId, "staging");
+    const missingZone = await zone(db, picker.companyId, "missing");
+    const before = await atLocation(lines[0].productId, missingZone.id);
+    await reportMissing(checker, ord.id, lines[0].id);
+    expect(await atLocation(lines[0].productId, missingZone.id)).toBe(before + 1);
+    expect(await atLocation(lines[0].productId, staging.id)).toBe(lines[0].picked - 1);
+    await finishControl(checker, ord.id);
+    const done = await status(ord.id);
+    expect(done.status).toBe("picked");
+    expect(done.controlledBy).toBe(checker.userId);
+
+    // Controlled by someone else, so the picker may pack it.
+    for (const l of await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))) if (l.picked > 0) await scanIntoBox(picker, ord.id, prods.get(l.productId)!.barcode, l.picked);
+    const [box] = await db.select().from(boxes).where(eq(boxes.orderId, ord.id));
+    await closeBox(picker, box.id);
+    await finishPacking(picker, ord.id);
+    expect((await status(ord.id)).packedBy).toBe(picker.userId);
+  });
+
+  it("only orders from the threshold up go to Control; otherwise packing is the check", async () => {
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await saveControlSettings(picker, { mode: "large", minUnits: String((await orderUnits(ord.id)) + 1), samePerson: false });
+    const lines = await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("picked");
+    await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).rejects.toThrow(/Lo empaca otra persona/);
+    await expect(scanIntoBox(checker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).resolves.toContain("Caja 1");
+
+    // When the same person is allowed, the picker can pack.
+    await saveControlSettings(picker, { mode: "large", minUnits: "1000", samePerson: true });
+    await expect(scanIntoBox(picker, ord.id, prods.get(lines[0].productId)!.barcode, 1)).resolves.toBeTruthy();
+  });
+
+  it("undoing the picking of an order in Control sends it back to picking, and its count starts over", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: true });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await pickAll(picker, ord.id);
+    // One unit of the first article is not in the cart: it goes to FALTANTES and off the route.
+    for (const l of lines.slice(1)) await checkUnit(checker, ord.id, prods.get(l.productId)!.barcode, l.picked);
+    if (lines[0].picked > 1) await checkUnit(checker, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].picked - 1);
+    await reportMissing(checker, ord.id, lines[0].id);
+    const staging = await zone(db, picker.companyId, "staging");
+    const routeUnits = async () => (await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id))).reduce((s, t) => s + t.picked, 0);
+    const lineUnits = async () => (await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))).reduce((s, l) => s + l.picked, 0);
+    expect(await routeUnits()).toBe(await lineUnits());
+
+    const [done] = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.lineId, lines[1].id)));
+    await unpick(picker, done.id);
+    const back = await status(ord.id);
+    expect(back.status).toBe("in_picking");
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id))).every((l) => l.checked === 0)).toBe(true);
+
+    // Dropping it returns exactly what is in Preparación: nothing left behind, nothing missing.
+    const before = await Promise.all(lines.map((l) => atLocation(l.productId, staging.id)));
+    await releaseOrder(picker, ord.id);
+    const after = await Promise.all(lines.map((l) => atLocation(l.productId, staging.id)));
+    expect(after.every((n, i) => n <= before[i] && n >= 0)).toBe(true);
+    expect((await status(ord.id)).status).toBe("pending");
+  });
+
+  it("turning the step off sends waiting orders to packing", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: true });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("to_control");
+    await expect(saveControlSettings(picker, { mode: "packing", samePerson: true })).resolves.toMatch(/1 a Empaque/);
+    expect((await status(ord.id)).status).toBe("picked");
+  });
+
+  it("a supervisor can let the picker check one order, but not themselves", async () => {
+    await saveControlSettings(picker, { mode: "all", samePerson: false });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await pickAll(picker, ord.id);
+    const code = prods.get(lines[0].productId)!.barcode;
+    await expect(checkUnit(picker, ord.id, code, 1)).rejects.toThrow(/otra persona/);
+    await expect(allowSameCheck(picker, ord.id, true)).rejects.toThrow(/otro supervisor/);
+    await expect(allowSameCheck(checker, ord.id, true)).resolves.toMatch(/Permitido/);
+    await expect(checkUnit(picker, ord.id, code, 1)).resolves.toContain("✓");
+    await allowSameCheck(checker, ord.id, false);
+    await expect(checkUnit(picker, ord.id, code, 1)).rejects.toThrow(/otra persona/);
+    // Dropping the order clears the permission: a new picker does not inherit it.
+    await allowSameCheck(checker, ord.id, true);
+    await releaseOrder(picker, ord.id);
+    expect((await status(ord.id)).sameCheckAllowedBy).toBeNull();
+  });
+
+  it("a customer marked for control sends every order to Control, whatever the mode", async () => {
+    await saveControlSettings(picker, { mode: "packing", samePerson: true });
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, picker.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await expect(setCustomerControl(picker, ord.customerId, true)).resolves.toMatch(/Control obligatorio/);
+    await pickAll(picker, ord.id);
+    expect((await status(ord.id)).status).toBe("to_control");
+    // Switching the step off leaves this customer's orders in Control.
+    await saveControlSettings(picker, { mode: "packing", samePerson: true });
+    expect((await status(ord.id)).status).toBe("to_control");
+    // Taking the mark off releases them, since the company checks in packing.
+    await expect(setCustomerControl(picker, ord.customerId, false)).resolves.toMatch(/1 a Empaque/);
+    expect((await status(ord.id)).status).toBe("picked");
+    await expect(setCustomerControl(picker, -1, true)).rejects.toThrow(UserError);
+  });
+});
+
 describe("comments", () => {
   it("threads replies one level deep, counts them and refuses empty or foreign ones", async () => {
     const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
     const colleague = await createUser(db, c.companyId, { name: "Compañera", email: "companera@prueba.test", role: "operator", password: "long-password" });
     const other: Ctx = { ...c, userId: colleague.id };
 
-    const root = await addComment(c, { subjectType: "order", subjectId: order.id, body: "  El cliente pidió que vaya en una sola caja.\r\n " });
-    expect(root.body).toBe("El cliente pidió que vaya en una sola caja.");
+    const root = await addComment(c, { subjectType: "order", subjectId: order.id, body: "  Todo en una sola caja.\r\n " });
+    expect(root.body).toBe("Todo en una sola caja.");
     const reply = await addComment(other, { subjectType: "order", subjectId: order.id, body: "Entra justo.", parentId: root.id });
     // Answering a reply answers its thread: no second level.
     const nested = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Gracias.", parentId: reply.id });
@@ -349,15 +595,15 @@ describe("comments", () => {
     expect((await commentCounts(db, c.companyId, "order", [order.id])).get(order.id)).toBe(3);
 
     await expect(addComment(c, { subjectType: "order", subjectId: order.id, body: "   " })).rejects.toThrow(/Escribe el comentario/);
-    await expect(addComment(c, { subjectType: "order", subjectId: order.id, body: "x".repeat(2001) })).rejects.toThrow(/demasiado largo/);
-    await expect(addComment(c, { subjectType: "receipt", subjectId: order.id, body: "Hola" })).rejects.toThrow(/No se encontró dónde/);
-    await expect(addComment(c, { subjectType: "order", subjectId: 999999, body: "Hola" })).rejects.toThrow(/No se encontró dónde/);
-    const { e, u } = await buildCompany("Comenta SA", "comenta", 13);
+    await expect(addComment(c, { subjectType: "order", subjectId: order.id, body: "x".repeat(2001) })).rejects.toThrow(/Máximo 2000/);
+    await expect(addComment(c, { subjectType: "receipt", subjectId: order.id, body: "Hola" })).rejects.toThrow(/No se encontró el documento/);
+    await expect(addComment(c, { subjectType: "order", subjectId: 999999, body: "Hola" })).rejects.toThrow(/No se encontró el documento/);
+    const { e, u } = await buildCompany("Comenta SA", "comenta", 17);
     const stranger: Ctx = { db, companyId: e.id, userId: u.id };
-    await expect(addComment(stranger, { subjectType: "order", subjectId: order.id, body: "Hola" })).rejects.toThrow(/No se encontró dónde/);
+    await expect(addComment(stranger, { subjectType: "order", subjectId: order.id, body: "Hola" })).rejects.toThrow(/No se encontró el documento/);
     const [own] = await db.select().from(orders).where(eq(orders.companyId, e.id)).limit(1);
-    await expect(addComment(stranger, { subjectType: "order", subjectId: own.id, body: "Hola", parentId: root.id })).rejects.toThrow(/No se encontró ese comentario/);
-    await expect(editComment(stranger, root.id, "Cambiado")).rejects.toThrow(/No se encontró ese comentario/);
+    await expect(addComment(stranger, { subjectType: "order", subjectId: own.id, body: "Hola", parentId: root.id })).rejects.toThrow(/No se encontró el comentario/);
+    await expect(editComment(stranger, root.id, "Cambiado")).rejects.toThrow(/No se encontró el comentario/);
   });
 
   it("lets only the author edit or delete, only for a few minutes, and never a thread with replies", async () => {
@@ -366,19 +612,19 @@ describe("comments", () => {
     const other: Ctx = { ...c, userId: colleague.authorId };
 
     const slip = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Faltna dos" });
-    await expect(editComment(other, slip.id, "Faltan tres")).rejects.toThrow(/Solo quien escribió/);
+    await expect(editComment(other, slip.id, "Faltan tres")).rejects.toThrow(/Solo el autor/);
     await editComment(c, slip.id, "Faltan dos");
     const [edited] = await db.select().from(comments).where(eq(comments.id, slip.id));
     expect(edited.body).toBe("Faltan dos");
     expect(edited.editedAt).not.toBeNull();
 
     await addComment(other, { subjectType: "order", subjectId: order.id, body: "¿De cuál?", parentId: slip.id });
-    await expect(deleteComment(c, slip.id)).rejects.toThrow(/ya tiene respuestas/);
+    await expect(deleteComment(c, slip.id)).rejects.toThrow(/con respuestas/);
 
-    const old = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Revisado." });
+    const old = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Controlado." });
     await db.update(comments).set({ createdAt: new Date(Date.now() - EDIT_WINDOW_MS - 1000) }).where(eq(comments.id, old.id));
-    await expect(editComment(c, old.id, "Revisado y cerrado.")).rejects.toThrow(/más de 5 minutos/);
-    await expect(deleteComment(c, old.id)).rejects.toThrow(/más de 5 minutos/);
+    await expect(editComment(c, old.id, "Controlado y cerrado.")).rejects.toThrow(/Pasaron 5 minutos/);
+    await expect(deleteComment(c, old.id)).rejects.toThrow(/Pasaron 5 minutos/);
 
     const mistake = await addComment(c, { subjectType: "order", subjectId: order.id, body: "Pedido equivocado" });
     await deleteComment(c, mistake.id);
@@ -403,5 +649,340 @@ describe("several companies", () => {
     const r = await simulateNews(db, company, "orders", 4);
     expect(r.newOrders).toBe(4);
     expect((await db.select().from(orders).where(eq(orders.companyId, c.companyId))).length).toBe(before + 4);
+  });
+});
+
+describe("going back", () => {
+  let u: Ctx;
+  let prods: Map<number, typeof products.$inferSelect>;
+  const shelf = async (code: string) => (await db.select().from(locations).where(and(eq(locations.companyId, u.companyId), eq(locations.code, code))))[0];
+
+  beforeAll(async () => {
+    const { e, u: user } = await buildCompany("Deshacer SA", "deshacer", 21);
+    u = { db, companyId: e.id, userId: user.id };
+    prods = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.id, p]));
+  });
+
+  it("an order can be dropped half picked: units go back to their shelf and it returns to Pendientes", async () => {
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, u.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id));
+    const a1 = await shelf("A-01-1");
+    const a2 = await shelf("A-01-2");
+    for (const l of lines) await moveStock(db, { companyId: u.companyId, productId: l.productId, fromId: null, toId: a1.id, quantity: l.quantity, reason: "initial" });
+    // The first title also has a spare unit elsewhere, so a shortage report finds it.
+    await moveStock(db, { companyId: u.companyId, productId: lines[0].productId, fromId: null, toId: a2.id, quantity: lines[0].quantity, reason: "initial" });
+
+    await takeOrder(u, ord.id);
+    const tasks = await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id)).orderBy(asc(pickTasks.id));
+    const [t0, t1] = tasks;
+    await confirmPick(u, { taskId: t0.id, location: "A-01-1", product: prods.get(t0.productId)!.barcode, quantity: t0.quantity });
+    expect(await atLocation(t0.productId, a1.id)).toBe(0);
+
+    // Undo one pick: the stop is pending again and the units are back.
+    expect(await unpick(u, t0.id)).toMatch(/A-01-1/);
+    expect(await atLocation(t0.productId, a1.id)).toBe(t0.quantity);
+    await expect(unpick(u, t0.id)).rejects.toThrow(/todavía no se tomó/);
+
+    // "Not here", then "it was there after all": the units leave FALTANTES and the extra stop goes.
+    const missingZone = await zone(db, u.companyId, "missing");
+    expect(await markShort(u, t0.id)).toMatch(/otra ubicación/i);
+    expect(await atLocation(t0.productId, missingZone.id)).toBe(t0.quantity);
+    expect((await db.select().from(pickTasks).where(eq(pickTasks.replacesTaskId, t0.id))).length).toBe(1);
+    await undoShort(u, t0.id);
+    expect(await atLocation(t0.productId, missingZone.id)).toBe(0);
+    expect(await atLocation(t0.productId, a1.id)).toBe(t0.quantity);
+    expect((await db.select().from(pickTasks).where(eq(pickTasks.replacesTaskId, t0.id))).length).toBe(0);
+    expect((await db.select().from(pickTasks).where(eq(pickTasks.id, t0.id)))[0].status).toBe("pending");
+
+    // Somebody else cannot drop it; its picker can.
+    if (t1) await confirmPick(u, { taskId: t1.id, location: "A-01-1", product: prods.get(t1.productId)!.barcode, quantity: 1 });
+    await expect(releaseOrder({ ...u, userId: u.userId + 999 }, ord.id)).rejects.toThrow(/Solo esa persona/);
+    expect(await releaseOrder(u, ord.id)).toMatch(/vuelve a Pendientes/);
+    const [after] = await db.select().from(orders).where(eq(orders.id, ord.id));
+    expect(after.status).toBe("pending");
+    expect(after.takenBy).toBeNull();
+    expect(await db.select().from(pickTasks).where(eq(pickTasks.orderId, ord.id))).toHaveLength(0);
+    for (const l of lines) expect((await db.select().from(orderLines).where(eq(orderLines.id, l.id)))[0].picked).toBe(0);
+    expect(await atLocation(lines[0].productId, a1.id)).toBe(lines[0].quantity);
+    await expect(releaseOrder(u, ord.id)).rejects.toThrow(/Nadie está preparando/);
+  });
+
+  it("packing can be gone back over until the order is loaded in Fierro", async () => {
+    const [ord] = await db.select().from(orders).where(and(eq(orders.companyId, u.companyId), eq(orders.status, "pending"))).orderBy(asc(orders.id)).limit(1);
+    await takeOrder(u, ord.id);
+    const tasks = await db.select({ t: pickTasks, code: locations.code }).from(pickTasks).innerJoin(locations, eq(locations.id, pickTasks.locationId)).where(eq(pickTasks.orderId, ord.id));
+    for (const { t, code } of tasks) await confirmPick(u, { taskId: t.id, location: code, product: prods.get(t.productId)!.barcode, quantity: t.quantity });
+    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, ord.id));
+    await scanIntoBox(u, ord.id, prods.get(lines[0].productId)!.barcode, lines[0].quantity);
+    const [box] = await db.select().from(boxes).where(eq(boxes.orderId, ord.id));
+    await expect(releaseOrder(u, ord.id)).rejects.toThrow(/cajas armadas/);
+    await expect(unpick(u, tasks.find((x) => x.t.productId === lines[0].productId)!.t.id)).rejects.toThrow(/en una caja/);
+    await removeFromBox(u, box.id, lines[0].productId);
+    expect((await db.select().from(orderLines).where(eq(orderLines.id, lines[0].id)))[0].packed).toBe(0);
+    for (const l of lines) await scanIntoBox(u, ord.id, prods.get(l.productId)!.barcode, l.quantity);
+    await closeBox(u, box.id);
+    await reopenBox(u, box.id);
+    await closeBox(u, box.id);
+    await finishPacking(u, ord.id);
+    await reopenPacking(u, ord.id);
+    expect((await db.select().from(orders).where(eq(orders.id, ord.id)))[0].status).toBe("picked");
+    await finishPacking(u, ord.id);
+    const [e] = await db.select().from(companies).where(eq(companies.id, u.companyId));
+    await markSent(u, e, "order", ord.id);
+    await expect(reopenPacking(u, ord.id)).rejects.toThrow(/No se puede reabrir/);
+  });
+
+  it("a receiving or a return can be cancelled while open and reopened while its units have not moved", async () => {
+    const [sup] = await db.select().from(suppliers).where(eq(suppliers.companyId, u.companyId)).limit(1);
+    const id = await createUnannouncedReceiving(u, sup.id);
+    const [r] = await db.select().from(receivings).where(eq(receivings.id, id));
+    expect(await cancelReceiving(u, id)).toMatch(/cancelada/);
+    // The next one gets the same number: nothing ever shares one.
+    const id2 = await createUnannouncedReceiving(u, sup.id);
+    expect((await db.select().from(receivings).where(eq(receivings.id, id2)))[0].number).toBe(r.number);
+    const p = [...prods.values()][5];
+    await scanReceiving(u, id2, p.barcode, 3);
+    await closeReceiving(u, id2);
+    const dock = await zone(db, u.companyId, "receiving");
+    const before = await atLocation(p.id, dock.id);
+    await move(u, { source: "RECEPCION", product: p.barcode, destination: "A-02-1", quantity: 1 });
+    await expect(reopenReceiving(u, id2)).rejects.toThrow(/ya se guardó/);
+    // Undo that move, then the receiving reopens and its units leave.
+    const [m] = await recentMoves(db, u.companyId, u.userId);
+    await undoMove(u, m.id);
+    await expect(undoMove(u, m.id)).rejects.toThrow(/ya se deshizo/);
+    expect((await recentMoves(db, u.companyId, u.userId))[0].undone).toBe(true);
+    await reopenReceiving(u, id2);
+    expect(await atLocation(p.id, dock.id)).toBe(before - 3);
+
+    const [cust] = await db.select().from(orders).where(eq(orders.companyId, u.companyId)).limit(1);
+    const ret = await createReturn(u, cust.customerId);
+    await scanReturn(u, ret, p.barcode, "damaged", 2);
+    await closeReturn(u, ret);
+    await reopenReturn(u, ret);
+    const damaged = await zone(db, u.companyId, "damaged");
+    expect(await atLocation(p.id, damaged.id)).toBe(0);
+    await cancelReturn(u, ret);
+  });
+
+  it("a write-off from Bajas can be undone until Fierro hears of it; a count can be cancelled while open", async () => {
+    const damaged = await zone(db, u.companyId, "damaged");
+    const p = [...prods.values()][7];
+    await moveStock(db, { companyId: u.companyId, productId: p.id, fromId: null, toId: damaged.id, quantity: 2, reason: "initial" });
+    await writeOff(u, { locationId: damaged.id, productId: p.id, quantity: 2, cause: "damage" });
+    const [a] = await db.select().from(adjustments).where(eq(adjustments.companyId, u.companyId)).orderBy(sql`${adjustments.id} desc`).limit(1);
+    await undoWriteOff(u, a.id);
+    expect(await atLocation(p.id, damaged.id)).toBe(2);
+    await writeOff(u, { locationId: damaged.id, productId: p.id, quantity: 1, cause: "damage" });
+    const [b] = await db.select().from(adjustments).where(eq(adjustments.companyId, u.companyId)).orderBy(sql`${adjustments.id} desc`).limit(1);
+    expect(b.number).toBe(a.number);
+    const [e] = await db.select().from(companies).where(eq(companies.id, u.companyId));
+    await markSent(u, e, "adjustment", b.id);
+    await expect(undoWriteOff(u, b.id)).rejects.toThrow(/ya se cargó/);
+
+    const k = await createCount(u, "Prueba", "A-01");
+    expect(await cancelCount(u, k)).toMatch(/cancelado/);
+  });
+
+  it("a supplier created by mistake can be deleted while nothing uses it", async () => {
+    const s = await createSupplier(u, "Distribuidora Equivocada");
+    expect(await deleteSupplier(u, s.id)).toMatch(/borrado/);
+    const [fromFierro] = await db.select().from(suppliers).where(and(eq(suppliers.companyId, u.companyId), sql`${suppliers.createdBy} is null`)).limit(1);
+    await expect(deleteSupplier(u, fromFierro.id)).rejects.toThrow(/Fierro/);
+  });
+});
+
+describe("orders that Fierro changes", () => {
+  it("follows Fierro for orders nobody started, flags started ones, and never takes an incomplete order", async () => {
+    const { e, u: user } = await buildCompany("Cambios SA", "cambios", 31);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const real = new SimulatedFierro(db, e);
+    const original = await real.pendingOrders();
+    expect(original.length).toBe(3);
+    const books = await real.books();
+    const [a, b, gone] = original;
+    // Someone starts picking order a; give it stock first so the route has a stop.
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1")));
+    const productOf = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.fierroId, p.id]));
+    for (const l of a.lines) await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: productOf.get(l.bookId)!, fromId: null, toId: shelf.id, quantity: l.quantity, reason: "initial" }));
+    const [orderA] = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.fierroId, a.id)));
+    await takeOrder(u, orderA.id);
+
+    // Fierro now: a and b edited, `gone` cancelled, and a new order naming an article not in its catalogue.
+    const edited = (o: typeof a) => ({ ...o, lines: [...o.lines, { bookId: books[50].id, quantity: 2 }] });
+    const fresh = { ...b, id: "NEW-1", number: "P-NEW-1", lines: [{ bookId: books[1].id, quantity: 1 }, { bookId: "NOT-IN-CATALOGUE", quantity: 1 }] };
+    const later = Object.assign(Object.create(real), { pendingOrders: async () => [edited(a), edited(b), fresh] });
+    const r = await sync(db, e, later);
+    expect(r).toMatchObject({ newOrders: 1, changedOrders: 1, cancelledOrders: 1, flaggedOrders: 1 });
+
+    const byId = async (f: string) => (await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.fierroId, f))))[0];
+    expect((await byId(a.id)).fierroChange).toBe("changed");
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, orderA.id))).length).toBe(a.lines.length);
+    const orderB = await byId(b.id);
+    expect(orderB.status).toBe("pending");
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, orderB.id))).some((l) => l.productId === productOf.get(books[50].id))).toBe(true);
+    const cancelled = await byId(gone.id);
+    expect(cancelled.status).toBe("cancelled");
+    await expect(takeOrder(u, cancelled.id)).rejects.toThrow(/PICK-19|ya no figura/);
+    const incomplete = await byId("NEW-1");
+    expect(incomplete.unknownLines).toBe(1);
+    await expect(takeOrder(u, incomplete.id)).rejects.toThrow(UserError);
+
+    // Released, the edited order is refused until a sync applies the change, then follows Fierro.
+    await releaseOrder(u, orderA.id);
+    await expect(takeOrder(u, orderA.id)).rejects.toThrow(UserError);
+    await sync(db, e, later);
+    expect((await byId(a.id)).fierroChange).toBeNull();
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, orderA.id))).length).toBe(a.lines.length + 1);
+
+    // A cancelled order Fierro lists again comes back; an empty answer from Fierro cancels nothing.
+    await sync(db, e, Object.assign(Object.create(real), { pendingOrders: async () => [edited(a), edited(b), fresh, gone] }));
+    expect((await byId(gone.id)).status).toBe("pending");
+    await sync(db, e, Object.assign(Object.create(real), { pendingOrders: async () => [] }));
+    expect((await byId(gone.id)).status).toBe("pending");
+  });
+});
+
+describe("urgent orders", () => {
+  it("a supervisor marks an order urgent and it goes first in the queue; not once packed", async () => {
+    const { e, u: user } = await buildCompany("Urgente SA", "urgente", 41);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const pending = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.status, "pending"))).orderBy(asc(orders.date));
+    const last = pending[pending.length - 1];
+    await setUrgent(u, last.id, true);
+    const { pending: queue } = await loadOpenOrders(db, e.id);
+    expect(queue[0].p.id).toBe(last.id);
+    await setUrgent(u, last.id, false);
+    expect((await loadOpenOrders(db, e.id)).pending[0].p.id).toBe(pending[0].id);
+    await db.update(orders).set({ status: "packed" }).where(eq(orders.id, last.id));
+    await expect(setUrgent(u, last.id, true)).rejects.toThrow(/ORD-02|empacado/);
+    const other = await buildCompany("Ajena SA", "ajena-urg", 42);
+    await expect(setUrgent({ db, companyId: other.e.id, userId: other.u.id }, pending[0].id, true)).rejects.toThrow(UserError);
+  });
+});
+
+describe("opening stock load", () => {
+  it("checks every row, loads only a clean file, and can be undone while nothing moved", async () => {
+    const { e, u: user } = await buildCompany("Inicial SA", "inicial", 51);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [p1, p2] = await db.select().from(products).where(eq(products.companyId, e.id)).orderBy(asc(products.id)).limit(2);
+    const bad = `Ubicación;Cantidad;Código\nA-01-1;5;${p1.barcode}\na-01-2;x;${p2.internalCode.toLowerCase()}\nZ-99;1;${p1.barcode}\nA-01-1;2;NOPE`;
+    const r = await checkLoad(db, e.id, bad);
+    expect(r.lines).toBe(4);
+    expect(r.rows.map((x) => !!x.error)).toEqual([false, true, true, true]);
+    await expect(applyLoad(u, bad, "malo.csv")).rejects.toThrow(/STK-18|errores/);
+
+    const good = `${p1.barcode},5,A-01-1\n${p2.internalCode},3,a-01-2\n${p1.isbn ?? p1.barcode},2,A-01-1`;
+    expect((await checkLoad(db, e.id, good)).errors).toBe(0);
+    await applyLoad(u, good, "bueno.csv");
+    expect(await atLocation(p1.id, (await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1"))))[0].id)).toBe(7);
+    expect(await total(p2.id)).toBe(3);
+    // Opening stock is not a document for Fierro.
+    expect((await pendingExports(db, e.id)).some((x) => x.type === "adjustment")).toBe(false);
+    const [load] = await listLoads(db, e.id);
+    expect(load.l).toMatchObject({ lines: 3, units: 10 });
+
+    // Once part of it moved, it can no longer be undone; put back, it can.
+    const a1 = (await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1"))))[0];
+    const a2 = (await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-02-1"))))[0];
+    await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: p1.id, fromId: a1.id, toId: a2.id, quantity: 1, reason: "movement" }));
+    await expect(undoLoad(u, load.l.id)).rejects.toThrow(/STK-21|ya se movió/);
+    await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: p1.id, fromId: a2.id, toId: a1.id, quantity: 1, reason: "movement" }));
+    await undoLoad(u, load.l.id);
+    expect(await total(p1.id)).toBe(0);
+    await expect(undoLoad(u, load.l.id)).rejects.toThrow(/ya se deshizo/);
+  });
+});
+
+describe("damaged on arrival", () => {
+  it("damaged units of a receiving go to DANADOS on closing, the rest to RECEPCION, and reopening takes both back", async () => {
+    const { e, u: user } = await buildCompany("Golpes SA", "golpes", 61);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [s] = await db.select().from(suppliers).where(eq(suppliers.companyId, e.id)).limit(1);
+    const id = await createUnannouncedReceiving(u, s.id);
+    const [p] = await db.select().from(products).where(eq(products.companyId, e.id)).limit(1);
+    await scanReceiving(u, id, p.barcode, 5);
+    await expect(setDamaged(u, id, p.id, 6)).rejects.toThrow(/no pueden estar dañadas más/);
+    await setDamaged(u, id, p.id, 2);
+    await expect(setReceived(u, id, p.id, 1)).rejects.toThrow(/dañadas/);
+    await closeReceiving(u, id);
+    expect(await atLocation(p.id, (await zone(db, e.id, "receiving")).id)).toBe(3);
+    expect(await atLocation(p.id, (await zone(db, e.id, "damaged")).id)).toBe(2);
+    expect((await fileFor(db, e.id, "receiving", id)).contents).toMatch(/danados/);
+    await reopenReceiving(u, id);
+    expect(await total(p.id)).toBe(0);
+  });
+});
+
+describe("dispatch", () => {
+  it("needs a carrier, loads each closed box once by its label, and the last box dispatches the order", async () => {
+    const { e, u: user } = await buildCompany("Envíos SA", "envios", 71);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [o] = await db.select().from(orders).where(eq(orders.companyId, e.id)).limit(1);
+    await expect(setShipping(u, o.id, { carrierId: 0, tracking: "", remito: "" })).rejects.toThrow(/empacado/);
+    await db.update(orders).set({ status: "packed" }).where(eq(orders.id, o.id));
+    await db.insert(boxes).values([1, 2].map((number) => ({ companyId: e.id, orderId: o.id, number, status: "closed" as const })));
+
+    const rehearse = async (box: string) => (await runLookup(db, e.id, new URLSearchParams({ ctx: "dispatch", box }))).statuses.box;
+    expect(await rehearse(`${o.number}-C1`)).toMatchObject({ tone: "danger", text: expect.stringMatching(/Falta el transporte/) });
+    expect(await rehearse(`${o.number}-`)).toBeUndefined();
+    await expect(loadBox(u, `${o.number}-C1`)).rejects.toThrow(/Falta el transporte/);
+    await expect(setShipping(u, o.id, { carrierId: 999999, tracking: "", remito: "" })).rejects.toThrow(/DSP-08|de la lista/);
+    const carrier = await createCarrier(u, "Andreani");
+    await expect(createCarrier(u, "andreaní")).rejects.toThrow(/Ya existe/);
+    await expect(createCarrier(u, "Andreanni")).rejects.toThrow(/casi igual/);
+    await setShipping(u, o.id, { carrierId: carrier.id, tracking: " AR 123 ", remito: "R 0001-00000042" });
+    expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0]).toMatchObject({ trackingNumber: "AR 123", remitoNumber: "R 0001-00000042" });
+
+    expect((await rehearse(`${o.number}-C1`))?.tone).toBe("ok");
+    expect(await loadBox(u, `${o.number.toLowerCase()}-c1`)).toMatch(/1 de 2/);
+    expect((await rehearse(`${o.number}-C1`))?.tone).toBe("danger");
+    await expect(loadBox(u, `${o.number}-C1`)).rejects.toThrow(/ya se cargó/);
+    await expect(loadBox(u, "PED-99999-C1")).rejects.toThrow(/no es la etiqueta/);
+    expect(await loadBox(u, `${o.number}-C2`)).toMatch(/despachado/);
+    expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0].dispatchedAt).not.toBeNull();
+    await expect(setShipping(u, o.id, { carrierId: carrier.id, tracking: "", remito: "" })).rejects.toThrow(/ya salió/);
+    expect((await toDispatch(db, e.id)).some((r) => r.o.id === o.id)).toBe(false);
+
+    const [b2] = await db.select().from(boxes).where(and(eq(boxes.orderId, o.id), eq(boxes.number, 2)));
+    await unloadBox(u, b2.id);
+    expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0].dispatchedAt).toBeNull();
+    expect((await toDispatch(db, e.id)).find((r) => r.o.id === o.id)).toMatchObject({ boxes: 2, loaded: 1 });
+  });
+});
+
+describe("stock away from the warehouse", () => {
+  it("takes units to an outside location and back through a transfer; what does not come back is sold there", async () => {
+    const { e, u: user } = await buildCompany("Feria SA", "feria", 81);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [p] = await db.select().from(products).where(eq(products.companyId, e.id)).orderBy(asc(products.id)).limit(1);
+    const [a1] = await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1")));
+    await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: p.id, fromId: null, toId: a1.id, quantity: 10, reason: "initial" }));
+
+    const stand = await createOutsideLocation(u, "Stand Comic-Con 2026");
+    expect(stand.code).toBe("STAND-COMIC-CON-2026");
+    await expect(createOutsideLocation(u, "stand comic con 2026")).rejects.toThrow(/Ya existe/);
+    // Mover never reaches it: only transfers do.
+    await expect(move(u, { source: "A-01-1", product: p.barcode, destination: stand.code, quantity: 1 })).rejects.toThrow(/Salidas/);
+
+    const id = await createTransfer(u, stand.id);
+    await expect(sendItem(u, id, { source: "A-01-1", product: p.barcode, quantity: 11 })).rejects.toThrow(UserError);
+    await sendItem(u, id, { source: "A-01-1", product: p.barcode, quantity: 8 });
+    expect(await atLocation(p.id, stand.id)).toBe(8);
+    await expect(receiveBack(u, id, { product: p.barcode, quantity: 1 })).rejects.toThrow(/no está afuera/);
+    await expect(sendTransfer(u, id, "")).rejects.toThrow(/remito/);
+    await sendTransfer(u, id, "R 0001-00000077");
+    await expect(sendItem(u, id, { source: "A-01-1", product: p.barcode, quantity: 1 })).rejects.toThrow(/ya salió/);
+
+    await receiveBack(u, id, { product: p.barcode, quantity: 5 });
+    await expect(receiveBack(u, id, { product: p.barcode, quantity: 4 })).rejects.toThrow(/quedan 3 afuera/);
+    expect(await atLocation(p.id, (await zone(db, e.id, "receiving")).id)).toBe(5);
+    // Owned stock: still counted while away.
+    expect(await total(p.id)).toBe(10);
+    expect(await closeTransfer(u, id)).toMatch(/3 unidades vendidas/);
+    expect(await total(p.id)).toBe(7);
+    expect(await atLocation(p.id, stand.id)).toBe(0);
+    const [row] = await listTransfers(db, e.id);
+    expect(row).toMatchObject({ sent: 8, returned: 5, sold: 3 });
   });
 });

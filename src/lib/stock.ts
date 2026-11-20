@@ -30,7 +30,7 @@ export async function moveStock(tx: Executor, m: Movement) {
       .set({ quantity: sql`${stock.quantity} - ${m.quantity}` })
       .where(and(eq(stock.productId, m.productId), eq(stock.locationId, m.fromId), gte(stock.quantity, m.quantity)))
       .returning({ quantity: stock.quantity });
-    if (rows.length === 0) throw new UserError("STK-03", "No hay tantas unidades de ese título en la ubicación de origen.");
+    if (rows.length === 0) throw new UserError("STK-03", "No hay tantas unidades de ese artículo en la ubicación de origen.");
     if (rows[0].quantity === 0) {
       await tx.delete(stock).where(and(eq(stock.productId, m.productId), eq(stock.locationId, m.fromId)));
     }
@@ -59,7 +59,7 @@ export async function moveStock(tx: Executor, m: Movement) {
 /** Looks up whatever the scanner read: barcode, ISBN or internal code. */
 export async function findProduct(tx: Executor, companyId: number, code: string) {
   const c = code.trim();
-  if (!c) throw new UserError("STK-04", "Escanea o escribe el código del libro.");
+  if (!c) throw new UserError("STK-04", "Escanea o escribe el código del artículo.");
   const [p] = await tx
     .select()
     .from(products)
@@ -70,7 +70,7 @@ export async function findProduct(tx: Executor, companyId: number, code: string)
       ),
     )
     .limit(1);
-  if (!p) throw new UserError("STK-05", `El código "${c}" no está en el catálogo. Si es un título nuevo, pide que sincronicen con Fierro.`);
+  if (!p) throw new UserError("STK-05", `El código "${c}" no está en el catálogo. Si es un artículo nuevo, pide que sincronicen con Fierro.`);
   return p;
 }
 
@@ -83,14 +83,14 @@ export async function findLocation(tx: Executor, companyId: number, code: string
     .where(and(eq(locations.companyId, companyId), eq(locations.code, c)))
     .limit(1);
   if (!u) throw new UserError("STK-07", `No existe la ubicación "${c}".`);
-  if (!u.active) throw new UserError("STK-08", `La ubicación "${c}" está dada de baja.`);
+  if (!u.active) throw new UserError("STK-08", `La ubicación "${c}" está desactivada.`);
   return u;
 }
 
 /** The special zones (receiving, returns, etc.) exist once per company. */
 export const ZONES: { type: Exclude<LocationType, "shelf">; code: string; name: string }[] = [
   { type: "receiving", code: "RECEPCION", name: "Recepción" },
-  { type: "returns", code: "DEVOLUCIONES", name: "Devoluciones por guardar" },
+  { type: "returns", code: "DEVOLUCIONES", name: "Devoluciones por reponer" },
   { type: "damaged", code: "DANADOS", name: "Dañados" },
   { type: "clearance", code: "SALDOS", name: "Saldos" },
   { type: "staging", code: "PREPARACION", name: "Pedidos preparados" },
@@ -109,6 +109,6 @@ export async function zone(tx: Executor, companyId: number, type: Exclude<Locati
   return created;
 }
 
-export function locationName(u: { code: string; type: LocationType }) {
-  return ZONES.find((z) => z.type === u.type)?.name ?? u.code;
+export function locationName(u: { code: string; type: LocationType; name?: string | null }) {
+  return ZONES.find((z) => z.type === u.type)?.name ?? (u.type === "outside" && u.name ? u.name : u.code);
 }

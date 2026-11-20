@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { isCopyFile, vocabularyHits } from "../scripts/copy-rules.mjs";
 
 /**
  * The app addresses the user as tú, never with voseo. This scans the interface code, the manual
@@ -36,6 +37,14 @@ anoté busqué cambié conozco creé encontré encuentro estoy guardé moví nec
 `.trim().split(/\s+/);
 const firstPerson = new RegExp(`(?<![${LETTER}])(${FIRST_PERSON.join("|")})(?![${LETTER}])`, "giu");
 
+/**
+ * Copy is neutral and short: no sentence or count opens with a connector or filler ("Y 3 más",
+ * "Ahora es de…", "Por favor…"). This catches the openers; the rest of the rule is in CLAUDE.md.
+ */
+const OPENERS = ["Y", "E", "Pero", "Además", "Entonces", "Ahora", "Bueno", "Por favor", "Recuerda que", "Ten en cuenta que"];
+const opener = new RegExp(`(?:>|["'\`]) *(${OPENERS.join("|")})[ ,{]`, "gu");
+const filler = /(?<![A-Za-zÁÉÍÓÚáéíóúñÑü])(por favor|simplemente|actualmente|en este momento)(?![A-Za-zÁÉÍÓÚáéíóúñÑü])/giu;
+
 describe("Spanish copy", () => {
   const copy = [...files(path.join(ROOT, "src")), ...files(path.join(ROOT, "wiki")), path.join(ROOT, "docs/ERRORS.md")];
   const find = (re: RegExp) =>
@@ -52,5 +61,23 @@ describe("Spanish copy", () => {
 
   it("never speaks in the first person", () => {
     expect(find(firstPerson)).toEqual([]);
+  });
+
+  it("opens no text with a connector or filler, and carries no filler words", () => {
+    const ui = files(path.join(ROOT, "src")).filter((f) => /\.tsx?$/.test(f));
+    const hits = ui.flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .flatMap((line, i) => (/^\s*(\/\/|\*|\/\*|import )/.test(line) ? [] : [...line.matchAll(opener), ...line.matchAll(filler)].map((m) => `${path.relative(ROOT, file)}:${i + 1}: ${m[1]}`))),
+    );
+    expect(hits).toEqual([]);
+  });
+
+  it("keeps the agreed vocabulary: artículo, ubicación, etiqueta, cargar en Fierro, neutral Spanish", () => {
+    const hits = [...files(path.join(ROOT, "src")), ...files(path.join(ROOT, "wiki"))]
+      .map((file) => path.relative(ROOT, file))
+      .filter(isCopyFile)
+      .flatMap((file) => vocabularyHits(file, readFileSync(path.join(ROOT, file), "utf8")));
+    expect(hits).toEqual([]);
   });
 });

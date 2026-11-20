@@ -5,6 +5,7 @@ import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { isLossCause, recordAdjustment, type AdjustmentLine } from "./adjustments";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 export const MAX_COUNT_LOCATIONS = 300;
 
@@ -23,7 +24,7 @@ export function needsRecount(system: number, counted: number) {
 /** Creates a count for every shelf whose code starts with the given prefix. */
 export async function createCount(c: Ctx, name: string, prefix: string) {
   const pre = prefix.trim().toUpperCase();
-  if (!name.trim()) throw new UserError("CNT-01", "Ponle un nombre al conteo (por ejemplo: Pasillo A, noviembre).");
+  if (!name.trim()) throw new UserError("CNT-01", "Escribe un nombre para el conteo (por ejemplo: Pasillo A, noviembre).");
   if (!pre) throw new UserError("CNT-02", "Escribe con qué empiezan las ubicaciones a contar (por ejemplo: A-01).");
   const us = await c.db
     .select({ id: locations.id })
@@ -32,7 +33,7 @@ export async function createCount(c: Ctx, name: string, prefix: string) {
     .orderBy(asc(locations.code))
     .limit(MAX_COUNT_LOCATIONS + 1);
   if (us.length === 0) throw new UserError("CNT-03", `No hay ubicaciones que empiecen con "${pre}".`);
-  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Parte el conteo en tramos más chicos.`);
+  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Divide el conteo en tramos más pequeños.`);
   return c.db.transaction(async (tx) => {
     const [stockCount] = await tx.insert(counts).values({ companyId: c.companyId, name: name.trim() }).returning();
     await tx.insert(countLocations).values(us.map((u) => ({ countId: stockCount.id, locationId: u.id })));
@@ -59,14 +60,14 @@ export async function scanCount(c: Ctx, countId: number, locationId: number, cod
   await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
   if (u.status === "counted") throw new UserError("CNT-08", "Esta ubicación ya se dio por contada.");
-  if (u.firstCountedBy === c.userId) throw new UserError("CNT-12", "Este recuento lo tiene que hacer otra persona.");
+  if (u.firstCountedBy === c.userId) throw new UserError("CNT-12", "El recuento debe hacerlo otra persona.");
   const p = await findProduct(c.db, c.companyId, code);
   const [l] = await c.db
     .insert(countLines)
     .values({ countId, locationId, productId: p.id, countedQty: n })
     .onConflictDoUpdate({ target: [countLines.countId, countLines.locationId, countLines.productId], set: { countedQty: sql`${countLines.countedQty} + ${n}` } })
     .returning();
-  return `${p.title}: llevas ${l.countedQty}`;
+  return `${articleName(p.title)}: ${l.countedQty}`;
 }
 
 export async function setCounted(c: Ctx, countId: number, locationId: number, productId: number, countedQty: unknown) {
@@ -80,7 +81,7 @@ export async function setCounted(c: Ctx, countId: number, locationId: number, pr
 export async function markLocation(c: Ctx, countId: number, locationId: number, counted: boolean) {
   await isOpen(c, countId);
   const u = await countLocation(c, countId, locationId);
-  if (counted && u.firstCountedBy === c.userId) throw new UserError("CNT-12", "Este recuento lo tiene que hacer otra persona.");
+  if (counted && u.firstCountedBy === c.userId) throw new UserError("CNT-12", "El recuento debe hacerlo otra persona.");
   await c.db
     .update(countLocations)
     .set({ status: counted ? "counted" : "pending", countedBy: counted ? c.userId : null })
@@ -125,7 +126,7 @@ export async function requestRecount(c: Ctx, countId: number, locationId: number
     await tx.delete(countLines).where(and(eq(countLines.countId, countId), eq(countLines.locationId, locationId)));
     await tx.update(countLocations).set({ status: "pending", firstCountedBy: u.countedBy, countedBy: null }).where(and(eq(countLocations.countId, countId), eq(countLocations.locationId, locationId)));
   });
-  return "Recuento pedido. Lo tiene que hacer otra persona.";
+  return "Recuento pedido, para otra persona.";
 }
 
 export type CountPlan = {
@@ -219,6 +220,13 @@ export async function closeCount(c: Ctx, countId: number, cause: string = "count
       plan.found.length && `${units(plan.found)} aparecieron`,
       plan.losses.length && `${units(plan.losses)} dados de baja`,
     ].filter(Boolean);
-    return parts.length === 0 ? "Conteo cerrado. Todo coincidía." : `Conteo cerrado: ${parts.join(", ")}.`;
+    return parts.length === 0 ? "Conteo cerrado. Sin diferencias." : `Conteo cerrado: ${parts.join(", ")}.`;
   });
+}
+
+/** Deletes an open count and everything counted in it. Stock is untouched: only approval changes it. */
+export async function cancelCount(c: Ctx, countId: number) {
+  const k = await isOpen(c, countId);
+  await c.db.delete(counts).where(eq(counts.id, countId));
+  return `Conteo "${k.name}" cancelado. El stock no cambió.`;
 }

@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Accounts } from "@/components/Accounts";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/ui";
-import { MENU } from "@/lib/menu";
+import { menuFor } from "@/lib/menu";
+import { controlInUse } from "@/lib/flows/control";
 import { can, requireSession } from "@/lib/session";
 
 export const metadata = { title: "Menú" };
 
 export default async function More() {
-  const { user, company } = await requireSession();
+  const { db, user, company } = await requireSession();
   return (
     <>
       <PageHeader title="Menú" subtitle={company.name} />
@@ -18,8 +19,9 @@ export default async function More() {
           <Accounts showCurrent />
         </div>
       </section>
-      {MENU.map((g) => {
-        const items = g.items.filter((i) => can(user.role, i.minRole ?? "operator"));
+      {menuFor(user.role, await controlInUse(db, company), can).map((g) => {
+        // Ajustes is already the first row of "Tu cuenta".
+        const items = g.items.filter((i) => i.href !== "/cuenta");
         if (items.length === 0) return null;
         return (
           <section key={g.group} className="mb-8 lg:mb-6">
