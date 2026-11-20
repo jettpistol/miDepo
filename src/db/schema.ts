@@ -33,7 +33,7 @@ export const companies = pgTable("companies", {
   /** How a picking batch is split into orders: at packing, or into one tray per order while picking. */
   batchSorting: text("batch_sorting").$type<BatchSorting>().notNull().default("packing"),
   /**
-   * Control step between picking and packing (Ajustes). null = no separate step: packing is the
+   * Control step between picking and packing (Organización). null = no separate step: packing is the
    * control, since it scans every unit again. N = orders with at least N picked units go to Control.
    */
   controlMinUnits: integer("control_min_units"),

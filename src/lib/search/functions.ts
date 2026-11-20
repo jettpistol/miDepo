@@ -44,7 +44,8 @@ const SCREEN_WORDS: Record<string, string> = {
   "/fierro": "sincronizar exportar csv enviar documentos integracion erp",
   "/usuarios": "personas empleados roles permisos pin altas operadores",
   "/ayuda": "manual guia ayuda documentacion",
-  "/cuenta": "mi cuenta perfil configuracion preferencias settings",
+  "/cuenta": "mi cuenta perfil configuracion preferencias personales settings",
+  "/organizacion": "empresa compania organizacion configuracion general ajustes de la empresa",
 };
 
 const screens: Feature[] = MENU.flatMap((g) =>
@@ -69,15 +70,17 @@ const more: Feature[] = [
   { title: "Cargar stock inicial", path: ["Stock", "Stock inicial"], href: "/stock/carga-inicial", icon: "download", words: "importar planilla csv excel arranque inventario inicial existencias", minRole: "admin" },
   { title: "Mover toda una ubicación", path: ["Mover", "Toda la ubicación"], href: "/mover?modo=todo", icon: "move", words: "vaciar estante reubicar masivo todo contenido traspaso bulk" },
   { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nueva", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
-  // Settings: sections of Ajustes.
+  // Settings: sections of Ajustes (personal) and Organización (the company).
   { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },
   { title: "Color de acento", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "colores tema personalizar" },
   { title: "Tipografía", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "letra fuente tamano texto font" },
   { title: "Tema claro u oscuro", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "modo oscuro noche dark light" },
   { title: "Huella, rostro o llave", path: ["Ajustes"], href: "/cuenta#llaves", icon: "account", words: "passkey llave de acceso biometria touch id face id" },
-  { title: "Control de pedidos", path: ["Ajustes"], href: "/cuenta#control", icon: "check", words: "controlar verificar revisar doble chequeo segunda persona empaque pedidos grandes", minRole: "admin" },
+  { title: "Control de pedidos", path: ["Organización"], href: "/organizacion#control", icon: "check", words: "controlar verificar revisar doble chequeo segunda persona empaque pedidos grandes", minRole: "admin" },
   { title: "Cambiar contraseña", path: ["Ajustes", "Contraseña"], href: "/cuenta#contrasena", icon: "account", words: "clave password" },
-  { title: "Picking por lotes", path: ["Ajustes"], href: "/cuenta#lotes", icon: "picking", words: "lote bandeja separar pedidos empaque batch oleada", minRole: "supervisor" },
+  { title: "Picking por lotes", path: ["Organización"], href: "/organizacion#lotes", icon: "picking", words: "lote bandeja separar pedidos empaque batch oleada", minRole: "supervisor" },
+  { title: "Nombre de la organización", path: ["Organización"], href: "/organizacion#nombre", icon: "organization", words: "empresa renombrar razon social", minRole: "admin" },
+  { title: "Código de empresa", path: ["Organización"], href: "/organizacion#codigo", icon: "organization", words: "codigo pin empresa iniciar sesion slug", minRole: "admin" },
   { title: "PIN del depósito", path: ["Ajustes", "PIN"], href: "/cuenta#pin", icon: "account", words: "codigo numerico clave" },
   { title: "Cambiar de cuenta", path: ["Ajustes"], href: "/mas", icon: "users", words: "otra cuenta usuario salir cerrar sesion logout" },
   { title: "Atajos de teclado", path: ["Manual"], href: "/ayuda/Atajos-de-teclado", icon: "help", words: "teclas f1 shortcuts", keys: KEYS.help },

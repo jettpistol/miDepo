@@ -1,7 +1,7 @@
 import type { Role } from "@/db/schema";
 import type { IconName } from "@/components/Icon";
 
-/** `control`: shown only while Control is in use: the step is on (Ajustes) or a customer always goes through it. */
+/** `control`: shown only while Control is in use: the step is on (Organización) or a customer always goes through it. */
 export type MenuItem = { href: string; name: string; icon: IconName; help: string; minRole?: Role; needs?: "control" };
 
 export const MENU: { group: string; items: MenuItem[] }[] = [
@@ -35,6 +35,13 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
       { href: "/ubicaciones", name: "Ubicaciones", icon: "locations", help: "Nombres y etiquetas de ubicaciones", minRole: "supervisor" },
       { href: "/bajas", name: "Bajas", icon: "writeoff", help: "Faltantes, dañados y su historial", minRole: "supervisor" },
       { href: "/fierro", name: "Fierro", icon: "fierro", help: "Sincronizar y cargar documentos", minRole: "supervisor" },
+    ],
+  },
+  {
+    // The whole company's settings, apart from each person's own (Ajustes).
+    group: "Organización",
+    items: [
+      { href: "/organizacion", name: "Organización", icon: "organization", help: "Nombre, código de empresa, control de pedidos y lotes", minRole: "supervisor" },
       { href: "/usuarios", name: "Usuarios", icon: "users", help: "Altas, roles y PIN", minRole: "admin" },
     ],
   },

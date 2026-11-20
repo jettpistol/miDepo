@@ -5,7 +5,7 @@ import { ActionForm } from "@/components/ScanForm";
 import { Select } from "@/components/Select";
 import { Toggle } from "@/components/Toggle";
 import type { ControlMode } from "@/lib/flows/settings";
-import { saveControl } from "./company-actions";
+import { saveControl } from "./actions";
 
 const MODES = [
   { value: "packing", label: "En empaque" },
