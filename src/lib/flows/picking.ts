@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
 import { boxes, companies, orderLines, orders, pickBatches, stock, pickTasks, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
@@ -55,9 +55,28 @@ function distribute(places: { locationId: number; free: number }[], quantity: nu
   return { stops, missing };
 }
 
+/**
+ * The stops taking the order would create, from the stock free right now. Taking uses it,
+ * and the order's page shows it before anyone takes the order (nothing is reserved until then).
+ */
+export async function planRoute(tx: Executor, companyId: number, orderId: number) {
+  const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
+  const freeOnes = await available(tx, companyId, lines.map((l) => l.productId));
+  const tasks: (typeof pickTasks.$inferInsert & { locationId: number | null; quantity: number })[] = [];
+  for (const l of lines) {
+    const { stops, missing } = distribute(freeOnes.get(l.productId) ?? [], l.quantity);
+    for (const s of stops) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: s.locationId, quantity: s.quantity });
+    if (missing > 0) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: null, quantity: missing, status: "short" });
+  }
+  return tasks;
+}
+
 /** The operator takes a pending order: the route through the shelves is built. */
 export async function takeOrder(c: Ctx, orderId: number) {
   const p = await orderOf(c, orderId);
+  if (p.status === "cancelled") throw new UserError("PICK-19", `El pedido ${p.number} ya no figura como pendiente en Fierro.`);
+  if (p.unknownLines > 0) throw new UserError("PICK-20", `El pedido ${p.number} tiene ${p.unknownLines === 1 ? "un artículo que no está" : `${p.unknownLines} artículos que no están`} en el catálogo. Sincroniza con Fierro cuando estén cargados.`);
+  if (p.status === "pending" && p.fierroChange) throw new UserError("PICK-21", `Fierro cambió el pedido ${p.number}. Sincroniza antes de prepararlo.`);
   return c.db.transaction(async (tx) => {
     // The status change goes first and is conditional: if two people act at once, only one wins.
     const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
@@ -66,7 +85,8 @@ export async function takeOrder(c: Ctx, orderId: number) {
       if (p.status === "in_picking" && p.takenBy === c.userId) return `Pedido ${p.number} tomado.`;
       throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
     }
-    await buildRoute(tx, c.companyId, orderId);
+    await tx.insert(pickTasks).values(await planRoute(tx, c.companyId, orderId));
+    await checkEnd(tx, orderId);
     return `Pedido ${p.number} tomado.`;
   });
 }
@@ -76,14 +96,7 @@ export async function takeOrder(c: Ctx, orderId: number) {
  * other orders (including earlier orders of the same batch, in this transaction) are not counted.
  */
 async function buildRoute(tx: Executor, companyId: number, orderId: number) {
-  const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, orderId));
-  const freeOnes = await available(tx, companyId, lines.map((l) => l.productId));
-  const tasks: (typeof pickTasks.$inferInsert)[] = [];
-  for (const l of lines) {
-    const { stops, missing } = distribute(freeOnes.get(l.productId) ?? [], l.quantity);
-    for (const s of stops) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: s.locationId, quantity: s.quantity });
-    if (missing > 0) tasks.push({ orderId, lineId: l.id, productId: l.productId, locationId: null, quantity: missing, status: "short" });
-  }
+  const tasks = await planRoute(tx, companyId, orderId);
   if (tasks.length > 0) await tx.insert(pickTasks).values(tasks);
   await checkEnd(tx, orderId);
 }
@@ -270,9 +283,10 @@ export async function takeAll(c: Ctx) {
     const taken = await tx
       .update(orders)
       .set({ status: "in_picking", takenBy: c.userId, batchId: batch.id })
-      .where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending")))
+      // Not the ones a single "Preparar" would refuse: changed in Fierro, or with titles not in the catalogue.
+      .where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"), isNull(orders.fierroChange), eq(orders.unknownLines, 0)))
       .returning({ id: orders.id, date: orders.date });
-    if (taken.length === 0) throw new UserError("PICK-19", "No hay pedidos pendientes para preparar.");
+    if (taken.length === 0) throw new UserError("PICK-22", "No hay pedidos pendientes para preparar.");
     taken.sort((a, b) => a.date.getTime() - b.date.getTime() || a.id - b.id);
     // Oldest first: when stock is short, the oldest orders get it.
     for (const [i, o] of taken.entries()) {
@@ -286,7 +300,7 @@ export async function takeAll(c: Ctx) {
 
 async function batchOf(c: Ctx, batchId: number) {
   const [b] = await c.db.select().from(pickBatches).where(and(eq(pickBatches.id, batchId), eq(pickBatches.companyId, c.companyId)));
-  if (!b) throw new UserError("PICK-20", "No se encontró ese lote.");
+  if (!b) throw new UserError("PICK-23", "No se encontró ese lote.");
   return b;
 }
 
@@ -423,7 +437,7 @@ export async function releaseBatch(c: Ctx, batchId: number, { anyone = false } =
   const batch = await batchOf(c, batchId);
   if (batch.takenBy !== c.userId && !anyone) {
     const [who] = await c.db.select({ name: users.name }).from(users).where(eq(users.id, batch.takenBy));
-    throw new UserError("PICK-21", `Este lote lo está preparando ${who?.name ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.`);
+    throw new UserError("PICK-24", `Este lote lo está preparando ${who?.name ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.`);
   }
   const open = await c.db.select().from(orders).where(and(eq(orders.batchId, batch.id), inArray(orders.status, ["in_picking", "picked"])));
   const [box] = open.length > 0 ? await c.db.select({ id: boxes.id }).from(boxes).where(inArray(boxes.orderId, open.map((o) => o.id))).limit(1) : [];

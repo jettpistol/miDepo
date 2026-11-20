@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { fierroWarning } from "@/lib/orderState";
 import { Assignee } from "@/components/Assignee";
 import { close, scan, finish, empty, takeOut, reopen, reopenOrder } from "../actions";
 import { articleName } from "@/lib/article";
@@ -29,6 +30,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   const open = ofOrder.find((k) => k.status === "open");
   const ready = p.status === "packed" || p.status === "shipped";
   const editable = p.status === "picked";
+  const warning = p.status === "shipped" ? null : fierroWarning(p);
 
   return (
     <>
@@ -46,6 +48,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
         )}
       </PageHeader>
 
+      {warning && <Notice tone="warn">{warning}</Notice>}
       {!editable && !ready && (
         <Notice tone="warn">
           Este pedido todavía está en picking.{" "}

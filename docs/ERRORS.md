@@ -190,9 +190,12 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-16` | Las paradas que la reemplazaron ya avanzaron. Deshaz esas primero. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after the extra stop miDepo added elsewhere was picked or reported short too. |
 | `PICK-17` | Esas unidades ya no están en Faltantes: se encontraron o se dieron de baja. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after a supervisor wrote the units off or somebody moved them out of FALTANTES. |
 | `PICK-18` | Primero deshaz el aviso de que no estaba en la ubicación. | `src/lib/flows/picking.ts` · `unpick` | Undoing a partial pick on a stop that was then reported short. |
-| `PICK-19` | No hay pedidos pendientes para preparar. | `src/lib/flows/picking.ts` · `takeAll` | "Preparar todos" when no order is pending (someone else took them first). |
-| `PICK-20` | No se encontró ese lote. | `src/lib/flows/picking.ts` · `batchOf` | The batch does not exist or belongs to another company. |
-| `PICK-21` | Este lote lo está preparando {nombre}. Solo esa persona o un supervisor puede soltarlo. | `src/lib/flows/picking.ts` · `releaseBatch` | Dropping someone else's batch without being a supervisor. The screen disables the button with this reason first. |
+| `PICK-19` | El pedido {número} ya no figura como pendiente en Fierro. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order a sync cancelled because Fierro stopped listing it. |
+| `PICK-20` | El pedido {número} tiene {n} artículos que no están en el catálogo. Sincroniza con Fierro cuando estén cargados. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order whose Fierro lines name articles missing from the synced catalogue. |
+| `PICK-21` | Fierro cambió el pedido {número}. Sincroniza antes de prepararlo. | `src/lib/flows/picking.ts` · `takeOrder` | Taking a released order whose change from Fierro has not been applied yet. |
+| `PICK-22` | No hay pedidos pendientes para preparar. | `src/lib/flows/picking.ts` · `takeAll` | "Preparar todos" when no order can be taken (none pending, or the pending ones were changed in Fierro or have titles not in the catalogue). |
+| `PICK-23` | No se encontró ese lote. | `src/lib/flows/picking.ts` · `batchOf` | The batch does not exist or belongs to another company. |
+| `PICK-24` | Este lote lo está preparando {nombre}. Solo esa persona o un supervisor puede soltarlo. | `src/lib/flows/picking.ts` · `releaseBatch` | Dropping someone else's batch without being a supervisor. The screen disables the button with this reason first. |
 
 ## PACK: Empaque
 
@@ -267,9 +270,9 @@ Writing off more units than the zone holds is refused by `STK-03`.
 
 | Code | Message | Where | When |
 |---|---|---|---|
-| `ASG-01` | No se reconoce qué se quiere asignar. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
-| `ASG-02` | No se encontró eso para asignar. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
-| `ASG-03` | {Pedido PED-00012} ya no tiene trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
+| `ASG-01` | Tipo de tarea desconocido. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
+| `ASG-02` | No se encontró. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
+| `ASG-03` | {Pedido PED-00012} sin trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
 | `ASG-04` | Elige una persona de la lista. | `src/lib/flows/assignments.ts` · `assign` | The person chosen does not exist, is deactivated, or belongs to another company. Only reachable by editing the form or a stale page. |
 
 ## EXP: Fierro documents

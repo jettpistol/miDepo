@@ -2,6 +2,7 @@ import Link from "next/link";
 import { and, asc, eq, inArray, min, sql } from "drizzle-orm";
 import { ActionButton } from "@/components/ScanForm";
 import { Progress, shortDate, Badge, ShelfMark } from "@/components/ui";
+import { fierroWarning } from "@/lib/orderState";
 import { customers, orderLines, orders, pickBatches, pickTasks, locations, users } from "@/db/schema";
 import { batchNumber } from "@/lib/flows/picking";
 import type { requireSession } from "@/lib/session";
@@ -160,7 +161,7 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
               <td className="hidden text-right font-semibold sm:table-cell">{units}</td>
               <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(p.date)}</td>
               <td className="w-px text-right">
-                <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm" hotkey={i === 0 ? "primary" : undefined}>
+                <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm" hotkey={i === 0 ? "primary" : undefined} reason={fierroWarning(p) ?? undefined}>
                   Preparar
                 </ActionButton>
               </td>

@@ -9,11 +9,13 @@ Picking es buscar en las ubicaciones lo que pide un pedido. miDepo genera el rec
 
 Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
+Si abres un pedido pendiente sin tomarlo, ves su **Recorrido previsto**: los artículos, de qué ubicación saldría cada uno y lo que no tiene stock en estanterías (saldría como faltante). Es una vista previa: el stock se reserva recién cuando tocas **Preparar este pedido**, y el recorrido se arma con lo que haya libre en ese momento.
+
 ## Preparar todos en un lote
 
 Lo normal es preparar todos los pedidos juntos, en un solo recorrido. Toca **Preparar todos** (o **F8**) arriba de la lista de pendientes y confirma.
 
-- Todos los pedidos pendientes, del más antiguo al más reciente, forman un **lote** (`LOTE-0001`) a tu nombre.
+- Todos los pedidos pendientes que se pueden preparar, del más antiguo al más reciente, forman un **lote** (`LOTE-0001`) a tu nombre.
 - Cada parada pide **el total** de ese artículo en esa ubicación, sumando todos los pedidos que lo llevan ("Toma 12 para 2 pedidos").
 - Las paradas van en orden de ubicación: pasas una sola vez por cada estante. Si el carro se llena, déjalo en PREPARACIÓN y sigue con el mismo lote.
 - Si falta stock, los pedidos más antiguos lo reciben primero.
