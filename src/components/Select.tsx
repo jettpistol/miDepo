@@ -110,6 +110,15 @@ export function Select({
     setViewH(list.current.clientHeight || 320);
   }, [open, rows.length]);
 
+  // The list shows whole rows only: its height is a multiple of the row height (plus its 4px padding top and bottom).
+  const LIST_PAD = 8;
+  const [fit, setFit] = useState(320);
+  useEffect(() => {
+    if (!open) return;
+    const room = Math.min(320, window.innerHeight * 0.5) - LIST_PAD;
+    setFit(Math.max(3, Math.floor(room / rowH)) * rowH + LIST_PAD);
+  }, [open, rowH]);
+
   // Keeps the active row in view, also when it is not drawn yet.
   useEffect(() => {
     const el = list.current;
@@ -159,7 +168,7 @@ export function Select({
   }
 
   return (
-    <div ref={root} className={`relative ${variant === "field" ? "" : "inline-flex max-w-full"} ${className}`}>
+    <div ref={root} className={`relative ${variant === "field" ? "" : "inline-flex w-max"} ${className}`}>
       {name && <input type="hidden" name={name} value={value} />}
       <input ref={proxy} tabIndex={-1} aria-hidden="true" value={chosen?.label ?? ""} onChange={() => {}} onFocus={() => trigger.current?.focus()} className="pointer-events-none absolute inset-0 opacity-0" required={required} />
       <button
@@ -185,7 +194,7 @@ export function Select({
           variant === "field"
             ? `field flex items-center justify-between gap-2 text-left ${open ? "border-accent-text" : ""}`
             : variant === "inline"
-              ? `group flex h-11 max-w-full items-center gap-2 rounded-control px-1.5 text-left transition-colors duration-150 hover:bg-sunken lg:h-8 ${open ? "bg-sunken" : ""}`
+              ? `group flex h-11 w-max items-center gap-2 rounded-control px-1.5 text-left transition-colors duration-150 hover:bg-sunken lg:h-8 ${open ? "bg-sunken" : ""}`
               : `grid size-11 place-items-center rounded-full transition-colors duration-150 hover:bg-sunken lg:size-8 ${open ? "bg-sunken" : ""}`
         }
       >
@@ -235,7 +244,7 @@ export function Select({
               className="h-9 w-full rounded-control border border-transparent bg-sunken pr-2 pl-8 text-base outline-none placeholder:text-muted focus:border-accent-text lg:h-8 lg:text-sm"
             />
           </div>
-          <ul ref={list} id={`${auto}-list`} role="listbox" aria-label={label ?? placeholder} onScroll={(e) => setScroll(e.currentTarget.scrollTop)} className="max-h-[min(20rem,50vh)] overflow-y-auto py-1">
+          <ul ref={list} id={`${auto}-list`} role="listbox" aria-label={label ?? placeholder} onScroll={(e) => setScroll(e.currentTarget.scrollTop)} style={{ maxHeight: fit }} className="overflow-y-auto py-1">
             {first > 0 && <li aria-hidden="true" role="presentation" style={{ height: first * rowH }} />}
             {rows.slice(first, last).map((o, n) => {
               const i = first + n;
