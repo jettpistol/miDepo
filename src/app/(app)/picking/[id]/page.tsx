@@ -80,7 +80,14 @@ export default async function PickingOrder({ params, searchParams }: { params: P
       </PageHeader>
 
       {warning && <Notice tone="warn">{warning}</Notice>}
-      {p.status === "pending" || p.status === "cancelled" ? (
+      {p.status === "in_picking" && p.batchId != null ? (
+        <Notice tone="accent">
+          <p className="mb-3">Este pedido se prepara en un lote, junto con otros.</p>
+          <Link href={`/picking/lote/${p.batchId}`} className="btn" {...hotkey("primary")}>
+            Ir al lote
+          </Link>
+        </Notice>
+      ) : p.status === "pending" || p.status === "cancelled" ? (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
           <div className="min-w-0 space-y-3 lg:sticky lg:top-30">
             <p>
