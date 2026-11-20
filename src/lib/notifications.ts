@@ -33,6 +33,7 @@ export const KINDS = {
   fierro_changes: { name: "Cambios en Fierro", when: "Fierro cambió o quitó pedidos ya empezados.", roles: DESK },
   day_end: { name: "Cierre del día", when: `Desde las ${DAY_END_HOUR} h, una vez por día: lo que queda abierto.`, roles: DESK },
   write_off: { name: "Bajas", when: "Unidades dadas de baja, desde Bajas o al aprobar un conteo.", roles: ["admin"] as Role[] },
+  comment: { name: "Comentarios", when: "Respuesta en un hilo tuyo, o comentario en un pedido asignado a ti o en tu picking.", roles: ALL },
   new_work: { name: "Trabajo nuevo", when: "Pedidos o recepciones nuevas de Fierro.", roles: ALL },
 } satisfies Record<string, { name: string; when: string; roles: Role[] }>;
 
@@ -110,6 +111,14 @@ export async function resolve(db: Executor, companyId: number, key: string, { pr
   await db
     .delete(notifications)
     .where(and(eq(notifications.companyId, companyId), isNull(notifications.readAt), prefix ? like(notifications.key, `${key.replace(/[%_]/g, "\\$&")}%`) : eq(notifications.key, key)));
+}
+
+/** The screen an order is worked on now, where its comments are too. */
+export function orderHref(o: { id: number; status: string; dispatchedAt?: Date | null }) {
+  if (o.status === "to_control") return `/control/${o.id}`;
+  if (o.status === "picked") return `/empaque/${o.id}`;
+  if ((o.status === "packed" || o.status === "shipped") && !o.dispatchedAt) return `/despacho/${o.id}`;
+  return `/picking/${o.id}`;
 }
 
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

@@ -28,6 +28,7 @@ Nadie recibe aviso de lo que hizo él mismo.
 | Cambios en Fierro | Fierro cambió o quitó pedidos ya empezados. | Supervisores y administradores |
 | Cierre del día | Desde las 17 h, una vez por día, si queda algo abierto: pedidos en picking, por controlar, por empacar, sin cargar o sin despachar; documentos sin cargar; recepciones, devoluciones y conteos abiertos; unidades por reponer y en FALTANTES o DANADOS. | Supervisores y administradores |
 | Bajas | Unidades dadas de baja, desde **Bajas** o al aprobar un conteo, con el motivo y quién aprobó. | Administradores |
+| Comentarios | Respuesta en un hilo donde comentaste, o comentario nuevo en un pedido asignado a ti o que estás preparando. | Esas personas |
 | Trabajo nuevo | Fierro trajo pedidos o recepciones nuevas. | Todos |
 
 ## Elegir tus avisos

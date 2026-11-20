@@ -17,6 +17,7 @@ import { writeOff } from "@/lib/flows/adjustments";
 import { simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
 import { setUrgent } from "@/lib/flows/orders";
+import { addComment } from "@/lib/flows/comments";
 import { announceSync, DAY_END_HOUR, kindsFor, localDay, refreshToLoad, runTimedChecks } from "@/lib/notifications";
 
 let db: DB;
@@ -46,7 +47,7 @@ const shelf = async (code: string) => (await db.select().from(locations).where(a
 
 describe("notifications", () => {
   it("each role gets only its kinds", () => {
-    expect(kindsFor("operator")).toEqual(["assigned", "urgent", "recount", "new_work"]);
+    expect(kindsFor("operator")).toEqual(["assigned", "urgent", "recount", "comment", "new_work"]);
     expect(kindsFor("admin")).toContain("write_off");
     expect(kindsFor("supervisor")).not.toContain("write_off");
   });
@@ -186,6 +187,19 @@ describe("notifications", () => {
     expect(await unread(op1, "urgent")).toHaveLength(0);
     await setUrgent(as(sup), o.id, true); // already urgent: no second notice
     expect(await unread(op2, "urgent")).toHaveLength(1);
+  });
+
+  it("a comment reaches whoever has the order; a reply reaches the thread", async () => {
+    const [o] = await db.select().from(orders).where(and(eq(orders.companyId, company.id), eq(orders.status, "pending"), eq(orders.assignedTo, op2))).limit(1);
+    const top = await addComment(as(sup), { subjectType: "order", subjectId: o.id, body: "Revisar   la dirección antes de empacar" });
+    const [n] = await unread(op2, "comment");
+    expect(n.title).toBe("Comentario");
+    expect(n.body).toBe(`${o.number} · supervisor: Revisar la dirección antes de empacar`);
+    expect(await unread(op1, "comment")).toHaveLength(0);
+    await addComment(as(op1), { subjectType: "order", subjectId: o.id, body: "Ya está", parentId: top.id });
+    const replies = (await unread(sup, "comment")).filter((r) => r.title === "Respuesta");
+    expect(replies).toHaveLength(1);
+    expect(await unread(op1, "comment")).toHaveLength(0); // the author of the reply
   });
 
   it("the end-of-day notice goes out once a day, from the closing hour, listing what is open", async () => {

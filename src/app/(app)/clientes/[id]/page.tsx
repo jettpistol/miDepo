@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { commentCounts } from "@/lib/flows/comments";
 import { and, eq } from "drizzle-orm";
 import { Pager, paging, requestedPage } from "@/components/ListTools";
 import { Badge, PageHeader } from "@/components/ui";
@@ -39,7 +40,7 @@ export default async function CustomerDetail({ params, searchParams }: { params:
         <h2 className="section-title">
           Pedidos <small>{ords.all}</small>
         </h2>
-        <OrdersTable rows={ords.rows} showCustomer={false} empty={{ title: "Sin pedidos" }} />
+        <OrdersTable rows={ords.rows} showCustomer={false} empty={{ title: "Sin pedidos" }} comments={await commentCounts(db, company.id, "order", ords.rows.map((x) => x.o.id))} />
         <Pager base={`/clientes/${c.id}`} params={{}} page={page} total={ords.total} />
       </section>
       <section>

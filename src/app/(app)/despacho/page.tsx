@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CommentCount } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { ScanForm } from "@/components/ScanForm";
 import { Badge, EmptyRow, PageHeader } from "@/components/ui";
 import { toDispatch } from "@/lib/flows/dispatch";
@@ -10,6 +12,7 @@ export const metadata = { title: "Despacho" };
 export default async function Dispatch() {
   const { db, company } = await requireSession();
   const rows = await toDispatch(db, company.id);
+  const notes = await commentCounts(db, company.id, "order", rows.map((r) => r.o.id));
   return (
     <>
       <PageHeader title="Despacho" />
@@ -35,7 +38,8 @@ export default async function Dispatch() {
                   <td>
                     <Link href={`/despacho/${o.id}`} className="link doc-number">
                       {o.number}
-                    </Link>
+                    </Link>{" "}
+                    <CommentCount n={notes.get(o.id)} />
                     {o.urgent && (
                       <>
                         {" "}

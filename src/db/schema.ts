@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -613,6 +614,33 @@ export const stockLoads = pgTable(
     undoneAt: timestamp("undone_at", { withTimezone: true }),
   },
   (t) => [uniqueIndex("stock_loads_company_id_number_idx").on(t.companyId, t.number)],
+);
+
+// ───────────── Comments ─────────────
+
+/** What a comment can be attached to. Add a kind here and in SUBJECTS (src/lib/flows/comments.ts). */
+export type CommentSubject = "order";
+
+/**
+ * A note people leave on a document, for the next person who works on it. One level of threads:
+ * a reply points at a top-level comment (parentId), never at another reply. Only the author can
+ * edit or delete it, and only for a few minutes, to fix a slip; after that it is part of the record.
+ */
+export const comments = pgTable(
+  "comments",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    subjectType: text("subject_type").$type<CommentSubject>().notNull(),
+    subjectId: integer("subject_id").notNull(),
+    /** null = starts a thread; otherwise the top-level comment it answers. */
+    parentId: integer("parent_id").references((): AnyPgColumn => comments.id),
+    authorId: integer("author_id").notNull().references(() => users.id),
+    body: text("body").notNull(),
+    createdAt: createdAt(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+  },
+  (t) => [index("comments_company_id_subject_idx").on(t.companyId, t.subjectType, t.subjectId), index("comments_parent_id_idx").on(t.parentId)],
 );
 
 // ───────────── Notifications ─────────────

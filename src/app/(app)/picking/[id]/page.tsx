@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Comments, CommentsLink } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { notFound } from "next/navigation";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
@@ -27,6 +29,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
     .leftJoin(users, eq(users.id, orders.takenBy))
     .where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
+  const commentCount = (await commentCounts(db, company.id, "order", [id])).get(id);
   const { p, customer, takenBy } = row;
   const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, id));
   const tasks = await db
@@ -76,6 +79,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
             Soltar pedido
           </ActionButton>
         )}
+        {commentCount ? <CommentsLink n={commentCount} /> : null}
       </PageHeader>
 
       {warning && <Notice tone="warn">{warning}</Notice>}
@@ -290,6 +294,9 @@ export default async function PickingOrder({ params, searchParams }: { params: P
           </section>
         </div>
       )}
+      <div className="mt-8 lg:mt-6">
+        <Comments db={db} companyId={company.id} userId={user.id} subjectType="order" subjectId={id} />
+      </div>
     </>
   );
 }

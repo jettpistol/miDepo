@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Comments, CommentsLink } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -31,6 +33,7 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
     .leftJoin(allower, eq(allower.id, orders.sameCheckAllowedBy))
     .where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
+  const commentCount = (await commentCounts(db, company.id, "order", [id])).get(id);
   const { p, customer, pickedBy, controlledBy, allowedBy } = row;
   const lines = await db.select({ l: orderLines, title: products.title }).from(orderLines).innerJoin(products, eq(products.id, orderLines.productId)).where(eq(orderLines.orderId, id)).orderBy(asc(products.title));
   const picked = lines.reduce((s, x) => s + x.l.picked, 0);
@@ -43,6 +46,7 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
     <>
       <PageHeader title={p.number} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${pickedBy ? ` · Preparó ${pickedBy}` : ""}`} back={{ href: "/control", text: "Control" }}>
         <Urgency session={session} order={p} />
+        {commentCount ? <CommentsLink n={commentCount} /> : null}
       </PageHeader>
 
       {(p.status === "pending" || p.status === "in_picking") && (
@@ -123,6 +127,9 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
             </table>
           </div>
         </section>
+      </div>
+      <div className="mt-8 lg:mt-6">
+        <Comments db={db} companyId={company.id} userId={user.id} subjectType="order" subjectId={id} />
       </div>
     </>
   );

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CommentCount } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { PageHeader, Badge, EmptyRow, Condition, SALE_MODE } from "@/components/ui";
@@ -28,6 +30,7 @@ export default async function Control() {
     .groupBy(orders.id, customers.name, picker.name)
     .orderBy(desc(orders.urgent), asc(orders.date));
   const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.sameCheckAllowedBy == null && p.takenBy === user.id;
+  const notes = await commentCounts(db, company.id, "order", rows.map((r) => r.p.id));
   const first = rows.findIndex((r) => !mine(r.p));
 
   return (
@@ -51,7 +54,8 @@ export default async function Control() {
                 <td>
                   <Link href={`/control/${p.id}`} className="link doc-number" {...(i === first ? hotkey("primary", `Controlar ${p.number}`) : {})}>
                     {p.number}
-                  </Link>
+                  </Link>{" "}
+                  <CommentCount n={notes.get(p.id)} />
                 </td>
                 <td>
                   <span className="font-medium">{customer}</span>

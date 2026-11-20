@@ -3,7 +3,7 @@ import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { counts, locations, orders, receivings, returns, users } from "@/db/schema";
 import { UserError } from "../errors";
 import type { Ctx } from "./common";
-import { notify } from "../notifications";
+import { notify, orderHref } from "../notifications";
 
 /** What a supervisor can give to a person. "putaway" is a zone (RECEPCION or DEVOLUCIONES): its put-away. */
 export type AssignKind = "order" | "receiving" | "return" | "count" | "putaway";
@@ -23,8 +23,7 @@ async function target(c: Ctx, kind: AssignKind, id: number) {
   switch (kind) {
     case "order": {
       const [o] = await c.db.select().from(orders).where(mine(orders));
-      const href = o && (o.status === "to_control" ? `/control/${o.id}` : o.status === "picked" ? `/empaque/${o.id}` : `/picking/${o.id}`);
-      return o && { save, label: `${o.number}`, href, open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
+      return o && { save, label: `${o.number}`, href: orderHref(o), open: ["pending", "in_picking", "to_control", "picked"].includes(o.status) };
     }
     case "receiving": {
       const [r] = await c.db.select().from(receivings).where(mine(receivings));

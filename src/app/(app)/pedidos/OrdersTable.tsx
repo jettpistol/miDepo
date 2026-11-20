@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommentCount } from "@/components/comments/Comments";
 import { Badge, EmptyRow, plural, shortDate, type Tone, Condition, SALE_MODE } from "@/components/ui";
 import type { orders, OrderStatus } from "@/db/schema";
 import { orderScreen } from "@/lib/lists";
@@ -16,7 +17,7 @@ export const ORDER_STATE: Record<OrderStatus, { label: string; tone: Tone }> = {
 type Row = { o: typeof orders.$inferSelect; customer: string; units: number };
 
 /** Orders of any state. Each opens where it is worked on: picking, control, or packing. */
-export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[]; showCustomer?: boolean; empty: { title: string; text?: string } }) {
+export function OrdersTable({ rows, showCustomer = true, empty, comments }: { rows: Row[]; showCustomer?: boolean; empty: { title: string; text?: string }; comments?: Map<number, number> }) {
   const columns = showCustomer ? 6 : 5;
   return (
     <div className="table-wrap">
@@ -43,7 +44,8 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
               <td>
                 <Link href={`/${orderScreen(o.status)}/${o.id}`} className="link doc-number after:absolute after:inset-0">
                   {o.number}
-                </Link>
+                </Link>{" "}
+                <CommentCount n={comments?.get(o.id)} />
                 {!showCustomer && <span className="block text-muted sm:hidden">{plural(units, "unidad", "unidades")} · {SALE_MODE[o.saleMode]} · {shortDate(o.date)}</span>}
               </td>
               {showCustomer && (

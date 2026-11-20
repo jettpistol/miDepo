@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Comments, CommentsLink } from "@/components/comments/Comments";
+import { commentCounts } from "@/lib/flows/comments";
 import { notFound } from "next/navigation";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm, ActionForm } from "@/components/ScanForm";
@@ -30,6 +32,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
     .leftJoin(allower, eq(allower.id, orders.sameCheckAllowedBy))
     .where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
+  const commentCount = (await commentCounts(db, company.id, "order", [id])).get(id);
   const { p, customer } = row;
   const lines = await db.select({ l: orderLines, title: products.title }).from(orderLines).innerJoin(products, eq(products.id, orderLines.productId)).where(eq(orderLines.orderId, id)).orderBy(asc(products.title));
   const ofOrder = await db.select().from(boxes).where(eq(boxes.orderId, id)).orderBy(asc(boxes.number));
@@ -59,6 +62,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
             </Link>
           </>
         )}
+        {commentCount ? <CommentsLink n={commentCount} /> : null}
       </PageHeader>
 
       {warning && <Notice tone="warn">{warning}</Notice>}
@@ -192,6 +196,9 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
             </div>
           </section>
         </div>
+      </div>
+      <div className="mt-8 lg:mt-6">
+        <Comments db={db} companyId={company.id} userId={user.id} subjectType="order" subjectId={id} />
       </div>
     </>
   );

@@ -25,6 +25,8 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 | Ver un proveedor o un cliente y sus documentos | **Proveedores**, **Clientes** | [Proveedores y clientes](Proveedores-y-clientes) |
 | Saber quién movió qué, cuándo y por qué | **Movimientos** | [Movimientos](Movimientos) |
 
+Cada pedido tiene [Comentarios](Comentarios) para avisos entre quienes lo trabajan.
+
 ## Para supervisores y administradores
 
 - [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas): nombrar las ubicaciones e imprimir sus etiquetas.
