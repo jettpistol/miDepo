@@ -205,6 +205,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.
 - Don't use unicode glyphs as icons; use `Icon`.
+- Don't highlight anything when a screen opens. A scan screen still puts the cursor in its first empty field (the handheld scanner types there), through `focusQuietly()` in `src/lib/quiet-focus.ts`: no ring or accent border until the first click, tap or key.
 - Do attach a button that acts on a single field to that field's right edge (`field-group`); never leave it floating beside the field with a gap.
 - Do treat the database as the source of truth: suppliers, customers, products, stock and locations are chosen from what exists. Never accept free text for something that should already exist; creating one is a separate, confirmed action that refuses near-duplicates.
 - Do say a problem before the click: validate while typing, suggest valid values, and disable what cannot work with the reason beside it.
