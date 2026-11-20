@@ -9,6 +9,8 @@ Picking es buscar en las ubicaciones lo que pide un pedido. miDepo genera el rec
 
 Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
+Si abres un pedido pendiente sin tomarlo, ves su **Recorrido previsto**: los artículos, de qué ubicación saldría cada uno y lo que no tiene stock en estanterías (saldría como faltante). Es una vista previa: el stock se reserva recién cuando tocas **Preparar este pedido**, y el recorrido se arma con lo que haya libre en ese momento.
+
 ## Recorrer las paradas
 
 A la izquierda está la **parada actual**: la ubicación en grande, el artículo, su SKU e ISBN y cuántas unidades tomar. A la derecha está el **Recorrido** completo, en el orden en que conviene caminarlo; la parada actual aparece resaltada como **Ahora**.
