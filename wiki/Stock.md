@@ -44,6 +44,19 @@ Además de las ubicaciones de estantería, hay seis zonas:
 | Pedidos preparados | Lo que ya se sacó de su ubicación para un pedido y todavía no salió. |
 | Faltantes | Lo que no estaba en su ubicación durante un picking. Sigue siendo del depósito hasta que aparece o se da de baja. Ver [Bajas y faltantes](Bajas-y-faltantes). |
 
+## Stock inicial (administradores)
+
+El día que el depósito empieza con miDepo, el stock que ya está en las estanterías se carga desde un archivo. En **Stock**, toca **Stock inicial**.
+
+1. Prepara una planilla con tres columnas: **código** (de barras, ISBN o SKU), **cantidad** y **ubicación**. Guárdala como CSV.
+2. Elige el archivo. miDepo revisa cada fila y muestra las que tienen errores: código que no está en el catálogo, ubicación que no existe, cantidad mal escrita.
+3. Corrige la planilla y vuelve a elegirla hasta que no haya errores.
+4. Toca **Cargar**.
+
+Cada carga queda numerada (`CI-00001`). Las unidades entran directo a su ubicación, sin pasar por Recepción, y no se informan a Fierro: Fierro ya las tiene. Las ubicaciones tienen que existir antes: créalas en [Ubicaciones](Ubicaciones-y-etiquetas).
+
+**Deshacer** quita del stock todo lo que cargó, si nada de esa carga se movió todavía. Si ya se movió algo, corrige las diferencias con un [conteo](Conteos).
+
 ## Artículos sin ISBN
 
 Todos los artículos tienen un **SKU**, el código interno del depósito (por ejemplo `OVN-001824`). Las grapas, las portadas variantes y los packs no tienen ISBN: aparecen marcados **Sin ISBN** y se identifican por el SKU. Se buscan y se escanean igual, con la etiqueta que les pone el depósito. Ver [Ubicaciones y etiquetas](Ubicaciones-y-etiquetas).
