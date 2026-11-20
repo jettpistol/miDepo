@@ -13,6 +13,6 @@ export const changeCode = action("admin", async (c, f) => {
   return `Guardado. Código: ${slug}.`;
 });
 
-export const saveControl = action("admin", (c, f) => saveControlSettings(c, { mode: txt(f, "mode"), minUnits: txt(f, "minUnits"), samePerson: txt(f, "samePerson") === "yes" }));
+export const saveControl = action("admin", (c, f) => saveControlSettings(c, { mode: txt(f, "mode"), minUnits: txt(f, "minUnits"), samePerson: txt(f, "otherPerson") !== "yes" }));
 
 export const saveSorting = action("supervisor", (c, f) => saveBatchSorting(c, txt(f, "sorting")));
