@@ -15,6 +15,7 @@
 - [Control](Control)
 - [Empaque](Empaque)
 - [Despacho](Despacho)
+- [Salidas](Salidas)
 - [Devoluciones](Devoluciones)
 - [Conteos](Conteos)
 - [Mover](Mover)

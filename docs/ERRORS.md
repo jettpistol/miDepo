@@ -29,6 +29,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `CTRL` | Control: the second count of a picked order before packing |
 | `PACK` | Empaque |
 | `DSP` | Despacho: transport, tracking, remito and loading boxes |
+| `TRF` | Salidas: stock taken to a fair, a bookstore or another outside location, and back |
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
@@ -166,6 +167,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `STK-20` | La carga {número} ya se deshizo. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load twice. |
 | `STK-21` | Parte de la carga {número} ya se movió. Corrige las diferencias con un conteo. | `src/lib/flows/stockLoad.ts` · `undoLoad` | Undoing a stock load after some of its units were moved, picked or written off. |
 | `STK-22` | {ubicación} está vacía. | `src/lib/flows/move.ts` · `moveAll` | Moving everything from a location that holds nothing. |
+| `STK-23` | Lo que sale del depósito o vuelve va por Salidas. | `src/lib/flows/move.ts` · `checkMove` | Moving stock into or out of an outside location with Mover. |
 | `STK-10` | La cantidad tiene que ser un número entero mayor que cero. | `src/lib/flows/common.ts` · `validQuantity` | A scanned quantity that is not a whole number from 1 to 100,000. Used by every scan flow. |
 
 ## RCV: Recepción and suppliers
@@ -290,6 +292,26 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `DSP-12` | No se encontró esa caja. | `src/lib/flows/dispatch.ts` · `unloadBox` | Unloading a box that does not exist or belongs to another company. |
 | `DSP-14` | No se pudo crear el transporte. | `src/app/(app)/despacho/actions.ts` · `addCarrier` | Creating a carrier from the dropdown failed without a message of its own. |
 | `DSP-13` | La caja {n} no está cargada. | `src/lib/flows/dispatch.ts` · `unloadBox` | Unloading a box that was not loaded. |
+
+## TRF: Salidas
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `TRF-01` | Escribe el nombre del destino. | `src/lib/flows/transfers.ts` · `createOutsideLocation` | Creating an outside location with a name under 3 characters. |
+| `TRF-02` | El nombre es demasiado largo. | `src/lib/flows/transfers.ts` · `createOutsideLocation` | Creating an outside location with a name over 60 characters. |
+| `TRF-03` | El nombre tiene que tener letras o números. | `src/lib/flows/transfers.ts` · `createOutsideLocation` | The name gives no usable location code. |
+| `TRF-04` | Ya existe la ubicación {código}. Elígela de la lista. | `src/lib/flows/transfers.ts` · `createOutsideLocation` | The code made from the name is already a location. |
+| `TRF-05` | No se encontró esa salida. | `src/lib/flows/transfers.ts` · `transferOf` | The transfer does not exist or belongs to another company. |
+| `TRF-06` | Elige el destino de la lista. | `src/lib/flows/transfers.ts` · `createTransfer` | Starting a transfer without an active outside location. |
+| `TRF-07` | La salida {número} ya salió del depósito. | `src/lib/flows/transfers.ts` · `sendItem, unsendItem, sendTransfer` | Adding to, removing from or sending a transfer that already left. |
+| `TRF-08` | De esa ubicación no se sacan artículos para una salida. | `src/lib/flows/transfers.ts` · `sendItem` | Taking units for a transfer from Preparados, Faltantes, Dañados or another outside location. |
+| `TRF-09` | Ese artículo no está en la salida. | `src/lib/flows/transfers.ts` · `unsendItem` | Removing an article that is not in the transfer. |
+| `TRF-10` | La salida no tiene artículos. | `src/lib/flows/transfers.ts` · `sendTransfer` | Sending an empty transfer. |
+| `TRF-11` | Escribe el número de remito con que viaja. | `src/lib/flows/transfers.ts` · `sendTransfer` | Sending a transfer without its remito number. |
+| `TRF-12` | La salida {número} no está afuera. | `src/lib/flows/transfers.ts` · `receiveBack, closeTransfer` | Receiving back or closing a transfer still being prepared or already closed. |
+| `TRF-13` | "{artículo}" no salió con {número}. | `src/lib/flows/transfers.ts` · `receiveBack` | Receiving back an article that did not leave with this transfer. |
+| `TRF-14` | De {artículo} quedan {n} afuera. | `src/lib/flows/transfers.ts` · `receiveBack` | Receiving back more units than are still away. |
+| `TRF-15` | No se pudo crear el destino. | `src/app/(app)/salidas/actions.ts` · `addDestination` | Creating an outside location from the dropdown failed without a message of its own. |
 
 ## RET: Devoluciones
 

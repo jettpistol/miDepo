@@ -16,6 +16,7 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 | Revisar lo preparado | **Control** (si está activado) | [Control](Control) |
 | Preparar las cajas de un pedido | **Empaque** | [Empaque](Empaque) |
 | Cargar las cajas en el transporte | **Despacho** | [Despacho](Despacho) |
+| Llevar stock a una feria o una librería, y lo que vuelve | **Salidas** | [Salidas](Salidas) |
 | Revisar artículos que vuelven | **Devoluciones** | [Devoluciones](Devoluciones) |
 | Contar un tramo del depósito | **Conteos** | [Conteos](Conteos) |
 | Cambiar artículos de ubicación | **Mover** | [Mover](Mover) |

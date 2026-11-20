@@ -109,6 +109,6 @@ export async function zone(tx: Executor, companyId: number, type: Exclude<Locati
   return created;
 }
 
-export function locationName(u: { code: string; type: LocationType }) {
-  return ZONES.find((z) => z.type === u.type)?.name ?? u.code;
+export function locationName(u: { code: string; type: LocationType; name?: string | null }) {
+  return ZONES.find((z) => z.type === u.type)?.name ?? (u.type === "outside" && u.name ? u.name : u.code);
 }

@@ -31,6 +31,7 @@ const SCREEN_WORDS: Record<string, string> = {
   "/picking": "pedidos preparar sacar recoger orden ventas urgente prioridad corte mismo dia",
   "/control": "controlar verificar revisar chequear doble control segunda persona carro",
   "/empaque": "empacar cajas embalar envio packing",
+  "/salidas": "feria evento stand comic con consignacion libreria traslado externo afuera fuera del deposito",
   "/despacho": "despachar cargar camion transporte envio salida remito seguimiento tracking andreani oca correo",
   "/devoluciones": "devolucion retorno vuelve cliente consignacion",
   "/conteos": "contar inventario recuento ciclico auditoria",
@@ -70,6 +71,7 @@ const more: Feature[] = [
   { title: "Conciliación con Fierro", path: ["Fierro", "Conciliación"], href: "/fierro/conciliacion", icon: "fierro", words: "diferencias comparar stock conciliar", minRole: "supervisor" },
   { title: "Cargar stock inicial", path: ["Stock", "Stock inicial"], href: "/stock/carga-inicial", icon: "download", words: "importar planilla csv excel arranque inventario inicial existencias", minRole: "admin" },
   { title: "Mover toda una ubicación", path: ["Mover", "Toda la ubicación"], href: "/mover?modo=todo", icon: "move", words: "vaciar estante reubicar masivo todo contenido traspaso bulk" },
+  { title: "Nueva salida", path: ["Salidas", "+ Nueva"], href: "/salidas#nueva", icon: "plus", words: "feria evento stand consignacion llevar", keys: KEYS.create },
   { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nueva", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
   // Settings: sections of Ajustes (personal) and Organización (the company).
   { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },

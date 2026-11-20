@@ -25,6 +25,7 @@ import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
 import { setUrgent } from "@/lib/flows/orders";
+import { closeTransfer, createOutsideLocation, createTransfer, listTransfers, receiveBack, sendItem, sendTransfer } from "@/lib/flows/transfers";
 import { runLookup } from "@/lib/lookup";
 import { createCarrier, loadBox, setShipping, toDispatch, unloadBox } from "@/lib/flows/dispatch";
 import { applyLoad, checkLoad, listLoads, undoLoad } from "@/lib/flows/stockLoad";
@@ -890,5 +891,41 @@ describe("dispatch", () => {
     await unloadBox(u, b2.id);
     expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0].dispatchedAt).toBeNull();
     expect((await toDispatch(db, e.id)).find((r) => r.o.id === o.id)).toMatchObject({ boxes: 2, loaded: 1 });
+  });
+});
+
+describe("stock away from the warehouse", () => {
+  it("takes units to an outside location and back through a transfer; what does not come back is sold there", async () => {
+    const { e, u: user } = await buildCompany("Feria SA", "feria", 81);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [p] = await db.select().from(products).where(eq(products.companyId, e.id)).orderBy(asc(products.id)).limit(1);
+    const [a1] = await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1")));
+    await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: p.id, fromId: null, toId: a1.id, quantity: 10, reason: "initial" }));
+
+    const stand = await createOutsideLocation(u, "Stand Comic-Con 2026");
+    expect(stand.code).toBe("STAND-COMIC-CON-2026");
+    await expect(createOutsideLocation(u, "stand comic con 2026")).rejects.toThrow(/Ya existe/);
+    // Mover never reaches it: only transfers do.
+    await expect(move(u, { source: "A-01-1", product: p.barcode, destination: stand.code, quantity: 1 })).rejects.toThrow(/Salidas/);
+
+    const id = await createTransfer(u, stand.id);
+    await expect(sendItem(u, id, { source: "A-01-1", product: p.barcode, quantity: 11 })).rejects.toThrow(UserError);
+    await sendItem(u, id, { source: "A-01-1", product: p.barcode, quantity: 8 });
+    expect(await atLocation(p.id, stand.id)).toBe(8);
+    await expect(receiveBack(u, id, { product: p.barcode, quantity: 1 })).rejects.toThrow(/no está afuera/);
+    await expect(sendTransfer(u, id, "")).rejects.toThrow(/remito/);
+    await sendTransfer(u, id, "R 0001-00000077");
+    await expect(sendItem(u, id, { source: "A-01-1", product: p.barcode, quantity: 1 })).rejects.toThrow(/ya salió/);
+
+    await receiveBack(u, id, { product: p.barcode, quantity: 5 });
+    await expect(receiveBack(u, id, { product: p.barcode, quantity: 4 })).rejects.toThrow(/quedan 3 afuera/);
+    expect(await atLocation(p.id, (await zone(db, e.id, "receiving")).id)).toBe(5);
+    // Owned stock: still counted while away.
+    expect(await total(p.id)).toBe(10);
+    expect(await closeTransfer(u, id)).toMatch(/3 unidades vendidas/);
+    expect(await total(p.id)).toBe(7);
+    expect(await atLocation(p.id, stand.id)).toBe(0);
+    const [row] = await listTransfers(db, e.id);
+    expect(row).toMatchObject({ sent: 8, returned: 5, sold: 3 });
   });
 });

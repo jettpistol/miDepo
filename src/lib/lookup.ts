@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gt, like, ne, or, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { DB } from "@/db";
-import { orderLines, orders, products, receivingLines, receivings, stock, pickTasks, locations } from "@/db/schema";
+import { orderLines, orders, products, receivingLines, receivings, stock, pickTasks, locations, transferLines, transfers } from "@/db/schema";
 import { MAX_COUNT_LOCATIONS } from "./flows/counts";
 import { boxByCode, cannotLoad, parseBoxCode } from "./flows/dispatch";
 import { locationName } from "./stock";
@@ -122,7 +122,38 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
 
   let source: Awaited<ReturnType<typeof location>> = null;
 
-  if (ctx === "move" || ctx === "putaway" || ctx === "move-all") {
+  if (ctx === "transfer-out") {
+    // Taking units to an outside location: the source must hold them, like a move.
+    source = await location(v("source"));
+    await checkLocation("source", source);
+    if (source?.active && !["shelf", "clearance", "receiving", "returns"].includes(source.type)) statuses.source = { tone: "danger", text: "De esa ubicación no se sacan artículos para una salida." };
+    if (book) {
+      const present = source?.active ? ((await whereIs(book.id)).find((l) => l.id === source!.id)?.quantity ?? 0) : null;
+      if (present === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no está en ${locationName(source!)}.` };
+      else if (present != null) {
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · ${present} en ${locationName(source!)}` };
+        if (present > 1 && quantity !== present) shortcuts.push({ field: "quantity", value: String(present), text: `Todas: ${present}` });
+        if (quantity && quantity > present) statuses.quantity = { tone: "danger", text: `En ${locationName(source!)} hay ${present}.` };
+      } else statuses.product = { tone: "ok", text: articleName(book.title) };
+    }
+  } else if (ctx === "transfer-back") {
+    // What comes back must have gone out with this transfer, and not more than is still away.
+    if (book) {
+      const [l] = await db
+        .select({ l: transferLines })
+        .from(transferLines)
+        .innerJoin(transfers, eq(transfers.id, transferLines.transferId))
+        .where(and(eq(transfers.id, Number(v("id"))), eq(transfers.companyId, companyId), eq(transferLines.productId, book.id)));
+      const left = l ? l.l.sent - l.l.returned - l.l.sold : 0;
+      if (!l) statuses.product = { tone: "danger", text: `"${articleName(book.title)}" no salió con esta salida.` };
+      else if (left === 0) statuses.product = { tone: "danger", text: `"${articleName(book.title)}": ya volvió todo.` };
+      else {
+        statuses.product = { tone: "ok", text: `${articleName(book.title)} · quedan ${left} afuera` };
+        if (left > 1 && quantity !== left) shortcuts.push({ field: "quantity", value: String(left), text: `Todas: ${left}` });
+        if (quantity && quantity > left) statuses.quantity = { tone: "danger", text: `Quedan ${left} afuera.` };
+      }
+    }
+  } else if (ctx === "move" || ctx === "putaway" || ctx === "move-all") {
     source = await location(v("source"));
     const destination = await location(v("destination"));
     await checkLocation("source", source);
@@ -133,6 +164,9 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven manualmente." };
     }
     if (destination?.active && destination.type === "missing") statuses.destination = { tone: "danger", text: "Nada pasa a Faltantes manualmente." };
+    for (const [field, u] of [["source", source], ["destination", destination]] as const) {
+      if (u?.active && u.type === "outside") statuses[field] = { tone: "danger", text: "Lo que sale del depósito o vuelve va por Salidas." };
+    }
     if (source && destination && source.id === destination.id) statuses.destination = { tone: "danger", text: "Es la misma ubicación que el origen." };
 
     if (book) {
@@ -243,7 +277,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       const seen = new Set<string>();
       const pre = clean(q).toUpperCase();
       // First, the places where the chosen book already is.
-      if (book && (ctx === "move" || ctx === "putaway")) {
+      if (book && (ctx === "move" || ctx === "putaway" || ctx === "transfer-out")) {
         for (const l of await whereIs(book.id, field === "destination")) {
           if (!l.code.startsWith(pre) || (field === "destination" && l.id === source?.id)) continue;
           seen.add(l.code);
@@ -256,7 +290,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       }
     } else if (field === "product") {
       const codes = (x: { barcode: string; author: string | null }) => [x.barcode, x.author].filter(Boolean).join(" · ");
-      if ((ctx === "move" || ctx === "putaway") && source?.active) {
+      if ((ctx === "move" || ctx === "putaway" || ctx === "transfer-out") && source?.active) {
         // Only what is really at the source: anything else could not be moved.
         const rows = await db
           .select({ barcode: products.barcode, title: products.title, author: products.author, quantity: stock.quantity })

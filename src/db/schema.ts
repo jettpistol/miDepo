@@ -176,8 +176,12 @@ export const fierroStock = pgTable(
 
 // ───────────── What miDepo owns: locations and physical stock ─────────────
 
-/** "missing" (FALTANTES) holds units a picker could not find: still owned, not yet written off. */
-export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging" | "missing";
+/**
+ * "missing" (FALTANTES) holds units a picker could not find: still owned, not yet written off.
+ * "outside": a place away from the building that still holds owned stock (a fair stand, a bookstore
+ * with books on consignment). Stock gets there and back only through a transfer (Salidas).
+ */
+export type LocationType = "shelf" | "receiving" | "returns" | "damaged" | "clearance" | "staging" | "missing" | "outside";
 
 export const locations = pgTable(
   "locations",
@@ -187,6 +191,8 @@ export const locations = pgTable(
     code: text("code").notNull(),
     type: text("type").$type<LocationType>().notNull().default("shelf"),
     active: boolean("active").notNull().default(true),
+    /** Outside locations only: what it is ("Stand Comic-Con 2026"). */
+    name: text("name"),
     /** RECEPCION and DEVOLUCIONES only: who a supervisor gave the put-away from this zone to (null = anyone). */
     assignedTo: integer("assigned_to").references(() => users.id),
   },
@@ -223,7 +229,12 @@ export type MovementReason =
   /** Units leave the warehouse with no customer: damaged, lost, stolen… Always has an adjustment. */
   | "write_off"
   /** Puts back an earlier movement: an undone pick, move, write-off, or a reopened receiving or return. */
-  | "undo";
+  | "undo"
+  /** A transfer takes units to an outside location (a fair, a bookstore), and brings them back to RECEPCION. */
+  | "transfer_out"
+  | "transfer_back"
+  /** Units that did not come back from an outside location when its transfer was closed: sold there. */
+  | "sold_outside";
 
 export const movements = pgTable(
   "movements",
@@ -439,6 +450,41 @@ export const receivingLines = pgTable(
 );
 
 export type BookCondition = "sellable" | "damaged" | "clearance";
+
+/**
+ * A transfer (Salida): stock leaving for an outside location and what comes back. "sending" while
+ * units are being taken there, "away" once it left (with its remito), "closed" when it is settled:
+ * what did not come back is recorded as sold there.
+ */
+export const transfers = pgTable(
+  "transfers",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    number: text("number").notNull(),
+    locationId: integer("location_id").notNull().references(() => locations.id),
+    status: text("status").$type<"sending" | "away" | "closed">().notNull().default("sending"),
+    remitoNumber: text("remito_number"),
+    createdBy: integer("created_by").notNull().references(() => users.id),
+    createdAt: createdAt(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("transfers_company_id_number_idx").on(t.companyId, t.number)],
+);
+
+export const transferLines = pgTable(
+  "transfer_lines",
+  {
+    id: serial("id").primaryKey(),
+    transferId: integer("transfer_id").notNull().references(() => transfers.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id),
+    sent: integer("sent").notNull().default(0),
+    returned: integer("returned").notNull().default(0),
+    sold: integer("sold").notNull().default(0),
+  },
+  (t) => [uniqueIndex("transfer_lines_transfer_id_product_id_idx").on(t.transferId, t.productId)],
+);
 
 export const returns = pgTable("returns", {
   id: serial("id").primaryKey(),
