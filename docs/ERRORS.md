@@ -179,7 +179,7 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RCV-06` | El nombre tiene que tener letras. | `src/lib/flows/receiving.ts` · `createSupplier` | New supplier name has no letters (only numbers or symbols). |
 | `RCV-07` | Ya existe: {proveedor}. Elígelo de la lista. | `src/lib/flows/receiving.ts` · `createSupplier` | A supplier with the same name exists, ignoring case and accents. |
 | `RCV-08` | ¿Es {proveedor}? Ya existe un proveedor casi igual. Elígelo de la lista. | `src/lib/flows/receiving.ts` · `createSupplier` | A supplier with a nearly identical name exists: one or two letters apart, for names of 6 letters or more. |
-| `RCV-09` | Escribe un número de cero para arriba. | `src/lib/flows/receiving.ts` · `setReceived` | Correcting a received quantity to a negative or non-whole number. |
+| `RCV-09` | Escribe un número de cero para arriba. | `src/lib/flows/receiving.ts` · `setReceived`, `setDamaged` | Correcting a received quantity to a negative or non-whole number. |
 | `RCV-10` | La recepción no tiene artículos escaneados. | `src/lib/flows/receiving.ts` · `closeReceiving` | Closing a receiving with nothing received. |
 | `RCV-11` | No se pudo crear el proveedor. | `src/app/(app)/recepcion/actions.ts` · `addSupplier` | Creating a supplier from the dropdown failed without a message. Should not happen: any failure there already has its own code. |
 | `RCV-12` | Esta recepción todavía está abierta. | `src/lib/flows/receiving.ts` · `reopenReceiving` | Reopening a receiving that is not closed. |
@@ -188,6 +188,9 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RCV-15` | No se encontró ese proveedor. | `src/lib/flows/receiving.ts` · `deleteSupplier` | The supplier does not exist or belongs to another company. |
 | `RCV-16` | Ese proveedor viene de Fierro. Se borra allí. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier that came from Fierro. The screen offers it only for suppliers created in miDepo. |
 | `RCV-17` | Ese proveedor ya tiene recepciones y no se puede borrar. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier some receiving uses. The screen disables the button first. |
+| `RCV-18` | Hay {n} marcadas como dañadas. Corrige eso primero. | `src/lib/flows/receiving.ts` · `setReceived` | Lowering the received quantity below the units marked damaged. |
+| `RCV-19` | Ese artículo no está en esta recepción. | `src/lib/flows/receiving.ts` · `setDamaged` | Marking damaged units of an article the receiving does not have. |
+| `RCV-20` | Se recibieron {n}: no pueden estar dañadas más. | `src/lib/flows/receiving.ts` · `setDamaged` | Marking more damaged units than were received. |
 
 ## ORD: orders
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { action, num, txt } from "@/lib/action";
 import { attempt, withCode } from "@/lib/errors";
 import { requireSessionInAction } from "@/lib/session";
-import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving, setReceived } from "@/lib/flows/receiving";
+import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving, setReceived, setDamaged } from "@/lib/flows/receiving";
 
 export const create = action("operator", async (c, f) => {
   const id = await createUnannouncedReceiving(c, num(f, "supplierId"));
@@ -12,6 +12,7 @@ export const create = action("operator", async (c, f) => {
 });
 export const scan = action("operator", (c, f) => scanReceiving(c, num(f, "id"), txt(f, "product"), f.get("quantity")));
 export const correct = action("operator", (c, f) => setReceived(c, num(f, "id"), num(f, "productId"), f.get("received")));
+export const correctDamaged = action("operator", (c, f) => setDamaged(c, num(f, "id"), num(f, "productId"), f.get("damaged")));
 export const close = action("operator", (c, f) => closeReceiving(c, num(f, "id")));
 export const cancel = action("operator", async (c, f) => {
   const message = await cancelReceiving(c, num(f, "id"));

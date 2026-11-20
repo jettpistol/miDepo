@@ -409,6 +409,8 @@ export const receivingLines = pgTable(
     productId: integer("product_id").notNull().references(() => products.id),
     expected: integer("expected").notNull().default(0),
     received: integer("received").notNull().default(0),
+    /** Of the received units, how many arrived damaged: on closing they go to DANADOS, not RECEPCION. */
+    damaged: integer("damaged").notNull().default(0),
   },
   (t) => [uniqueIndex("receiving_lines_receiving_id_product_id_idx").on(t.receivingId, t.productId)],
 );

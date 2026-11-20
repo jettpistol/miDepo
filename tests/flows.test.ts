@@ -13,7 +13,7 @@ import { UserError } from "@/lib/errors";
 import { moveStock, zone } from "@/lib/stock";
 import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
 import type { Ctx } from "@/lib/flows/common";
-import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving } from "@/lib/flows/receiving";
+import { cancelReceiving, closeReceiving, createSupplier, createUnannouncedReceiving, deleteSupplier, reopenReceiving, scanReceiving, setDamaged, setReceived } from "@/lib/flows/receiving";
 import { move, recentMoves, undoMove } from "@/lib/flows/move";
 import { confirmPick, markShort, planRoute, shortages, releaseOrder, takeOrder, undoShort, unpick } from "@/lib/flows/picking";
 import { closeBox, scanIntoBox, finishPacking, removeFromBox, reopenBox, reopenPacking } from "@/lib/flows/packing";
@@ -831,5 +831,25 @@ describe("opening stock load", () => {
     await undoLoad(u, load.l.id);
     expect(await total(p1.id)).toBe(0);
     await expect(undoLoad(u, load.l.id)).rejects.toThrow(/ya se deshizo/);
+  });
+});
+
+describe("damaged on arrival", () => {
+  it("damaged units of a receiving go to DANADOS on closing, the rest to RECEPCION, and reopening takes both back", async () => {
+    const { e, u: user } = await buildCompany("Golpes SA", "golpes", 61);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [s] = await db.select().from(suppliers).where(eq(suppliers.companyId, e.id)).limit(1);
+    const id = await createUnannouncedReceiving(u, s.id);
+    const [p] = await db.select().from(products).where(eq(products.companyId, e.id)).limit(1);
+    await scanReceiving(u, id, p.barcode, 5);
+    await expect(setDamaged(u, id, p.id, 6)).rejects.toThrow(/no pueden estar dañadas más/);
+    await setDamaged(u, id, p.id, 2);
+    await expect(setReceived(u, id, p.id, 1)).rejects.toThrow(/dañadas/);
+    await closeReceiving(u, id);
+    expect(await atLocation(p.id, (await zone(db, e.id, "receiving")).id)).toBe(3);
+    expect(await atLocation(p.id, (await zone(db, e.id, "damaged")).id)).toBe(2);
+    expect((await fileFor(db, e.id, "receiving", id)).contents).toMatch(/danados/);
+    await reopenReceiving(u, id);
+    expect(await total(p.id)).toBe(0);
   });
 });

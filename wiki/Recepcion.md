@@ -26,6 +26,14 @@ Si hay diferencias, miDepo te avisa antes de cerrar. **Se puede cerrar igual**: 
 
 Si contaste mal, toca el número en la columna **Recibido**, escribe el correcto y presiona Enter.
 
+## Llegó dañado
+
+En la columna **Dañadas**, escribe cuántas de las recibidas llegaron rotas o mal impresas. Al cerrar, esas unidades van a **DANADOS** en vez de a Recepción, y el archivo para Fierro las lista aparte (columna `danados`) para el reclamo al proveedor. Desde DANADOS un supervisor las da de baja en [Bajas](Bajas-y-faltantes).
+
+## Etiquetas para lo recibido
+
+**Etiquetas** (arriba) imprime una etiqueta con código de barras por cada unidad recibida. Sirve para tapas que el lector no lee o reimpresiones que comparten ISBN: pega la etiqueta en el libro antes de reponer.
+
 ## Recibir algo sin aviso
 
 Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que no figure:
@@ -38,7 +46,7 @@ Para devoluciones de feria, una imprenta que entregó antes o cualquier cosa que
 
 ## Qué pasa al cerrar
 
-- Lo recibido entra al stock en la zona **Recepción**. Todavía no está en su ubicación.
+- Lo recibido entra al stock en la zona **Recepción**. Todavía no está en su ubicación. Lo dañado entra en **DANADOS**.
 - Aparece en [Reposición](Reposicion) para llevarlo a su ubicación.
 - Queda en **Cerradas**, abajo en Recepción. Ahí están todas las recepciones cerradas; busca por número o proveedor.
 - Si te equivocaste, toca **Reabrir**: sus unidades salen de Recepción hasta que la cierres de nuevo. Se puede mientras no esté cargada en Fierro y mientras todo siga en Recepción (si ya repusiste algo, devuélvelo a Recepción con [Mover](Mover) o deshazlo en **Tus últimos movimientos**). Una vez cargada en Fierro, se corrige con un [conteo](Conteos).
