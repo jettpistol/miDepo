@@ -8,6 +8,7 @@ import { BOOK_CONDITIONS } from "@/lib/flows/returns";
 import { requireSession } from "@/lib/session";
 import { close, scan, remove } from "../actions";
 import { hotkey } from "@/lib/hotkeys";
+import { InfoHint } from "@/components/Hint";
 
 const TONE_CLASS: Record<string, Tone> = { sellable: "ok", damaged: "danger", clearance: "warn" };
 
@@ -45,9 +46,9 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
                   {BOOK_CONDITIONS.map((e, i) => (
                     <label key={e.id} className="flex cursor-pointer items-start gap-3 rounded-control border border-line-strong px-3 py-2.5 transition-colors duration-150 hover:bg-sunken has-checked:border-accent-text has-checked:bg-accent-soft">
                       <input type="radio" name="bookCondition" value={e.id} defaultChecked={i === 0} className="mt-1 size-4 accent-(--accent-text)" />
-                      <span>
-                        <span className="block font-semibold">{e.name}</span>
-                        <span className="block text-sm text-muted">{e.help}</span>
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        {e.name}
+                        <InfoHint text={e.help} />
                       </span>
                     </label>
                   ))}

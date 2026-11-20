@@ -6,6 +6,7 @@ import { connector } from "@/lib/fierro";
 import { EXPORT_NAME, pendingExports } from "@/lib/flows/exports";
 import { requireSession } from "@/lib/session";
 import { submit, simulate, syncNow } from "./actions";
+import { InfoHint } from "@/components/Hint";
 
 export const metadata = { title: "Fierro" };
 
@@ -53,8 +54,8 @@ export default async function Fierro() {
       <section>
         <h2 className="section-title">
           Para cargar en Fierro <small>{pending.length}</small>
+          <InfoHint text="Un pedido sale del stock recién cuando lo marcas como cargado." />
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock recién cuando lo marcas como cargado.</p>
         {pending.length === 0 ? (
           <EmptyState title="Fierro está al día">No hay documentos del depósito sin informar.</EmptyState>
         ) : (

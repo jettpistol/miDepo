@@ -4,6 +4,7 @@ import { Code, EmptyRow, PageHeader, ShelfMark, shortDate } from "@/components/u
 import { adjustmentHistory, causeName, heldStock, LOSS_CAUSES, misplacedSince, WRITE_OFF_ZONES } from "@/lib/flows/adjustments";
 import { requireSession } from "@/lib/session";
 import { writeOffAction } from "./actions";
+import { InfoHint } from "@/components/Hint";
 
 export const metadata = { title: "Bajas" };
 
@@ -49,8 +50,8 @@ export default async function WriteOffs() {
       <section className="mb-8 lg:mb-6">
         <h2 className="section-title">
           Faltantes y dañados <small>{held.length}</small>
+          <InfoHint text="Si un faltante aparece, muévelo desde FALTANTES a su estante con Mover: vuelve al stock sin baja." />
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Si un faltante aparece, muévelo desde FALTANTES a su estante con Mover: vuelve al stock sin baja.</p>
         <div className="table-wrap">
           <table className="data-table">
             <thead>

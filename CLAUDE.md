@@ -20,6 +20,7 @@ These came from the owner directly; keep to them unless told otherwise.
 - **Say problems before the click.** Validate as the user types, suggest valid values, disable what cannot work with the reason beside it. The server still validates everything.
 - **The database is the source of truth.** Suppliers, customers, products, stock and locations are chosen from what exists, never typed as free text. Creating one is a separate, confirmed action that refuses near-duplicates (see `createSupplier`).
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
+- **Notes go in hints, not on the screen.** Why a button is disabled (`reason` on `ActionButton`/`ActionForm`, or `DisabledReason`) and side notes (`InfoHint`, an ⓘ beside a heading or option) open on hover, focus or tap (`src/components/Hint.tsx`). Status notices (`Notice`) and facts the user needs to act stay visible.
 - **Dropdowns are the app's own `<Select>`** with a search box that stays open; never a system `<select>`.
 - **List screens show their table even when empty** (one `EmptyRow`), with a "+ Nueva" button (`NewButton`) for creating.
 - **Tú, never voseo**, in the app, its messages and the manual.
@@ -57,7 +58,7 @@ src/app/(print)/          A4 print layouts (labels, packing list).
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
                           /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
 src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
-src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
+src/components/           ScanForm (scan fields + live check), Select, NewButton, Hint, ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
 src/lib/hotkeys.ts        Keyboard shortcuts: Alt+digit screens, F-key meanings. Mark a screen's
                           buttons with hotkey("primary") etc.; F1 lists what is marked.
