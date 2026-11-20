@@ -62,7 +62,7 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
               <td className="hidden whitespace-nowrap text-muted sm:table-cell">{shortDate(o.date)}</td>
               <td className="w-px">
                 <span className="flex gap-1">
-                  {o.urgent && ["pending", "in_picking", "picked"].includes(o.status) && <Badge tone="danger">Urgente</Badge>}
+                  {o.urgent && ["pending", "in_picking", "to_control", "picked"].includes(o.status) && <Badge tone="danger">Urgente</Badge>}
                   <Badge tone={ORDER_STATE[o.status].tone}>{ORDER_STATE[o.status].label}</Badge>
                 </span>
               </td>
