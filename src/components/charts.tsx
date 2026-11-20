@@ -184,41 +184,34 @@ export function ActivityChart({ days }: { days: Day[] }) {
   );
 }
 
-const ZONE_COLOR: Record<string, string> = { receiving: "var(--zone-receiving)", returns: "var(--zone-returns)", damaged: "var(--zone-damaged)", missing: "var(--line-strong)" };
-const ZONE_JOB: Record<string, string> = { receiving: "por reponer", returns: "por reponer", missing: "sin encontrar", damaged: "por dar de baja" };
+/** What to do with what waits in each zone, and where it is done. */
+const ZONE_ACTION: Record<string, string> = { receiving: "Reponer", returns: "Reponer", missing: "Revisar", damaged: "Dar de baja" };
 
-/** Units waiting in each zone, as bars in the zone's own colour, beside its shelf mark. */
-export function ZoneBars({ zones }: { zones: { code: string; type: string; units: number; href?: string }[] }) {
-  const max = Math.max(1, ...zones.map((z) => z.units));
+/**
+ * Units waiting in each zone: one aligned row per zone, the number in its own column and the
+ * action beside it only when there is something to do (and the person may do it: `href`).
+ */
+export function ZoneTable({ zones }: { zones: { code: string; type: string; units: number; href?: string }[] }) {
   return (
-    <ul className="space-y-px">
-      {zones.map((z) => {
-        const row = (
-          <>
-            <span className="w-32 shrink-0">
+    <table className="w-full text-sm">
+      <tbody>
+        {zones.map((z) => (
+          <tr key={z.code} className="border-b border-line last:border-b-0">
+            <td className="w-px py-1.5 pr-3">
               <ShelfMark code={z.code} />
-            </span>
-            <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-sunken">
-              <span className="block h-full rounded-full" style={{ width: z.units ? `max(4px, ${(z.units / max) * 100}%)` : 0, background: ZONE_COLOR[z.type] }} />
-            </span>
-            <span className="w-28 shrink-0 text-right text-sm">
-              <strong className={`tabular-nums ${z.units === 0 ? "font-semibold text-muted" : ""}`}>{z.units.toLocaleString("es-AR")}</strong> <span className="text-xs text-muted">{ZONE_JOB[z.type]}</span>
-            </span>
-          </>
-        );
-        return (
-          <li key={z.code}>
-            {z.href ? (
-              <Link href={z.href} className="-mx-2 flex h-9 items-center gap-3 rounded-control px-2 transition-colors duration-150 hover:bg-sunken">
-                {row}
-              </Link>
-            ) : (
-              <span className="-mx-2 flex h-9 items-center gap-3 px-2">{row}</span>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+            </td>
+            <td className="py-1.5 pl-4 text-right">
+              {z.units > 0 && z.href && (
+                <Link href={z.href} className="link text-[13px] whitespace-nowrap">
+                  {ZONE_ACTION[z.type]}
+                </Link>
+              )}
+            </td>
+            <td className={`w-16 py-1.5 text-right font-semibold tabular-nums ${z.units === 0 ? "text-muted" : ""}`}>{z.units.toLocaleString("es-AR")}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
