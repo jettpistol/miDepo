@@ -195,7 +195,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
               </section>
             ) : p.status === "to_control" ? (
               <Notice tone="ok">
-                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."} Antes de empacar pasa por control.</p>
+                <p className="mb-3 text-base">Recorrido terminado. {missing > 0 ? `Con ${plural(missing, "faltante", "faltantes")}.` : "Completo."}</p>
                 <Link href={`/control/${id}`} className="btn w-full" {...hotkey("primary")}>
                   Ir a control
                 </Link>
