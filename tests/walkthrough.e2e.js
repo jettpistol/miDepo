@@ -213,6 +213,14 @@ async function warning(p, field, value) {
   // An admin edits a manual page for their company only
   o.on('pageerror', (e) => errors.push('admin pageerror: ' + e.message)); o.on('response', (r) => r.status() >= 500 && errors.push(`admin HTTP ${r.status()} ${r.url()}`));
   await o.setViewportSize({ width: 1440, height: 900 });
+
+  // Users: a thin table, options in each row's ⋯ menu, new users from "+ Nuevo"
+  await o.goto(BASE + '/usuarios'); await o.waitForSelector('main table'); await o.waitForLoadState('networkidle'); await o.screenshot({ path: `${OUT}/users.png`, caret: 'initial' });
+  await o.locator('button[aria-label^="Opciones de"]').first().click(); await o.click('button.menu-item:has-text("Cambiar rol")'); await o.waitForSelector('dialog[open]');
+  await o.click('dialog[open] button[aria-haspopup=listbox]'); await o.keyboard.type('Supervisor'); await o.keyboard.press('Enter'); await o.click('dialog[open] button:has-text("Guardar rol")'); await o.waitForSelector('dialog[open] [role=status]');
+  step('users: role changed → ' + (await o.textContent('dialog[open] [role=status]')).trim()); await o.keyboard.press('Escape');
+  await o.click('button:has-text("Nuevo")'); await o.fill('#name', 'Prueba Recorrido'); await o.fill('#email', 'recorrido@demo.test'); await o.fill('#pin', '345678');
+  await o.click('button:has-text("Crear usuario")'); await o.waitForSelector('main td:has-text("Prueba Recorrido")'); step('users: created from + Nuevo');
   await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
   await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
   await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');

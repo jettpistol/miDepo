@@ -319,6 +319,17 @@ h3 {
   .doc-number {
     @apply font-mono text-[1.08em] font-bold whitespace-nowrap;
   }
+  /* Square icon button, e.g. a row's "⋯" menu. */
+  .btn-icon {
+    @apply inline-flex size-11 cursor-pointer items-center justify-center rounded-control text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink aria-expanded:bg-sunken aria-expanded:text-ink lg:size-7;
+  }
+  /* One option in a row menu. */
+  .menu-item {
+    @apply flex min-h-11 w-full cursor-pointer items-center px-3 text-left text-[15px] text-ink transition-colors duration-150 hover:bg-sunken disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-8 lg:text-sm;
+  }
+  .menu-item.danger {
+    @apply text-danger;
+  }
   /* Button for the last cell of a table row. */
   .btn-sm {
     @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1 text-sm font-semibold whitespace-nowrap text-ink transition-colors duration-150 hover:border-accent-text hover:bg-accent-soft hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-55 lg:min-h-7 lg:px-2.5 lg:py-0.5 lg:text-[13px] lg:font-medium;
