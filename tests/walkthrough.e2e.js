@@ -166,10 +166,11 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/fierro/conciliacion'); await shot('reconciliation'); step('reconciliation: ' + (await p.textContent('main')).replace(/\s+/g, ' ').slice(0, 90));
 
   // Stock, locations, labels, manual
-  await p.goto(BASE + '/stock'); await p.waitForSelector('main ul img[src^="/api/cover/"]'); await shot('stock-cards');
-  step('stock covers: ' + await p.$$eval('main ul img[src^="/api/cover/"]', (is) => Promise.all(is.slice(0, 6).map((i) => i.decode().then(() => i.naturalWidth)))).then((w) => w.join(',')));
-  await p.click('button:has-text("Lista")'); await p.waitForSelector('main table.data-table'); await shot('stock-table');
-  await p.click('button:has-text("Tarjetas")'); await p.waitForSelector('main ul img[src^="/api/cover/"]');
+  await p.goto(BASE + '/stock'); await p.waitForSelector('main table img[src^="/api/cover/"]'); await shot('stock-table');
+  step('stock covers: ' + await p.$$eval('main table img[src^="/api/cover/"]', (is) => Promise.all(is.slice(0, 6).map((i) => i.decode().then(() => i.naturalWidth)))).then((w) => w.join(',')));
+  await p.click('button:has-text("Tarjetas")'); await p.waitForSelector('main ul img[src^="/api/cover/"]'); await shot('stock-cards');
+  await p.goto(BASE + '/stock'); await p.waitForSelector('main ul img[src^="/api/cover/"]'); step('stock remembers Tarjetas: ok');
+  await p.click('button:has-text("Lista")'); await p.waitForSelector('main table img[src^="/api/cover/"]');
   await p.goto(BASE + '/stock?q=' + rows[0].code); await p.click('main a[href^="/stock/"]'); await p.waitForSelector('text=Últimos movimientos'); await shot('stock');
   await p.goto(BASE + '/ubicaciones'); await p.waitForSelector('text=Generador de ubicaciones'); await p.screenshot({ path: `${OUT}/locations.png`, fullPage: true, caret: 'initial' });
   await p.goto(BASE + '/imprimir/ubicaciones?prefijo=A-01'); await shot('labels');

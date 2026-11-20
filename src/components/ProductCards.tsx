@@ -28,8 +28,8 @@ export function ViewSwitch({ view }: { view: ListView }) {
   );
   return (
     <form action={setListView} aria-label="Vista" className="flex gap-4">
-      {tab("cards", "cards", "Tarjetas")}
       {tab("table", "bullets", "Lista")}
+      {tab("cards", "cards", "Tarjetas")}
     </form>
   );
 }
