@@ -60,7 +60,7 @@ export async function closeReturn(c: Ctx, returnId: number) {
     }
     await tx.update(returns).set({ status: "closed" }).where(eq(returns.id, returnId));
     const sellables = lines.filter((l) => l.bookCondition === "sellable").reduce((s, l) => s + l.quantity, 0);
-    return `Devolución ${d.number} cerrada. ${sellables} unidades vendibles por reponer.`;
+    return `${d.number} cerrada. ${sellables} unidades vendibles por reponer.`;
   });
 }
 
@@ -68,7 +68,7 @@ export async function closeReturn(c: Ctx, returnId: number) {
 export async function cancelReturn(c: Ctx, returnId: number) {
   const d = await open(c, returnId);
   await c.db.delete(returns).where(eq(returns.id, returnId));
-  return `Devolución ${d.number} cancelada.`;
+  return `${d.number} cancelada.`;
 }
 
 /**
@@ -89,6 +89,6 @@ export async function reopenReturn(c: Ctx, returnId: number) {
       await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: z.id, toId: null, quantity: l.quantity, reason: "undo", reference: d.number, userId: c.userId });
     }
     await tx.update(returns).set({ status: "in_progress" }).where(eq(returns.id, returnId));
-    return `Devolución ${d.number} reabierta. Sus unidades salieron del stock hasta que se vuelva a cerrar.`;
+    return `${d.number} reabierta. Sus unidades salieron del stock hasta que se vuelva a cerrar.`;
   });
 }

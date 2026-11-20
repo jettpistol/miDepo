@@ -41,7 +41,7 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${pickedBy ? ` · Preparó ${pickedBy}` : ""}`} back={{ href: "/control", text: "Control" }}>
+      <PageHeader title={p.number} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${pickedBy ? ` · Preparó ${pickedBy}` : ""}`} back={{ href: "/control", text: "Control" }}>
         <Urgency session={session} order={p} />
       </PageHeader>
 

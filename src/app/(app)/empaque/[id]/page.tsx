@@ -47,7 +47,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Empaque ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}`} back={{ href: "/empaque", text: "Empaque" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />}>
+      <PageHeader title={p.number} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}`} back={{ href: "/empaque", text: "Empaque" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />}>
         <Urgency session={session} order={p} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>

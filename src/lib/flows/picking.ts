@@ -99,12 +99,12 @@ export async function takeOrder(c: Ctx, orderId: number) {
     const taken = await tx.update(orders).set({ status: "in_picking", takenBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "pending"))).returning({ id: orders.id });
     if (taken.length === 0) {
       // Already yours (an old screen, or a second tap): carry on with it.
-      if (p.status === "in_picking" && p.takenBy === c.userId) return `Pedido ${p.number} tomado.`;
+      if (p.status === "in_picking" && p.takenBy === c.userId) return `${p.number} tomado.`;
       throw new UserError("PICK-02", "Ese pedido ya lo tomó otra persona.");
     }
     await tx.insert(pickTasks).values(await planRoute(tx, c.companyId, orderId));
     await checkEnd(tx, orderId);
-    return `Pedido ${p.number} tomado.`;
+    return `${p.number} tomado.`;
   });
 }
 
@@ -162,7 +162,7 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
     const end = await checkEnd(tx, order.id);
-    if (end) return `Pedido ${order.number} completo. Llévalo a ${end === "to_control" ? "control" : "empaque"}.`;
+    if (end) return `${order.number} completo. Llévalo a ${end === "to_control" ? "control" : "empaque"}.`;
     return `${n} × ${articleName(p.title)} ✓`;
   });
 }
@@ -245,7 +245,7 @@ export async function releaseOrder(c: Ctx, orderId: number, { anyone = false } =
     const inMissing = tasks.reduce((s, t) => s + t.sentToMissing, 0);
     await tx.delete(pickTasks).where(eq(pickTasks.orderId, orderId));
     await tx.update(orderLines).set({ picked: 0, checked: 0 }).where(eq(orderLines.orderId, orderId));
-    const parts = [`Pedido ${order.number} soltado: vuelve a Pendientes.`];
+    const parts = [`${order.number} soltado: vuelve a Pendientes.`];
     if (back > 0) parts.push(`Devuelve ${back === 1 ? "la unidad tomada" : `las ${back} unidades tomadas`} a su ubicación.`);
     if (inMissing > 0) parts.push(`${inMissing === 1 ? "La unidad no encontrada sigue" : `Las ${inMissing} unidades no encontradas siguen`} en Faltantes.`);
     return parts.join(" ");
@@ -479,7 +479,7 @@ export async function releaseBatch(c: Ctx, batchId: number, { anyone = false } =
   const units = (await c.db.select({ n: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number) }).from(orderLines).innerJoin(orders, eq(orders.id, orderLines.orderId)).where(eq(orders.batchId, batch.id)))[0].n;
   for (const o of open) await releaseOrder(c, o.id, { anyone: true });
   await c.db.update(pickBatches).set({ status: "done" }).where(eq(pickBatches.id, batch.id));
-  const parts = [`Lote ${batchNumber(batch.number)} soltado: ${open.length === 1 ? "1 pedido vuelve" : `${open.length} pedidos vuelven`} a Pendientes.`];
+  const parts = [`${batchNumber(batch.number)} soltado: ${open.length === 1 ? "1 pedido vuelve" : `${open.length} pedidos vuelven`} a Pendientes.`];
   if (units > 0) parts.push(`Devuelve ${units === 1 ? "la unidad tomada" : `las ${units} unidades tomadas`} a su ubicación.`);
   return parts.join(" ");
 }

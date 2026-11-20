@@ -111,7 +111,7 @@ export async function finishControl(c: Ctx, orderId: number) {
   const left = lines.reduce((s, l) => s + (l.picked - l.checked), 0);
   if (left > 0) throw new UserError("CTRL-08", `Quedan ${left} sin controlar.`);
   await c.db.update(orders).set({ status: "picked", controlledBy: c.userId }).where(and(eq(orders.id, orderId), eq(orders.status, "to_control")));
-  return `Pedido ${order.number} controlado.`;
+  return `${order.number} controlado.`;
 }
 
 /**
@@ -127,7 +127,7 @@ export async function allowSameCheck(c: Ctx, orderId: number, allow: boolean) {
     .set({ sameCheckAllowedBy: allow ? c.userId : null })
     .where(and(eq(orders.id, orderId), inArray(orders.status, ["in_picking", "to_control", "picked"])))
     .returning({ id: orders.id });
-  if (changed.length === 0) throw new UserError("CTRL-11", `Pedido ${p.number} ya empacado.`);
+  if (changed.length === 0) throw new UserError("CTRL-11", `${p.number} ya empacado.`);
   return allow ? "Permitido." : "Permiso quitado.";
 }
 

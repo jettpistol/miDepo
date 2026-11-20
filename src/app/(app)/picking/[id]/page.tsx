@@ -56,7 +56,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
 
   return (
     <>
-      <PageHeader title={`Pedido ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${p.status !== "pending" && !mine && takenBy ? ` · Lo prepara ${takenBy}` : ""}`} back={{ href: "/picking", text: "Picking" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "to_control", "picked"].includes(p.status)} />}>
+      <PageHeader title={p.number} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}${p.status !== "pending" && !mine && takenBy ? ` · Lo prepara ${takenBy}` : ""}`} back={{ href: "/picking", text: "Picking" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "to_control", "picked"].includes(p.status)} />}>
         <Urgency session={session} order={p} />
         {editable && (
           <ActionButton

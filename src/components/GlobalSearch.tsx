@@ -6,6 +6,7 @@ import type { SearchResults } from "@/app/api/search/route";
 import type { IconName } from "./Icon";
 import { Icon } from "./Icon";
 import { ShelfMark } from "./ui";
+import { inFloating } from "./Select";
 
 export type Tab = "funciones" | "inventario" | "guias";
 const TABS: { id: Tab; name: string }[] = [
@@ -175,7 +176,7 @@ export function GlobalSearch({ starters }: { starters: SearchRow[] }) {
   // Closes on a click outside, like any menu.
   useEffect(() => {
     if (!open || sheet) return;
-    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
+    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && !inFloating(e.target) && setOpen(false);
     document.addEventListener("pointerdown", away);
     return () => document.removeEventListener("pointerdown", away);
   }, [open, sheet]);
