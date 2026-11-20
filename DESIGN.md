@@ -180,7 +180,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **Ruled list** (`ul.ruled-list` with `.row` rows) and **table** (`table.data-table` inside `div.overflow-x-auto.border-y.border-line`). Use a table when rows share three or more comparable fields.
 - **Buttons**: `btn` (one primary per view), `btn-soft`, `btn-danger`, and `btn-sm` inside table rows.
 - **Fields**: `field` with a `field-label` label.
-- **Search and filter boxes** (`form.field-group` with a `field` and a `btn` holding the magnifier icon): one control with one border and one focus ring, the button attached on the right edge. Standard size everywhere: full width up to 576px (`max-w-xl`), 32px tall on desktop, 44px on phones. The button says what it does in its `aria-label` (Buscar, Filtrar).
+- **Field with its button** (`div.field-group`, or `ActionForm attached` for a single field and its submit): a button that acts on one field sits on that field's right edge as one control, with one border, one focus ring and the field's height (32px desktop, 44px phone). The border takes the field's tone (`border-ok`, `border-danger`). Used by every scan field's camera button, search boxes and one-field forms such as Agregar una ubicación suelta. Search and filter boxes add `search-box` (full width up to 576px) and use the blue magnifier button, named in its `aria-label` (Buscar, Filtrar).
 - **Scan form** (`<ScanForm context>`): every keystroke is rehearsed against the server (`/api/lookup`, logic in `src/lib/lookup.ts`) with the same rules as the real action. Under each field a one-line note says what was recognised (the book's title, how much a shelf holds) or why it will not work, in `ok`, `warn` or `danger`. A field in `danger` blocks the submit. Suggestions open under the field as you type (a listbox; shelves as shelf marks). One-tap fixes sit under the field as `btn-sm` chips ("Está en", "Ya hay en", "Todas: 60"). Picking and packing validate but never suggest, because the scan there proves which book is in hand.
 - **Disabled with a reason**: an action that cannot work yet is disabled and says why in one muted line (`<ActionButton reason>`).
 - **Badge**: a small rectangular state badge in five tones. **Notice**: a bordered, tinted notice. **EmptyState**: an empty state between two hairlines that says what is missing and how it appears.
@@ -207,6 +207,7 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - Don't put a small uppercase label above a heading.
 - Don't use the mono face for anything that is not a code.
 - Don't use unicode glyphs as icons; use `Icon`.
+- Do attach a button that acts on a single field to that field's right edge (`field-group`); never leave it floating beside the field with a gap.
 - Do treat the database as the source of truth: suppliers, customers, products, stock and locations are chosen from what exists. Never accept free text for something that should already exist; creating one is a separate, confirmed action that refuses near-duplicates.
 - Do say a problem before the click: validate while typing, suggest valid values, and disable what cannot work with the reason beside it.
 - Don't explain what a screen is for under its title, or how an ordinary control works. Keep text that states a fact (a count, a state) or a consequence the user could not guess.
