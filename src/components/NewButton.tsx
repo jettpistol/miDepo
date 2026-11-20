@@ -10,6 +10,18 @@ export function NewButton({ label = "Nueva", title, children }: { label?: string
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
 
+  // "#nueva" in the address (from the top search) opens the panel, on arrival or on the same page.
+  useEffect(() => {
+    const fromHash = () => {
+      if (location.hash !== "#nueva") return;
+      history.replaceState(null, "", location.pathname + location.search);
+      setOpen(true);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     // Opened from the keyboard (F10) or not, the cursor goes to the first field.

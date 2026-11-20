@@ -30,7 +30,7 @@ export default async function Fierro() {
         </div>
       )}
 
-      <section className="mb-8 lg:mb-6">
+      <section id="traer" className="mb-8 lg:mb-6">
         <h2 className="section-title">Traer novedades de Fierro</h2>
         <p className="mb-3 max-w-[70ch] text-sm text-muted">Última sincronización: {company.lastSync ? shortDate(company.lastSync) : "nunca"}</p>
         <div className="flex flex-wrap gap-2">
@@ -50,7 +50,7 @@ export default async function Fierro() {
         </div>
       </section>
 
-      <section>
+      <section id="cargar">
         <h2 className="section-title">
           Para cargar en Fierro <small>{pending.length}</small>
         </h2>

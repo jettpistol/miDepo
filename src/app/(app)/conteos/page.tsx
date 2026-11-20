@@ -29,7 +29,7 @@ export default async function Counts() {
     <>
       <PageHeader title="Conteos" />
       {can(user.role, "supervisor") && (
-        <section className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
+        <section id="nuevo" className="panel mb-8 lg:mb-6 max-w-3xl p-4 lg:p-3">
           <h2 className="section-title">Nuevo conteo</h2>
           <ActionForm action={create} button="Crear conteo" className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-start [&>button]:sm:mt-[1.625rem]">
             <div>

@@ -18,6 +18,10 @@ Mantén **Alt** pulsado y pulsa un número.
 | Alt + 7 | Mover |
 | Alt + 8 | Stock |
 
+## Buscar
+
+**Ctrl + K** (en Mac, **⌘ + K**) o **/** llevan al buscador de arriba desde cualquier pantalla. Ahí, **Tab** cambia entre Funciones, Inventario y Guías, las flechas eligen y **Enter** abre. **Esc** cierra. Más en [Primeros pasos](Primeros-pasos#buscar).
+
 ## Dentro de una pantalla
 
 Cada tecla hace lo mismo en todas las pantallas que la usan.

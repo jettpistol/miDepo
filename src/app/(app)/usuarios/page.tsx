@@ -84,7 +84,7 @@ export default async function Users() {
         ))}
       </ul>
 
-      <section className="panel mt-10 lg:mt-8 max-w-3xl p-5 lg:p-4">
+      <section id="sumar" className="panel mt-10 lg:mt-8 max-w-3xl p-5 lg:p-4">
         <h2 className="section-title mb-3">Sumar a alguien</h2>
         <ActionForm action={create} button="Crear usuario" className="grid gap-3 sm:grid-cols-2" anyOf={{ fields: ["pin", "password"], message: "Dale un PIN, una contraseña o las dos cosas para que pueda entrar." }}>
           <div>

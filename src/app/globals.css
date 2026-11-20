@@ -121,6 +121,8 @@ html {
   accent-color: var(--accent-text);
   caret-color: var(--accent-text);
   scrollbar-color: var(--line-strong) transparent;
+  /* A link to a section (#apariencia) lands below the sticky top bar. */
+  scroll-padding-top: 4.5rem;
 }
 body {
   min-height: 100dvh;

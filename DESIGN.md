@@ -157,7 +157,7 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 
 - **Density follows Jira on desktop** (from `lg`, 1024px): 14px body text with 20px line height, 32px buttons and inputs (`btn`, `field`), 28px row buttons (`btn-sm`), 12px table headers and field labels, 24px semibold page titles. Free space is left free: a screen that is not full has room for the next feature.
 - **Phones keep touch sizes** (below `lg`): 44px controls and 15–16px text, because operators scan on the floor with one hand.
-- Desktop shell: a 48px white top bar (brand, stock search, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
+- Desktop shell: a 48px white top bar (brand, the search for everything, manual, account menu) over a 240px left sidebar with grouped sections and, beside each queue, how many items wait in it. The active item has an `accent-soft` fill and a 2px accent bar. Content fills the remaining width with 32px side padding.
 - Phone shell: a 52px white top bar and a five-item bar fixed at the bottom. The rest of the menu is at `/mas`.
 - Page header: a breadcrumb (parent / ) above the title, actions on the right.
 - Work screens use two columns from `lg`: a sticky 22–24rem scan column (`lg:top-30`) and the list beside it.

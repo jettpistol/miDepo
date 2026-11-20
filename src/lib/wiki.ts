@@ -12,6 +12,15 @@ export function pages() {
   return readdirSync(FOLDER).filter((f) => f.endsWith(".md") && !f.startsWith("_")).map((f) => f.slice(0, -3));
 }
 
+/** "Si el libro no está" → "si-el-libro-no-esta": the anchor of a section. */
+export const slug = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
 const isInternal = (href: string) => !/^([a-z]+:|\/|#)/i.test(href);
 
 function render(md: string) {
@@ -19,6 +28,11 @@ function render(md: string) {
   marked.use({
     renderer: {
       // Links between wiki pages ("Picking") become /ayuda/Picking.
+      // Section headings get an id, so the top search can open a page at the right section.
+      heading({ tokens, depth, text }) {
+        const id = depth === 2 ? ` id="${slug(text)}"` : "";
+        return `<h${depth}${id}>${this.parser.parseInline(tokens)}</h${depth}>\n`;
+      },
       link({ href, tokens }) {
         const destination = isInternal(href) ? `/ayuda/${href}` : href;
         const external = /^https?:/i.test(destination) ? ' target="_blank" rel="noreferrer"' : "";
@@ -90,6 +104,40 @@ export function search(lookup: string): SearchHit[] {
     results.push({ page, title, excerptHtml: html, points });
   }
   return results.sort((a, b) => b.points - a.points || a.title.localeCompare(b.title));
+}
+
+export type SectionHit = { page: string; pageTitle: string; section: string | null; href: string; excerpt: string };
+
+/**
+ * Searches the manual section by section, for the "Guías" tab of the top search: a hit opens
+ * the page at the section where the words are. Every word has to appear in the same section.
+ */
+export function searchSections(lookup: string, limit = 10): SectionHit[] {
+  const words = plain(lookup).split(/\s+/).filter((p) => p.length > 1).slice(0, 6);
+  if (words.length === 0) return [];
+  const results: (SectionHit & { points: number })[] = [];
+  for (const page of pages()) {
+    if (page === "Home") continue;
+    const md = readFileSync(path.join(FOLDER, `${page}.md`), "utf8");
+    const pageTitle = md.match(/^#\s+(.+)$/m)?.[1] ?? page.replace(/-/g, " ");
+    // The text before the first "##" belongs to the page itself.
+    const parts = md.split(/^##\s+/m);
+    parts.forEach((part, i) => {
+      const section = i === 0 ? null : part.split("\n")[0].trim();
+      const text = textOnly(i === 0 ? part : part.slice(part.indexOf("\n") + 1));
+      const [t, h, body] = [plain(pageTitle), plain(section ?? ""), plain(text)];
+      if (!words.every((w) => t.includes(w) || h.includes(w) || body.includes(w))) return;
+      const points = words.reduce((s, w) => s + (h.includes(w) ? 12 : 0) + (t.includes(w) ? 8 : 0) + Math.min(5, body.split(w).length - 1), 0) + (i === 0 ? 1 : 0);
+      const at = Math.max(0, Math.min(...words.map((w) => body.indexOf(w)).filter((n) => n >= 0), body.length));
+      const from = at > 60 ? text.lastIndexOf(" ", at - 40) + 1 : 0;
+      const excerpt = (from > 0 ? "… " : "") + text.slice(from, from + 140).trim() + (from + 140 < text.length ? " …" : "");
+      results.push({ page, pageTitle, section, href: `/ayuda/${page}${section ? `#${slug(section)}` : ""}`, excerpt, points });
+    });
+  }
+  return results
+    .sort((a, b) => b.points - a.points)
+    .slice(0, limit)
+    .map(({ points: _, ...hit }) => hit);
 }
 
 export function readFooter() {
