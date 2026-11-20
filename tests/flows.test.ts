@@ -25,6 +25,8 @@ import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
 import { setUrgent } from "@/lib/flows/orders";
+import { runLookup } from "@/lib/lookup";
+import { createCarrier, loadBox, setShipping, toDispatch, unloadBox } from "@/lib/flows/dispatch";
 import { applyLoad, checkLoad, listLoads, undoLoad } from "@/lib/flows/stockLoad";
 import { loadOpenOrders } from "@/app/(app)/picking/Tables";
 import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
@@ -851,5 +853,42 @@ describe("damaged on arrival", () => {
     expect((await fileFor(db, e.id, "receiving", id)).contents).toMatch(/danados/);
     await reopenReceiving(u, id);
     expect(await total(p.id)).toBe(0);
+  });
+});
+
+describe("dispatch", () => {
+  it("needs a carrier, loads each closed box once by its label, and the last box dispatches the order", async () => {
+    const { e, u: user } = await buildCompany("Envíos SA", "envios", 71);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [o] = await db.select().from(orders).where(eq(orders.companyId, e.id)).limit(1);
+    await expect(setShipping(u, o.id, { carrierId: 0, tracking: "", remito: "" })).rejects.toThrow(/empacado/);
+    await db.update(orders).set({ status: "packed" }).where(eq(orders.id, o.id));
+    await db.insert(boxes).values([1, 2].map((number) => ({ companyId: e.id, orderId: o.id, number, status: "closed" as const })));
+
+    const rehearse = async (box: string) => (await runLookup(db, e.id, new URLSearchParams({ ctx: "dispatch", box }))).statuses.box;
+    expect(await rehearse(`${o.number}-C1`)).toMatchObject({ tone: "danger", text: expect.stringMatching(/Falta el transporte/) });
+    expect(await rehearse(`${o.number}-`)).toBeUndefined();
+    await expect(loadBox(u, `${o.number}-C1`)).rejects.toThrow(/Falta el transporte/);
+    await expect(setShipping(u, o.id, { carrierId: 999999, tracking: "", remito: "" })).rejects.toThrow(/DSP-08|de la lista/);
+    const carrier = await createCarrier(u, "Andreani");
+    await expect(createCarrier(u, "andreaní")).rejects.toThrow(/Ya existe/);
+    await expect(createCarrier(u, "Andreanni")).rejects.toThrow(/casi igual/);
+    await setShipping(u, o.id, { carrierId: carrier.id, tracking: " AR 123 ", remito: "R 0001-00000042" });
+    expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0]).toMatchObject({ trackingNumber: "AR 123", remitoNumber: "R 0001-00000042" });
+
+    expect((await rehearse(`${o.number}-C1`))?.tone).toBe("ok");
+    expect(await loadBox(u, `${o.number.toLowerCase()}-c1`)).toMatch(/1 de 2/);
+    expect((await rehearse(`${o.number}-C1`))?.tone).toBe("danger");
+    await expect(loadBox(u, `${o.number}-C1`)).rejects.toThrow(/ya se cargó/);
+    await expect(loadBox(u, "PED-99999-C1")).rejects.toThrow(/no es la etiqueta/);
+    expect(await loadBox(u, `${o.number}-C2`)).toMatch(/despachado/);
+    expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0].dispatchedAt).not.toBeNull();
+    await expect(setShipping(u, o.id, { carrierId: carrier.id, tracking: "", remito: "" })).rejects.toThrow(/ya salió/);
+    expect((await toDispatch(db, e.id)).some((r) => r.o.id === o.id)).toBe(false);
+
+    const [b2] = await db.select().from(boxes).where(and(eq(boxes.orderId, o.id), eq(boxes.number, 2)));
+    await unloadBox(u, b2.id);
+    expect((await db.select().from(orders).where(eq(orders.id, o.id)))[0].dispatchedAt).toBeNull();
+    expect((await toDispatch(db, e.id)).find((r) => r.o.id === o.id)).toMatchObject({ boxes: 2, loaded: 1 });
   });
 });

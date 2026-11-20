@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gt, like, ne, or, sql, type AnyColumn, type SQL } f
 import type { DB } from "@/db";
 import { orderLines, orders, products, receivingLines, receivings, stock, pickTasks, locations } from "@/db/schema";
 import { MAX_COUNT_LOCATIONS } from "./flows/counts";
+import { boxByCode, cannotLoad, parseBoxCode } from "./flows/dispatch";
 import { locationName } from "./stock";
 import { articleName } from "@/lib/article";
 
@@ -17,7 +18,7 @@ export type Lookup = { statuses: Record<string, FieldStatus>; suggestions: Sugge
 
 const LOCATION_FIELDS = ["source", "destination", "location"];
 /** In picking, control and packing the scan proves which book is in hand: nothing is suggested there. */
-const NO_SUGGESTIONS = ["picking", "batch-picking", "control", "packing"];
+const NO_SUGGESTIONS = ["picking", "batch-picking", "control", "packing", "dispatch"];
 const clean = (q: string) => q.replace(/[%_\\]/g, "");
 
 /** "cronicas luna" finds "Crónicas de la Luna Roja": no accents, no capitals, words may be skipped. */
@@ -33,6 +34,17 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
   const statuses: Record<string, FieldStatus> = {};
   const shortcuts: Shortcut[] = [];
   const suggestions: Suggestion[] = [];
+
+  if (ctx === "dispatch") {
+    // A box label: "PED-00012-C2". While it does not look like one yet, the user is still typing.
+    const code = v("box");
+    if (parseBoxCode(code)) {
+      const row = await boxByCode(db, companyId, code);
+      const why = row ? cannotLoad(row) : `"${code}" no es la etiqueta de una caja.`;
+      statuses.box = why ? { tone: "danger", text: why } : { tone: "ok", text: `${row!.order.number} · caja ${row!.box.number} · ${row!.customer}` };
+    }
+    return { statuses, suggestions, shortcuts };
+  }
 
   if (ctx === "new-count") {
     const pre = clean(v("prefix")).toUpperCase();

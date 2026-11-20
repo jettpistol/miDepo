@@ -296,6 +296,13 @@ export const orders = pgTable(
     /** Who finished packing. */
     packedBy: integer("packed_by").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
+    /** Dispatch: who carries it, its tracking number and the remito it travels with (issued in Fierro). */
+    carrierId: integer("carrier_id").references(() => carriers.id),
+    trackingNumber: text("tracking_number"),
+    remitoNumber: text("remito_number"),
+    /** When its last box was scanned onto the vehicle, and by whom. */
+    dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
+    dispatchedBy: integer("dispatched_by").references(() => users.id),
     /** Set by sync when Fierro edited the order, or stopped listing it, after picking started. */
     fierroChange: text("fierro_change").$type<FierroChange>(),
     /** A supervisor marked it to go first (same-day delivery, a cutoff). Queues sort urgent first, then oldest. */
@@ -351,6 +358,9 @@ export const boxes = pgTable(
     number: integer("number").notNull(),
     weightGrams: integer("weight_grams"),
     status: text("status").$type<"open" | "closed">().notNull().default("open"),
+    /** Scanned onto the vehicle at dispatch. */
+    loadedAt: timestamp("loaded_at", { withTimezone: true }),
+    loadedBy: integer("loaded_by").references(() => users.id),
   },
   (t) => [index("boxes_order_id_idx").on(t.orderId)],
 );
@@ -366,6 +376,19 @@ export const boxItems = pgTable(
 );
 
 // ───────────── Inbound: receivings and returns ─────────────
+
+/** Who carries dispatched orders (Andreani, OCA, a messenger…). Master data: chosen from the list, created on purpose. */
+export const carriers = pgTable(
+  "carriers",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    name: text("name").notNull(),
+    createdBy: integer("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("carriers_company_id_name_idx").on(t.companyId, sql`lower(${t.name})`)],
+);
 
 /** Who sends stock in. Filled from Fierro on sync; a receiving can only name one of these. */
 export const suppliers = pgTable(

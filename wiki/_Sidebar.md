@@ -14,6 +14,7 @@
 - [Picking](Picking)
 - [Control](Control)
 - [Empaque](Empaque)
+- [Despacho](Despacho)
 - [Devoluciones](Devoluciones)
 - [Conteos](Conteos)
 - [Mover](Mover)

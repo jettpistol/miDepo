@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { DB } from "./index";
-import { companies, fierroStock, orders, products, receivings, stock, locations, users, type Role } from "./schema";
+import { carriers, companies, fierroStock, orders, products, receivings, stock, locations, users, type Role } from "./schema";
 import ovnipressCatalog from "@/lib/fierro/ovnipress-catalog.json";
 import { hashPassword, pinHmac } from "@/lib/credentials";
 import { sync } from "@/lib/fierro";
@@ -102,6 +102,8 @@ export async function seed(db: DB, log: (m: string) => void = () => {}) {
       .sort((a, b) => codes.indexOf(a.code) - codes.indexOf(b.code));
 
     await sync(db, company);
+    // Common Argentine carriers, so Despacho has a list to choose from.
+    await db.insert(carriers).values(["Andreani", "OCA", "Correo Argentino", "Mercado Envíos Flex", "Mensajería propia"].map((name) => ({ companyId: company.id, name })));
     const prods = (await db.select({ id: products.id, fierroId: products.fierroId }).from(products).where(eq(products.companyId, company.id)))
       .map((p) => ({ id: p.id, i: Number(p.fierroId.split("-L")[1]) - 1 }))
       .sort((a, b) => a.i - b.i);

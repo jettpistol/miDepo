@@ -28,6 +28,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `PICK` | Picking |
 | `CTRL` | Control: the second count of a picked order before packing |
 | `PACK` | Empaque |
+| `DSP` | Despacho: transport, tracking, remito and loading boxes |
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
@@ -270,6 +271,25 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PACK-19` | Este pedido todavía no se terminó de empacar. | `src/lib/flows/packing.ts` · `reopenPacking` | Reopening packing of an order that is not packed. |
 | `PACK-20` | Pendiente de control. | `src/lib/flows/packing.ts` · `orderToPack` | Packing an order that is waiting in Control. |
 | `PACK-21` | Lo preparaste tú. Lo empaca otra persona. | `src/lib/flows/packing.ts` · `orderToPack` | The company does not let the picker do the check (Ajustes), the order skipped Control, and the person packing is the one who picked it. |
+
+## DSP: Despacho
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `DSP-01` | No se encontró ese pedido. | `src/lib/flows/dispatch.ts` · `setShipping` | Saving dispatch data for an order that does not exist or belongs to another company. |
+| `DSP-02` | Escribe el nombre del transporte. | `src/lib/flows/dispatch.ts` · `createCarrier` | Creating a carrier with an empty or one-letter name. |
+| `DSP-03` | El nombre es demasiado largo. | `src/lib/flows/dispatch.ts` · `createCarrier` | Creating a carrier with a name over 60 characters. |
+| `DSP-04` | Ya existe: {nombre}. Elígelo de la lista. | `src/lib/flows/dispatch.ts` · `createCarrier` | Creating a carrier that already exists, ignoring accents, capitals and spacing. |
+| `DSP-05` | ¿Es {nombre}? Ya existe un transporte casi igual. Elígelo de la lista. | `src/lib/flows/dispatch.ts` · `createCarrier` | Creating a carrier one or two letters off an existing one. |
+| `DSP-06` | El pedido {número} todavía no está empacado. | `src/lib/flows/dispatch.ts` · `setShipping` | Saving dispatch data before packing is finished. |
+| `DSP-07` | El pedido {número} ya salió. Para cambiar estos datos, descarga una caja. | `src/lib/flows/dispatch.ts` · `setShipping` | Changing dispatch data of an order already dispatched. |
+| `DSP-08` | Elige el transporte de la lista. | `src/lib/flows/dispatch.ts` · `setShipping` | Saving dispatch data without a carrier from the list. |
+| `DSP-09` | Escanea la etiqueta de la caja. | `src/lib/flows/dispatch.ts` · `loadBox` | Loading with an empty box field. |
+| `DSP-10` | "{código}" no es la etiqueta de una caja. | `src/lib/flows/dispatch.ts` · `loadBox` | The scanned code is not a box label of this company. |
+| `DSP-11` | {motivo: no empacado, caja abierta, ya cargada o falta el transporte} | `src/lib/flows/dispatch.ts` · `loadBox` | Loading a box that cannot leave yet, or twice. |
+| `DSP-12` | No se encontró esa caja. | `src/lib/flows/dispatch.ts` · `unloadBox` | Unloading a box that does not exist or belongs to another company. |
+| `DSP-14` | No se pudo crear el transporte. | `src/app/(app)/despacho/actions.ts` · `addCarrier` | Creating a carrier from the dropdown failed without a message of its own. |
+| `DSP-13` | La caja {n} no está cargada. | `src/lib/flows/dispatch.ts` · `unloadBox` | Unloading a box that was not loaded. |
 
 ## RET: Devoluciones
 

@@ -14,6 +14,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
       { href: "/picking", name: "Picking", icon: "picking", help: "Preparar pedidos" },
       { href: "/control", name: "Control", icon: "check", help: "Revisar lo preparado", needs: "control" },
       { href: "/empaque", name: "Empaque", icon: "packing", help: "Preparar las cajas" },
+      { href: "/despacho", name: "Despacho", icon: "dispatch", help: "Cargar las cajas en el transporte" },
       { href: "/devoluciones", name: "Devoluciones", icon: "return", help: "Revisar artículos que vuelven" },
       { href: "/conteos", name: "Conteos", icon: "count", help: "Contar ubicaciones" },
       { href: "/mover", name: "Mover", icon: "move", help: "Cambiar artículos de ubicación" },

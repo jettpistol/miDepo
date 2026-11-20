@@ -35,4 +35,4 @@ Con al menos una caja cerrada aparecen dos botones:
 
 ## Qué pasa después
 
-El pedido queda **empacado** y aparece en la pantalla **Fierro** del supervisor, para cargarlo en Fierro. Los artículos siguen contando como stock del depósito hasta que se marca como cargado en Fierro: solo entonces salen.
+El pedido queda **empacado** y pasa a [Despacho](Despacho) para cargar sus cajas. También aparece en la pantalla **Fierro** del supervisor, para cargarlo en Fierro. Los artículos siguen contando como stock del depósito hasta que se marca como cargado en Fierro: solo entonces salen.
