@@ -10,6 +10,8 @@ import { confirm, putBack, release, shortage, take, wasThere } from "../actions"
 import { hotkey } from "@/lib/hotkeys";
 import { articleName } from "@/lib/article";
 import { Assignee } from "@/components/Assignee";
+import { Urgency } from "@/components/Urgency";
+import { fierroWarning } from "@/lib/orderState";
 import { planRoute } from "@/lib/flows/picking";
 
 export default async function PickingOrder({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ parada?: string }> }) {
@@ -45,8 +47,9 @@ export default async function PickingOrder({ params, searchParams }: { params: P
   const editable = p.status === "in_picking" || p.status === "picked";
   const mine = p.takenBy === user.id;
   const releaseReason = !mine && !can(user.role, "supervisor") ? `Lo está preparando ${takenBy ?? "otra persona"}. Solo esa persona o un supervisor puede soltarlo.` : box ? "Ya hay cajas armadas. Vacíalas en empaque antes de soltarlo." : undefined;
+  const warning = fierroWarning(p);
   // Before anyone takes it: the route taking it would build now, so the order can be read first.
-  const preview = p.status === "pending" ? await previewRoute(db, company.id, id) : [];
+  const preview = ["pending", "cancelled"].includes(p.status) ? await previewRoute(db, company.id, id) : [];
   const previewShort = preview.filter((x) => x.location == null).reduce((s, x) => s + x.quantity, 0);
   const missingInRoute = tasks.filter((x) => x.t.sentToMissing > 0).reduce((s, x) => s + x.t.sentToMissing, 0);
 
@@ -54,6 +57,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
     <>
       <PageHeader title={`Pedido ${p.number}`} subtitle={p.status !== "pending" && !mine && takenBy ? `${customer} · Lo prepara ${takenBy}` : customer} back={{ href: "/picking", text: "Picking" }}>
         {p.saleMode === "consignment" && <Badge>Consignación</Badge>}
+        <Urgency session={session} order={p} />
         <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={["pending", "in_picking", "picked"].includes(p.status)} />
         {editable && (
           <ActionButton
@@ -75,14 +79,15 @@ export default async function PickingOrder({ params, searchParams }: { params: P
         )}
       </PageHeader>
 
-      {p.status === "pending" ? (
+      {warning && <Notice tone="warn">{warning}</Notice>}
+      {p.status === "pending" || p.status === "cancelled" ? (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
           <div className="min-w-0 space-y-3 lg:sticky lg:top-30">
             <p>
-              <strong>{plural(total, "unidad", "unidades")}</strong> de {plural(lines.length, "artículo", "artículos")}. Todavía no lo tomó nadie; el stock se reserva al tomarlo.
+              <strong>{plural(total, "unidad", "unidades")}</strong> de {plural(lines.length, "artículo", "artículos")}{p.status === "pending" && ". Todavía no lo tomó nadie; el stock se reserva al tomarlo"}.
             </p>
             {previewShort > 0 && <Notice tone="danger">Sin stock en estanterías para {plural(previewShort, "unidad", "unidades")}: saldrían como faltantes.</Notice>}
-            <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary">
+            <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary" reason={warning ?? undefined}>
               Preparar este pedido
             </ActionButton>
           </div>

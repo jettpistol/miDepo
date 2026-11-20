@@ -23,6 +23,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `LOC` | Ubicaciones (`/ubicaciones`) |
 | `STK` | Stock, moves and scanning a book or a location (any scan screen) |
 | `RCV` | Recepción and suppliers |
+| `ORD` | Orders in general: Pedidos and marking an order urgent |
 | `PICK` | Picking |
 | `PACK` | Empaque |
 | `RET` | Devoluciones |
@@ -167,6 +168,13 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RCV-16` | Ese proveedor viene de Fierro. Se borra allí. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier that came from Fierro. The screen offers it only for suppliers created in miDepo. |
 | `RCV-17` | Ese proveedor ya tiene recepciones y no se puede borrar. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier some receiving uses. The screen disables the button first. |
 
+## ORD: orders
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `ORD-01` | No se encontró ese pedido. | `src/lib/flows/orders.ts` · `setUrgent` | Marking urgent an order that does not exist or belongs to another company. |
+| `ORD-02` | El pedido {número} ya está empacado: la urgencia no cambia nada. | `src/lib/flows/orders.ts` · `setUrgent` | Marking urgent an order already packed, shipped or cancelled. |
+
 ## PICK: Picking
 
 | Code | Message | Where | When |
@@ -189,6 +197,9 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-16` | Las paradas que la reemplazaron ya avanzaron. Deshaz esas primero. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after the extra stop miDepo added elsewhere was picked or reported short too. |
 | `PICK-17` | Esas unidades ya no están en Faltantes: se encontraron o se dieron de baja. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after a supervisor wrote the units off or somebody moved them out of FALTANTES. |
 | `PICK-18` | Primero deshaz el aviso de que no estaba en la ubicación. | `src/lib/flows/picking.ts` · `unpick` | Undoing a partial pick on a stop that was then reported short. |
+| `PICK-19` | El pedido {número} ya no figura como pendiente en Fierro. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order a sync cancelled because Fierro stopped listing it. |
+| `PICK-20` | El pedido {número} tiene {n} artículos que no están en el catálogo. Sincroniza con Fierro cuando estén cargados. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order whose Fierro lines name articles missing from the synced catalogue. |
+| `PICK-21` | Fierro cambió el pedido {número}. Sincroniza antes de prepararlo. | `src/lib/flows/picking.ts` · `takeOrder` | Taking a released order whose change from Fierro has not been applied yet. |
 
 ## PACK: Empaque
 
@@ -263,9 +274,9 @@ Writing off more units than the zone holds is refused by `STK-03`.
 
 | Code | Message | Where | When |
 |---|---|---|---|
-| `ASG-01` | No se reconoce qué se quiere asignar. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
-| `ASG-02` | No se encontró eso para asignar. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
-| `ASG-03` | {Pedido PED-00012} ya no tiene trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
+| `ASG-01` | Tipo de tarea desconocido. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
+| `ASG-02` | No se encontró. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
+| `ASG-03` | {Pedido PED-00012} sin trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
 | `ASG-04` | Elige una persona de la lista. | `src/lib/flows/assignments.ts` · `assign` | The person chosen does not exist, is deactivated, or belongs to another company. Only reachable by editing the form or a stale page. |
 
 ## EXP: Fierro documents

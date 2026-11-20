@@ -25,12 +25,11 @@ function Rest({ tasks }: { tasks: Task[] }) {
   const kinds = (Object.keys(KIND) as Task["kind"][]).map((k) => [k, tasks.filter((t) => t.kind === k).length] as const).filter(([, n]) => n > 0);
   return (
     <p className="mt-3 text-[13px] text-muted">
-      Y {tasks.length} más:{" "}
       {kinds.map(([k, n], i) => (
         <span key={k}>
           {i > 0 && " · "}
           <Link href={KIND_HREF[k]} className="link">
-            {plural(n, KIND[k].one, KIND[k].many)}
+            {plural(n, `${KIND[k].one} más`, `${KIND[k].many} más`)}
           </Link>
         </span>
       ))}
@@ -111,14 +110,13 @@ export default async function Home() {
           <Link href={`/picking/${current.p.id}`} className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 transition-colors duration-150 hover:bg-accent-hover">
             {current.nextShelf && <ShelfMark code={current.nextShelf} size="md" onAccent />}
             <span className="min-w-0 flex-1">
-              <span className="block text-sm opacity-85">Pedido en curso</span>
               <span className="block text-lg leading-tight font-bold lg:text-base">Seguir con {current.p.number}</span>
             </span>
             <Icon name="arrow" className="size-6" />
           </Link>
           {picking.length > 1 && (
             <Link href="/picking" className="flex shrink-0 items-center border-l border-on-accent/25 px-4 text-sm font-semibold transition-colors duration-150 hover:bg-accent-hover">
-              {picking.length - 1} más en curso
+              {picking.length - 1} más
             </Link>
           )}
         </div>
@@ -158,7 +156,7 @@ export default async function Home() {
               <p className="font-semibold">Nada asignado</p>
               {next ? (
                 <>
-                  <p className="mt-0.5 mb-2 text-sm text-muted">Próximo pedido sin asignar</p>
+                  <p className="mt-0.5 mb-2 text-sm text-muted">Próximo sin asignar</p>
                   <ul className="divide-y divide-line border-y border-line">
                     <TaskRow t={next} first={!current} />
                   </ul>
@@ -170,15 +168,15 @@ export default async function Home() {
           )}
         </Card>
 
-        <Card title="Pedidos abiertos" count={stages.reduce((s, x) => s + x.n, 0)} link={{ href: "/picking", text: "Ver en Picking" }}>
+        <Card title="Pedidos abiertos" count={stages.reduce((s, x) => s + x.n, 0)} link={{ href: "/picking", text: "Picking" }}>
           <StageBar stages={stages.map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
         </Card>
 
-        <Card title="Actividad, últimos 7 días" count={days.reduce((s, d) => s + d.received + d.picked + d.shipped, 0)}>
+        <Card title="Últimos 7 días" count={days.reduce((s, d) => s + d.received + d.picked + d.shipped, 0)}>
           <ActivityChart days={days} />
         </Card>
 
-        <Card title="Stock esperando en zonas">
+        <Card title="Stock en zonas">
           <ZoneBars zones={zones.map((z) => ({ ...z, href: z.type === "missing" || z.type === "damaged" ? (supervisor ? z.href : undefined) : z.href }))} />
         </Card>
 
@@ -190,8 +188,8 @@ export default async function Home() {
                   <tr>
                     <th>Persona</th>
                     <th>Asignado</th>
-                    <th className="hidden sm:table-cell">Preparando ahora</th>
-                    <th className="w-[28%] min-w-32">Unidades movidas hoy</th>
+                    <th className="hidden sm:table-cell">En preparación</th>
+                    <th className="w-[28%] min-w-32">Unidades hoy</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -204,7 +202,7 @@ export default async function Home() {
                         <span className="font-medium">Sin asignar</span>
                       </span>
                     </td>
-                    <td className={unassigned.length ? "font-medium text-warn" : "text-muted"}>{byKind(unassigned) || "Nada"}</td>
+                    <td className={unassigned.length ? "font-medium text-warn" : "text-muted"}>{byKind(unassigned) || "—"}</td>
                     <td className="hidden sm:table-cell" />
                     <td />
                   </tr>
@@ -249,7 +247,7 @@ export default async function Home() {
             </div>
             {team.length > TEAM_ROWS && (
               <p className="mt-3 text-[13px] text-muted">
-                Y {plural(team.length - TEAM_ROWS, "persona más", "personas más")}
+                {plural(team.length - TEAM_ROWS, "persona más", "personas más")}
                 {can(user.role, "admin") && (
                   <>
                     {" · "}
