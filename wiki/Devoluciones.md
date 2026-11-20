@@ -31,6 +31,7 @@ Si cargaste mal una línea, toca **Quitar** y escanéala de nuevo con el estado 
 - Los **vendibles** quedan en la zona de Devoluciones. Repónlos desde [Reposición](Reposicion), eligiendo **Desde Devoluciones**.
 - Los **saldos** y los **dañados** ya quedan en su zona: lleva los artículos físicamente ahí.
 - La devolución aparece en la pantalla **Fierro** del supervisor, para cargarla en Fierro.
+- Una etiqueta por unidad, con VENDIBLE, SALDO o DAÑADO, queda pendiente en [Etiquetas](Etiquetas).
 
 Las devoluciones cerradas quedan en **Cerradas**, abajo en Devoluciones: todas, con buscador por número o cliente.
 

@@ -103,7 +103,7 @@ export function ShelfMark({ code, size = "sm", onAccent = false, className = "" 
   const segments = zone ? [ZONE_NAME[code]] : code.split(/[^0-9A-Za-zÑñ]+/).filter(Boolean);
   const classes = ["shelfmark", size === "md" && "shelfmark-md", size === "xl" && "shelfmark-xl", onAccent && "shelfmark-on-accent", className].filter(Boolean).join(" ");
   return (
-    <span className={classes} data-zone={zone} aria-label={`Ubicación ${code}`} title={code}>
+    <span className={classes} data-zone={zone} data-code={code} aria-label={`Ubicación ${code}`} title={code}>
       {zone && <span className="shelfmark-band" aria-hidden="true" />}
       {segments.map((t, i) => (
         <span key={i} aria-hidden="true">
@@ -116,7 +116,11 @@ export function ShelfMark({ code, size = "sm", onAccent = false, className = "" 
 
 /** A code that is not a shelf: ISBN, internal code. */
 export function Code({ children }: { children: ReactNode }) {
-  return <span className="code-chip">{children}</span>;
+  return (
+    <span className="code-chip" data-code={typeof children === "string" ? children : undefined}>
+      {children}
+    </span>
+  );
 }
 
 export const shortDate = (d: Date) => new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }).format(d);

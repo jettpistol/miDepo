@@ -152,7 +152,7 @@ export default async function PickingOrder({ params, searchParams }: { params: P
                     <Cover productId={current.t.productId} version={current.thumb} className="h-30 w-21 border-on-accent/40" />
                     <div className="min-w-0">
                       <p className="text-lg leading-snug font-semibold lg:text-base">{articleName(current.title)}</p>
-                      <p className="mt-1 font-mono text-sm font-bold break-all opacity-85">
+                      <p className="mt-1 font-mono text-sm font-bold break-all opacity-85" data-code={current.isbn ?? current.sku ?? undefined}>
                         {current.sku}
                         {current.isbn && ` · ${current.isbn}`}
                       </p>

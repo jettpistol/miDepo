@@ -3,7 +3,8 @@ import type { DB } from "@/db";
 import { orderLines, orders, products, receivingLines, receivings, stock, pickTasks, locations, transferLines, transfers } from "@/db/schema";
 import { MAX_COUNT_LOCATIONS } from "./flows/counts";
 import { boxByCode, cannotLoad, parseBoxCode } from "./flows/dispatch";
-import { locationName } from "./stock";
+import { locationByCode, locationName, productByCode } from "./stock";
+import { fixLayout } from "./scan";
 import { articleName } from "@/lib/article";
 
 /**
@@ -69,20 +70,8 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     return or(like(products.barcode, `${c}%`), like(products.isbn, `${c}%`), like(products.internalCode, `${c.toUpperCase()}%`), containsText(products.title, c), containsText(products.author, c))!;
   };
 
-  async function location(code: string) {
-    if (!code) return null;
-    const [u] = await db.select().from(locations).where(and(eq(locations.companyId, companyId), eq(locations.code, code.toUpperCase()))).limit(1);
-    return u ?? null;
-  }
-  async function product(code: string) {
-    if (!code) return null;
-    const [x] = await db
-      .select()
-      .from(products)
-      .where(and(eq(products.companyId, companyId), or(eq(products.barcode, code), eq(products.isbn, code), eq(products.internalCode, code.toUpperCase()))))
-      .limit(1);
-    return x ?? null;
-  }
+  const location = (code: string) => (code ? locationByCode(db, companyId, code) : Promise.resolve(null));
+  const product = (code: string) => (code ? productByCode(db, companyId, code) : Promise.resolve(null));
   /** Where a title is, from most to fewest units. */
   const whereIs = (productId: number, shelvesOnly = false) =>
     db
@@ -99,7 +88,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     if (!text) return;
     if (!u) {
       // As long as what was typed is the start of some code, the user is still typing.
-      const [prefixMatch] = await db.select({ id: locations.id }).from(locations).where(and(eq(locations.companyId, companyId), like(locations.code, `${clean(text).toUpperCase()}%`))).limit(1);
+      const [prefixMatch] = await db.select({ id: locations.id }).from(locations).where(and(eq(locations.companyId, companyId), like(locations.code, `${clean(fixLayout(text.toUpperCase()))}%`))).limit(1);
       if (!prefixMatch) statuses[field] = { tone: "danger", text: `No existe la ubicación "${text.toUpperCase()}".` };
       return;
     }

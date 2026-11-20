@@ -49,8 +49,9 @@ describe("Funciones", () => {
         expect(existsSync(path.join(process.cwd(), "wiki", `${route.slice(7)}.md`)), f.href).toBe(true);
         continue;
       }
-      const group = route.startsWith("/imprimir") ? "(print)" : route === "/ayuda" ? "(manual)" : "(app)";
-      const file = route === "/ayuda" ? path.join(app, group, "ayuda/[[...page]]/page.tsx") : path.join(app, group, route, "page.tsx");
+      // Print views live outside the app shell: A4 pages in (print), label views in (label).
+      const groups = route.startsWith("/imprimir") || route.startsWith("/etiquetas/") ? ["(print)", "(label)"] : route === "/ayuda" ? ["(manual)"] : ["(app)"];
+      const file = route === "/ayuda" ? path.join(app, "(manual)", "ayuda/[[...page]]/page.tsx") : (groups.map((g) => path.join(app, g, route, "page.tsx")).find((f) => existsSync(f)) ?? path.join(app, groups[0], route, "page.tsx"));
       expect(existsSync(file), f.href).toBe(true);
       if (!hash) continue;
       const source = readFileSync(file, "utf8");

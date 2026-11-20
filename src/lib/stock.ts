@@ -1,7 +1,8 @@
-import { and, eq, gte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, or, sql } from "drizzle-orm";
 import type { Executor } from "@/db";
 import { movements, products, stock, locations, type MovementReason, type LocationType } from "@/db/schema";
 import { UserError } from "./errors";
+import { best, cleanScan, locationCandidates, productCandidates } from "./scan";
 
 export type Movement = {
   companyId: number;
@@ -56,34 +57,45 @@ export async function moveStock(tx: Executor, m: Movement) {
   });
 }
 
-/** Looks up whatever the scanner read: barcode, ISBN or internal code. */
-export async function findProduct(tx: Executor, companyId: number, code: string) {
-  const c = code.trim();
-  if (!c) throw new UserError("STK-04", "Escanea o escribe el código del artículo.");
-  const [p] = await tx
+/**
+ * The article a scan names: barcode, ISBN or SKU, after the clean-up in scan.ts (add-ons, UPC-A,
+ * ISBN-10, keyboard layout). Null if none. The scan forms' live check uses the same function.
+ */
+export async function productByCode(tx: Executor, companyId: number, code: string) {
+  const c = productCandidates(code);
+  if (!c[0]) return null;
+  const upper = c.map((x) => x.toUpperCase());
+  const rows = await tx
     .select()
     .from(products)
-    .where(
-      and(
-        eq(products.companyId, companyId),
-        or(eq(products.barcode, c), eq(products.isbn, c), eq(products.internalCode, c.toUpperCase())),
-      ),
-    )
-    .limit(1);
+    .where(and(eq(products.companyId, companyId), or(inArray(products.barcode, c), inArray(products.isbn, c), inArray(products.internalCode, upper))))
+    .limit(10);
+  return best(rows, [...c, ...upper], (p) => [p.barcode, p.isbn, p.internalCode]);
+}
+
+/** Looks up whatever the scanner read: barcode, ISBN or internal code. */
+export async function findProduct(tx: Executor, companyId: number, code: string) {
+  const c = cleanScan(code);
+  if (!c) throw new UserError("STK-04", "Escanea o escribe el código del artículo.");
+  const p = await productByCode(tx, companyId, c);
   if (!p) throw new UserError("STK-05", `El código "${c}" no está en el catálogo. Si es un artículo nuevo, pide que sincronicen con Fierro.`);
   return p;
 }
 
+/** The location a scan names, in capitals and with the keyboard-layout fix. Null if none. */
+export async function locationByCode(tx: Executor, companyId: number, code: string) {
+  const c = locationCandidates(code);
+  if (!c[0]) return null;
+  const rows = await tx.select().from(locations).where(and(eq(locations.companyId, companyId), inArray(locations.code, c))).limit(c.length);
+  return best(rows, c, (u) => [u.code]);
+}
+
 export async function findLocation(tx: Executor, companyId: number, code: string) {
-  const c = code.trim().toUpperCase();
+  const c = cleanScan(code).toUpperCase();
   if (!c) throw new UserError("STK-06", "Escanea o escribe la ubicación.");
-  const [u] = await tx
-    .select()
-    .from(locations)
-    .where(and(eq(locations.companyId, companyId), eq(locations.code, c)))
-    .limit(1);
+  const u = await locationByCode(tx, companyId, c);
   if (!u) throw new UserError("STK-07", `No existe la ubicación "${c}".`);
-  if (!u.active) throw new UserError("STK-08", `La ubicación "${c}" está desactivada.`);
+  if (!u.active) throw new UserError("STK-08", `La ubicación "${u.code}" está desactivada.`);
   return u;
 }
 

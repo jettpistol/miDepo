@@ -11,6 +11,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { LabelKind, StoredLabel } from "@/lib/labels/kinds";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
@@ -39,6 +40,8 @@ export const companies = pgTable("companies", {
   controlMinUnits: integer("control_min_units"),
   /** Whether whoever picked an order may also control it (or pack it, when packing is the control). */
   samePersonChecks: boolean("same_person_checks").notNull().default(true),
+  /** Test mode (Organización, admins): demo printers and a demo scanner, marked as such, for trying labels without hardware. */
+  testMode: boolean("test_mode").notNull().default(false),
   createdAt: createdAt(),
 });
 
@@ -610,6 +613,123 @@ export const stockLoads = pgTable(
 );
 
 export const now = sql`now()`;
+
+// ───────────── Labels, printers and computers ─────────────
+
+/**
+ * A computer (browser) that prints, per company: identified by a long-lived cookie
+ * (src/lib/workstation.ts). Its printer for each kind of label is chosen by a supervisor.
+ */
+export const workstations = pgTable(
+  "workstations",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** Random value of the `midepo_equipo` cookie. */
+    token: text("token").notNull(),
+    name: text("name").notNull(),
+    /** Browser and system as last seen, for the device list ("Chrome · Windows"). */
+    agent: text("agent"),
+    lastUserId: integer("last_user_id").references(() => users.id),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("workstations_company_id_token_idx").on(t.companyId, t.token)],
+);
+
+/** How miDepo reaches a printer. Today: the system print dialog, or a demo printer (test mode). Later: usb, serial, bluetooth, helper. */
+export type PrinterConnection = "dialog" | "demo";
+/** What the printer is sent: a page through the dialog, or its own language. */
+export type PrinterLanguage = "page" | "zpl" | "tspl";
+/** A demo printer's simulated state, set in Dispositivos to try what a fault looks like. */
+export type DemoFault = "paper" | "head" | "offline";
+
+/** The company's printers. The system dialog needs no row: it is every computer's fallback. */
+export const printers = pgTable(
+  "printers",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    name: text("name").notNull(),
+    connection: text("connection").$type<PrinterConnection>().notNull(),
+    language: text("language").$type<PrinterLanguage>().notNull(),
+    dpi: integer("dpi").notNull().default(203),
+    /** Model as the user knows it ("Zebra ZD421"), for the manual's supported-models list. */
+    model: text("model"),
+    fault: text("fault").$type<DemoFault>(),
+    active: boolean("active").notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("printers_company_id_name_idx").on(t.companyId, sql`lower(${t.name})`)],
+);
+
+/** A computer's printer and size for one kind of label. No row: the system dialog at the kind's default size. */
+export const workstationPrinters = pgTable(
+  "workstation_printers",
+  {
+    workstationId: integer("workstation_id").notNull().references(() => workstations.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<LabelKind>().notNull(),
+    /** null = the system print dialog. */
+    printerId: integer("printer_id").references(() => printers.id),
+    sizeId: text("size_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.workstationId, t.kind] })],
+);
+
+/**
+ * Labels prepared by a step (a receiving closed, an order packed, a return closed, locations
+ * created) or asked for from a record, waiting for one click in Etiquetas. Never printed on
+ * their own. `labels` is a snapshot of what each label says; box labels are read again when
+ * printed, so the carrier and tracking set later in Despacho appear.
+ */
+export const labelJobs = pgTable(
+  "label_jobs",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    kind: text("kind").$type<LabelKind>().notNull(),
+    /** The document it comes from, as shown ("REC-0004", "PED-00012", "A-01"). */
+    reference: text("reference").notNull(),
+    /** Where it links to and what box labels are read from: "receiving:12", "order:5", "return:3", "locations". */
+    source: text("source").notNull(),
+    labels: jsonb("labels").$type<StoredLabel[]>().notNull(),
+    /** Total labels, copies included. */
+    total: integer("total").notNull(),
+    /** Prepared by a step (true) or asked for by someone (false). */
+    automatic: boolean("automatic").notNull().default(true),
+    createdBy: integer("created_by").references(() => users.id),
+    createdAt: createdAt(),
+    prints: integer("prints").notNull().default(0),
+    printedAt: timestamp("printed_at", { withTimezone: true }),
+    printedBy: integer("printed_by").references(() => users.id),
+    discardedAt: timestamp("discarded_at", { withTimezone: true }),
+  },
+  (t) => [index("label_jobs_company_id_printed_at_idx").on(t.companyId, t.printedAt)],
+);
+
+/** Every time labels were sent: to the dialog, or to a printer with the program it got (a demo printer's output tray). */
+export const printLog = pgTable(
+  "print_log",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    jobId: integer("job_id").references(() => labelJobs.id),
+    printerId: integer("printer_id").references(() => printers.id),
+    workstationId: integer("workstation_id").references(() => workstations.id),
+    kind: text("kind").$type<LabelKind>().notNull(),
+    sizeId: text("size_id").notNull(),
+    labels: integer("labels").notNull(),
+    /** What was printed (box labels as they were then): the demo printer's preview is drawn from it. */
+    content: jsonb("content").$type<StoredLabel[]>().notNull(),
+    /** ZPL or TSPL sent; null for the dialog. */
+    program: text("program"),
+    /** Why it failed (a demo fault), or null. */
+    error: text("error"),
+    userId: integer("user_id").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("print_log_company_id_printer_id_idx").on(t.companyId, t.printerId)],
+);
 
 // ───────────── Manual ─────────────
 

@@ -20,7 +20,7 @@ La barra de arriba muestra cuántas unidades ya están en cajas.
 
 Con al menos una caja cerrada aparecen dos botones:
 
-- **Etiquetas:** una etiqueta grande por caja, con el cliente, la dirección y "Caja 1 de 3". Salen cuatro por hoja A4; recórtalas y pégalas con cinta.
+- **Etiquetas:** una por caja, con el cliente, la dirección y "Caja 1 de 3". En térmica de 10 × 15 cm, o cuatro por hoja A4. Al terminar el pedido quedan pendientes en [Etiquetas](Etiquetas).
 - **Lista de empaque:** el detalle de qué va en cada caja. Pon una copia dentro de la Caja 1.
 
 > La lista de empaque **no es un remito**. El remito y la factura los hace la oficina en Fierro.

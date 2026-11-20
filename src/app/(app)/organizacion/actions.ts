@@ -1,6 +1,7 @@
 "use server";
 
 import { action, txt } from "@/lib/action";
+import { setTestMode } from "@/lib/flows/printers";
 import { changeOrganizationCode, renameOrganization, saveBatchSorting, saveControlSettings } from "@/lib/flows/settings";
 
 export const rename = action("admin", async (c, f) => {
@@ -16,3 +17,5 @@ export const changeCode = action("admin", async (c, f) => {
 export const saveControl = action("admin", (c, f) => saveControlSettings(c, { mode: txt(f, "mode"), minUnits: txt(f, "minUnits"), samePerson: txt(f, "otherPerson") !== "yes" }));
 
 export const saveSorting = action("supervisor", (c, f) => saveBatchSorting(c, txt(f, "sorting")));
+
+export const saveTestMode = action("admin", (c, f) => setTestMode(c, txt(f, "testMode") === "yes"));

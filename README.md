@@ -66,7 +66,10 @@ npm run db:reset
 | Registers | **Pedidos** (every order in any state, tabs by state), **Proveedores** and **Clientes** (each with its page and all its documents), **Movimientos** (the warehouse's whole movement log, searchable by article, location, document or user, filtered by reason). Closed receivings, returns and counts are all listed, searchable and paged; Fierro → **Cargados** lists what was marked as loaded. Only supervisors and admins create suppliers. |
 | Opening stock | **Stock → Stock inicial** (admins): load the stock already on the shelves from a CSV (code, quantity, location); every row is checked first; numbered `CI-` loads, undoable while untouched. |
 | Stock | The whole catalogue, 50 titles per page; search by title, author, ISBN, internal code or shelf as you type; per-shelf quantities and movement history. |
-| Locations | Four naming templates plus a custom builder; printable Code 128 shelf labels (24 per A4 sheet). |
+| Locations | Four naming templates plus a custom builder; Code 128 location labels. |
+| Labels | Prepared by each step (item labels at receiving for articles without ISBN, box labels at packing, condition stickers at returns, labels for new locations) and printed from **Etiquetas** with one click. Every label in any standard size: thermal rolls (100 × 150 down to 32 × 25 mm, and inch sizes) or A4 sheets. Drawn as a page for the print dialog, and as ZPL and TSPL for label printers. A test label with a ruler. |
+| Devices | **Dispositivos**: this computer's printer and size per kind of label (supervisors), a scanner check that explains what arrived, what the browser can reach (USB, serial, Bluetooth, HID, camera) and the devices authorized in it, the company's printers and computers. Scans are cleaned up: a US scanner on a Spanish keyboard, CapsLock, AIM prefixes, EAN add-ons, UPC-A, ISBN-10. |
+| Test mode | An admin switch: demo printers that receive real ZPL/TSPL, keep it in a tray and simulate faults, and a demo scanner on every screen. |
 | Fierro | Sync (catalogue, customers, suppliers, orders, expected receipts), CSV export of every finished document, stock reconciliation between warehouse and Fierro. |
 | Data rules | Suppliers, customers, products, stock and locations come from the database and are picked from lists, never typed freely. Scan fields check codes as you type and block what would fail. A new supplier is created only on purpose, with confirmation, and near-duplicates are refused. |
 | Accounts | Three roles; login by password, 6-digit PIN, or passkey (fingerprint, face, device PIN). Up to five accounts stay logged in per device, with one-tap switching. Profile photos, with initials as the fallback. |
@@ -101,6 +104,8 @@ There is no documented way to push a picked order or a receipt into Fierro in re
 
 - **No real Fierro connection.** The connector is simulated. The CSV layouts for orders, receipts, returns and write-offs are a reasonable guess; only the count export follows a format Fierro documents. They need checking against a real Fierro account.
 - **No offline mode.** The warehouse needs working wifi.
+- **No direct printing yet.** Labels go through the system print dialog (or to demo printers in test mode). Direct USB, serial and Bluetooth printing is the next phase; the Windows helper for network printers is only designed. See `docs/hardware/README.md`.
+- **No printer or scanner model has been tested with miDepo.** The manual's compatibility list says what each claim rests on.
 - **No new-company screen.** Companies are created with a command (below).
 - **Spanish only.** Text lives in the pages, not in a translation file.
 - **No password reset by email.** An administrator sets a new password or PIN.

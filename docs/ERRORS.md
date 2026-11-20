@@ -36,6 +36,9 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `ASG` | Assigning work to a person (the assignee picker, supervisors) |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
+| `LBL` | Etiquetas: prepared labels and the label print view |
+| `PRN` | Printers, computers and test mode (Dispositivos, Organización) |
+| `DEV` | Devices this browser reaches (Dispositivos, browser side) |
 | `WIKI` | Editing the manual (`/ayuda/editar`), admin only |
 | `CFG` | Server configuration (environment variables) |
 | `CLI` | Developer scripts: `npm run db:setup`, `company:create`, `scripts/` |
@@ -393,6 +396,47 @@ The CSV download route also returns `EXP-01` to `EXP-04` and `EXP-12` as plain t
 |---|---|---|---|
 | `CAM-01` | miDepo no tiene permiso para usar la cámara. Habilítalo en los ajustes del navegador y vuelve a intentar. | `src/components/Camera.tsx` · `Camera` | The user or the browser denied camera access. |
 | `CAM-02` | No se pudo abrir la cámara en este dispositivo. Puedes escribir el código a mano. | `src/components/Camera.tsx` · `Camera` | No camera, no camera API (for example plain HTTP), or the barcode reader failed to load. |
+
+## LBL: labels
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `LBL-01` | No se encontraron esas etiquetas. | `src/lib/flows/labels.ts` · `jobById` | Opening, printing or discarding a label job that does not exist or belongs to another company. |
+| `LBL-02` | Origen de etiquetas desconocido. | `src/lib/flows/labels.ts` · `resolveSource` | A print view address names no known source (an edited link). |
+| `LBL-03` | No se encontró esa recepción. | `src/lib/flows/labels.ts` · `resolveSource` | Item labels for a receiving that does not exist or belongs to another company. |
+| `LBL-04` | No se encontró ese pedido. | `src/lib/flows/labels.ts` · `resolveSource` | Box labels for an order that does not exist or belongs to another company. |
+| `LBL-05` | Esas etiquetas ya no están pendientes. | `src/lib/flows/labels.ts` · `discardLabels` | Discarding a job someone already printed or discarded. |
+| `LBL-06` | Esas etiquetas están descartadas. | `src/lib/flows/printers.ts` · `sendLabels` | Printing a discarded job (from an old tab). Put it back on the pending list first. |
+| `LBL-07` | Sin etiquetas para imprimir. | `src/lib/flows/printers.ts` · `sendLabels` | Printing a source with nothing in it: no closed boxes, no matching locations or articles. |
+| `LBL-08` | Este equipo imprime con el diálogo: abre las etiquetas. | `src/app/(app)/etiquetas/actions.ts` · `printNow` | One-click print from Etiquetas when this computer's printer for that kind became the dialog after the list loaded. |
+
+## PRN: printers, computers and test mode
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `PRN-01` | Falta el nombre. | `src/lib/flows/printers.ts` · `createPrinter` | Adding a printer with an empty name. |
+| `PRN-02` | Nombre: máximo 60 caracteres. | `src/lib/flows/printers.ts` · `createPrinter` | Printer name longer than 60 characters. |
+| `PRN-03` | Elige el modelo. | `src/lib/flows/printers.ts` · `createPrinter` | Adding a printer without a model from the list. |
+| `PRN-04` | Ya existe: {name}. | `src/lib/flows/printers.ts` · `createPrinter` | A printer with the same name, or one or two letters off it, already exists. |
+| `PRN-05` | No se encontró esa impresora. | `src/lib/flows/printers.ts` · `printerOf` | A printer that does not exist or belongs to another company. |
+| `PRN-06` | Las impresoras demo dependen del modo de prueba. | `src/lib/flows/printers.ts` · `setPrinterActive` | Deactivating a demo printer by hand: test mode turns them on and off. |
+| `PRN-07` | Solo las impresoras demo simulan fallas. | `src/lib/flows/printers.ts` · `setDemoFault` | Setting a simulated fault on a real printer. |
+| `PRN-08` | Estado desconocido. | `src/lib/flows/printers.ts` · `setDemoFault` | A simulated state that is not one of the list. |
+| `PRN-09` | Falta el nombre. | `src/lib/flows/printers.ts` · `renameWorkstation` | Saving an empty computer name. |
+| `PRN-10` | Nombre: máximo 40 caracteres. | `src/lib/flows/printers.ts` · `renameWorkstation` | Computer name longer than 40 characters. |
+| `PRN-11` | No se encontró ese equipo. | `src/lib/flows/printers.ts` · `renameWorkstation`, `assignPrinter` | A computer that does not exist or belongs to another company. |
+| `PRN-12` | Tipo de etiqueta desconocido. | `src/lib/flows/printers.ts` · `assignPrinter` | Saving a printer for a kind of label that does not exist. |
+| `PRN-13` | {printer} está desactivada. | `src/lib/flows/printers.ts` · `assignPrinter`, `sendLabels` | Choosing or printing on a deactivated printer, or a demo printer with test mode off. |
+| `PRN-14` | {size}: insuficiente para {kind}. / Las hojas A4 van por el diálogo del sistema. / Elige un tamaño. | `src/lib/flows/printers.ts` · `assignPrinter`, `sendLabels` | A size too small for that kind of label, an A4 sheet sent to a thermal printer, or no size. |
+| `PRN-15` | {printer}: sin papel. | `src/lib/flows/printers.ts` · `sendLabels` | Printing on a demo printer set to "Sin papel" (test mode). |
+| `PRN-16` | {printer}: cabezal abierto. | `src/lib/flows/printers.ts` · `sendLabels` | Printing on a demo printer set to "Cabezal abierto" (test mode). |
+| `PRN-17` | {printer}: sin conexión. | `src/lib/flows/printers.ts` · `sendLabels` | Printing on a demo printer set to "Sin conexión" (test mode). |
+
+## DEV: devices in the browser
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `DEV-01` | No se pudo autorizar el dispositivo. | `src/app/(app)/dispositivos/BrowserDevices.tsx` · `ask` | The browser refused a USB, serial or HID device after it was chosen (in use by another program, blocked by policy). The browser's error goes to the console as `[DEV-01]`. |
 
 ## WIKI: editing the manual
 

@@ -4,6 +4,7 @@ import type { Executor } from "@/db";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { nextNumber, validQuantity, type Ctx } from "./common";
+import { prepareLabels, returnLabels } from "./labels";
 import { articleName } from "@/lib/article";
 
 export const BOOK_CONDITIONS: { id: BookCondition; name: string; help: string }[] = [
@@ -59,8 +60,9 @@ export async function closeReturn(c: Ctx, returnId: number) {
       await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: destination[l.bookCondition].id, quantity: l.quantity, reason: "return", reference: d.number, userId: c.userId });
     }
     await tx.update(returns).set({ status: "closed" }).where(eq(returns.id, returnId));
+    const job = await prepareLabels(tx, c, { kind: "condition", reference: d.number, source: `return:${returnId}`, labels: await returnLabels(tx, returnId) });
     const sellables = lines.filter((l) => l.bookCondition === "sellable").reduce((s, l) => s + l.quantity, 0);
-    return `${d.number} cerrada. ${sellables} unidades vendibles por reponer.`;
+    return `${d.number} cerrada. ${sellables} unidades vendibles por reponer${job ? `. ${job.total} etiquetas por imprimir` : ""}.`;
   });
 }
 

@@ -56,6 +56,14 @@ src/lib/flows/*.ts        Warehouse rules, one file per flow. Plain functions ta
                           ({ db, companyId, userId }); they throw UserError for anything the
                           user should see. Tested in tests/flows.test.ts.
 src/lib/stock.ts          moveStock(): the only place stock quantities change; always logs a movement.
+                          findProduct/findLocation (and productByCode/locationByCode for the live check).
+src/lib/scan.ts           Scan clean-up shared by flows and lookup: layout fixes, AIM, add-ons, UPC-A, ISBN-10.
+src/lib/scanner.ts        Browser side: scanner-speed hint, demo scanner event.
+src/lib/labels/           Labels in millimetres: kinds.ts (what each label says, layout at any size),
+                          sizes.ts (standard sizes, data), zpl.ts and tspl.ts (printer languages), models.ts.
+src/lib/flows/labels.ts   Label jobs prepared by the steps, and resolveSource() for every print view.
+src/lib/flows/printers.ts Printers, test mode, each computer's printer per kind, sendLabels().
+src/lib/workstation.ts    This computer (cookie midepo_equipo) per company.
 src/lib/flows/adjustments.ts  Stock changes with nobody on the other side (write-offs, found stock):
                           every one is an adjustment document with a cause. Never a fake order.
 src/lib/lists.ts          The register lists (suppliers, customers, orders, movements, documents by
@@ -71,7 +79,9 @@ src/lib/session.ts        Multi-account sessions per device; requireSession() fo
 src/lib/fonts.ts, color.ts  Per-user font and accent; applied in src/app/layout.tsx.
 src/app/(app)/<screen>/   One folder per screen: page.tsx (server), actions.ts, small client parts.
 src/app/(app)/layout.tsx  Shell: top bar, sidebar with queue counts, phone bottom bar.
-src/app/(print)/          A4 print layouts (labels, packing list).
+src/app/(print)/          A4 print layouts (packing list, transfer sheet).
+src/app/(label)/          Label print views (PrintView: size, printer, Imprimir) at /etiquetas/<id>,
+                          /etiqueta/<order>, /imprimir/ubicaciones, /imprimir/productos, /etiquetas/prueba.
 src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
                           /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
 src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.

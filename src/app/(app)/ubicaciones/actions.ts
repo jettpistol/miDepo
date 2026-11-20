@@ -5,6 +5,7 @@ import { action, num, txt } from "@/lib/action";
 import { companies, stock, locations } from "@/db/schema";
 import { UserError } from "@/lib/errors";
 import { generateCodes, validateScheme, type Scheme } from "@/lib/locations";
+import { locationLabels, prepareLabels } from "@/lib/flows/labels";
 
 export const generate = action("supervisor", async (c, f) => {
   let scheme: Scheme;
@@ -16,16 +17,18 @@ export const generate = action("supervisor", async (c, f) => {
   const problem = validateScheme(scheme);
   if (problem) throw new UserError(problem.code, problem.message);
   const codes = generateCodes(scheme);
-  let newOnes = 0;
+  const created: string[] = [];
   await c.db.transaction(async (tx) => {
     for (let i = 0; i < codes.length; i += 1000) {
-      const createdList = await tx.insert(locations).values(codes.slice(i, i + 1000).map((code) => ({ companyId: c.companyId, code }))).onConflictDoNothing().returning({ id: locations.id });
-      newOnes += createdList.length;
+      const createdList = await tx.insert(locations).values(codes.slice(i, i + 1000).map((code) => ({ companyId: c.companyId, code }))).onConflictDoNothing().returning({ code: locations.code });
+      created.push(...createdList.map((r) => r.code));
     }
     await tx.update(companies).set({ locationScheme: scheme }).where(eq(companies.id, c.companyId));
+    // Labels for the new locations, ready in Etiquetas.
+    await prepareLabels(tx, c, { kind: "location", reference: created.length === 1 ? created[0] : `${created[0]} … ${created.at(-1)}`, source: "locations", labels: locationLabels(created) });
   });
-  const repeated = codes.length - newOnes;
-  return `Se crearon ${newOnes} ubicaciones${repeated ? ` (${repeated} ya existían y no se tocaron)` : ""}. Ya puedes imprimir las etiquetas.`;
+  const repeated = codes.length - created.length;
+  return `${created.length} ubicaciones creadas${repeated ? ` (${repeated} ya existían)` : ""}${created.length ? ". Etiquetas pendientes" : ""}.`;
 });
 
 export const createStandalone = action("supervisor", async (c, f) => {
@@ -33,7 +36,8 @@ export const createStandalone = action("supervisor", async (c, f) => {
   if (!/^[A-Z0-9][A-Z0-9._/-]{0,19}$/.test(code)) throw new UserError("LOC-02", "El código admite letras, números, guiones y puntos (hasta 20 caracteres, sin espacios ni Ñ).");
   const created = await c.db.insert(locations).values({ companyId: c.companyId, code }).onConflictDoNothing().returning();
   if (created.length === 0) throw new UserError("LOC-03", `La ubicación ${code} ya existe.`);
-  return `Ubicación ${code} creada.`;
+  await prepareLabels(c.db, c, { kind: "location", reference: code, source: "locations", labels: locationLabels([code]) });
+  return `Ubicación ${code} creada. Etiqueta pendiente.`;
 });
 
 export const toggle = action("supervisor", async (c, f) => {

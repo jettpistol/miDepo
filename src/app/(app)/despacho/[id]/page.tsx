@@ -36,10 +36,7 @@ export default async function DispatchOrder({ params }: { params: Promise<{ id: 
         {bx.length > 0 && (
           <>
             <Link href={`/etiqueta/${id}`} target="_blank" className="btn-soft">
-              <Icon name="print" /> Etiquetas 10×15
-            </Link>
-            <Link href={`/imprimir/cajas/${id}`} target="_blank" className="btn-soft">
-              <Icon name="print" /> Etiquetas A4
+              <Icon name="print" /> Etiquetas
             </Link>
           </>
         )}

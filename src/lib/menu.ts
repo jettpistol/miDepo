@@ -19,6 +19,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
       { href: "/devoluciones", name: "Devoluciones", icon: "return", help: "Revisar artículos que vuelven" },
       { href: "/conteos", name: "Conteos", icon: "count", help: "Contar ubicaciones" },
       { href: "/mover", name: "Mover", icon: "move", help: "Cambiar artículos de ubicación" },
+      { href: "/etiquetas", name: "Etiquetas", icon: "print", help: "Etiquetas preparadas para imprimir" },
       { href: "/stock", name: "Stock", icon: "stock", help: "Buscar un artículo o una ubicación" },
     ],
   },
@@ -50,6 +51,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
   {
     group: "Ayuda y ajustes",
     items: [
+      { href: "/dispositivos", name: "Dispositivos", icon: "device", help: "Impresoras y lectores de este equipo" },
       { href: "/ayuda", name: "Manual", icon: "help", help: "Paso a paso, con buscador" },
       // Also opens from the person's name and photo in the top bar.
       { href: "/cuenta", name: "Ajustes", icon: "settings", help: "Tema claro u oscuro, color, tipografía, foto, contraseña y PIN" },

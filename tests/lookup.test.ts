@@ -146,3 +146,19 @@ describe("rehearsing a control", () => {
     await expect(checkUnit(c, o.id, book.barcode, 1)).rejects.toBeInstanceOf(UserError);
   });
 });
+
+describe("scan clean-up (keyboard layout, add-ons, UPC-A, ISBN-10)", () => {
+  it("finds the same article and location in the live check and in the flow", async () => {
+    const { findLocation, findProduct } = await import("@/lib/stock");
+    const ean = (book.isbn ?? book.barcode)!;
+    expect(ean).toMatch(/^\d{13}$/);
+    for (const read of [ean, `]E0${ean}`, `${ean}12`, `${ean}51999`, ` ${ean}\t`]) {
+      expect((await findProduct(db, c.companyId, read)).id, read).toBe(book.id);
+      expect((await rehearsal({ ctx: "move", product: read })).statuses.product?.tone, read).not.toBe("danger");
+    }
+    for (const read of ["A'01'1", "a-01-1", "]C0A-01-1"]) {
+      expect((await findLocation(db, c.companyId, read)).code, read).toBe("A-01-1");
+      expect((await rehearsal({ ctx: "move", source: read })).statuses.source?.tone, read).toBe("ok");
+    }
+  });
+});

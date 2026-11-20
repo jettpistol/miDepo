@@ -51,7 +51,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
         <Urgency session={session} order={p} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>
-            <Link href={`/imprimir/cajas/${id}`} target="_blank" className="btn-soft">
+            <Link href={`/etiqueta/${id}`} target="_blank" className="btn-soft">
               <Icon name="print" /> Etiquetas
             </Link>
             <Link href={`/imprimir/lista/${id}`} target="_blank" className="btn-soft">

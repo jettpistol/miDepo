@@ -19,6 +19,7 @@
 - [Devoluciones](Devoluciones)
 - [Conteos](Conteos)
 - [Mover](Mover)
+- [Etiquetas](Etiquetas)
 - [Stock](Stock)
 
 ### Registros
@@ -42,5 +43,6 @@
 ### Ayuda
 
 - [Ajustes](Ajustes)
+- [Impresoras y lectores](Impresoras-y-lectores)
 - [Problemas frecuentes](Problemas-frecuentes)
 - [Glosario](Glosario)

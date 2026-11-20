@@ -36,12 +36,13 @@ Para una mesa, un pallet o una vitrina, usa **Agregar una ubicación suelta** y 
 
 ## Imprimir las etiquetas
 
-1. En **Ubicaciones**, filtra por el comienzo del código (por ejemplo `A-01`) o deja el filtro vacío para todas.
-2. Toca **Imprimir etiquetas**.
-3. Imprime en hoja **A4, tamaño real (100 %)**. Salen 24 por hoja.
-4. Recorta y pega cada una en el frente de su nivel, a la altura de los ojos si se puede.
+Al crear ubicaciones, sus etiquetas quedan pendientes en [Etiquetas](Etiquetas). Para reimprimir:
 
-Sirve papel común con cinta transparente ancha por encima, o papel autoadhesivo A4.
+1. En **Ubicaciones**, filtra por el comienzo del código (por ejemplo `A-01`) o deja el filtro vacío para todas.
+2. Toca **Imprimir etiquetas** y elige el **Tamaño**: rollo térmico (100 × 50 mm por defecto) u hoja A4 autoadhesiva.
+3. Pega cada una en el frente de su nivel, a la altura de los ojos si se puede.
+
+En una estantería que dura años conviene etiqueta de transferencia térmica (con ribbon) o papel A4 con cinta transparente ancha por encima: el papel térmico directo se borra en meses.
 
 ## Etiquetas para artículos sin ISBN
 
@@ -50,6 +51,8 @@ Las grapas, variantes y packs necesitan una etiqueta con su código interno.
 1. En **Ubicaciones**, toca **Etiquetas sin ISBN**.
 2. Busca la serie o el artículo.
 3. Imprime y pega una etiqueta por ejemplar, o una en la bolsa si van embolsados.
+
+Al cerrar una recepción con artículos sin ISBN, sus etiquetas ya quedan pendientes en [Etiquetas](Etiquetas).
 
 ## Desactivar una ubicación
 

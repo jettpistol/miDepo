@@ -3,6 +3,7 @@ import type { DB } from "@/db";
 import { boxes, carriers, customers, orders } from "@/db/schema";
 import { distance, plain } from "../text";
 import { UserError } from "../errors";
+import { cleanScan, fixLayout } from "../scan";
 import type { Ctx } from "./common";
 
 /**
@@ -52,7 +53,7 @@ export async function setShipping(c: Ctx, orderId: number, d: { carrierId: numbe
 
 /** Reads a box label ("PED-00012-C2") into the order number and the box number. */
 export function parseBoxCode(code: string) {
-  const m = code.trim().toUpperCase().match(/^(.+)-C(\d+)$/);
+  const m = fixLayout(cleanScan(code).toUpperCase()).match(/^(.+)-C(\d+)$/);
   return m ? { orderNumber: m[1], boxNumber: Number(m[2]) } : null;
 }
 

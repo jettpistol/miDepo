@@ -32,7 +32,9 @@ En la columna **Dañadas**, escribe cuántas de las recibidas llegaron rotas o m
 
 ## Etiquetas para lo recibido
 
-**Etiquetas** (arriba) imprime una etiqueta con código de barras por cada unidad recibida. Sirve para tapas que el lector no lee o reimpresiones que comparten ISBN: pega la etiqueta en el libro antes de reponer.
+Al cerrar, las unidades de artículos sin ISBN (grapas, variantes, packs) tienen su etiqueta pendiente en [Etiquetas](Etiquetas), una por unidad.
+
+**Etiquetas** (arriba) imprime una etiqueta por cada unidad recibida, con ISBN o sin él. Sirve para tapas que el lector no lee o reimpresiones que comparten ISBN: pega la etiqueta en el libro antes de reponer.
 
 ## Recibir algo sin aviso
 

@@ -8,7 +8,7 @@ Casi todo en miDepo se confirma escaneando. Hay tres maneras y se pueden mezclar
 2. Apunta el lector al código de barras y presiona el gatillo.
 3. El lector escribe el código y avanza automáticamente al campo siguiente. En el último campo, confirma.
 
-No hace falta tocar la pantalla entre un escaneo y otro.
+No hace falta tocar la pantalla entre un escaneo y otro. Si el lector no avanza o cambia guiones por `'`, ver [Impresoras y lectores](Impresoras-y-lectores#configurar-el-lector).
 
 ## Con la cámara del teléfono
 

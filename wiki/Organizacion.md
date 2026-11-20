@@ -14,6 +14,10 @@ Solo administradores. Se escribe junto con el PIN al iniciar sesión: de 2 a 20 
 
 Cambiarlo no afecta los PIN ni las sesiones abiertas. Al iniciar sesión con PIN se escribe el código nuevo: avisa al equipo antes.
 
+## Modo de prueba
+
+Solo administradores. **Dispositivos demo** agrega impresoras y un lector simulados, marcados como demo, para probar etiquetas y escaneos sin hardware. Ver [Impresoras y lectores](Impresoras-y-lectores#modo-de-prueba).
+
 ## Control de pedidos
 
 Solo administradores.

@@ -32,9 +32,9 @@ Still missing, roughly in order of value:
 Researched in [hardware/README.md](hardware/README.md), which numbers the owner's six original items as phases; below is the order of work. Each step waits for the owner's go-ahead.
 
 1. **Research.** Done (2026-11-20).
-2. **Labels prepared for one click, through the print dialog.** A label model in millimetres, every standard size, the label catalogue (item label at receiving, box label at packing, location and totem labels, return condition sticker, test label), a queue of prepared labels with reprint, a test label with a ruler, demo printers and scanners behind an admin test mode, the device panel, and the Spanish manual pages (supported models, setup, troubleshooting). Also the scan clean-up: keyboard-layout fixes, add-ons dropped, UPC-A and ISBN-10 accepted.
+2. **Done (2026-11-20, D56 to D59): labels prepared for one click, through the print dialog.** A label model in millimetres, every standard size, the label catalogue (item label at receiving, box label at packing, location and totem labels, return condition sticker, test label), a queue of prepared labels with reprint, a test label with a ruler, demo printers and scanners behind an admin test mode, the device panel, and the Spanish manual pages (supported models, setup, troubleshooting). Also the scan clean-up: keyboard-layout fixes, add-ons dropped, UPC-A and ISBN-10 accepted.
 3. **Direct printing from Chrome:** ZPL and TSPL over WebUSB, Web Serial and Web Bluetooth. Android first; on Windows only COM-port and Bluetooth printers, plus an optional driver swap a supervisor does.
-4. **Printers per computer:** a computer identity, a default printer per computer and label type, a company printer list for supervisors and admins.
+4. **Done with step 2: printers per computer:** a computer identity, a default printer per computer and label type, a company printer list for supervisors and admins.
 5. **Windows helper** for wifi, network and driver-installed USB printers. Design only, in the research; not to be built until the owner says so.
 
 ## Questions only the owner can answer

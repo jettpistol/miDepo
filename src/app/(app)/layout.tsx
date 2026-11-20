@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { BottomBar, Sidebar } from "@/components/Navigation";
 import { Avatar } from "@/components/Avatar";
 import { Accounts, ROLE_LABEL } from "@/components/Accounts";
+import { DemoScanner } from "@/components/DemoScanner";
 import { Dropdown } from "@/components/Dropdown";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
@@ -12,7 +13,7 @@ import { GlobalSearch, type SearchRow } from "@/components/GlobalSearch";
 import { NAV } from "@/lib/hotkeys";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { saveTheme } from "./cuenta/actions";
-import { counts, orders, receivings, returns } from "@/db/schema";
+import { counts, labelJobs, orders, receivings, returns } from "@/db/schema";
 import { menuFor } from "@/lib/menu";
 import { controlInUse } from "@/lib/flows/control";
 import { can, requireSession } from "@/lib/session";
@@ -25,18 +26,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // How much waits in each queue, shown beside it in the sidebar.
   const c = company.id;
   const n = (q: Promise<{ n: number }[]>) => q.then((r) => r[0].n);
-  const [toPick, toControl, toReceive, toPack, toReturn, toCount] = await Promise.all([
+  const [toPick, toControl, toReceive, toPack, toReturn, toCount, toPrint] = await Promise.all([
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), inArray(orders.status, ["pending", "in_picking"])))),
     !controlOn ? 0 : n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "to_control")))),
     n(db.select({ n: count() }).from(receivings).where(and(eq(receivings.companyId, c), inArray(receivings.status, ["pending", "in_progress"])))),
     n(db.select({ n: count() }).from(orders).where(and(eq(orders.companyId, c), eq(orders.status, "picked")))),
     n(db.select({ n: count() }).from(returns).where(and(eq(returns.companyId, c), eq(returns.status, "in_progress")))),
     n(db.select({ n: count() }).from(counts).where(and(eq(counts.companyId, c), eq(counts.status, "open")))),
+    n(db.select({ n: count() }).from(labelJobs).where(and(eq(labelJobs.companyId, c), isNull(labelJobs.printedAt), isNull(labelJobs.discardedAt)))),
   ]);
   // What the top search offers before anything is typed: the screens this person can open.
   const altKey = Object.fromEntries(Object.entries(NAV).map(([d, href]) => [href, `Alt + ${d}`]));
   const starters: SearchRow[] = groups.flatMap((g) => g.items.map((i) => ({ key: i.href, group: g.group, title: i.name, path: [], href: i.href, icon: i.icon, keys: altKey[i.href] })));
-  const queueCounts = { "/picking": toPick, "/control": toControl, "/recepcion": toReceive, "/empaque": toPack, "/devoluciones": toReturn, "/conteos": toCount };
+  const queueCounts = { "/picking": toPick, "/control": toControl, "/recepcion": toReceive, "/empaque": toPack, "/devoluciones": toReturn, "/conteos": toCount, "/etiquetas": toPrint };
 
   return (
     <>
@@ -90,6 +92,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-6 lg:pb-12">{children}</main>
       </div>
       <BottomBar />
+      {company.testMode && <DemoScanner />}
       <Hotkeys allowed={groups.flatMap((g) => g.items.map((i) => i.href))} names={Object.fromEntries(groups.flatMap((g) => g.items.map((i) => [i.href, i.name])))} />
     </>
   );

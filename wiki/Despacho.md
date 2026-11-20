@@ -9,7 +9,7 @@ En **Despacho** se registra qué sale del depósito, con qué transporte y con q
 3. Escribe el número de **Seguimiento** del transporte y el número de **Remito** con que viaja (el remito se hace en Fierro).
 4. Toca **Guardar**.
 
-Desde ahí se imprimen las etiquetas: **10×15** para impresora térmica (una por caja, con transporte, remito y seguimiento) o **A4** para impresora común.
+**Etiquetas** imprime una por caja, con transporte, remito y seguimiento, en térmica de 10 × 15 cm o en hoja A4 (ver [Etiquetas](Etiquetas)).
 
 ## Cargar las cajas
 

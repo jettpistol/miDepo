@@ -272,7 +272,7 @@ async function warning(p, field, value) {
   step('operator does not see Fierro: ' + (!(await m.textContent('main')).includes('Fierro') ? 'ok' : fail('Fierro visible')));
   await m.goto(BASE + '/fierro'); step('operator /fierro → ' + m.url());
   const sideways = async (url, name) => { await m.goto(BASE + url); await m.screenshot({ path: `${OUT}/${name}.png`, caret: 'initial' }); step(`phone ${url} scrolls sideways: ` + ((await m.evaluate(() => document.documentElement.scrollWidth > innerWidth || [...document.querySelectorAll('.table-wrap')].some((t) => t.scrollWidth > t.clientWidth + 1))) ? fail('yes') : 'no')); };
-  for (const [url, name] of [['/pedidos', 'm-orders'], ['/proveedores', 'm-suppliers'], ['/clientes', 'm-customers'], ['/movimientos', 'm-movements']]) await sideways(url, name);
+  for (const [url, name] of [['/pedidos', 'm-orders'], ['/proveedores', 'm-suppliers'], ['/clientes', 'm-customers'], ['/movimientos', 'm-movements'], ['/etiquetas', 'm-labels'], ['/dispositivos', 'm-devices']]) await sideways(url, name);
   step('operator sees no Nuevo on Proveedores: ' + ((await m.goto(BASE + '/proveedores'), await m.$('main button:has-text("Nuevo")')) ? fail('visible') : 'ok'));
   await m.goto(BASE + '/recepcion'); await m.click('button:has-text("Nueva")'); await m.click('#supplier'); await m.waitForSelector('[role=combobox]:focus'); await m.keyboard.type('Proveedor inexistente xyz');
   step('operator cannot create a supplier: ' + ((await m.locator('text=Crear proveedor').count()) === 0 && (await m.locator('text=Solo un supervisor').count()) === 1 ? 'ok' : fail('create offered')));
@@ -372,6 +372,27 @@ async function warning(p, field, value) {
   await ma.goto(BASE + '/ayuda/editar/Picking'); await ma.waitForSelector('textarea'); await ma.screenshot({ path: `${OUT}/m-editor.png`, caret: 'initial' });
   await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
   step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
+
+  // Labels and devices (demo company): test mode, a demo printer for location labels, a new
+  // location prepares its label, one click prints it to the demo printer's tray; the demo scanner
+  // reads through a US keyboard on a Spanish PC and the field still finds the location.
+  await o.goto(BASE + '/organizacion#prueba'); await o.click('#prueba [role=switch]'); await o.click('#prueba button:has-text("Guardar")'); await o.waitForSelector('#prueba [role=status]');
+  await o.goto(BASE + '/dispositivos'); await o.waitForSelector('text=Zebra ZD421 (demo)');
+  await o.locator('tr', { hasText: 'Ubicación' }).first().locator('button[aria-haspopup=listbox]').first().click(); await o.click('[role=option]:has-text("Zebra ZD421 (demo)")'); await o.waitForTimeout(500);
+  await o.reload(); await o.screenshot({ path: `${OUT}/devices.png`, fullPage: true, caret: 'initial' });
+  step('devices: location labels to the Zebra demo → ' + ((await o.locator('tr', { hasText: 'Ubicación' }).first().textContent()).includes('Zebra ZD421 (demo)') ? 'saved' : fail('not saved')));
+  await o.goto(BASE + '/ubicaciones#suelta'); await o.fill('input[name=code]', 'Z-99-1'); await o.locator('form:has(input[name=code]) button').first().click(); await o.waitForSelector('text=Etiqueta pendiente');
+  await o.goto(BASE + '/etiquetas'); await o.waitForSelector('main td:has-text("Z-99-1")'); await o.screenshot({ path: `${OUT}/labels-pending.png`, caret: 'initial' });
+  await o.locator('tr', { hasText: 'Z-99-1' }).locator('button:has-text("Imprimir")').click(); await o.waitForSelector('text=1 etiqueta a Zebra ZD421 (demo)');
+  step('labels: one click to the demo printer → ok');
+  await o.goto(BASE + '/dispositivos'); await o.click('a:has-text("Zebra ZD421 (demo)")'); await o.waitForSelector('text=ZPL recibido'); await o.screenshot({ path: `${OUT}/demo-tray.png`, caret: 'initial' });
+  await o.goto(BASE + '/etiquetas/prueba?tamano=100x50'); await o.waitForSelector('text=Etiqueta de prueba'); await o.screenshot({ path: `${OUT}/label-test.png`, caret: 'initial' });
+  await o.goto(BASE + '/mover'); await o.click('#scan-source'); await o.click('button:has-text("Lector demo")');
+  await o.click('[role=dialog][aria-label="Lector demo"] [role=switch] >> nth=0'); await o.fill('[aria-label="Código"]', 'Z-99-1'); await o.click('[role=dialog][aria-label="Lector demo"] button:has-text("Leer")');
+  await o.waitForSelector('#note-source:has-text("Vacía")'); step(`demo scanner: read "${await o.inputValue('#scan-source')}" → location found`);
+  await o.screenshot({ path: `${OUT}/demo-scanner.png`, caret: 'initial' });
+  await o.goto(BASE + '/organizacion#prueba'); await o.click('#prueba [role=switch]'); await o.click('#prueba button:has-text("Guardar")'); await o.waitForSelector('#prueba [role=status]');
+  step('test mode off: demo scanner gone → ' + ((await o.goto(BASE + '/mover'), await o.$('button:has-text("Lector demo")')) ? fail('still there') : 'ok'));
 
   await browser.close();
   console.log(errors.length ? 'ERRORS:\n' + [...new Set(errors)].join('\n') : 'NO CONSOLE ERRORS OR 5xx');

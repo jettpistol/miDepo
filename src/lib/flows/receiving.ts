@@ -4,6 +4,7 @@ import { distance, plain } from "../text";
 import { UserError } from "../errors";
 import { findProduct, moveStock, zone } from "../stock";
 import { nextNumber, validQuantity, type Ctx } from "./common";
+import { prepareLabels, receivingLabels } from "./labels";
 import { articleName } from "@/lib/article";
 
 async function open(c: Ctx, id: number) {
@@ -96,8 +97,10 @@ export async function closeReceiving(c: Ctx, receivingId: number) {
       if (l.damaged > 0) await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: damagedZone.id, quantity: l.damaged, reason: "receiving", reference: r.number, userId: c.userId });
     }
     await tx.update(receivings).set({ status: "closed" }).where(eq(receivings.id, receivingId));
+    // Articles with miDepo's own code (no ISBN) need a label on each unit: prepared for one click.
+    const job = await prepareLabels(tx, c, { kind: "item", reference: r.number, source: `receiving:${receivingId}`, labels: await receivingLabels(tx, receivingId, true) });
     const damaged = lines.reduce((s, l) => s + l.damaged, 0);
-    return `${r.number} cerrada. ${total - damaged} unidades por reponer${damaged > 0 ? `, ${damaged} en Dañados` : ""}.`;
+    return `${r.number} cerrada. ${total - damaged} unidades por reponer${damaged > 0 ? `, ${damaged} en Dañados` : ""}${job ? `. ${job.total} etiquetas por imprimir` : ""}.`;
   });
 }
 

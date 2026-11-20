@@ -9,6 +9,7 @@ import { Icon } from "./Icon";
 import { toast } from "./Toast";
 import { ShelfMark } from "./ui";
 import { hotkey, type HotkeyName } from "@/lib/hotkeys";
+import { DEMO_SCAN_EVENT, looksScanned, rememberNoEnter, rememberScan, type DemoScan } from "@/lib/scanner";
 
 export type Action = (prev: Result, data: FormData) => Promise<Result>;
 
@@ -97,6 +98,8 @@ export function ScanForm({
   const turn = useRef(0);
   /** The values the last rehearsal was computed for: it only blocks the submit if they are still the same. */
   const rehearsed = useRef("");
+  /** Key times of the burst being typed in a field: a scanner types far faster than a person. */
+  const keys = useRef<{ field: string; times: number[]; timer?: ReturnType<typeof setTimeout> }>({ field: "", times: [] });
 
   const inputs = useCallback(() => fields.map((c) => form.current?.elements.namedItem(c.name) as HTMLInputElement | null), [fields]);
   const inputOf = (name: string) => form.current?.elements.namedItem(name) as HTMLInputElement | null;
@@ -193,6 +196,7 @@ export function ScanForm({
       setCameraFor(null);
       if (!e) return;
       e.value = code;
+      rememberScan(code, "camera");
       rehearse(null, true);
       advance(i);
     },
@@ -200,11 +204,54 @@ export function ScanForm({
   );
   const closeCamera = useCallback(() => setCameraFor(null), []);
 
+  // The demo scanner (test mode) reads into the focused scan field, like the camera does.
+  useEffect(() => {
+    const onDemo = (ev: Event) => {
+      const { target, code, enter } = (ev as CustomEvent<DemoScan>).detail;
+      const i = inputs().indexOf(target);
+      if (i < 0) return;
+      target.value = code;
+      target.focus();
+      setFocusedField(target.name);
+      rememberScan(code, "demo");
+      rehearse(target.name, true);
+      if (enter) advance(i);
+    };
+    window.addEventListener(DEMO_SCAN_EVENT, onDemo);
+    return () => window.removeEventListener(DEMO_SCAN_EVENT, onDemo);
+  }, [advance, inputs, rehearse]);
+
   const suggestions = open && lookup && lookup.field === focusedField ? lookup.suggestions : [];
   const shortcutsFor = (name: string) => (lookup?.shortcuts ?? []).filter((a) => a.field === name);
   // F7 fills a suggested shelf: the first one for the field being filled, or else the first one there is.
   const shelves = (lookup?.shortcuts ?? []).filter((a) => a.shelfMark);
   const shelfKey = shelves.find((a) => a.field === focusedField) ?? shelves[0];
+
+  /**
+   * Times each key in a field. Enter after a scanner-fast burst counts as a scanner read; a fast
+   * burst with no Enter within 400 ms means the scanner sends no Enter (shown in Dispositivos).
+   * Only a hint: nothing is refused for how it was typed.
+   */
+  function trackKey(field: string, ev: React.KeyboardEvent<HTMLInputElement>) {
+    const k = keys.current;
+    const el = ev.currentTarget;
+    if (ev.repeat || ev.key === "Unidentified" || ev.keyCode === 229) return;
+    clearTimeout(k.timer);
+    if (ev.key === "Enter" || ev.key === "Tab") {
+      if (k.field === field && looksScanned(k.times)) rememberScan(el.value.trim(), "scanner");
+      k.times = [];
+      return;
+    }
+    if (ev.key.length !== 1) return;
+    const last = k.times.at(-1);
+    if (k.field !== field || (last != null && ev.timeStamp - last > 300)) k.times = [];
+    k.field = field;
+    k.times.push(ev.timeStamp);
+    k.timer = setTimeout(() => {
+      if (looksScanned(k.times)) rememberNoEnter(el.value.trim());
+      k.times = [];
+    }, 400);
+  }
 
   /** Esc: starts the scan over, keeping the fields that came filled in. */
   function clear() {
@@ -283,6 +330,7 @@ export function ScanForm({
                 }}
                 onBlur={() => setOpen(false)}
                 onKeyDown={(ev) => {
+                  trackKey(c.name, ev);
                   if (list.length > 0 && (ev.key === "ArrowDown" || ev.key === "ArrowUp")) {
                     ev.preventDefault();
                     setActive((a) => (ev.key === "ArrowDown" ? (a + 1) % list.length : (a <= 0 ? list.length : a) - 1));

@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/ui";
 import { customers } from "@/db/schema";
 import { controlMode, MAX_NAME } from "@/lib/flows/settings";
 import { can, requireSession } from "@/lib/session";
-import { changeCode, rename, saveSorting } from "./actions";
+import { Toggle } from "@/components/Toggle";
+import { changeCode, rename, saveSorting, saveTestMode } from "./actions";
 import { ControlSettings } from "./ControlSettings";
 
 export const metadata = { title: "Organización" };
@@ -52,6 +53,15 @@ export default async function Organization() {
                     </label>
                     <input id="slug" name="slug" defaultValue={company.slug} minLength={2} maxLength={20} pattern="[a-z0-9\-]{2,20}" title="Minúsculas, números y guiones, sin espacios" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="off" className="field max-w-56 font-mono" required />
                   </div>
+                </ActionForm>
+              </div>
+            </section>
+
+            <section id="prueba" className={section}>
+              <h2 className="section-title">Modo de prueba</h2>
+              <div className="max-w-sm">
+                <ActionForm action={saveTestMode} button="Guardar" resetOnOk={false}>
+                  <Toggle name="testMode" label="Dispositivos demo" hint="Impresoras y lector simulados, marcados como demo, para probar etiquetas y escaneos sin hardware." defaultChecked={company.testMode} />
                 </ActionForm>
               </div>
             </section>

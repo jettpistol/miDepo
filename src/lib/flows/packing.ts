@@ -3,6 +3,7 @@ import { boxItems, boxes, orderLines, orders, products } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { prepareBoxLabels } from "./labels";
 import { articleName } from "@/lib/article";
 import { blockedCheck, settingsOf } from "./control";
 
@@ -81,6 +82,7 @@ export async function finishPacking(c: Ctx, orderId: number) {
   if (ofOrder.some((k) => k.status === "open")) throw new UserError("PACK-11", "Cierra la caja abierta antes de terminar.");
   if (ofOrder.length === 0 && lines.some((l) => l.picked > 0)) throw new UserError("PACK-12", "Todavía no hay ninguna caja.");
   await c.db.update(orders).set({ status: "packed", packedBy: c.userId }).where(eq(orders.id, orderId));
+  if (ofOrder.length > 0) await prepareBoxLabels(c.db, c, orderId, order.number, ofOrder.length);
   return `${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}.`;
 }
 

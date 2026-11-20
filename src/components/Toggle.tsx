@@ -3,9 +3,16 @@
 import { useId, useState, type ReactNode } from "react";
 import { InfoHint } from "./Hint";
 
-/** On/off for one setting: a switch beside its label. Sends `name` as "yes" or "no" in a form. */
-export function Toggle({ name, label, hint, defaultChecked = false }: { name: string; label: string; hint?: ReactNode; defaultChecked?: boolean }) {
-  const [on, setOn] = useState(defaultChecked);
+/**
+ * On/off for one setting: a switch beside its label. With `name`, sends "yes" or "no" in a form;
+ * with `onChange`, reports each change (outside a form).
+ */
+export function Toggle({ name, label, hint, defaultChecked = false, onChange }: { name?: string; label: string; hint?: ReactNode; defaultChecked?: boolean; onChange?: (on: boolean) => void }) {
+  const [on, setOwn] = useState(defaultChecked);
+  const setOn = (v: boolean) => {
+    setOwn(v);
+    onChange?.(v);
+  };
   const id = useId();
   return (
     <div className="flex min-h-11 items-center justify-between gap-4 lg:min-h-8">
@@ -15,7 +22,7 @@ export function Toggle({ name, label, hint, defaultChecked = false }: { name: st
         </label>
         {hint && <InfoHint text={hint} />}
       </span>
-      <input type="hidden" name={name} value={on ? "yes" : "no"} />
+      {name && <input type="hidden" name={name} value={on ? "yes" : "no"} />}
       <button
         id={id}
         type="button"
