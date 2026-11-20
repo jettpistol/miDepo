@@ -7,6 +7,7 @@ import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { blockedCheck } from "@/lib/flows/control";
 import { requireSession } from "@/lib/session";
+import { fierroWarning } from "@/lib/orderState";
 import { Assignee } from "@/components/Assignee";
 import { close, scan, finish, empty, takeOut, reopen, reopenOrder } from "../actions";
 import { articleName } from "@/lib/article";
@@ -32,6 +33,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   // When the order skipped Control, packing is the check.
   const blocked = p.status === "picked" && p.controlledBy == null ? blockedCheck(company, p, user.id, "empacar") : null;
   const editable = p.status === "picked" && !blocked;
+  const warning = p.status === "shipped" ? null : fierroWarning(p);
 
   return (
     <>
@@ -49,6 +51,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
         )}
       </PageHeader>
 
+      {warning && <Notice tone="warn">{warning}</Notice>}
       {blocked && <Notice tone="warn">{blocked}</Notice>}
       {p.status === "to_control" && (
         <Notice tone="warn">

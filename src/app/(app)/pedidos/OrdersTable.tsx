@@ -10,6 +10,7 @@ export const ORDER_STATE: Record<OrderStatus, { label: string; tone: Tone }> = {
   picked: { label: "Por empacar", tone: "warn" },
   packed: { label: "Empacado", tone: "accent" },
   shipped: { label: "Despachado", tone: "ok" },
+  cancelled: { label: "Anulado", tone: "neutral" },
 };
 
 type Row = { o: typeof orders.$inferSelect; customer: string; units: number };

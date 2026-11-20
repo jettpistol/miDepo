@@ -198,6 +198,9 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-16` | Las paradas que la reemplazaron ya avanzaron. Deshaz esas primero. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after the extra stop miDepo added elsewhere was picked or reported short too. |
 | `PICK-17` | Esas unidades ya no están en Faltantes: se encontraron o se dieron de baja. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after a supervisor wrote the units off or somebody moved them out of FALTANTES. |
 | `PICK-18` | Primero deshaz el aviso de que no estaba en la ubicación. | `src/lib/flows/picking.ts` · `unpick` | Undoing a partial pick on a stop that was then reported short. |
+| `PICK-19` | El pedido {número} ya no figura como pendiente en Fierro. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order a sync cancelled because Fierro stopped listing it. |
+| `PICK-20` | El pedido {número} tiene {n} artículos que no están en el catálogo. Sincroniza con Fierro cuando estén cargados. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order whose Fierro lines name articles missing from the synced catalogue. |
+| `PICK-21` | Fierro cambió el pedido {número}. Sincroniza antes de prepararlo. | `src/lib/flows/picking.ts` · `takeOrder` | Taking a released order whose change from Fierro has not been applied yet. |
 
 ## CTRL: Control
 

@@ -238,8 +238,12 @@ export const movements = pgTable(
 
 // ───────────── Outbound: orders, picking and boxes ─────────────
 
-/** to_control: picked, waiting for the Control step (only when the company has it on). picked: ready to pack. */
-export type OrderStatus = "pending" | "in_picking" | "to_control" | "picked" | "packed" | "shipped";
+/** to_control: picked, waiting for the Control step (only when the company has it on). picked: ready to pack.
+ * "cancelled": no longer pending in Fierro before anyone started it. It comes back if Fierro lists it again. */
+export type OrderStatus = "pending" | "in_picking" | "to_control" | "picked" | "packed" | "shipped" | "cancelled";
+
+/** What Fierro changed in an order that was already started; applied once the order is released. */
+export type FierroChange = "changed" | "gone";
 
 export const orders = pgTable(
   "orders",
@@ -260,6 +264,10 @@ export const orders = pgTable(
     /** Who finished packing. */
     packedBy: integer("packed_by").references(() => users.id),
     sentToFierro: timestamp("sent_to_fierro", { withTimezone: true }),
+    /** Set by sync when Fierro edited the order, or stopped listing it, after picking started. */
+    fierroChange: text("fierro_change").$type<FierroChange>(),
+    /** Lines Fierro sent for articles not in the catalogue. Such an order cannot be taken until they are known. */
+    unknownLines: integer("unknown_lines").notNull().default(0),
   },
   (t) => [uniqueIndex("orders_company_id_fierro_id_idx").on(t.companyId, t.fierroId), index("orders_company_id_status_idx").on(t.companyId, t.status)],
 );

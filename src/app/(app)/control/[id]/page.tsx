@@ -7,6 +7,7 @@ import { Progress, Notice, PageHeader } from "@/components/ui";
 import { customers, orderLines, orders, products, users } from "@/db/schema";
 import { articleName } from "@/lib/article";
 import { blockedCheck } from "@/lib/flows/control";
+import { fierroWarning } from "@/lib/orderState";
 import { hotkey } from "@/lib/hotkeys";
 import { requireSession } from "@/lib/session";
 import { finish, missing, restart, scan } from "../actions";
@@ -45,6 +46,7 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
           </Link>
         </Notice>
       )}
+      {waiting && fierroWarning(p) && <Notice tone="warn">{fierroWarning(p)}</Notice>}
       {blocked && <Notice tone="warn">{blocked}</Notice>}
       {!waiting && p.status !== "pending" && p.status !== "in_picking" && (
         <Notice tone="ok">

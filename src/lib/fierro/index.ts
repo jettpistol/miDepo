@@ -1,9 +1,9 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { DB, Executor } from "@/db";
 import { customers, companies, fierroStock, orderLines, orders, products, receivingLines, receivings, suppliers } from "@/db/schema";
 import { makeThumbnails } from "@/lib/covers";
 import { SimulatedFierro } from "./simulated";
-import type { FierroConnector } from "./types";
+import type { FierroConnector, FierroOrder } from "./types";
 
 export type Company = typeof companies.$inferSelect;
 
@@ -16,14 +16,14 @@ const inBatches = <T,>(list: T[], n = 400) => Array.from({ length: Math.ceil(lis
 
 /**
  * Brings catalogue, customers, orders and expected receipts from Fierro. Fierro rules: what
- * changed there overwrites what is here. The only thing miDepo leaves alone is orders already started.
+ * changed there overwrites what is here. Orders already started are not changed: a change Fierro
+ * made to one is only flagged (fierro_change) and applied once the order is released to Pendientes.
  */
-export async function sync(db: DB, company: Company) {
-  const fierro = connector(db, company);
+export async function sync(db: DB, company: Company, fierro: FierroConnector = connector(db, company)) {
   const [books, custs, ords, rcpts] = await Promise.all([fierro.books(), fierro.customers(), fierro.pendingOrders(), fierro.expectedReceipts()]);
   // Read before the transaction opens: inside it only `tx` may be used.
   const fierroQty = await fierro.stock();
-  const summary = { titles: books.length, customers: custs.length, newOrders: 0, newReceipts: 0 };
+  const summary = { titles: books.length, customers: custs.length, newOrders: 0, changedOrders: 0, cancelledOrders: 0, flaggedOrders: 0, skippedOrders: 0, newReceipts: 0 };
 
   await db.transaction(async (tx) => {
     for (const batch of inBatches(books)) {
@@ -48,16 +48,7 @@ export async function sync(db: DB, company: Company) {
     const productRef = new Map((await tx.select({ id: products.id, f: products.fierroId }).from(products).where(eq(products.companyId, company.id))).map((p) => [p.f, p.id]));
     const customerRef = new Map((await tx.select({ id: customers.id, f: customers.fierroId }).from(customers).where(eq(customers.companyId, company.id))).map((c) => [c.f, c.id]));
 
-    const existingOrders = new Set((await tx.select({ f: orders.fierroId }).from(orders).where(eq(orders.companyId, company.id))).map((p) => p.f));
-    for (const p of ords) {
-      if (existingOrders.has(p.id)) continue;
-      const customerId = customerRef.get(p.customerId);
-      const ls = p.lines.flatMap((l) => (productRef.has(l.bookId) ? [{ productId: productRef.get(l.bookId)!, quantity: l.quantity }] : []));
-      if (!customerId || ls.length === 0) continue;
-      const [fresh] = await tx.insert(orders).values({ companyId: company.id, fierroId: p.id, number: p.number, customerId, saleMode: p.saleMode, date: p.date }).returning({ id: orders.id });
-      await tx.insert(orderLines).values(ls.map((l) => ({ orderId: fresh.id, ...l })));
-      summary.newOrders++;
-    }
+    await syncOrders(tx, company.id, ords, productRef, customerRef, summary);
 
     const existingReceipts = new Set((await tx.select({ f: receivings.fierroId }).from(receivings).where(eq(receivings.companyId, company.id))).map((r) => r.f));
     // Suppliers named on Fierro's receipts join the supplier list (matched by name, case-insensitively).
@@ -85,3 +76,83 @@ export async function sync(db: DB, company: Company) {
   return summary;
 }
 
+
+type Summary = { newOrders: number; changedOrders: number; cancelledOrders: number; flaggedOrders: number; skippedOrders: number };
+
+/** "productId:quantity" pairs, sorted: two orders with the same lines give the same key. */
+const linesKey = (ls: { productId: number; quantity: number }[]) =>
+  ls.map((l) => `${l.productId}:${l.quantity}`).sort().join(",");
+
+/**
+ * Fierro's pending orders against miDepo's. New ones come in (also with lines for articles not yet in
+ * the catalogue: those are counted in unknown_lines and the order cannot be taken). An order nobody
+ * started follows Fierro: its lines are replaced if they changed, and it is cancelled if Fierro no
+ * longer lists it (it comes back if Fierro lists it again). A started order is never changed here.
+ */
+async function syncOrders(tx: Executor, companyId: number, ords: FierroOrder[], productRef: Map<string, number>, customerRef: Map<string, number>, summary: Summary) {
+  const mine = await tx.select().from(orders).where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "cancelled", "in_picking", "to_control", "picked", "packed"])));
+  const byFierroId = new Map(mine.map((o) => [o.fierroId, o]));
+  const shipped = new Set((await tx.select({ f: orders.fierroId }).from(orders).where(and(eq(orders.companyId, companyId), eq(orders.status, "shipped")))).map((o) => o.f));
+  const linesOf = new Map<number, { productId: number; quantity: number }[]>();
+  if (mine.length > 0) {
+    for (const l of await tx.select({ orderId: orderLines.orderId, productId: orderLines.productId, quantity: orderLines.quantity }).from(orderLines).where(inArray(orderLines.orderId, mine.map((o) => o.id)))) {
+      linesOf.set(l.orderId, [...(linesOf.get(l.orderId) ?? []), l]);
+    }
+  }
+
+  const listed = new Set<string>();
+  for (const p of ords) {
+    listed.add(p.id);
+    if (shipped.has(p.id)) continue;
+    // One line per article: Fierro may repeat an article, miDepo adds them up.
+    const qty = new Map<number, number>();
+    let unknown = 0;
+    for (const l of p.lines) {
+      const id = productRef.get(l.bookId);
+      if (id == null) unknown++;
+      else qty.set(id, (qty.get(id) ?? 0) + l.quantity);
+    }
+    const ls = [...qty].map(([productId, quantity]) => ({ productId, quantity }));
+    const existing = byFierroId.get(p.id);
+    if (!existing) {
+      const customerId = customerRef.get(p.customerId);
+      if (!customerId || (ls.length === 0 && unknown === 0)) {
+        summary.skippedOrders++;
+        continue;
+      }
+      const [fresh] = await tx.insert(orders).values({ companyId, fierroId: p.id, number: p.number, customerId, saleMode: p.saleMode, date: p.date, unknownLines: unknown }).returning({ id: orders.id });
+      if (ls.length > 0) await tx.insert(orderLines).values(ls.map((l) => ({ orderId: fresh.id, ...l })));
+      summary.newOrders++;
+      continue;
+    }
+    const same = linesKey(linesOf.get(existing.id) ?? []) === linesKey(ls) && existing.unknownLines === unknown;
+    if (existing.status === "pending" || existing.status === "cancelled") {
+      if (same && existing.status === "pending") continue;
+      if (!same) {
+        await tx.delete(orderLines).where(eq(orderLines.orderId, existing.id));
+        if (ls.length > 0) await tx.insert(orderLines).values(ls.map((l) => ({ orderId: existing.id, ...l })));
+      }
+      await tx.update(orders).set({ status: "pending", unknownLines: unknown, fierroChange: null, saleMode: p.saleMode }).where(eq(orders.id, existing.id));
+      summary.changedOrders++;
+      continue;
+    }
+    const change = same ? null : "changed";
+    if (existing.fierroChange !== change) {
+      await tx.update(orders).set({ fierroChange: change }).where(eq(orders.id, existing.id));
+      if (change) summary.flaggedOrders++;
+    }
+  }
+
+  // An empty answer is more likely a failure on Fierro's side than every order cancelled at once.
+  if (ords.length === 0) return;
+  for (const o of mine) {
+    if (listed.has(o.fierroId)) continue;
+    if (o.status === "pending") {
+      await tx.update(orders).set({ status: "cancelled", assignedTo: null }).where(eq(orders.id, o.id));
+      summary.cancelledOrders++;
+    } else if (o.status !== "cancelled" && o.fierroChange !== "gone") {
+      await tx.update(orders).set({ fierroChange: "gone" }).where(eq(orders.id, o.id));
+      summary.flaggedOrders++;
+    }
+  }
+}

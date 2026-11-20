@@ -1,5 +1,5 @@
 {
-  "id": "c97ea40b-25cd-48e9-9112-40822b6c9c17",
+  "id": "8cec14a7-0efc-40ec-bb12-7c9f74243a2b",
   "prevId": "5c0810e7-374a-48a1-8e6f-d2080617ba7c",
   "version": "7",
   "dialect": "postgresql",
@@ -475,19 +475,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
-        },
-        "control_min_units": {
-          "name": "control_min_units",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "same_person_checks": {
-          "name": "same_person_checks",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "created_at": {
           "name": "created_at",
@@ -1303,13 +1290,6 @@
           "notNull": true,
           "default": 0
         },
-        "checked": {
-          "name": "checked",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
         "packed": {
           "name": "packed",
           "type": "integer",
@@ -1436,23 +1416,24 @@
           "primaryKey": false,
           "notNull": false
         },
-        "controlled_by": {
-          "name": "controlled_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "packed_by": {
-          "name": "packed_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "sent_to_fierro": {
           "name": "sent_to_fierro",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "fierro_change": {
+          "name": "fierro_change",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unknown_lines": {
+          "name": "unknown_lines",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {
@@ -1545,32 +1526,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "assigned_to"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "orders_controlled_by_users_id_fk": {
-          "name": "orders_controlled_by_users_id_fk",
-          "tableFrom": "orders",
-          "tableTo": "users",
-          "columnsFrom": [
-            "controlled_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "orders_packed_by_users_id_fk": {
-          "name": "orders_packed_by_users_id_fk",
-          "tableFrom": "orders",
-          "tableTo": "users",
-          "columnsFrom": [
-            "packed_by"
           ],
           "columnsTo": [
             "id"
