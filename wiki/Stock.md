@@ -12,7 +12,7 @@ La ficha muestra:
 
 - **En el depósito:** el total físico, sumando todos los lugares.
 - **Según Fierro:** lo que cree la oficina. Si no coincide, puede haber documentos sin cargar o un error de stock.
-- **Dónde está:** cada estante o zona, con su cantidad.
+- **Ubicaciones:** cada estante o zona, con su cantidad.
 - **Últimos movimientos:** qué pasó con ese título, cuándo y quién lo hizo.
 
 ## Ver qué hay en un estante

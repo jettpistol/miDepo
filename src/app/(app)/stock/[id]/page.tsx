@@ -71,7 +71,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           <div className="grid gap-x-12 lg:gap-x-8 gap-y-8 lg:gap-y-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
             <section>
               <h2 className="section-title">
-                Dónde está {whereabouts.length > 0 && <small>{whereabouts.length}</small>}
+                Ubicaciones {whereabouts.length > 0 && <small>{whereabouts.length}</small>}
               </h2>
               {whereabouts.length === 0 ? (
                 <p className="border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">No hay unidades en el depósito.</p>
