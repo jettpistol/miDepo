@@ -72,6 +72,22 @@ export async function planRoute(tx: Executor, companyId: number, orderId: number
   return tasks;
 }
 
+/**
+ * Units of each pending order that would come out short if it were taken now, one order at a
+ * time (orders do not compete with each other here). Same rule as planRoute, in two queries.
+ */
+export async function shortages(tx: Executor, companyId: number, orderIds: number[]) {
+  const result = new Map<number, number>();
+  if (orderIds.length === 0) return result;
+  const lines = await tx.select().from(orderLines).where(inArray(orderLines.orderId, orderIds));
+  const freeOnes = await available(tx, companyId, [...new Set(lines.map((l) => l.productId))]);
+  for (const l of lines) {
+    const { missing } = distribute(freeOnes.get(l.productId) ?? [], l.quantity);
+    if (missing > 0) result.set(l.orderId, (result.get(l.orderId) ?? 0) + missing);
+  }
+  return result;
+}
+
 /** The operator takes a pending order: the route through the shelves is built. */
 export async function takeOrder(c: Ctx, orderId: number) {
   const p = await orderOf(c, orderId);
