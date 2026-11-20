@@ -52,7 +52,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
                 <input value={t.name} onChange={(e) => change(i, { name: e.target.value })} className="field mt-1" />
               </label>
               <label className="text-[13px] font-semibold text-muted">
-                Se nombra con
+                Formato
                 <Select
                   className="mt-1"
                   value={t.type}
@@ -64,7 +64,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
                 />
               </label>
               <label className="text-[13px] font-semibold text-muted">
-                Cuántos hay
+                Cantidad
                 <input type="number" min={1} max={999} value={t.quantity} onChange={(e) => change(i, { quantity: Number(e.target.value) })} className="field mt-1" />
               </label>
               <label className="text-[13px] font-semibold text-muted">
@@ -107,7 +107,7 @@ export function Generator({ action, initial }: { action: Action; initial: Scheme
       </fieldset>
 
       <div>
-        <p className="field-label">3. Así van a quedar</p>
+        <p className="field-label">3. Vista previa</p>
         {problem ? (
           <p className="text-sm font-semibold text-danger">{problem}</p>
         ) : (

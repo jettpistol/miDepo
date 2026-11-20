@@ -54,13 +54,13 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
       )}
 
       <h2 className="section-title">
-        {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
+        {q ? "Resultados" : "Todos los artículos"} <small>{fmt(total)}</small>
       </h2>
       <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Título</th>
+                <th>Artículo</th>
                 <th className="hidden md:table-cell">Autor</th>
                 <th className="hidden sm:table-cell">Código</th>
                 <th className="text-right">Unidades</th>
@@ -68,8 +68,8 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
             </thead>
             <tbody>
               {found.length === 0 && (
-                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}>
-                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
+                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}>
+                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}
                 </EmptyRow>
               )}
               {found.map((p) => (

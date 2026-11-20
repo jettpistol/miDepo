@@ -59,7 +59,7 @@ export default async function PackingList({ params }: { params: Promise<{ id: st
           </ul>
         </section>
       )}
-      <p className="mt-[6mm] text-[8.5pt]">Documento interno del depósito. No reemplaza al remito ni a la factura.</p>
+      <p className="mt-[6mm] text-[8.5pt]">Documento interno del depósito. No reemplaza a la remito ni a la factura.</p>
     </article>
   );
 }

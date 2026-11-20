@@ -64,14 +64,14 @@ export async function Accounts({ showCurrent = false }: { showCurrent?: boolean 
           <span className="grid size-8 place-items-center">
             <Icon name="logout" />
           </span>
-          {others.length > 0 ? `Salir de ${current?.user.name.split(" ")[0] ?? "esta cuenta"}` : "Salir"}
+          {others.length > 0 ? `Cerrar la sesión de ${current?.user.name.split(" ")[0] ?? "esta cuenta"}` : "Cerrar sesión"}
         </button>
       </form>
       {others.length > 0 && (
         <form action={logoutAll}>
           <button className={`${row} text-danger`}>
             <span className="size-8" />
-            Salir de todas las cuentas
+            Cerrar todas las sesiones
           </button>
         </form>
       )}

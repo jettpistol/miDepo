@@ -53,7 +53,7 @@ export default async function Account() {
                     <span>
                       <span className="font-semibold">{l.name}</span> <span className="text-sm text-muted">· registrada el {shortDate(l.createdAt)}</span>
                     </span>
-                    <ActionButton action={removePasskey} hiddenFields={{ id: l.id }} className="cursor-pointer rounded-control text-sm font-semibold text-danger underline decoration-danger/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-danger disabled:opacity-55" confirm="¿Quitar esta llave? Ese dispositivo va a tener que entrar con contraseña o PIN." showOk={false}>
+                    <ActionButton action={removePasskey} hiddenFields={{ id: l.id }} className="cursor-pointer rounded-control text-sm font-semibold text-danger underline decoration-danger/35 underline-offset-[3px] transition-colors duration-150 hover:decoration-danger disabled:opacity-55" confirm="¿Quitar esta llave? Ese dispositivo tendrá que iniciar sesión con contraseña o PIN." showOk={false}>
                       Quitar
                     </ActionButton>
                   </li>

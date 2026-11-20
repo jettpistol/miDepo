@@ -73,7 +73,7 @@ export async function finishPacking(c: Ctx, orderId: number) {
   if (unpacked > 0) throw new UserError("PACK-10", `Quedan ${unpacked} unidades preparadas sin empacar.`);
   const ofOrder = await c.db.select().from(boxes).where(eq(boxes.orderId, orderId));
   if (ofOrder.some((k) => k.status === "open")) throw new UserError("PACK-11", "Cierra la caja abierta antes de terminar.");
-  if (ofOrder.length === 0 && lines.some((l) => l.picked > 0)) throw new UserError("PACK-12", "Todavía no armaste ninguna caja.");
+  if (ofOrder.length === 0 && lines.some((l) => l.picked > 0)) throw new UserError("PACK-12", "Todavía no hay ninguna caja.");
   await c.db.update(orders).set({ status: "packed" }).where(eq(orders.id, orderId));
-  return `Pedido ${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}. Ya se puede documentar en Fierro.`;
+  return `Pedido ${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}. Ya se puede cargar en Fierro.`;
 }

@@ -42,14 +42,14 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
       <div className={open ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8" : "max-w-3xl"}>
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
-            <ScanForm action={scan} context="count" hiddenFields={{ id, locationId }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar" />
+            <ScanForm action={scan} context="count" hiddenFields={{ id, locationId }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar" />
             <ActionButton action={complete} hotkey="secondary" hiddenFields={{ id, locationId }} className="btn-soft w-full" confirm={lines.length === 0 ? `¿Confirmas que ${row.code} está vacía?` : `¿Ya contaste todo lo que hay en ${row.code}?`} showOk={false}>
               {lines.length === 0 ? "Está vacía" : "Terminar esta ubicación"}
             </ActionButton>
           </div>
         )}
         {lines.length === 0 ? (
-          <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no contaste nada acá.</p>
+          <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no se contó nada en esta ubicación.</p>
         ) : (
           <ul className="ruled-list framed">
             {lines.map(({ l, title, code }) => (

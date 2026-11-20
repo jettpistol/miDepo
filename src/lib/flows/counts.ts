@@ -23,7 +23,7 @@ export function needsRecount(system: number, counted: number) {
 /** Creates a count for every shelf whose code starts with the given prefix. */
 export async function createCount(c: Ctx, name: string, prefix: string) {
   const pre = prefix.trim().toUpperCase();
-  if (!name.trim()) throw new UserError("CNT-01", "Ponle un nombre al conteo (por ejemplo: Pasillo A, noviembre).");
+  if (!name.trim()) throw new UserError("CNT-01", "Escribe un nombre para el conteo (por ejemplo: Pasillo A, noviembre).");
   if (!pre) throw new UserError("CNT-02", "Escribe con qué empiezan las ubicaciones a contar (por ejemplo: A-01).");
   const us = await c.db
     .select({ id: locations.id })
@@ -32,7 +32,7 @@ export async function createCount(c: Ctx, name: string, prefix: string) {
     .orderBy(asc(locations.code))
     .limit(MAX_COUNT_LOCATIONS + 1);
   if (us.length === 0) throw new UserError("CNT-03", `No hay ubicaciones que empiecen con "${pre}".`);
-  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Parte el conteo en tramos más chicos.`);
+  if (us.length > MAX_COUNT_LOCATIONS) throw new UserError("CNT-04", `Son más de ${MAX_COUNT_LOCATIONS} ubicaciones. Divide el conteo en tramos más pequeños.`);
   return c.db.transaction(async (tx) => {
     const [stockCount] = await tx.insert(counts).values({ companyId: c.companyId, name: name.trim() }).returning();
     await tx.insert(countLocations).values(us.map((u) => ({ countId: stockCount.id, locationId: u.id })));

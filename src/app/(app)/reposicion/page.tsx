@@ -50,7 +50,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
       </div>
 
       {pending.length === 0 ? (
-        <EmptyState title="No queda nada por guardar acá">Lo que cierres en {zone === "receiving" ? "una recepción" : "una devolución (los libros vendibles)"} va a aparecer en esta lista.</EmptyState>
+        <EmptyState title="No hay nada por reponer">Lo que cierres en {zone === "receiving" ? "una recepción" : "una devolución (los artículos vendibles)"} aparecerá en esta lista.</EmptyState>
       ) : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">
           <div className="lg:sticky lg:top-30">
@@ -59,17 +59,17 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
               context="putaway"
               hiddenFields={{ source: current!.code }}
               fields={[
-                { name: "product", label: "Libro" },
-                { name: "destination", label: "Estante", help: "Escanea el cartel" },
+                { name: "product", label: "Artículo" },
+                { name: "destination", label: "Ubicación", help: "Escanea la etiqueta" },
               ]}
               quantity={1}
-              button="Guardar"
+              button="Reponer"
             />
           </div>
           <div className="min-w-0">
             <p className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-sm text-muted">
               <span>
-                Quedan <strong className="text-ink">{units} unidades</strong> de {pending.length} títulos.
+                Quedan <strong className="text-ink">{units} unidades</strong> de {pending.length} artículos.
               </span>
               <ShelfMark code={current!.code} />
             </p>
@@ -77,9 +77,9 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Título</th>
-                    <th className="text-right">Por guardar</th>
-                    <th>Ya hay en</th>
+                    <th>Artículo</th>
+                    <th className="text-right">Por reponer</th>
+                    <th>Ubicaciones actuales</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -90,7 +90,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
                         <Code>{p.code}</Code>
                       </td>
                       <td className="text-right text-base font-bold">{p.quantity}</td>
-                      <td>{suggestions.has(p.productId) ? <ShelfMark code={suggestions.get(p.productId)} size="md" /> : <span className="text-muted">Título nuevo: elige un estante libre</span>}</td>
+                      <td>{suggestions.has(p.productId) ? <ShelfMark code={suggestions.get(p.productId)} size="md" /> : <span className="text-muted">Artículo nuevo: elige una ubicación libre</span>}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -45,7 +45,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         rows.length === 0
           ? { tone: "danger", text: `Ninguna ubicación empieza con "${pre}".` }
           : rows.length > MAX_COUNT_LOCATIONS
-            ? { tone: "danger", text: `Son más de ${MAX_COUNT_LOCATIONS}. Parte el conteo en tramos más chicos.` }
+            ? { tone: "danger", text: `Son más de ${MAX_COUNT_LOCATIONS}. Divide el conteo en tramos más pequeños.` }
             : { tone: "ok", text: rows.length === 1 ? "1 ubicación" : `${rows.length} ubicaciones` };
     }
     return { statuses, suggestions, shortcuts };
@@ -90,16 +90,16 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       if (!prefixMatch) statuses[field] = { tone: "danger", text: `No existe la ubicación "${text.toUpperCase()}".` };
       return;
     }
-    if (!u.active) return void (statuses[field] = { tone: "danger", text: `"${u.code}" está dada de baja.` });
+    if (!u.active) return void (statuses[field] = { tone: "danger", text: `"${u.code}" está desactivada.` });
     const [present] = await db.select({ titles: sql<number>`count(*)`.mapWith(Number), n: sql<number>`coalesce(sum(${stock.quantity}), 0)`.mapWith(Number) }).from(stock).where(and(eq(stock.locationId, u.id), gt(stock.quantity, 0)));
     const name = u.type === "shelf" ? "" : `${locationName(u)} · `;
-    statuses[field] = { tone: "ok", text: present.n === 0 ? `${name}Vacía` : `${name}${present.titles === 1 ? "1 título" : `${present.titles} títulos`} · ${units(present.n)}` };
+    statuses[field] = { tone: "ok", text: present.n === 0 ? `${name}Vacía` : `${name}${present.titles === 1 ? "1 artículo" : `${present.titles} artículos`} · ${units(present.n)}` };
   }
   /** If the code belongs to no book and resembles none either, say so. */
   async function flagUnknown(text: string) {
     if (text.length < 3) return;
     const [similar] = await db.select({ id: products.id }).from(products).where(and(eq(products.companyId, companyId), matchesProduct(text))).limit(1);
-    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un título nuevo, sincroniza con Fierro.` };
+    if (!similar) statuses.product = { tone: "danger", text: `"${text}" no está en el catálogo. Si es un artículo nuevo, sincroniza con Fierro.` };
   }
 
   const n = Number(v("quantity"));
@@ -115,10 +115,10 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     await checkLocation("source", source);
     await checkLocation("destination", destination);
     for (const [field, u] of [["source", source], ["destination", destination]] as const) {
-      if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven a mano." };
+      if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven manualmente." };
     }
-    if (destination?.active && destination.type === "missing") statuses.destination = { tone: "danger", text: "Nada pasa a Faltantes a mano." };
-    if (source && destination && source.id === destination.id) statuses.destination = { tone: "danger", text: "Es el mismo lugar que el origen." };
+    if (destination?.active && destination.type === "missing") statuses.destination = { tone: "danger", text: "Nada pasa a Faltantes manualmente." };
+    if (source && destination && source.id === destination.id) statuses.destination = { tone: "danger", text: "Es la misma ubicación que el origen." };
 
     if (book) {
       const places = await whereIs(book.id);
@@ -140,7 +140,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       }
       if (!v("destination")) {
         const livesAt = places.find((l) => l.type === "shelf" && l.id !== source?.id);
-        if (livesAt) shortcuts.push({ field: "destination", value: livesAt.code, text: "Ya hay en", shelfMark: true });
+        if (livesAt) shortcuts.push({ field: "destination", value: livesAt.code, text: "Ubicación actual", shelfMark: true });
       }
     }
   } else if (ctx === "picking") {
@@ -153,8 +153,8 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
     if (t) {
       const u = await location(v("location"));
       await checkLocation("location", u);
-      if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Es el estante de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
-      if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: book.title } : { tone: "danger", text: `Ese es "${book.title}". No es el título de esta parada.` };
+      if (u?.active) statuses.location = u.id === t.t.locationId ? { tone: "ok", text: "Es la ubicación de esta parada" } : { tone: "danger", text: `Estás en ${u.code}. Esta parada es en ${t.code}.` };
+      if (book) statuses.product = book.id === t.t.productId ? { tone: "ok", text: book.title } : { tone: "danger", text: `Ese es "${book.title}". No es el artículo de esta parada.` };
       const remaining = t.t.quantity - t.t.picked;
       if (quantity && quantity > remaining) statuses.quantity = { tone: "danger", text: `Esta parada pide ${remaining}.` };
     }
@@ -169,7 +169,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
       } else if (l) {
         statuses.product = { tone: "ok", text: `${book.title} · van ${l.received}` };
       } else if (r.fierroId) {
-        statuses.product = { tone: "warn", text: `${book.title} · no está avisado en este ingreso` };
+        statuses.product = { tone: "warn", text: `${book.title} · no está en el aviso de esta recepción` };
       }
     }
   } else if (ctx === "packing" && book) {
@@ -202,7 +202,7 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
         for (const l of await whereIs(book.id, field === "destination")) {
           if (!l.code.startsWith(pre) || (field === "destination" && l.id === source?.id)) continue;
           seen.add(l.code);
-          suggestions.push({ value: l.code, type: "location", title: l.code, detail: field === "source" ? `${l.quantity} de este título` : `ya hay ${l.quantity}` });
+          suggestions.push({ value: l.code, type: "location", title: l.code, detail: field === "source" ? `${l.quantity} de este artículo` : `ya hay ${l.quantity}` });
         }
       }
       if (pre) {

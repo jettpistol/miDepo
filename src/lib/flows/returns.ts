@@ -5,9 +5,9 @@ import { findProduct, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
 
 export const BOOK_CONDITIONS: { id: BookCondition; name: string; help: string }[] = [
-  { id: "sellable", name: "Vendible", help: "Como nuevo. Vuelve a la estantería." },
+  { id: "sellable", name: "Vendible", help: "Como nuevo. Vuelve a su ubicación." },
   { id: "damaged", name: "Dañado", help: "Roto, mojado o muy marcado. No se vende." },
-  { id: "clearance", name: "Saldo", help: "Con detalles. Se vende con descuento." },
+  { id: "clearance", name: "Saldo", help: "Con detalles menores. Se vende con descuento." },
 ];
 
 export async function createReturn(c: Ctx, customerId: number) {
@@ -28,7 +28,7 @@ async function open(c: Ctx, id: number) {
 export async function scanReturn(c: Ctx, returnId: number, code: string, bookCondition: string, quantity: unknown) {
   const n = validQuantity(quantity);
   const status = BOOK_CONDITIONS.find((e) => e.id === bookCondition);
-  if (!status) throw new UserError("RET-04", "Elige en qué estado está el libro.");
+  if (!status) throw new UserError("RET-04", "Elige en qué estado está el artículo.");
   await open(c, returnId);
   const p = await findProduct(c.db, c.companyId, code);
   await c.db
@@ -49,7 +49,7 @@ export async function closeReturn(c: Ctx, returnId: number) {
   const d = await open(c, returnId);
   return c.db.transaction(async (tx) => {
     const lines = await tx.select().from(returnLines).where(eq(returnLines.returnId, returnId));
-    if (lines.length === 0) throw new UserError("RET-05", "Todavía no escaneaste ningún libro.");
+    if (lines.length === 0) throw new UserError("RET-05", "Todavía no escaneaste ningún artículo.");
     const destination = { sellable: await zone(tx, c.companyId, "returns"), damaged: await zone(tx, c.companyId, "damaged"), clearance: await zone(tx, c.companyId, "clearance") };
     for (const l of lines) {
       await moveStock(tx, { companyId: c.companyId, productId: l.productId, fromId: null, toId: destination[l.bookCondition].id, quantity: l.quantity, reason: "return", reference: d.number, userId: c.userId });

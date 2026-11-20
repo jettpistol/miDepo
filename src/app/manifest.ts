@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "miDepo",
     short_name: "miDepo",
-    description: "El depósito de libros, ordenado.",
+    description: "El depósito, en orden.",
     lang: "es-AR",
     start_url: "/",
     display: "standalone",

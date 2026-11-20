@@ -10,7 +10,7 @@ export type Theme = "light" | "dark" | "system";
 export const THEMES: { id: Theme; name: string; icon: IconName }[] = [
   { id: "light", name: "Claro", icon: "sun" },
   { id: "dark", name: "Oscuro", icon: "moon" },
-  { id: "system", name: "Como el dispositivo", icon: "device" },
+  { id: "system", name: "Según el dispositivo", icon: "device" },
 ];
 
 /** Light or dark from the top bar. Changes at once and is saved to the user, like in Ajustes. */
