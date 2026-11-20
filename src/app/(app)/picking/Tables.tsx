@@ -3,9 +3,10 @@ import { and, asc, eq, inArray, min, sql, desc } from "drizzle-orm";
 import { ActionButton } from "@/components/ScanForm";
 import { Progress, shortDate, Badge, ShelfMark, Condition, SALE_MODE } from "@/components/ui";
 import { fierroWarning } from "@/lib/orderState";
-import { customers, orderLines, orders, pickTasks, locations, users } from "@/db/schema";
+import { customers, orderLines, orders, pickBatches, pickTasks, locations, users } from "@/db/schema";
+import { batchNumber } from "@/lib/flows/picking";
 import type { requireSession } from "@/lib/session";
-import { take } from "./actions";
+import { take, takeAllOrders } from "./actions";
 import { hotkey } from "@/lib/hotkeys";
 import { shortages } from "@/lib/flows/picking";
 
@@ -31,7 +32,8 @@ export async function loadOpenOrders(db: Db, companyId: number) {
     .groupBy(orders.id, customers.name, customers.city, users.name)
     .orderBy(desc(orders.urgent), asc(orders.date))
     .limit(200);
-  const inProgress = rows.filter((f) => f.p.status === "in_picking");
+  // Orders in a batch are shown once, as their batch.
+  const inProgress = rows.filter((f) => f.p.status === "in_picking" && f.p.batchId == null);
   const pending = rows.filter((f) => f.p.status === "pending");
 
   const nextShelf = new Map<number, string | null>();
@@ -44,8 +46,39 @@ export async function loadOpenOrders(db: Db, companyId: number) {
       .groupBy(pickTasks.orderId);
     for (const x of stops) nextShelf.set(x.orderId, x.code);
   }
+
+  const batches = await db
+    .select({
+      b: pickBatches,
+      takenBy: users.name,
+      orders: sql<number>`count(distinct ${orders.id})`.mapWith(Number),
+      units: sql<number>`coalesce(sum(${orderLines.quantity}), 0)`.mapWith(Number),
+      picked: sql<number>`coalesce(sum(${orderLines.picked}), 0)`.mapWith(Number),
+    })
+    .from(pickBatches)
+    .innerJoin(users, eq(users.id, pickBatches.takenBy))
+    .innerJoin(orders, eq(orders.batchId, pickBatches.id))
+    .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
+    .where(and(eq(pickBatches.companyId, companyId), eq(pickBatches.status, "open")))
+    .groupBy(pickBatches.id, users.name)
+    .orderBy(asc(pickBatches.number));
+  const batchShelf = new Map<number, string | null>();
+  if (batches.length > 0) {
+    const stops = await db
+      .select({ batchId: orders.batchId, code: min(locations.code) })
+      .from(pickTasks)
+      .innerJoin(orders, eq(orders.id, pickTasks.orderId))
+      .innerJoin(locations, eq(locations.id, pickTasks.locationId))
+      .where(and(eq(pickTasks.status, "pending"), inArray(orders.batchId, batches.map((x) => x.b.id))))
+      .groupBy(orders.batchId);
+    for (const x of stops) batchShelf.set(x.batchId!, x.code);
+  }
   const short = await shortages(db, companyId, pending.map((f) => f.p.id));
-  return { inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null })), pending: pending.map((f) => ({ ...f, short: short.get(f.p.id) ?? 0 })) };
+  return {
+    inProgress: inProgress.map((f) => ({ ...f, nextShelf: nextShelf.get(f.p.id) ?? null })),
+    pending: pending.map((f) => ({ ...f, short: short.get(f.p.id) ?? 0 })),
+    batches: batches.map((x) => ({ ...x, nextShelf: batchShelf.get(x.b.id) ?? null })),
+  };
 }
 
 type OpenOrders = Awaited<ReturnType<typeof loadOpenOrders>>;
@@ -162,5 +195,55 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** Batches being picked: like orders in progress, one row per batch. */
+export function BatchesTable({ rows, userId }: { rows: OpenOrders["batches"]; userId: number }) {
+  return (
+    <div className="table-wrap">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Próxima ubicación</th>
+            <th>Lote</th>
+            <th className="hidden sm:table-cell">Usuario</th>
+            <th className="hidden w-[30%] min-w-36 sm:table-cell">Progreso</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ b, takenBy, orders: n, units, picked, nextShelf }) => (
+            <tr key={b.id} className={b.takenBy === userId ? "bg-accent-soft" : ""}>
+              <td>{nextShelf ? <ShelfMark code={nextShelf} size="md" /> : <Badge tone="ok">Recorrido terminado</Badge>}</td>
+              <td>
+                <Link href={`/picking/lote/${b.id}`} className="link doc-number" {...(b.id === rows.find((r) => r.b.takenBy === userId)?.b.id ? hotkey("primary", `Seguir con el lote ${batchNumber(b.number)}`) : {})}>
+                  {batchNumber(b.number)}
+                </Link>
+                <span className="block text-muted">
+                  {n === 1 ? "1 pedido" : `${n} pedidos`}
+                  <span className="sm:hidden">
+                    {" "}
+                    · {picked} de {units} · {b.takenBy === userId ? "tú" : takenBy}
+                  </span>
+                </span>
+              </td>
+              <td className="hidden sm:table-cell">{b.takenBy === userId ? <strong>Tú</strong> : takenBy}</td>
+              <td className="hidden sm:table-cell">
+                <Progress done={picked} total={units} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** "Preparar todos": every pending order in one batch, asked first. */
+export function TakeAllButton({ count }: { count: number }) {
+  return (
+    <ActionButton action={takeAllOrders} showOk={false} className="btn-sm" hotkey="secondary" confirm={`¿Preparar los ${count} pedidos pendientes en un solo recorrido? Quedan a tu nombre.`}>
+      Preparar todos
+    </ActionButton>
   );
 }

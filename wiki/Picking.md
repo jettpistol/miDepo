@@ -11,6 +11,26 @@ Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
 
 Si abres un pedido pendiente sin tomarlo, ves su **Recorrido previsto**: los artículos, de qué ubicación saldría cada uno y lo que no tiene stock en estanterías (saldría como faltante). Es una vista previa: el stock se reserva recién cuando tocas **Preparar este pedido**, y el recorrido se arma con lo que haya libre en ese momento.
 
+## Preparar todos en un lote
+
+Lo normal es preparar todos los pedidos juntos, en un solo recorrido. Toca **Preparar todos** (o **F8**) arriba de la lista de pendientes y confirma.
+
+- Todos los pedidos pendientes que se pueden preparar, del más antiguo al más reciente, forman un **lote** (`LOTE-0001`) a tu nombre.
+- Cada parada pide **el total** de ese artículo en esa ubicación, sumando todos los pedidos que lo llevan ("Toma 12 para 2 pedidos").
+- Las paradas van en orden de ubicación: pasas una sola vez por cada estante. Si el carro se llena, déjalo en PREPARACIÓN y sigue con el mismo lote.
+- Si falta stock, los pedidos más antiguos lo reciben primero.
+
+Cómo se separa el lote en pedidos lo elige un supervisor en **Ajustes → Picking por lotes**:
+
+| Opción | Qué haces |
+|---|---|
+| **En empaque** | Todo va junto al carro. En [Empaque](Empaque) se separa por pedido, escaneando cada libro en la caja de su pedido. |
+| **Por bandeja, al tomar** | Cada pedido tiene una bandeja numerada (la lista **Bandejas** dice cuál es cuál). En cada parada la pantalla dice cuántos van en cada bandeja, y al confirmar lo repite: "Bandeja 2: 4 (PED-00002) · Bandeja 3: 8 (PED-00003)". |
+
+El cambio vale para los lotes nuevos; un lote abierto sigue como empezó.
+
+**No está aquí**, **Saltar**, **Ir**, **Devolver** y **Sí estaba** funcionan igual que con un pedido solo, para todos los pedidos de esa parada. **Soltar lote** devuelve todos sus pedidos a Pendientes (lo tomado vuelve a su ubicación). Si sueltas un solo pedido del lote, sale del lote.
+
 ## Recorrer las paradas
 
 A la izquierda está la **parada actual**: la ubicación en grande, el artículo, su SKU e ISBN y cuántas unidades tomar. A la derecha está el **Recorrido** completo, en el orden en que conviene caminarlo; la parada actual aparece resaltada como **Ahora**.
@@ -63,7 +83,7 @@ Cuando no quedan paradas, miDepo avisa **Recorrido terminado**. Lleva todo a la 
 
 ## Preguntas frecuentes
 
-**¿Puedo dejar un pedido por la mitad?** Sí. Queda guardado y en Inicio aparece **Seguir con PED-…**. Si no lo vas a terminar tú, toca **Soltar pedido** para que vuelva a Pendientes.
+**¿Puedo dejar un pedido por la mitad?** Sí. Queda guardado y en Inicio aparece **Seguir con PED-…** (o **Seguir con LOTE-…** si es un lote). Si no lo vas a terminar tú, toca **Soltar pedido** para que vuelva a Pendientes.
 
 **¿Por qué el recorrido pasa por dos ubicaciones para el mismo artículo?** Porque en una sola no había suficientes unidades.
 

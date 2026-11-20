@@ -55,6 +55,7 @@ const more: Feature[] = [
   // Actions on a screen. "#nueva" opens that screen's "+ Nueva" panel.
   { title: "Nueva recepción sin aviso", path: ["Recepción", "+ Nueva"], href: "/recepcion#nueva", icon: "plus", words: "crear recepcion ingreso sin aviso", keys: KEYS.create },
   { title: "Nueva devolución", path: ["Devoluciones", "+ Nueva"], href: "/devoluciones#nueva", icon: "plus", words: "crear devolucion retorno", keys: KEYS.create },
+  { title: "Preparar todos los pedidos", path: ["Picking"], href: "/picking", icon: "picking", words: "lote recorrido conjunto juntos varios pedidos batch oleada", keys: KEYS.secondary },
   { title: "Nuevo conteo", path: ["Conteos"], href: "/conteos#nuevo", icon: "plus", words: "crear conteo contar rango inventario", minRole: "supervisor" },
   { title: "Nuevo proveedor", path: ["Proveedores", "+ Nuevo"], href: "/proveedores#nueva", icon: "plus", words: "crear proveedor alta editorial", minRole: "supervisor", keys: KEYS.create },
   { title: "Documentos cargados en Fierro", path: ["Fierro", "Cargados"], href: "/fierro/cargados", icon: "history", words: "historial enviados exportados csv", minRole: "supervisor" },
@@ -74,6 +75,7 @@ const more: Feature[] = [
   { title: "Huella, rostro o llave", path: ["Ajustes"], href: "/cuenta#llaves", icon: "account", words: "passkey llave de acceso biometria touch id face id" },
   { title: "Control de pedidos", path: ["Ajustes"], href: "/cuenta#control", icon: "check", words: "controlar verificar revisar doble chequeo segunda persona empaque pedidos grandes", minRole: "admin" },
   { title: "Cambiar contraseña", path: ["Ajustes", "Contraseña"], href: "/cuenta#contrasena", icon: "account", words: "clave password" },
+  { title: "Picking por lotes", path: ["Ajustes"], href: "/cuenta#lotes", icon: "picking", words: "lote bandeja separar pedidos empaque batch oleada", minRole: "supervisor" },
   { title: "PIN del depósito", path: ["Ajustes", "PIN"], href: "/cuenta#pin", icon: "account", words: "codigo numerico clave" },
   { title: "Cambiar de cuenta", path: ["Ajustes"], href: "/mas", icon: "users", words: "otra cuenta usuario salir cerrar sesion logout" },
   { title: "Atajos de teclado", path: ["Manual"], href: "/ayuda/Atajos-de-teclado", icon: "help", words: "teclas f1 shortcuts", keys: KEYS.help },

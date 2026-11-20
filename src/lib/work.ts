@@ -92,7 +92,8 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
   ]);
 
   return [
-    ...orderRows.map(({ o, customer, units, picked, checked, packed }): Task => {
+    // An order being picked in a batch is the batch's work: Inicio shows the batch instead.
+    ...orderRows.filter(({ o }) => !(o.status === "in_picking" && o.batchId != null)).map(({ o, customer, units, picked, checked, packed }): Task => {
       const packing = o.status === "picked";
       const control = o.status === "to_control";
       return {

@@ -142,7 +142,7 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 - `accent-text` is the accent as text. It is computed per theme so it always reads (light: the accent itself; dark: `#9DB1F5` for Klein blue).
 - Neutrals are tinted toward blue. `page` and `surface` are white; `sunken` is the second layer (hovered rows, sidebar hover, code chips).
 - `ok`, `warn` and `danger` each have a `-soft` tint and appear only where they carry state.
-- Zone colours mark the five non-shelf zones on their labels (recepción amber, devoluciones violet, dañados red, saldos teal, preparación green).
+- Zone colours mark the six non-shelf zones on their labels (recepción amber, devoluciones violet, faltantes slate, dañados red, saldos teal, preparación green). Every zone label has its band; a zone never looks like a shelf.
 - Light and dark themes both ship. The dark theme uses a deep blue-black ground (`#090C1A`); Klein blue stays on primary buttons, the active sidebar item and shelf marks.
 
 ## Typography

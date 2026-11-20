@@ -90,6 +90,7 @@ Placeholders in messages are written `{like this}`; the app fills them in.
 | `ACCT-08` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The uploaded photo did not arrive as a JPEG data URL. |
 | `ACCT-09` | No se pudo leer esa imagen. Prueba con otra foto. | `src/app/(app)/cuenta/actions.ts` · `savePhoto` | The photo is not a JPEG, or is under 100 bytes or over 200 KB after the browser shrank it. |
 | `ACCT-10` | Ese archivo no es una imagen que pueda usar. Prueba con una foto JPG o PNG. | `src/app/(app)/cuenta/Photo.tsx` · `choose` | The browser could not open or crop the chosen file. |
+| `ACCT-11` | Elige cómo se separa el lote. | `src/app/(app)/cuenta/actions.ts` · `saveBatchSorting` | The batch sorting setting got a value that is not one of the two options. |
 
 ## USER: Usuarios (admin)
 
@@ -191,24 +192,27 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `PICK-01` | No se encontró ese pedido. | `src/lib/flows/picking.ts` · `orderOf` | The order does not exist or belongs to another company. |
 | `PICK-02` | Ese pedido ya lo tomó otra persona. | `src/lib/flows/picking.ts` · `takeOrder` | Two people tried to take the same order; the other one got it first. Taking an order you already have opens it instead. |
 | `PICK-03` | No se encontró esa parada del recorrido. | `src/lib/flows/picking.ts` · `taskOf` | The pick task does not exist or belongs to another company. |
-| `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf` | Confirming or marking short a stop that is already done. |
-| `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned location is not the stop's location. |
-| `PICK-06` | Ese es "{artículo}". No es el artículo que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick` | The scanned book is not the one the stop asks for. |
-| `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} a la ubicación. | `src/lib/flows/picking.ts` · `confirmPick` | Picking more units than the stop still needs. |
+| `PICK-04` | Esa parada ya está resuelta. | `src/lib/flows/picking.ts` · `taskOf`, `confirmBatchPick`, `markBatchShort` | Confirming or marking short a stop that is already done (also a stop of a batch). |
+| `PICK-05` | Estás en {ubicación}, pero esta parada es en otra ubicación. Revisa la etiqueta. | `src/lib/flows/picking.ts` · `confirmPick`, `confirmBatchPick` | The scanned location is not the stop's location. |
+| `PICK-06` | Ese es "{artículo}". No es el artículo que pide esta parada. | `src/lib/flows/picking.ts` · `confirmPick`, `confirmBatchPick` | The scanned book is not the one the stop asks for. |
+| `PICK-07` | Esta parada pide {n}. Si tomaste de más, devuelve {sobrante} a la ubicación. | `src/lib/flows/picking.ts` · `confirmPick`, `confirmBatchPick` | Picking more units than the stop still needs. |
 | `PICK-08` | El pedido {número} ya pasó por empaque. Su picking ya no se puede cambiar. | `src/lib/flows/picking.ts` · `releaseOrder`, `unpick`, `undoShort` | Dropping an order, undoing a pick or undoing a shortage report once the order is packed or shipped. |
 | `PICK-09` | Nadie está preparando el pedido {número}. | `src/lib/flows/picking.ts` · `releaseOrder` | Dropping an order that is still pending (somebody dropped it already). |
 | `PICK-10` | Este pedido lo está preparando {nombre}. Solo esa persona o un supervisor puede soltarlo. | `src/lib/flows/picking.ts` · `releaseOrder` | An operator tries to drop an order somebody else took. The screen disables the button first. |
-| `PICK-11` | Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo. | `src/lib/flows/picking.ts` · `releaseOrder` | Dropping an order whose packing has started. The screen disables the button first. |
+| `PICK-11` | Ya hay cajas armadas para este pedido. Vacíalas en empaque antes de soltarlo. | `src/lib/flows/picking.ts` · `releaseOrder`, `releaseBatch` | Dropping an order whose packing has started. The screen disables the button first. |
 | `PICK-12` | El pedido cambió mientras tanto. Recarga la página. | `src/lib/flows/picking.ts` · `releaseOrder` | Two people act on the same order at the same moment and the other got there first. |
-| `PICK-13` | En esta parada todavía no se tomó nada. | `src/lib/flows/picking.ts` · `unpick` | Undoing a pick on a stop with nothing picked (for example, pressed twice). |
+| `PICK-13` | En esta parada todavía no se tomó nada. | `src/lib/flows/picking.ts` · `unpick`, `unpickBatchStop` | Undoing a pick on a stop with nothing picked (for example, pressed twice). |
 | `PICK-14` | Parte de esto ya está en una caja. Sácalo de la caja en empaque primero. | `src/lib/flows/picking.ts` · `unpick` | Undoing a pick whose units are already in a box. |
-| `PICK-15` | Esa parada no está marcada como no encontrada. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report on a stop that is not short, or on a title with no stock anywhere (nothing was reported). |
+| `PICK-15` | Esa parada no está marcada como no encontrada. | `src/lib/flows/picking.ts` · `undoShort`, `undoBatchShort` | Undoing a shortage report on a stop that is not short, or on a title with no stock anywhere (nothing was reported). |
 | `PICK-16` | Las paradas que la reemplazaron ya avanzaron. Deshaz esas primero. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after the extra stop miDepo added elsewhere was picked or reported short too. |
 | `PICK-17` | Esas unidades ya no están en Faltantes: se encontraron o se dieron de baja. | `src/lib/flows/picking.ts` · `undoShort` | Undoing a shortage report after a supervisor wrote the units off or somebody moved them out of FALTANTES. |
 | `PICK-18` | Primero deshaz el aviso de que no estaba en la ubicación. | `src/lib/flows/picking.ts` · `unpick` | Undoing a partial pick on a stop that was then reported short. |
 | `PICK-19` | El pedido {número} ya no figura como pendiente en Fierro. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order a sync cancelled because Fierro stopped listing it. |
 | `PICK-20` | El pedido {número} tiene {n} artículos que no están en el catálogo. Sincroniza con Fierro cuando estén cargados. | `src/lib/flows/picking.ts` · `takeOrder` | Taking an order whose Fierro lines name articles missing from the synced catalogue. |
 | `PICK-21` | Fierro cambió el pedido {número}. Sincroniza antes de prepararlo. | `src/lib/flows/picking.ts` · `takeOrder` | Taking a released order whose change from Fierro has not been applied yet. |
+| `PICK-22` | No hay pedidos pendientes para preparar. | `src/lib/flows/picking.ts` · `takeAll` | "Preparar todos" when no order can be taken (none pending, or the pending ones were changed in Fierro or have titles not in the catalogue). |
+| `PICK-23` | No se encontró ese lote. | `src/lib/flows/picking.ts` · `batchOf` | The batch does not exist or belongs to another company. |
+| `PICK-24` | Este lote lo está preparando {nombre}. Solo esa persona o un supervisor puede soltarlo. | `src/lib/flows/picking.ts` · `releaseBatch` | Dropping someone else's batch without being a supervisor. The screen disables the button with this reason first. |
 
 ## CTRL: Control
 
