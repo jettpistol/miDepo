@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { PageHeader, Badge, EmptyRow } from "@/components/ui";
 import { customers, orderLines, orders, users } from "@/db/schema";
@@ -26,7 +26,7 @@ export default async function Control() {
     .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
     .where(and(eq(orders.companyId, company.id), eq(orders.status, "to_control")))
     .groupBy(orders.id, customers.name, picker.name)
-    .orderBy(asc(orders.date));
+    .orderBy(desc(orders.urgent), asc(orders.date));
   const mine = (p: typeof orders.$inferSelect) => !company.samePersonChecks && p.takenBy === user.id;
   const first = rows.findIndex((r) => !mine(r.p));
 
@@ -54,6 +54,12 @@ export default async function Control() {
                 </td>
                 <td>
                   <span className="font-medium">{customer}</span>
+                  {p.urgent && (
+                    <>
+                      {" "}
+                      <Badge tone="danger">Urgente</Badge>
+                    </>
+                  )}
                   <span className="block text-muted sm:hidden">Preparó {pickedBy ?? "—"}</span>
                 </td>
                 <td className="hidden sm:table-cell">{pickedBy ?? "—"}</td>

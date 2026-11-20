@@ -59,7 +59,10 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
               <td className="hidden text-right font-semibold tabular-nums sm:table-cell">{units}</td>
               <td className="hidden whitespace-nowrap text-muted sm:table-cell">{shortDate(o.date)}</td>
               <td className="w-px">
-                <Badge tone={ORDER_STATE[o.status].tone}>{ORDER_STATE[o.status].label}</Badge>
+                <span className="flex gap-1">
+                  {o.urgent && ["pending", "in_picking", "picked"].includes(o.status) && <Badge tone="danger">Urgente</Badge>}
+                  <Badge tone={ORDER_STATE[o.status].tone}>{ORDER_STATE[o.status].label}</Badge>
+                </span>
               </td>
             </tr>
           ))}

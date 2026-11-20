@@ -10,6 +10,7 @@ import { blockedCheck } from "@/lib/flows/control";
 import { fierroWarning } from "@/lib/orderState";
 import { hotkey } from "@/lib/hotkeys";
 import { requireSession } from "@/lib/session";
+import { Urgency } from "@/components/Urgency";
 import { finish, missing, restart, scan } from "../actions";
 
 const picker = alias(users, "picker");
@@ -17,7 +18,8 @@ const controller = alias(users, "controller");
 
 export default async function ControlOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const [row] = await db
     .select({ p: orders, customer: customers.name, pickedBy: picker.name, controlledBy: controller.name })
     .from(orders)
@@ -36,7 +38,9 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · preparó ${pickedBy ?? "—"}`} back={{ href: "/control", text: "Control" }} />
+      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · preparó ${pickedBy ?? "—"}`} back={{ href: "/control", text: "Control" }}>
+        <Urgency session={session} order={p} />
+      </PageHeader>
 
       {(p.status === "pending" || p.status === "in_picking") && (
         <Notice tone="warn">

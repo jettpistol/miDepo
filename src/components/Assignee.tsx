@@ -4,7 +4,7 @@ import type { AssignKind } from "@/lib/flows/assignments";
 import { assignablePeople } from "@/lib/work";
 import { can, type requireSession } from "@/lib/session";
 
-type Session = Awaited<ReturnType<typeof requireSession>>;
+export type Session = Awaited<ReturnType<typeof requireSession>>;
 
 /**
  * Whose this work is. Supervisors change it in place; operators see the name, or nothing if

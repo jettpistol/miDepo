@@ -24,6 +24,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `LOC` | Ubicaciones (`/ubicaciones`) |
 | `STK` | Stock, moves and scanning a book or a location (any scan screen) |
 | `RCV` | Recepción and suppliers |
+| `ORD` | Orders in general: Pedidos and marking an order urgent |
 | `PICK` | Picking |
 | `CTRL` | Control: the second count of a picked order before packing |
 | `PACK` | Empaque |
@@ -175,6 +176,13 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `RCV-15` | No se encontró ese proveedor. | `src/lib/flows/receiving.ts` · `deleteSupplier` | The supplier does not exist or belongs to another company. |
 | `RCV-16` | Ese proveedor viene de Fierro. Se borra allí. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier that came from Fierro. The screen offers it only for suppliers created in miDepo. |
 | `RCV-17` | Ese proveedor ya tiene recepciones y no se puede borrar. | `src/lib/flows/receiving.ts` · `deleteSupplier` | Deleting a supplier some receiving uses. The screen disables the button first. |
+
+## ORD: orders
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `ORD-01` | No se encontró ese pedido. | `src/lib/flows/orders.ts` · `setUrgent` | Marking urgent an order that does not exist or belongs to another company. |
+| `ORD-02` | El pedido {número} ya está empacado: la urgencia no cambia nada. | `src/lib/flows/orders.ts` · `setUrgent` | Marking urgent an order already packed, shipped or cancelled. |
 
 ## PICK: Picking
 
