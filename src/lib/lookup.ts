@@ -110,11 +110,13 @@ export async function runLookup(db: DB, companyId: number, p: URLSearchParams): 
 
   let source: Awaited<ReturnType<typeof location>> = null;
 
-  if (ctx === "move" || ctx === "putaway") {
+  if (ctx === "move" || ctx === "putaway" || ctx === "move-all") {
     source = await location(v("source"));
     const destination = await location(v("destination"));
     await checkLocation("source", source);
     await checkLocation("destination", destination);
+    // Moving a whole location: an empty one has nothing to move.
+    if (ctx === "move-all" && source?.active && statuses.source?.text.endsWith("Vacía")) statuses.source = { tone: "danger", text: `${source.code} está vacía.` };
     for (const [field, u] of [["source", source], ["destination", destination]] as const) {
       if (u?.active && u.type === "staging") statuses[field] = { tone: "danger", text: "Los pedidos preparados no se mueven manualmente." };
     }
