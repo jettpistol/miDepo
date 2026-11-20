@@ -31,7 +31,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
-| `ASG` | Assigning work to a person (the "Asignado a" control, supervisors) |
+| `ASG` | Assigning work to a person (the assignee picker, supervisors) |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
 | `WIKI` | Editing the manual (`/ayuda/editar`), admin only |

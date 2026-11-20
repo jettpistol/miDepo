@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { isCopyFile, vocabularyHits } from "../scripts/copy-rules.mjs";
 
 /**
  * The app addresses the user as tú, never with voseo. This scans the interface code, the manual
@@ -69,6 +70,14 @@ describe("Spanish copy", () => {
         .split("\n")
         .flatMap((line, i) => (/^\s*(\/\/|\*|\/\*|import )/.test(line) ? [] : [...line.matchAll(opener), ...line.matchAll(filler)].map((m) => `${path.relative(ROOT, file)}:${i + 1}: ${m[1]}`))),
     );
+    expect(hits).toEqual([]);
+  });
+
+  it("keeps the agreed vocabulary: artículo, ubicación, etiqueta, cargar en Fierro, neutral Spanish", () => {
+    const hits = [...files(path.join(ROOT, "src")), ...files(path.join(ROOT, "wiki"))]
+      .map((file) => path.relative(ROOT, file))
+      .filter(isCopyFile)
+      .flatMap((file) => vocabularyHits(file, readFileSync(path.join(ROOT, file), "utf8")));
     expect(hits).toEqual([]);
   });
 });

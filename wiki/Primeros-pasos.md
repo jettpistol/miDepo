@@ -19,7 +19,7 @@ Con un pedido a medio preparar, arriba aparece **Seguir con PED-…**: el últim
 
 ## Asignar trabajo (supervisores)
 
-En un pedido, una recepción, una devolución, un conteo o en Reposición: **Asignado a**, arriba a la derecha. **Sin asignar** lo quita. La persona lo ve en su Inicio.
+En las listas de Recepción, Picking, Empaque, Devoluciones y Conteos, la columna **Asignado** muestra la foto y el nombre de cada persona. Haz clic en ella para elegir a otra; se guarda al momento. También está bajo el título de cada pedido, recepción, devolución o conteo, y en Reposición junto a cada pestaña. **Sin asignar** lo quita. La persona lo ve en su Inicio.
 
 Asignar no bloquea: otra persona puede seguir con el trabajo. Los operarios ven la asignación pero no la cambian.
 
