@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { ActionButton, ScanForm, ActionForm } from "@/components/ScanForm";
 import { Icon } from "@/components/Icon";
-import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
+import { Progress, Notice, PageHeader, Badge, SALE_MODE } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products, users } from "@/db/schema";
 import { alias } from "drizzle-orm/pg-core";
 import { SameCheck } from "@/components/SameCheck";
@@ -47,7 +47,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Empaque ${p.number}`} subtitle={customer} back={{ href: "/empaque", text: "Empaque" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />}>
+      <PageHeader title={`Empaque ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]}`} back={{ href: "/empaque", text: "Empaque" }} meta={<Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />}>
         <Urgency session={session} order={p} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>

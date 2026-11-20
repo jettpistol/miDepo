@@ -3,7 +3,7 @@ import { ShelfMark, shortDate } from "@/components/ui";
 import type { DB } from "@/db";
 import { recentMoves } from "@/lib/flows/move";
 import { articleName } from "@/lib/article";
-import { undoMoveAction } from "./actions";
+import { undoMoveAction, undoMoveAllAction } from "./actions";
 
 /** This person's latest moves and put-aways, each with "Deshacer" while it has not been undone. */
 export async function RecentMoves({ db, companyId, userId }: { db: DB; companyId: number; userId: number }) {
@@ -27,7 +27,7 @@ export async function RecentMoves({ db, companyId, userId }: { db: DB; companyId
             {rows.map((m) => (
               <tr key={m.id} className={m.undone ? "text-muted" : ""}>
                 <td className="max-w-0 w-full">
-                  <span className="block truncate font-medium">{articleName(m.title)}</span>
+                  <span className="block truncate font-medium">{m.articles > 1 || m.reference?.startsWith("MT-") ? `Toda la ubicación · ${m.articles === 1 ? "1 artículo" : `${m.articles} artículos`}` : articleName(m.title)}</span>
                   <span className="mt-1 flex items-center gap-1.5 sm:hidden">
                     <ShelfMark code={m.from} /> → <ShelfMark code={m.to} />
                   </span>
@@ -42,6 +42,10 @@ export async function RecentMoves({ db, companyId, userId }: { db: DB; companyId
                 <td className="w-px text-right whitespace-nowrap">
                   {m.undone ? (
                     <span className="text-sm">Deshecho</span>
+                  ) : m.reference?.startsWith("MT-") ? (
+                    <ActionButton action={undoMoveAllAction} hiddenFields={{ reference: m.reference }} className="btn-sm" showOk={false} confirm={`¿Deshacer? ${m.quantity === 1 ? "1 unidad vuelve" : `${m.quantity} unidades vuelven`} de ${m.to} a ${m.from}.`}>
+                      Deshacer
+                    </ActionButton>
                   ) : (
                     <ActionButton action={undoMoveAction} hiddenFields={{ id: m.id }} className="btn-sm" showOk={false} confirm={`¿Deshacer? ${m.quantity} × ${articleName(m.title)} vuelve de ${m.to} a ${m.from}.`}>
                       Deshacer

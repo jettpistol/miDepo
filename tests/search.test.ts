@@ -42,7 +42,9 @@ describe("Funciones", () => {
   it("links only to screens and sections that exist", () => {
     const app = path.join(process.cwd(), "src/app");
     for (const f of FEATURES) {
-      const [route, hash] = f.href.split("#");
+      const [withQuery, hash] = f.href.split("#");
+      // A query string picks a tab of the screen (/mover?modo=todo): the screen is what must exist.
+      const route = withQuery.split("?")[0];
       if (route.startsWith("/ayuda/")) {
         expect(existsSync(path.join(process.cwd(), "wiki", `${route.slice(7)}.md`)), f.href).toBe(true);
         continue;
