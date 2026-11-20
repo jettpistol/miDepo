@@ -40,7 +40,7 @@ export default async function Home() {
 
   return (
     <>
-      <PageHeader title={`Hola, ${user.name.split(" ")[0]}`} />
+      <PageHeader title="Inicio" />
 
       {myOrders.map(({ p, nextShelf }) => (
         <Link key={p.id} href={`/picking/${p.id}`} className="mb-6 flex items-center gap-4 rounded-control bg-accent px-4 py-3.5 text-on-accent transition-colors duration-150 hover:bg-accent-hover">
@@ -87,7 +87,7 @@ export default async function Home() {
         </div>
 
         <section>
-          <h2 className="section-title">El resto del depósito</h2>
+          <h2 className="section-title">Resumen del depósito</h2>
           <ul className="ruled-list framed">
             <Queue href="/empaque" number={toPack[0].n} title="Pedidos para empacar" />
             <Queue href="/recepcion" number={openReceivings[0].n} title="Recepciones abiertas" />

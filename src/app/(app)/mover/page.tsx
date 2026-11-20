@@ -15,9 +15,9 @@ export default async function Move() {
           action={moveAction}
           context="move"
           fields={[
-            { name: "source", label: "Desde", help: "Estante o zona" },
-            { name: "product", label: "Libro", help: "Código, título o autor" },
-            { name: "destination", label: "Hacia", help: "Estante o zona" },
+            { name: "source", label: "Origen", help: "Ubicación" },
+            { name: "product", label: "Artículo", help: "Código, nombre o autor" },
+            { name: "destination", label: "Destino", help: "Ubicación" },
           ]}
           quantity={1}
           button="Mover"

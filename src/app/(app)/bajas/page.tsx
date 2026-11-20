@@ -19,7 +19,7 @@ function WriteOffForm({ h }: { h: Held }) {
       button="Dar de baja"
       buttonClassName="btn-sm"
       className="flex flex-wrap items-center gap-2 md:justify-end [&>p[role=status]]:basis-full"
-      confirm="¿Dar de baja estas unidades? Salen del stock y quedan para informar a Fierro."
+      confirm="¿Dar de baja estas unidades? Salen del stock y quedan para cargar en Fierro."
     >
       <input type="hidden" name="locationId" value={h.locationId} />
       <input type="hidden" name="productId" value={h.productId} />
@@ -50,12 +50,12 @@ export default async function WriteOffs() {
         <h2 className="section-title">
           Faltantes y dañados <small>{held.length}</small>
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Si un faltante aparece, muévelo desde FALTANTES a su estante con Mover: vuelve al stock sin baja.</p>
+        <p className="mb-3 max-w-[70ch] text-sm text-muted">Si un faltante aparece, muévelo desde FALTANTES a su ubicación con Mover: vuelve al stock sin baja.</p>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Título</th>
+                <th>Artículo</th>
                 <th className="hidden md:table-cell">Zona</th>
                 <th className="hidden text-right md:table-cell">Cantidad</th>
                 <th className="hidden md:table-cell" />
@@ -97,8 +97,8 @@ export default async function WriteOffs() {
             <thead>
               <tr>
                 <th>Motivo</th>
-                <th className="text-right">Salieron</th>
-                <th className="text-right">Entraron</th>
+                <th className="text-right">Salidas</th>
+                <th className="text-right">Entradas</th>
               </tr>
             </thead>
             <tbody>
@@ -130,11 +130,11 @@ export default async function WriteOffs() {
             <thead>
               <tr>
                 <th>Documento</th>
-                <th>Título</th>
+                <th>Artículo</th>
                 <th className="hidden md:table-cell">Ubicación</th>
                 <th className="text-right">Cantidad</th>
                 <th className="hidden sm:table-cell">Motivo</th>
-                <th className="hidden lg:table-cell">Aprobó</th>
+                <th className="hidden lg:table-cell">Aprobado por</th>
               </tr>
             </thead>
             <tbody>

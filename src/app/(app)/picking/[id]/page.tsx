@@ -40,7 +40,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
       {p.status === "pending" ? (
         <div className="max-w-md space-y-4 border-y border-line py-5 lg:py-4">
           <p>
-            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} títulos y todavía no lo tomó nadie.
+            Este pedido tiene <strong>{total} unidades</strong> de {lines.length} artículos y todavía no lo tomó nadie.
           </p>
           <ActionButton action={take} hiddenFields={{ id }} className="btn w-full" showOk={false} hotkey="primary">
             Preparar este pedido
@@ -67,14 +67,14 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                   context="picking"
                   hiddenFields={{ taskId: nextStop.t.id }}
                   fields={[
-                    { name: "location", label: "Estante", help: "Escanea el cartel" },
-                    { name: "product", label: "Libro" },
+                    { name: "location", label: "Ubicación", help: "Escanea la etiqueta" },
+                    { name: "product", label: "Artículo" },
                   ]}
                   quantity={nextStop.t.quantity - nextStop.t.picked}
                   button="Confirmar"
                 />
-                <ActionButton action={shortage} hotkey="secondary" hiddenFields={{ taskId: nextStop.t.id }} className="btn-soft w-full" confirm={`¿Seguro que en ${nextStop.location} no ${nextStop.t.quantity - nextStop.t.picked === 1 ? "está la unidad que falta" : `están las ${nextStop.t.quantity - nextStop.t.picked} unidades que faltan`}? miDepo va a buscar el título en otro estante.`}>
-                  No está en el estante
+                <ActionButton action={shortage} hotkey="secondary" hiddenFields={{ taskId: nextStop.t.id }} className="btn-soft w-full" confirm={`¿Seguro que en ${nextStop.location} no ${nextStop.t.quantity - nextStop.t.picked === 1 ? "está la unidad que falta" : `están las ${nextStop.t.quantity - nextStop.t.picked} unidades que faltan`}? miDepo buscará el artículo en otra ubicación.`}>
+                  No está en la ubicación
                 </ActionButton>
               </>
             ) : p.status === "picked" ? (
@@ -98,7 +98,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
                     <li key={t.id} className="row justify-between">
                       <span>
                         <span className="block font-medium">{title}</span>
-                        <span className="block text-sm text-muted">{location ? `No estaba en ${location}` : "Sin stock en estanterías"}</span>
+                        <span className="block text-sm text-muted">{location ? `No estaba en ${location}` : "Sin stock en ninguna ubicación"}</span>
                       </span>
                       <Badge tone="danger">Faltan {t.quantity - t.picked}</Badge>
                     </li>
@@ -108,7 +108,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             )}
             {pending.length > 1 && (
               <section>
-                <h2 className="section-title">Después</h2>
+                <h2 className="section-title">Próximas paradas</h2>
                 <ul className="ruled-list framed">
                   {pending.slice(1).map(({ t, title, location }) => (
                     <li key={t.id} className="row">
@@ -122,7 +122,7 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
             )}
             {doneTasks.length > 0 && (
               <section>
-                <h2 className="section-title">Ya tomado</h2>
+                <h2 className="section-title">Tomado</h2>
                 <ul className="ruled-list framed">
                   {doneTasks.map(({ t, title, location }) => (
                     <li key={t.id} className="row text-muted">

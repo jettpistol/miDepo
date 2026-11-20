@@ -38,8 +38,8 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
       <div className={`grid gap-5 lg:items-start lg:gap-8 ${open ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""}`}>
         {open && (
           <div className="space-y-3 lg:sticky lg:top-30">
-            <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Libro", help: "Código, título o autor" }]} quantity={1} button="Sumar">
-              <fieldset {...hotkey("option", "Cambiar el estado del libro")} data-hotkey-cycle>
+            <ScanForm action={scan} context="return" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar">
+              <fieldset {...hotkey("option", "Cambiar el estado del artículo")} data-hotkey-cycle>
                 <legend className="field-label">¿En qué estado está?</legend>
                 <div className="space-y-2">
                   {BOOK_CONDITIONS.map((e, i) => (
@@ -54,7 +54,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
                 </div>
               </fieldset>
             </ScanForm>
-            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún libro." : undefined} confirm="¿Cerrar la devolución? Los libros entran al stock y ya no se puede corregir.">
+            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún artículo." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock y ya no se puede corregir.">
               Cerrar devolución
             </ActionButton>
           </div>
@@ -68,7 +68,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
             ))}
           </div>
           {lines.length === 0 ? (
-            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay libros. Escanea el primero.</p>
+            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay artículos. Escanea el primero.</p>
           ) : (
             <ul className="ruled-list framed">
               {lines.map(({ l, title, code }) => (

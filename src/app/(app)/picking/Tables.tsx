@@ -54,10 +54,10 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
       <table className="data-table">
         <thead>
           <tr>
-            <th>Próximo estante</th>
+            <th>Próxima ubicación</th>
             <th>Pedido</th>
-            <th className="hidden sm:table-cell">Quién</th>
-            <th className="hidden w-[30%] min-w-36 sm:table-cell">Avance</th>
+            <th className="hidden sm:table-cell">Usuario</th>
+            <th className="hidden w-[30%] min-w-36 sm:table-cell">Progreso</th>
           </tr>
         </thead>
         <tbody>
@@ -95,9 +95,9 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
             <th>Pedido</th>
             <th>Cliente</th>
             <th className="hidden md:table-cell">Localidad</th>
-            <th className="hidden text-right sm:table-cell">Títulos</th>
+            <th className="hidden text-right sm:table-cell">Artículos</th>
             <th className="hidden text-right sm:table-cell">Unidades</th>
-            <th className="hidden md:table-cell">Llegó</th>
+            <th className="hidden md:table-cell">Fecha</th>
             <th />
           </tr>
         </thead>

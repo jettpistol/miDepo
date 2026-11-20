@@ -11,7 +11,7 @@ import { locationName } from "@/lib/stock";
 const money = (cents: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(cents / 100);
 const kg = (g: number) => `${(g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
 
-const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Guardado", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
+const REASON = { initial: "Carga inicial", receiving: "Recepción", putaway: "Reposición", movement: "Movimiento", picking: "Picking", shipment: "Despacho", return: "Devolución", count_adjustment: "Ajuste por conteo", count_relocation: "Mal ubicado (conteo)", missing: "Faltante en picking", found: "Apareció", write_off: "Baja" } as const satisfies Record<MovementReason, string>;
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -97,11 +97,11 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="hidden sm:table-cell">Cuándo</th>
-                        <th>Qué</th>
-                        <th>Desde → Hacia</th>
+                        <th className="hidden sm:table-cell">Fecha</th>
+                        <th>Motivo</th>
+                        <th>Origen → Destino</th>
                         <th className="text-right">Cantidad</th>
-                        <th className="hidden md:table-cell">Quién</th>
+                        <th className="hidden md:table-cell">Usuario</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -116,9 +116,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                           </td>
                           <td className="whitespace-nowrap">
                             <span className="inline-flex items-center gap-1.5">
-                              {fromLoc ? <ShelfMark code={fromLoc} /> : <span className="text-muted">afuera</span>}
+                              {fromLoc ? <ShelfMark code={fromLoc} /> : <span className="text-muted">Fuera del depósito</span>}
                               <Icon name="arrow" className="size-4 text-muted" />
-                              {toLoc ? <ShelfMark code={toLoc} /> : <span className="text-muted">afuera</span>}
+                              {toLoc ? <ShelfMark code={toLoc} /> : <span className="text-muted">Fuera del depósito</span>}
                             </span>
                           </td>
                           <td className="text-right font-semibold">{m.quantity}</td>

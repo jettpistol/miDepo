@@ -25,7 +25,7 @@ export default async function Fierro() {
       {simulated && (
         <div className="mb-6">
           <Notice tone="warn">
-            <strong>Modo de prueba:</strong> este depósito está conectado a un Fierro simulado con datos inventados. Nada de lo que hagas acá llega a un Fierro real.
+            <strong>Modo de prueba:</strong> este depósito está conectado a un Fierro simulado con datos inventados. Nada de lo que hagas aquí llega a un Fierro real.
           </Notice>
         </div>
       )}
@@ -43,7 +43,7 @@ export default async function Fierro() {
                 Simular 10 pedidos nuevos
               </ActionButton>
               <ActionButton action={simulate} hiddenFields={{ what: "receipts", howManyOf: 1 }} className="btn-soft">
-                Simular un ingreso avisado
+                Simular una recepción avisada
               </ActionButton>
             </>
           )}
@@ -54,9 +54,9 @@ export default async function Fierro() {
         <h2 className="section-title">
           Para cargar en Fierro <small>{pending.length}</small>
         </h2>
-        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock recién cuando lo marcas como cargado.</p>
+        <p className="mb-3 max-w-[70ch] text-sm text-muted">Un pedido sale del stock solo cuando lo marcas como cargado.</p>
         {pending.length === 0 ? (
-          <EmptyState title="Fierro está al día">No hay documentos del depósito sin informar.</EmptyState>
+          <EmptyState title="Fierro está al día">No hay documentos del depósito sin cargar.</EmptyState>
         ) : (
           <div className="table-wrap">
             <table className="data-table">

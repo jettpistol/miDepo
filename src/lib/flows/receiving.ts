@@ -54,7 +54,7 @@ export async function scanReceiving(c: Ctx, receivingId: number, code: string, q
     .onConflictDoUpdate({ target: [receivingLines.receivingId, receivingLines.productId], set: { received: sql`${receivingLines.received} + ${n}` } })
     .returning();
   if (r.status === "pending") await c.db.update(receivings).set({ status: "in_progress" }).where(eq(receivings.id, receivingId));
-  const notice = line.expected === 0 ? " (no estaba en el aviso)" : line.received > line.expected ? ` (¡van ${line.received - line.expected} de más!)` : "";
+  const notice = line.expected === 0 ? " (no estaba en el aviso)" : line.received > line.expected ? ` (${line.received - line.expected} de más)` : "";
   return `${p.title}: ${line.received} de ${line.expected}${notice}`;
 }
 

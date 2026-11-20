@@ -28,7 +28,7 @@ export default async function Help({ params, searchParams }: Props) {
             <p className="font-semibold">Prueba así:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
               <li>Usa una sola palabra: “faltante”, “PIN”, “etiquetas”.</li>
-              <li>Busca por lo que quieres hacer: “guardar”, “contar”, “devolución”.</li>
+              <li>Busca por lo que quieres hacer: “reponer”, “contar”, “devolución”.</li>
               <li>
                 O empieza por el{" "}
                 <Link href="/ayuda" className="link">

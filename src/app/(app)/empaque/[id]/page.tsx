@@ -50,13 +50,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
           </Link>
         </Notice>
       )}
-      {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está documentado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo documenta en Fierro."}</Notice>}
+      {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está cargado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo carga en Fierro."}</Notice>}
 
       <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
         {editable && (
           <div className="space-y-3 lg:sticky lg:top-30">
             <Progress done={packed} total={picked} unit="en cajas" />
-            {packed < picked && <ScanForm action={scan} context="packing" hiddenFields={{ id }} fields={[{ name: "product", label: open ? `Libro para la caja ${open.number}` : "Libro (abre una caja nueva)" }]} quantity={1} button="Poner en la caja" />}
+            {packed < picked && <ScanForm action={scan} context="packing" hiddenFields={{ id }} fields={[{ name: "product", label: open ? `Artículo para la caja ${open.number}` : "Artículo (abre una caja nueva)" }]} quantity={1} button="Poner en la caja" />}
             {open && items.some((x) => x.i.boxId === open.id) && (
               <div className="panel p-4 lg:p-3">
                 <h2 className="section-title mb-3">Cerrar la caja {open.number}</h2>
@@ -89,7 +89,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
                   <span className="flex flex-wrap items-center justify-end gap-3">
                     {k.status === "closed" ? <Badge tone="ok">Cerrada · {kg(k.weightGrams ?? 0)} kg</Badge> : <Badge tone="accent">Abierta</Badge>}
                     {k.status === "open" && editable && (
-                      <ActionButton action={empty} hiddenFields={{ boxId: k.id }} className="btn-sm border-danger/50 text-danger hover:border-danger hover:bg-danger-soft hover:text-danger" confirm={`¿Vaciar la caja ${k.number}? Vas a tener que escanear de nuevo lo que tenía.`} showOk={false}>
+                      <ActionButton action={empty} hiddenFields={{ boxId: k.id }} className="btn-sm border-danger/50 text-danger hover:border-danger hover:bg-danger-soft hover:text-danger" confirm={`¿Vaciar la caja ${k.number}? Tendrás que escanear de nuevo lo que contenía.`} showOk={false}>
                         Vaciar
                       </ActionButton>
                     )}
@@ -110,13 +110,13 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
 
           <section>
             <h2 className="section-title">
-              Títulos del pedido <small>{lines.length}</small>
+              Artículos del pedido <small>{lines.length}</small>
             </h2>
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Título</th>
+                    <th>Artículo</th>
                     <th className="hidden text-right sm:table-cell">Pedido</th>
                     <th className="text-right">Preparado</th>
                     <th className="text-right">En cajas</th>

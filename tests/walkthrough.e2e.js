@@ -43,9 +43,9 @@ async function warning(p, field, value) {
   const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png`, fullPage: false, caret: 'initial' });
 
   // Password login (supervisor)
-  await p.goto(BASE + '/'); await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'wrong'); await p.click('button:has-text("Entrar")');
+  await p.goto(BASE + '/'); await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'wrong'); await p.click('button:has-text("Iniciar sesión")');
   await p.waitForSelector('[role=status]'); step('wrong password → ' + (await p.textContent('[role=status]')).trim());
-  await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'midepo1234'); await p.click('button:has-text("Entrar")'); await p.waitForURL(BASE + '/');
+  await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'midepo1234'); await p.click('button:has-text("Iniciar sesión")'); await p.waitForURL(BASE + '/');
 
   // Receiving
   await p.goto(BASE + '/recepcion'); await p.click('a[href^="/recepcion/"]'); await p.waitForSelector('#scan-product');
@@ -80,7 +80,7 @@ async function warning(p, field, value) {
   step('  missing location, before the click → ' + await warning(p, 'destination', 'ZZ-99'));
   await p.fill('#scan-product', ''); await p.fill('#scan-destination', '');
   for (const r of rows.slice(0, 4)) step('  put away → ' + await scan(p, { product: r.code, destination: 'A-01-1' }, r.expected));
-  await p.goto(BASE + '/reposicion'); step('put-away empty: ' + ((await p.textContent('main')).includes('No queda nada') ? 'ok' : fail('something left to put away')));
+  await p.goto(BASE + '/reposicion'); step('put-away empty: ' + ((await p.textContent('main')).includes('No hay nada por reponer') ? 'ok' : fail('something left to put away')));
 
   // Picking
   await p.goto(BASE + '/picking'); await shot('picking-list');
@@ -141,7 +141,7 @@ async function warning(p, field, value) {
   await p.goto(countUrl); await p.click('a:has-text("Contar")'); await p.waitForSelector('text=Este recuento lo tiene que hacer otra persona'); step('  first counter cannot recount: ok');
   const second = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const q = await second.newPage();
   q.on('dialog', (d) => d.accept()); q.on('pageerror', (e) => errors.push('recount pageerror: ' + e.message)); q.on('response', (r) => r.status() >= 500 && errors.push(`recount HTTP ${r.status()} ${r.url()}`));
-  await q.goto(BASE + '/'); await q.click('button:has-text("PIN del depósito")'); await q.fill('#company', 'ovnipress'); await q.fill('#pin', '100001'); await q.click('button:has-text("Entrar")'); await q.waitForURL(BASE + '/');
+  await q.goto(BASE + '/'); await q.click('button:has-text("PIN del depósito")'); await q.fill('#company', 'ovnipress'); await q.fill('#pin', '100001'); await q.click('button:has-text("Iniciar sesión")'); await q.waitForURL(BASE + '/');
   await q.goto(countUrl); await q.click('a:has-text("Contar")'); await q.waitForSelector('#scan-product');
   step('  recount → ' + await scan(q, { product: rows[0].code }, rows[0].expected - 1));
   await q.click('button:has-text("Terminar esta ubicación")'); await q.waitForURL(countUrl); await second.close();
@@ -183,7 +183,7 @@ async function warning(p, field, value) {
 
   // Per-user colour
   await p.goto(BASE + '/cuenta'); await p.click('button[aria-label="Magenta"]'); await p.click('form button:has-text("Oscuro")'); await shot('account-magenta-dark');
-  await p.click('button:has-text("Guardar apariencia")'); await p.waitForSelector('text=Guardado'); await p.goto(BASE + '/'); await shot('home-magenta');
+  await p.click('button:has-text("Guardar apariencia")'); await p.waitForSelector('text=Apariencia guardada'); await p.goto(BASE + '/'); await shot('home-magenta');
   step('saved accent: ' + await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
   await ctx.close();
 
@@ -191,7 +191,7 @@ async function warning(p, field, value) {
   const phone = await browser.newContext({ ...devices['Pixel 7'] }); const m = await phone.newPage();
   m.on('pageerror', (e) => errors.push('phone pageerror: ' + e.message)); m.on('response', (r) => r.status() >= 500 && errors.push(`phone HTTP ${r.status()} ${r.url()}`));
   await m.goto(BASE + '/'); await m.screenshot({ path: `${OUT}/m-login.png`, caret: 'initial' });
-  await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Entrar")'); await m.waitForURL(BASE + '/');
+  await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Iniciar sesión")'); await m.waitForURL(BASE + '/');
   await m.screenshot({ path: `${OUT}/m-home.png`, caret: 'initial' });
   step('phone accent: ' + await m.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
   await m.goto(BASE + '/picking'); await m.click('button:has-text("Preparar")'); await m.waitForSelector('text=Próxima parada'); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
@@ -201,7 +201,7 @@ async function warning(p, field, value) {
 
   // Another company does not see Ovnipress orders
   const other = await browser.newContext(); const o = await other.newPage();
-  await o.goto(BASE + '/'); await o.fill('#email', 'admin@demo.test'); await o.fill('#password', 'midepo1234'); await o.click('button:has-text("Entrar")'); await o.waitForURL(BASE + '/');
+  await o.goto(BASE + '/'); await o.fill('#email', 'admin@demo.test'); await o.fill('#password', 'midepo1234'); await o.click('button:has-text("Iniciar sesión")'); await o.waitForURL(BASE + '/');
   const r = await o.goto(`${BASE}/picking/${orderId}`); step(`other company opens a foreign order → HTTP ${r.status()}`);
   await o.goto(BASE + '/ubicaciones'); await o.waitForSelector('text=Generador'); step('demo company scheme: ' + ((await o.textContent('main')).includes('Mostrando el esquema') ? 'shown' : 'none'));
 
@@ -222,7 +222,7 @@ async function warning(p, field, value) {
   await o.goto(BASE + '/ayuda/editar/Glosario'); o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Volver al original")'); await o.waitForURL(BASE + '/ayuda/Glosario');
   step('back to original: ' + (!(await o.textContent('article')).includes('zorzal') ? 'ok' : fail('still edited')));
   await m.goto(BASE + '/ayuda'); await m.screenshot({ path: `${OUT}/m-manual.png`, caret: 'initial' });
-  const ma = await phone.newPage(); await ma.goto(BASE + '/ingresar?agregar=1'); await ma.click('button:has-text("Email y contraseña")'); await ma.fill('#email', 'admin@ovnipress.test'); await ma.fill('#password', 'midepo1234'); await ma.click('button:has-text("Entrar")'); await ma.waitForURL(BASE + '/');
+  const ma = await phone.newPage(); await ma.goto(BASE + '/ingresar?agregar=1'); await ma.click('button:has-text("Email y contraseña")'); await ma.fill('#email', 'admin@ovnipress.test'); await ma.fill('#password', 'midepo1234'); await ma.click('button:has-text("Iniciar sesión")'); await ma.waitForURL(BASE + '/');
   await ma.goto(BASE + '/ayuda/editar/Picking'); await ma.waitForSelector('textarea'); await ma.screenshot({ path: `${OUT}/m-editor.png`, caret: 'initial' });
   await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
   step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
