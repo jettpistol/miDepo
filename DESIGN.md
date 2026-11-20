@@ -185,6 +185,8 @@ Rectangular. Labels and chips use 3px corners (`rounded-label`); buttons, inputs
 - **Disabled with a reason**: an action that cannot work yet is disabled and says why in one muted line (`<ActionButton reason>`).
 - **Badge**: a small rectangular state badge in five tones. **Notice**: a bordered, tinted notice. **EmptyState**: an empty state between two hairlines that says what is missing and how it appears.
 - **Dropdown** (`<Select>`): drawn by miDepo, never the system `<select>`. Opens the full list with a search box that keeps focus, so typing narrows the list while it is open; arrows and Enter pick. Only listed values can be submitted. With `create`, a search that matches nothing offers "Crear …", which asks for confirmation; Enter alone never creates.
+- **Row menu** (`<RowMenu>`): a "⋯" icon button (`btn-icon`) at the end of a row, with that row's options (`menu-item`, `menu-item danger`). An option with a form opens it in a modal dialog; a direct action asks for confirmation. The menu is placed on the page body, so a table's scroll box never clips it. Rows stay one line of crucial facts; everything else goes in the menu (Usuarios).
+- **Avatar without a photo**: initials on the person's accent, or, if they kept the default accent, on a palette colour picked by their id, so a list of people is not all one blue.
 - **New button** (`<NewButton>`): "+ Nueva" in the page header, opening a small panel with the form, like Jira's Create.
 - **Always-on tables**: list screens keep their table even when empty, with one `<EmptyRow>` that says what is missing and how it appears.
 - **Tabs**: underlined text tabs replace segmented toggles.
