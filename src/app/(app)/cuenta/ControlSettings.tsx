@@ -33,7 +33,7 @@ export function ControlSettings({ mode: initial, minUnits, samePerson }: { mode:
           </div>
         )}
       </div>
-      <Toggle name="otherPerson" label="Control por otra persona" defaultChecked={!samePerson} />
+      <Toggle name="otherPerson" label="Redundancia" hint="Prohíbe que el armador controle su propio pedido" defaultChecked={!samePerson} />
     </ActionForm>
   );
 }

@@ -71,7 +71,7 @@ Solo administradores. Vale para toda la empresa.
 | **Todos los pedidos** | Todo pedido pasa por [Control](Control). |
 | **Pedidos grandes** | Pasan por Control los pedidos desde las unidades indicadas. |
 
-**Control por otra persona:** activado, quien preparó no controla ni empaca el pedido. Un supervisor puede permitirlo en un pedido puntual.
+**Redundancia:** activada, quien armó el pedido no lo controla ni lo empaca. Un supervisor puede permitirlo en un pedido puntual.
 
 **Control obligatorio:** se marca en la página del cliente. Sus pedidos pasan siempre por Control.
 

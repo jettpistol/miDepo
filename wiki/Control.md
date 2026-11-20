@@ -15,6 +15,6 @@ Segundo conteo de lo preparado, antes de empacar. Aparece si está activado en [
 - **Falta un artículo:** toca **No está**. Pasa a Faltantes y el pedido sale sin él.
 - **Carro mezclado:** toca **Reiniciar**.
 
-## Control por otra persona
+## Redundancia
 
-Si la empresa lo pide, quien preparó no controla el pedido. Un supervisor puede tocar **Permitir control a…** en un pedido puntual.
+Con **Redundancia** activada en Ajustes, quien armó no controla el pedido. Un supervisor puede tocar **Permitir control a…** en un pedido puntual.
