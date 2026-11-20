@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { ActionButton, ScanForm } from "@/components/ScanForm";
-import { Progress, Notice, PageHeader } from "@/components/ui";
+import { Progress, Notice, PageHeader, SALE_MODE } from "@/components/ui";
 import { customers, orderLines, orders, products, users } from "@/db/schema";
 import { articleName } from "@/lib/article";
 import { blockedCheck } from "@/lib/flows/control";
@@ -38,7 +38,7 @@ export default async function ControlOrder({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · preparó ${pickedBy ?? "—"}`} back={{ href: "/control", text: "Control" }}>
+      <PageHeader title={`Control ${p.number}`} subtitle={`${customer} · ${SALE_MODE[p.saleMode]} · preparó ${pickedBy ?? "—"}`} back={{ href: "/control", text: "Control" }}>
         <Urgency session={session} order={p} />
       </PageHeader>
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge, EmptyRow, plural, shortDate, type Tone } from "@/components/ui";
+import { Badge, EmptyRow, plural, shortDate, type Tone, Condition, SALE_MODE } from "@/components/ui";
 import type { orders, OrderStatus } from "@/db/schema";
 import { orderScreen } from "@/lib/lists";
 
@@ -25,7 +25,7 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
           <tr>
             <th>Pedido</th>
             {showCustomer && <th>Cliente</th>}
-            <th className="hidden md:table-cell">Venta</th>
+            <th className="hidden sm:table-cell">Condición</th>
             <th className="hidden text-right sm:table-cell">Unidades</th>
             <th className="hidden sm:table-cell">Fecha</th>
             <th>Estado</th>
@@ -43,7 +43,7 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
                 <Link href={`/${orderScreen(o.status)}/${o.id}`} className="link doc-number">
                   {o.number}
                 </Link>
-                {!showCustomer && <span className="block text-muted sm:hidden">{plural(units, "unidad", "unidades")} · {shortDate(o.date)}</span>}
+                {!showCustomer && <span className="block text-muted sm:hidden">{plural(units, "unidad", "unidades")} · {SALE_MODE[o.saleMode]} · {shortDate(o.date)}</span>}
               </td>
               {showCustomer && (
                 <td>
@@ -51,11 +51,13 @@ export function OrdersTable({ rows, showCustomer = true, empty }: { rows: Row[];
                     {customer}
                   </Link>
                   <span className="block text-muted sm:hidden">
-                    {plural(units, "unidad", "unidades")} · {shortDate(o.date)}
+                    {plural(units, "unidad", "unidades")} · {SALE_MODE[o.saleMode]} · {shortDate(o.date)}
                   </span>
                 </td>
               )}
-              <td className="hidden text-muted md:table-cell">{o.saleMode === "consignment" ? "Consignación" : "Firme"}</td>
+              <td className="hidden sm:table-cell">
+                <Condition mode={o.saleMode} href={`/${orderScreen(o.status)}/${o.id}`} />
+              </td>
               <td className="hidden text-right font-semibold tabular-nums sm:table-cell">{units}</td>
               <td className="hidden whitespace-nowrap text-muted sm:table-cell">{shortDate(o.date)}</td>
               <td className="w-px">

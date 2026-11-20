@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { and, asc, eq, sql, desc } from "drizzle-orm";
-import { PageHeader, Badge, plural, EmptyState } from "@/components/ui";
+import { PageHeader, Badge, plural, EmptyState, Condition, SALE_MODE } from "@/components/ui";
 import { customers, orderLines, orders } from "@/db/schema";
 import { requireSession } from "@/lib/session";
 import { hotkey } from "@/lib/hotkeys";
@@ -40,6 +40,7 @@ export default async function Packing() {
               <tr>
                 <th>Pedido</th>
                 <th>Cliente</th>
+                <th className="hidden sm:table-cell">Condición</th>
                 <th className="hidden text-right sm:table-cell">Preparadas</th>
                 <th className="hidden text-right sm:table-cell">Faltantes</th>
                 <th>Cajas</th>
@@ -62,9 +63,12 @@ export default async function Packing() {
                       </>
                     )}
                     <span className="block text-muted sm:hidden">
-                      {plural(picked, "unidad preparada", "unidades preparadas")}
+                      {SALE_MODE[p.saleMode]} · {plural(picked, "unidad preparada", "unidades preparadas")}
                       {picked < order && ` · ${order - picked} faltantes`}
                     </span>
+                  </td>
+                  <td className="hidden sm:table-cell">
+                    <Condition mode={p.saleMode} href={`/empaque/${p.id}`} />
                   </td>
                   <td className="hidden text-right font-semibold sm:table-cell">{picked}</td>
                   <td className={`hidden text-right sm:table-cell ${picked < order ? "font-semibold text-danger" : "text-muted"}`}>{picked < order ? order - picked : "—"}</td>

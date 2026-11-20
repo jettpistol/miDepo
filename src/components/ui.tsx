@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import { hotkey } from "@/lib/hotkeys";
+import { SALE_MODE as SALE_LABEL } from "@/lib/orderState";
 import { InfoHint } from "./Hint";
 
 export function PageHeader({ title, subtitle, back, children }: { title: ReactNode; subtitle?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
@@ -114,3 +115,14 @@ export function Code({ children }: { children: ReactNode }) {
 
 export const shortDate = (d: Date) => new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }).format(d);
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export { SALE_MODE } from "@/lib/orderState";
+
+/** An order's condición in a list: the value links to the order, like its number. */
+export function Condition({ mode, href }: { mode: "firm" | "consignment"; href: string }) {
+  return (
+    <Link href={href} className="text-muted transition-colors duration-150 hover:text-accent-text hover:underline">
+      {SALE_LABEL[mode]}
+    </Link>
+  );
+}
