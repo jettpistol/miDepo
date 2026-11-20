@@ -12,9 +12,9 @@ import { toggleActive, changeRole, create, setAccess, removePhotoOf } from "./ac
 export const metadata = { title: "Usuarios" };
 
 const ROLES = [
-  { id: "operator", name: "Operario", help: "Hace el trabajo del depósito." },
-  { id: "supervisor", name: "Supervisor", help: "Además crea conteos y ubicaciones, y gestiona la conexión con Fierro." },
-  { id: "admin", name: "Administrador", help: "Además gestiona los usuarios." },
+  { id: "operator", name: "Operario", help: "Trabajo del depósito." },
+  { id: "supervisor", name: "Supervisor", help: "Operario, más conteos, ubicaciones y Fierro." },
+  { id: "admin", name: "Administrador", help: "Supervisor, más usuarios." },
 ] as const;
 const roleOptions = ROLES.map((r) => ({ value: r.id, label: r.name, detail: r.help }));
 
@@ -84,7 +84,7 @@ export default async function Users() {
             </tr>
           </thead>
           <tbody>
-            {list.length === 0 && <EmptyRow columns={5} title="Todavía no hay usuarios" />}
+            {list.length === 0 && <EmptyRow columns={5} title="Sin usuarios" />}
             {list.map((u) => (
               <tr key={u.id} className={u.active ? "" : "text-muted"}>
                 <td className="w-full max-w-0 py-1.5! md:w-auto md:max-w-none">

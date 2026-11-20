@@ -149,10 +149,10 @@ describe("full circuit", () => {
     await takeOrder(c, ord.id);
     const pend = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.status, "pending")));
     expect(pend).toHaveLength(1);
-    expect(await markShort(c, pend[0].id)).toMatch(/otra ubicación/);
+    expect(await markShort(c, pend[0].id)).toMatch(/otra ubicación/i);
     const [newPassword] = await db.select().from(pickTasks).where(and(eq(pickTasks.orderId, ord.id), eq(pickTasks.status, "pending")));
     expect(newPassword.locationId).not.toBe(pend[0].locationId);
-    expect(await markShort(c, newPassword.id)).toMatch(/faltante/);
+    expect(await markShort(c, newPassword.id)).toMatch(/Faltantes/);
     expect((await db.select().from(orders).where(eq(orders.id, ord.id)))[0].status).toBe("picked");
   });
 });

@@ -49,8 +49,8 @@ export default async function Suppliers({ searchParams }: { searchParams: Promis
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <EmptyRow columns={4} title={q ? `Ningún proveedor coincide con "${q}"` : "Todavía no hay proveedores"}>
-                {q ? undefined : "Los proveedores llegan de Fierro al sincronizar."}
+              <EmptyRow columns={4} title={q ? `Ningún proveedor coincide con "${q}"` : "Sin proveedores"}>
+                {q ? undefined : "Llegan de Fierro al sincronizar."}
               </EmptyRow>
             )}
             {rows.map((s) => (
@@ -59,9 +59,9 @@ export default async function Suppliers({ searchParams }: { searchParams: Promis
                   <Link href={`/proveedores/${s.id}`} className="link">
                     {s.name}
                   </Link>
-                  <span className="block text-muted sm:hidden">{s.createdBy ? `Creado por ${s.createdBy}` : "De Fierro"}</span>
+                  <span className="block text-muted sm:hidden">{s.createdBy ? `miDepo · ${s.createdBy}` : "Fierro"}</span>
                 </td>
-                <td className="hidden text-muted sm:table-cell">{s.createdBy ? `Creado por ${s.createdBy} · ${day(s.createdAt)}` : "De Fierro"}</td>
+                <td className="hidden text-muted sm:table-cell">{s.createdBy ? `miDepo · ${s.createdBy} · ${day(s.createdAt)}` : "Fierro"}</td>
                 <td className="text-right font-semibold tabular-nums">{s.receivings}</td>
                 <td className="hidden whitespace-nowrap text-muted md:table-cell">{s.last ? shortDate(new Date(s.last)) : "—"}</td>
               </tr>

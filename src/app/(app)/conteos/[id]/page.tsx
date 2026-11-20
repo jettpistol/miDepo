@@ -46,7 +46,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Conteo cerrado: el stock ya quedó ajustado."} />
+      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."} />
       <div className="mb-8 lg:mb-6 max-w-xl">
         <Progress done={countedCount} total={us.length} unit="ubicaciones" />
       </div>
@@ -57,7 +57,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             Revisión del supervisor {diffs.length > 0 && <small>{diffs.length}</small>}
           </h2>
           {diffs.length === 0 ? (
-            <Notice tone="ok">Lo contado hasta ahora coincide con el sistema.</Notice>
+            <Notice tone="ok">Sin diferencias.</Notice>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
@@ -110,7 +110,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
             className="mt-4 flex flex-wrap items-end gap-2"
             resetOnOk={false}
             hotkey="finish"
-            reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes. El recuento lo hace otra persona.` : undefined}
+            reason={waiting.size > 0 ? `Falta recontar ${waiting.size === 1 ? "1 ubicación" : `${waiting.size} ubicaciones`} con diferencias grandes, por otra persona.` : undefined}
             confirm={`Se ajustará el stock de ${countedCount} ubicaciones contadas${diffs.length ? ` (${diffs.length} diferencias)` : ""}.${countedCount < us.length ? ` Las ${us.length - countedCount} sin contar quedan como están.` : ""} ¿Cerrar el conteo?`}
           >
             <input type="hidden" name="id" value={id} />

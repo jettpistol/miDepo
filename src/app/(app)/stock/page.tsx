@@ -68,8 +68,8 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
           items={found.map((p) => ({ product: p, quantity: totals.get(p.id) ?? 0, extra: p.type !== "book" && <Badge>{TYPE_LABEL[p.type]}</Badge> }))}
           empty={
             <>
-              <p className="font-semibold">{q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}</p>
-              <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}</p>
+              <p className="font-semibold">{q ? `Nada coincide con "${q}"` : "Sin artículos"}</p>
+              <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{q ? "Prueba con menos palabras o con el código de barras completo." : "Llegan de Fierro al sincronizar."}</p>
             </>
           }
         />

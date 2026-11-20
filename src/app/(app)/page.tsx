@@ -69,7 +69,7 @@ export default async function Home() {
               Pedidos para preparar <small>{pending.length}</small>
             </h2>
             {pending.length === 0 ? (
-              <EmptyState title="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</EmptyState>
+              <EmptyState title="Sin pedidos pendientes">Llegan de Fierro al sincronizar.</EmptyState>
             ) : (
               <>
                 <PendingTable rows={pending.slice(0, FIRST_N)} />

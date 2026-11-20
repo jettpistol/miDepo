@@ -51,7 +51,7 @@ export default async function PutAway({ searchParams }: { searchParams: Promise<
       </div>
 
       {pending.length === 0 ? (
-        <EmptyState title="No hay nada por reponer">Lo que cierres en {zone === "receiving" ? "una recepción" : "una devolución (los artículos vendibles)"} aparecerá en esta lista.</EmptyState>
+        <EmptyState title="Nada por reponer" />
       ) : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8">
           <div className="lg:sticky lg:top-30">

@@ -51,7 +51,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
           </Link>
         </Notice>
       )}
-      {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Ya está cargado en Fierro y salió del depósito." : "Imprime las etiquetas y la lista de empaque; la oficina lo carga en Fierro."}</Notice>}
+      {ready && <Notice tone="ok">Pedido empacado en {ofOrder.length} {ofOrder.length === 1 ? "caja" : "cajas"}. {p.status === "shipped" ? "Despachado." : "Pendiente en Fierro."}</Notice>}
 
       <div className={`grid gap-5 lg:items-start lg:gap-8 ${editable ? "lg:grid-cols-[minmax(0,22rem)_1fr]" : ""} ${ready || !editable ? "mt-6" : ""}`}>
         {editable && (

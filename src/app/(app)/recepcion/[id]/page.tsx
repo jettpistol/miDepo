@@ -37,7 +37,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
             <ScanForm action={scan} context="receiving" hiddenFields={{ id }} fields={[{ name: "product", label: "Artículo", help: "Código, nombre o autor" }]} quantity={1} button="Sumar" />
             {expected > 0 && <Progress done={received} total={expected} unit="unidades" />}
             <div className="flex flex-wrap gap-2">
-              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Todavía no escaneaste nada." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? Después no se puede seguir escaneando."}>
+              <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={received === 0 ? "Sin artículos escaneados." : undefined} confirm={withDifference > 0 ? `Hay ${withDifference} artículos con una cantidad distinta a la esperada. ¿Cerrar la recepción igual?` : "¿Cerrar la recepción? No se podrá seguir escaneando."}>
                 Cerrar recepción
               </ActionButton>
             </div>
@@ -47,7 +47,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
       ) : (
         <div className="space-y-6">
           <Notice tone="ok">
-            Recepción cerrada con {received} unidades. {r.sentToFierro ? "Ya está cargada en Fierro." : "Falta cargarla en Fierro."}{" "}
+            Recepción cerrada con {received} unidades. {r.sentToFierro ? "Cargada en Fierro." : "Pendiente en Fierro."}{" "}
             <Link href="/reposicion" className="font-semibold underline underline-offset-[3px]" {...hotkey("primary", "Ir a reposición")}>
               Ir a reposición
             </Link>
@@ -60,7 +60,7 @@ export default async function ReceivingDetail({ params }: { params: Promise<{ id
 }
 
 function Lines({ lines, id, editable = false }: { lines: { l: typeof receivingLines.$inferSelect; title: string; code: string }[]; id: number; editable?: boolean }) {
-  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay artículos. Escanea el primero.</p>;
+  if (lines.length === 0) return <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Sin artículos.</p>;
   return (
     <div className="table-wrap">
       <table className="data-table">

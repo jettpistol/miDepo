@@ -163,7 +163,7 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
         : (await tx.select().from(countLines).where(eq(countLines.countId, id))).map((l) => ({ productId: l.productId, delta: l.countedQty - (l.system ?? l.countedQty) }));
     }
     await connector(tx, company).submit(doc);
-    return `${EXPORT_NAME[type]} ${doc.reference}: marcado como cargado en Fierro.`;
+    return `${EXPORT_NAME[type]} ${doc.reference}: cargado en Fierro.`;
   });
 }
 

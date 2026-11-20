@@ -37,7 +37,7 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
         } back={{ href: `/conteos/${id}`, text: row.k.name }} />
       {firstCounter && (
         <div className="mb-5 max-w-xl">
-          <Notice tone="warn">Este recuento lo tiene que hacer otra persona.</Notice>
+          <Notice tone="warn">El recuento debe hacerlo otra persona.</Notice>
         </div>
       )}
       <div className={open ? "grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-8" : "max-w-3xl"}>
@@ -50,7 +50,7 @@ export default async function CountLocation({ params }: { params: Promise<{ id: 
           </div>
         )}
         {lines.length === 0 ? (
-          <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no se contó nada en esta ubicación.</p>
+          <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Sin artículos contados.</p>
         ) : (
           <ul className="ruled-list framed">
             {lines.map(({ l, title, code }) => (

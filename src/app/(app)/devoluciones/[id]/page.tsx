@@ -56,7 +56,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
                 </div>
               </fieldset>
             </ScanForm>
-            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Todavía no escaneaste ningún artículo." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock y ya no se puede corregir.">
+            <ActionButton action={close} hotkey="finish" hiddenFields={{ id }} className="btn w-full" reason={lines.length === 0 ? "Sin artículos escaneados." : undefined} confirm="¿Cerrar la devolución? Los artículos entran al stock y no se podrá corregir.">
               Cerrar devolución
             </ActionButton>
           </div>
@@ -70,7 +70,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
             ))}
           </div>
           {lines.length === 0 ? (
-            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Todavía no hay artículos. Escanea el primero.</p>
+            <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Sin artículos.</p>
           ) : (
             <ul className="ruled-list framed">
               {lines.map(({ l, title, code }) => (

@@ -48,7 +48,7 @@ export async function loginWithPin(_: Result, f: FormData): Promise<Result> {
   return attempt(async () => {
     const slug = String(f.get("company") ?? "").toLowerCase().trim();
     const pin = String(f.get("pin") ?? "").trim();
-    if (!slug) throw new UserError("AUTH-04", "Escribe el código de tu empresa. Te lo da tu supervisor.");
+    if (!slug) throw new UserError("AUTH-04", "Escribe el código de empresa.");
     if (!VALID_PIN.test(pin)) throw new UserError("AUTH-05", "El PIN tiene 6 dígitos.");
     const user = await withRateLimit(`pin:${slug}:${await source()}`, async () => {
       const db = await getDb();

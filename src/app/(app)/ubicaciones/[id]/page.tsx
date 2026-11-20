@@ -39,7 +39,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
         )}
       </PageHeader>
       {contents.length === 0 ? (
-        <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Esta ubicación está vacía.</p>
+        <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Vacía.</p>
       ) : (
         <>
           <div className="mb-2 flex justify-end">

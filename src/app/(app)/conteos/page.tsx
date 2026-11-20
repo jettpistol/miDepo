@@ -66,9 +66,7 @@ export default async function Counts({ searchParams }: { searchParams: Promise<{
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <EmptyRow columns={4} title={q ? `Ningún conteo coincide con "${q}"` : "No hay conteos"}>
-                  {q ? undefined : can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor cree un conteo, aparecerá aquí."}
-                </EmptyRow>
+                <EmptyRow columns={4} title={q ? `Ningún conteo coincide con "${q}"` : "Sin conteos"} />
               )}
               {rows.map(({ k, total, countedCount }) => (
                 <tr key={k.id}>

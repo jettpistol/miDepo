@@ -80,13 +80,13 @@ export default async function PickingOrder({ params }: { params: Promise<{ id: s
               </>
             ) : p.status === "picked" ? (
               <Notice tone="ok">
-                <p className="mb-3 text-base">Picking terminado. {shortages.length > 0 ? "Sale con faltantes." : "Está completo."}</p>
+                <p className="mb-3 text-base">Picking terminado. {shortages.length > 0 ? "Con faltantes." : "Completo."}</p>
                 <Link href={`/empaque/${id}`} className="btn w-full" {...hotkey("primary")}>
                   Ir a empacar
                 </Link>
               </Notice>
             ) : (
-              <Notice tone="ok">Este pedido ya pasó por empaque.</Notice>
+              <Notice tone="ok">Pedido en empaque.</Notice>
             )}
           </div>
 

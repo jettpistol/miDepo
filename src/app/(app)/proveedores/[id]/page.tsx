@@ -16,7 +16,7 @@ export default async function SupplierDetail({ params, searchParams }: { params:
   if (!s) notFound();
   const page = requestedPage((await searchParams).pagina);
   const list = await receivingRows(db, company.id, eq(suppliers.id, s.id), paging(page));
-  const origin = s.createdBy ? `Creado en miDepo por ${s.createdBy}, ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "America/Argentina/Buenos_Aires" }).format(s.createdAt)}` : "De Fierro";
+  const origin = `Origen: ${s.createdBy ? `miDepo · ${s.createdBy} · ${new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Argentina/Buenos_Aires" }).format(s.createdAt)}` : "Fierro"}`;
 
   return (
     <>
@@ -24,7 +24,7 @@ export default async function SupplierDetail({ params, searchParams }: { params:
       <h2 className="section-title">
         Recepciones <small>{list.total}</small>
       </h2>
-      <ReceivingsTable rows={list.rows} showSupplier={false} empty={{ title: "Todavía no hay recepciones de este proveedor" }} />
+      <ReceivingsTable rows={list.rows} showSupplier={false} empty={{ title: "Sin recepciones" }} />
       <Pager base={`/proveedores/${s.id}`} params={{}} page={page} total={list.total} />
     </>
   );
