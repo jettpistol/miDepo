@@ -4,7 +4,7 @@ Picking es buscar en las ubicaciones lo que pide un pedido. miDepo genera el rec
 
 ## Tomar un pedido
 
-1. Ve a **Picking**. Los pedidos pendientes están ordenados del más antiguo al más reciente.
+1. Ve a **Picking**. Los pedidos pendientes están ordenados del más antiguo al más reciente, con los **Urgentes** primero.
 2. Toca **Preparar** en el primero.
 
 Desde ese momento el pedido es tuyo: nadie más lo puede tomar.
@@ -20,6 +20,10 @@ A la izquierda está la **parada actual**: la ubicación en grande, el artículo
 3. Toma los artículos y escanea **uno** (campo 2).
 4. Revisa la **cantidad**: ya viene con lo que pide la parada.
 5. Confirma. La parada queda como **Tomado** y aparece la siguiente.
+
+### Pedidos urgentes
+
+Un supervisor marca un pedido con **Marcar urgente** (arriba, en el pedido): pasa al principio de Picking y de Empaque. **Quitar urgencia** lo devuelve a su lugar. Un pedido ya empacado no cambia.
 
 ### Cambiar el orden
 

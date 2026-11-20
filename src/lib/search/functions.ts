@@ -28,7 +28,7 @@ const SCREEN_WORDS: Record<string, string> = {
   "/": "inicio home tablero resumen hoy",
   "/recepcion": "recibir ingreso entrada llegada proveedor remito compra mercaderia",
   "/reposicion": "guardar ubicar acomodar estante put away putaway",
-  "/picking": "pedidos preparar sacar recoger orden ventas",
+  "/picking": "pedidos preparar sacar recoger orden ventas urgente prioridad corte mismo dia",
   "/empaque": "empacar cajas embalar despacho envio packing",
   "/devoluciones": "devolucion retorno vuelve cliente consignacion",
   "/conteos": "contar inventario recuento ciclico auditoria",
