@@ -127,7 +127,7 @@ export function ActivityChart({ days }: { days: Day[] }) {
         <div className="relative h-36 border-b border-line-strong">
           <span className="absolute inset-x-0 top-0 border-t border-dashed border-line" />
           <span className="absolute inset-x-0 top-1/2 border-t border-dashed border-line" />
-          {empty && <p className="absolute inset-0 grid place-items-center"><span className="bg-surface px-2 text-sm text-muted">Sin movimientos en estos 7 días</span></p>}
+          {empty && <p className="absolute inset-0 grid place-items-center"><span className="bg-surface px-2 text-sm text-muted">Sin movimientos</span></p>}
           <div className="absolute inset-0 grid grid-cols-7">
             {days.map((d, i) => (
               <div key={d.key} tabIndex={0} className="group relative flex items-end justify-center gap-0.5 rounded-t-control outline-none hover:bg-sunken/70 focus-visible:bg-sunken">

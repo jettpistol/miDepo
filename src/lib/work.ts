@@ -122,7 +122,7 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
       date: r.date,
     })),
     ...returnRows.map(({ d, customer, units }): Task => ({ kind: "return", id: d.id, name: d.number, detail: customer, href: `/devoluciones/${d.id}`, assignedTo: d.assignedTo, takenBy: null, done: units, total: 0, verb: "Seguir", date: d.date })),
-    ...countRows.map(({ k, total, counted }): Task => ({ kind: "count", id: k.id, name: k.name, detail: "Conteo", href: `/conteos/${k.id}`, assignedTo: k.assignedTo, takenBy: null, done: counted, total, verb: "Contar", date: k.date })),
+    ...countRows.map(({ k, total, counted }): Task => ({ kind: "count", id: k.id, name: k.name, detail: `${total} ubicaciones`, href: `/conteos/${k.id}`, assignedTo: k.assignedTo, takenBy: null, done: counted, total, verb: "Contar", date: k.date })),
     // A zone is work only while it holds something to put away.
     ...zoneRows
       .filter((z) => z.units > 0)
@@ -130,13 +130,13 @@ export async function openTasks(db: DB, companyId: number): Promise<Task[]> {
         kind: "putaway",
         id: z.id,
         name: z.type === "receiving" ? "Desde Recepción" : "Desde Devoluciones",
-        detail: `${units} unidades por guardar`,
+        detail: `${units} unidades`,
         href: z.type === "receiving" ? "/reposicion" : "/reposicion?zona=devoluciones",
         assignedTo: z.assignedTo,
         takenBy: null,
         done: 0,
         total: units,
-        verb: "Guardar",
+        verb: "Reponer",
         date: new Date(0),
       })),
   ];
@@ -216,7 +216,7 @@ export async function orderStages(db: DB, companyId: number) {
     { key: "in_picking", label: "En preparación", n: n("in_picking"), href: "/picking" },
     { key: "to_control", label: "Para controlar", n: n("to_control"), href: "/control" },
     { key: "picked", label: "Para empacar", n: n("picked"), href: "/empaque" },
-    { key: "packed", label: "Empacados, sin cargar en Fierro", n: n("packed"), href: "/fierro" },
+    { key: "packed", label: "Para cargar en Fierro", n: n("packed"), href: "/fierro" },
   ];
 }
 

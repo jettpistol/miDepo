@@ -54,7 +54,7 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/recepcion'); const assignedHref = await p.locator('tbody a[href^="/recepcion/"]').nth(2).getAttribute('href');
   await p.goto(BASE + assignedHref); const assignedNumber = (await p.textContent('h1')).split(' ·')[0].trim();
   await p.click('button[aria-label="Asignado a"]'); await p.keyboard.type('Martín'); await p.keyboard.press('Enter');
-  await p.waitForSelector('text=ahora es de Martín Sosa'); step(`assigned ${assignedNumber} to Martín Sosa: ok`);
+  await p.waitForSelector('[role=status]:has-text("Asignado a Martín Sosa")'); step(`assigned ${assignedNumber} to Martín Sosa: ok`);
 
   // Receiving
   await p.goto(BASE + '/recepcion'); await p.click('a[href^="/recepcion/"]'); await p.waitForSelector('#scan-product');
