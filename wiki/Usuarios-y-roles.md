@@ -6,7 +6,7 @@ Esta página es para administradores.
 
 | Tarea | Operario | Supervisor | Administrador |
 |---|:-:|:-:|:-:|
-| Recepción, reposición, picking, empaque | Sí | Sí | Sí |
+| Recepción, reposición, picking, control, empaque | Sí | Sí | Sí |
 | Devoluciones, mover, consultar stock | Sí | Sí | Sí |
 | Contar ubicaciones | Sí | Sí | Sí |
 | Ver pedidos, proveedores, clientes y movimientos | Sí | Sí | Sí |
@@ -17,6 +17,7 @@ Esta página es para administradores.
 | Sincronizar y cargar en Fierro | — | Sí | Sí |
 | Crear y desactivar usuarios | — | — | Sí |
 | [Editar el manual](Editar-el-manual) | — | — | Sí |
+| [Control de pedidos](Ajustes#control-de-pedidos) | — | — | Sí |
 
 ## Nuevo usuario
 

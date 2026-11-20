@@ -9,7 +9,7 @@ type Order = Pick<typeof orders.$inferSelect, "id" | "urgent" | "status">;
 
 /** The "Urgente" badge, and for supervisors the switch, while the order still has work in it. */
 export function Urgency({ session, order }: { session: Session; order: Order }) {
-  const open = ["pending", "in_picking", "picked"].includes(order.status);
+  const open = ["pending", "in_picking", "to_control", "picked"].includes(order.status);
   return (
     <>
       {order.urgent && <Badge tone="danger">Urgente</Badge>}

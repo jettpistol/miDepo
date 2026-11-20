@@ -1,7 +1,7 @@
 /**
  * Full walkthrough in a real browser: receiving, put-away, picking, packing, return, count,
  * keyboard shortcuts (several steps below press F-keys instead of clicking),
- * Fierro, the registers (orders, suppliers, customers, movements), per-user colour, phone login with a PIN, and separation between companies.
+ * Fierro, the registers (orders, suppliers, customers, movements), per-user colour, phone login with a PIN, separation between companies, and the Control step.
  * Needs Playwright and miDepo running on localhost:3000 with freshly loaded demo data:
  *   npm run db:reset && npm run dev        (in another terminal)
  *   node tests/walkthrough.e2e.js [folder-for-screenshots]
@@ -93,7 +93,7 @@ async function warning(p, field, value) {
 
   // Picking
   await p.goto(BASE + '/picking'); await shot('picking-list');
-  await p.click('button:has-text("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector(STOP);
+  await p.click('button:text-is("Preparar")'); await p.waitForURL(/\/picking\/\d+/); await p.waitForSelector(STOP);
   const orderId = p.url().split('/').pop(); await shot('picking-stop');
   // The browser's back button shows the list as it is now: the order is in progress, not pending.
   const taken = await p.textContent('h1'); await p.goBack(); await p.waitForURL(BASE + '/picking');
@@ -231,7 +231,7 @@ async function warning(p, field, value) {
   step('supervisor cannot open users: ' + ((await p.goto(BASE + '/usuarios'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
 
   // Light/dark from the top bar, saved at once
-  await p.goto(BASE + '/'); await p.click('summary[aria-label^="Tema:"] >> visible=true'); const saved = p.waitForResponse((r) => r.request().method() === 'POST');
+  await p.goto(BASE + '/'); await p.waitForLoadState('networkidle'); await p.click('summary[aria-label^="Tema:"] >> visible=true'); const saved = p.waitForResponse((r) => r.request().method() === 'POST');
   await p.click('details[open] button:has-text("Oscuro")'); await saved; await p.reload(); await shot('home-dark-switch');
   step('theme after reload: ' + ((await p.getAttribute('html', 'data-theme')) === 'dark' ? 'dark' : fail('not saved')));
   await p.click('summary[aria-label^="Tema:"] >> visible=true'); const back = p.waitForResponse((r) => r.request().method() === 'POST'); await p.click('details[open] button:has-text("Claro")'); await back;
@@ -261,7 +261,7 @@ async function warning(p, field, value) {
   await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Iniciar sesión")'); await m.waitForURL(BASE + '/');
   await m.screenshot({ path: `${OUT}/m-home.png`, caret: 'initial' });
   step('phone accent: ' + await m.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
-  await m.goto(BASE + '/picking'); await m.click('button:has-text("Preparar")'); await m.waitForSelector(STOP); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
+  await m.goto(BASE + '/picking'); await m.click('button:text-is("Preparar")'); await m.waitForSelector(STOP); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
   await m.click('button:has-text("Soltar pedido")'); await m.waitForURL(/\/picking\?soltado=/); step('drop order → ' + (await m.textContent('main')).match(/Pedido \S+ soltado[^.]*/)?.[0]);
   await m.goto(BASE + '/mas'); await m.screenshot({ path: `${OUT}/m-more.png`, caret: 'initial' });
   step('operator does not see Fierro: ' + (!(await m.textContent('main')).includes('Fierro') ? 'ok' : fail('Fierro visible')));
@@ -290,6 +290,24 @@ async function warning(p, field, value) {
   step('users: role changed → ' + (await o.textContent('dialog[open] [role=status]')).trim()); await o.keyboard.press('Escape');
   await o.click('button:has-text("Nuevo")'); await o.fill('#name', 'Prueba Recorrido'); await o.fill('#email', 'recorrido@demo.test'); await o.fill('#pin', '345678');
   await o.click('button:has-text("Crear usuario")'); await o.waitForSelector('main td:has-text("Prueba Recorrido")'); step('users: created from + Nuevo');
+
+  // Batch picking: every pending order in one route, totals per shelf, split into trays
+  await o.goto(BASE + '/cuenta#lotes'); await o.click('#lotes button[aria-haspopup=listbox]'); await o.keyboard.type('bandeja'); await o.keyboard.press('Enter');
+  await o.click('#lotes button:has-text("Guardar")'); await o.waitForSelector('#lotes [role=status]'); step('batch sorting → ' + (await o.textContent('#lotes [role=status]')).trim());
+  await o.goto(BASE + '/picking'); await o.waitForLoadState('networkidle'); await o.screenshot({ path: `${OUT}/picking-take-all.png`, caret: 'initial' });
+  o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Preparar todos")'); await o.waitForURL(/\/picking\/lote\/\d+/); await o.waitForSelector(STOP);
+  await o.screenshot({ path: `${OUT}/batch.png`, fullPage: true, caret: 'initial' });
+  step('batch: ' + (await o.textContent('h1')).trim() + ' · ' + (await o.textContent('main header p')).trim());
+  const bShelf = await o.getAttribute('.shelfmark-xl', 'title'); const bCode = await o.getAttribute('[data-scan-code]', 'data-scan-code');
+  step('  wrong shelf, before the click → ' + await warning(o, 'location', bShelf === 'A-01-1' ? 'A-01-2' : 'A-01-1')); await o.fill('#scan-location', '');
+  step('  batch pick → ' + await scan(o, { location: bShelf, product: bCode }));
+  await o.waitForSelector('main tbody button:text-is("Devolver")'); o.once('dialog', (d) => d.accept()); await o.click('main tbody button:text-is("Devolver")');
+  await o.waitForSelector('main tbody button:text-is("Devolver")', { state: 'detached' }); step('  batch undo: the stop is pending again');
+  await o.goto(BASE + '/picking'); step('batch listed in Picking: ' + ((await o.$('main a[href^="/picking/lote/"]')) ? 'ok' : fail('missing')));
+  await o.setViewportSize({ width: 390, height: 844 }); await o.click('main a[href^="/picking/lote/"]'); await o.waitForSelector(STOP);
+  await o.screenshot({ path: `${OUT}/m-batch.png`, fullPage: true, caret: 'initial' });
+  step('phone batch scrolls sideways: ' + ((await o.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
+  await o.setViewportSize({ width: 1440, height: 900 });
   await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
   await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
   await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');
@@ -308,6 +326,32 @@ async function warning(p, field, value) {
   await ma.goto(BASE + '/ayuda/editar/Picking'); await ma.waitForSelector('textarea'); await ma.screenshot({ path: `${OUT}/m-editor.png`, caret: 'initial' });
   await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
   step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
+
+  // Control step (demo company, so the Ovnipress circuit above is untouched).: turn it on, pick, control.
+  await o.goto(BASE + '/cuenta#control'); await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, pedidos grandes")');
+  await o.fill('#minUnits', '1'); step('settings, 1 unit, before the click → ' + ((await o.$eval('#minUnits', (e) => e.validationMessage)) || fail('1 unit accepted')));
+  await o.click('#mode'); await o.click('[role=option]:has-text("Paso de control, todos los pedidos")'); await o.click('button:has-text("Guardar control")'); await o.waitForSelector('#control [role=status]:has-text("Guardado")');
+  await o.locator('#control').screenshot({ path: `${OUT}/settings.png` });
+  await o.goto(BASE + '/picking'); await o.click('button:has-text("Preparar")'); await o.waitForURL(/\/picking\/\d+/);
+  const ctrlId = o.url().split('/').pop(); const ctrlCodes = {};
+  await o.waitForSelector(STOP);
+  while (await o.$(STOP)) {
+    const shelf = await o.getAttribute('.shelfmark-xl', 'title');
+    const title = (await o.textContent('.bg-accent p.text-lg')).trim(); const code = await o.getAttribute('[data-scan-code]', 'data-scan-code'); ctrlCodes[title] = code;
+    const before = title + shelf; await scan(o, { location: shelf, product: code });
+    await o.waitForFunction((b) => ((document.querySelector('.bg-accent p.text-lg')?.textContent ?? '').trim() + (document.querySelector('.shelfmark-xl')?.getAttribute('title') ?? '')) !== b || !document.querySelector('section[aria-label="Parada actual"]'), before, { timeout: 15000 });
+  }
+  await o.waitForSelector('text=Antes de empacar pasa por control'); await o.keyboard.press('F2'); await o.waitForURL(`${BASE}/control/${ctrlId}`); await o.waitForSelector('#scan-product');
+  const ctrlLines = await o.$$eval('table tbody tr', (trs) => trs.map((tr) => ({ title: tr.children[0].textContent.trim(), picked: Number(tr.children[1].textContent) })));
+  let k = 0;
+  for (const l of ctrlLines.filter((l) => l.picked > 0)) { const msg = await scan(o, { product: ctrlCodes[l.title] }, l.picked); if (k++ === 0) { step('  control → ' + msg); await o.screenshot({ path: `${OUT}/control.png`, caret: 'initial' }); } }
+  await o.keyboard.press('F9'); await o.waitForSelector('text=Controlado por'); step('control finished');
+  await o.goto(BASE + '/control'); await o.waitForSelector('text=No hay pedidos esperando control'); await o.screenshot({ path: `${OUT}/control-list.png`, caret: 'initial' });
+  await o.setViewportSize({ width: 390, height: 844 });
+  for (const [path, name] of [['/control', 'm-control-list'], [`/control/${ctrlId}`, 'm-control-done'], ['/cuenta#control', 'm-settings']]) {
+    await o.goto(BASE + path); await o.screenshot({ path: `${OUT}/${name}.png`, fullPage: true, caret: 'initial' });
+    if (await o.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) fail(`${path} scrolls sideways on a phone`);
+  }
   await browser.close();
   console.log(errors.length ? 'ERRORS:\n' + [...new Set(errors)].join('\n') : 'NO CONSOLE ERRORS OR 5xx');
   if (errors.length) process.exit(1);

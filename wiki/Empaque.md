@@ -1,6 +1,8 @@
 # Empaque
 
-Empaque es preparar las cajas de un pedido que ya pasó por picking. Cada artículo se escanea al entrar a la caja: así la lista de empaque dice la verdad.
+Empaque es preparar las cajas de un pedido que ya pasó por picking. Cada artículo se escanea al entrar a la caja: así la lista de empaque dice la verdad, y lo preparado queda controlado por segunda vez.
+
+Si la empresa activó el paso de [Control](Control), el pedido llega acá después de pasar por él. Si pide que el control lo haga otra persona y el pedido no pasó por Control, quien lo preparó no puede empacarlo. Ver [Ajustes](Ajustes#control-de-pedidos).
 
 ## Paso a paso
 

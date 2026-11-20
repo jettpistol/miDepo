@@ -1,7 +1,8 @@
-import type { Role } from "@/db/schema";
+import type { Role, companies } from "@/db/schema";
 import type { IconName } from "@/components/Icon";
 
-export type MenuItem = { href: string; name: string; icon: IconName; help: string; minRole?: Role };
+/** `control`: shown only while the company has the Control step on (Ajustes, admins). */
+export type MenuItem = { href: string; name: string; icon: IconName; help: string; minRole?: Role; needs?: "control" };
 
 export const MENU: { group: string; items: MenuItem[] }[] = [
   {
@@ -11,6 +12,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
       { href: "/recepcion", name: "Recepción", icon: "receiving", help: "Contar lo que llega" },
       { href: "/reposicion", name: "Reposición", icon: "putaway", help: "Llevar lo recibido a su ubicación" },
       { href: "/picking", name: "Picking", icon: "picking", help: "Preparar pedidos" },
+      { href: "/control", name: "Control", icon: "check", help: "Contar de nuevo lo preparado", needs: "control" },
       { href: "/empaque", name: "Empaque", icon: "packing", help: "Preparar las cajas" },
       { href: "/devoluciones", name: "Devoluciones", icon: "return", help: "Revisar artículos que vuelven" },
       { href: "/conteos", name: "Conteos", icon: "count", help: "Contar ubicaciones" },
@@ -45,3 +47,8 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
     ],
   },
 ];
+
+/** The menu this person sees: their role, and the steps their company has on. */
+export function menuFor(role: Role, company: Pick<typeof companies.$inferSelect, "controlMinUnits">, can: (role: Role, min: Role) => boolean) {
+  return MENU.map((g) => ({ ...g, items: g.items.filter((i) => can(role, i.minRole ?? "operator") && (i.needs !== "control" || company.controlMinUnits != null)) })).filter((g) => g.items.length > 0);
+}

@@ -9,6 +9,7 @@ import { hotkey } from "@/lib/hotkeys";
 import { can, requireSession } from "@/lib/session";
 import { assignablePeople, isMine, lastPickedOrder, isUnassigned, KIND, movedToday, openTasks, orderStages, weekActivity, zoneStock, type Task } from "@/lib/work";
 import { loadOpenOrders } from "./picking/Tables";
+import { batchNumber } from "@/lib/flows/picking";
 
 /**
  * Inicio never grows with the work: each part shows a fixed number of rows and sums up the rest
@@ -89,6 +90,7 @@ export default async function Home() {
   const mine = tasks.filter((t) => isMine(t, user.id)).sort((a, b) => Number(b.takenBy === user.id) - Number(a.takenBy === user.id) || a.date.getTime() - b.date.getTime());
   const unassigned = tasks.filter(isUnassigned);
   const picking = openOrders.inProgress.filter((o) => o.p.takenBy === user.id);
+  const myBatches = openOrders.batches.filter((x) => x.b.takenBy === user.id);
   // One banner, for the order you scanned into last; the others are in "Asignado a ti".
   const current = picking.find((o) => o.p.number === lastPicked) ?? picking[0];
   // With nothing given to you, the oldest order nobody has is the next thing to do.
@@ -105,6 +107,16 @@ export default async function Home() {
         {supervisor && <span className="text-[13px] text-muted">{company.lastSync ? `Fierro sincronizado ${shortDate(company.lastSync)}` : "Fierro sin sincronizar"}</span>}
       </PageHeader>
 
+      {myBatches.map(({ b, nextShelf, orders: count }) => (
+        <Link key={`b${b.id}`} href={`/picking/lote/${b.id}`} className="mb-4 flex items-center gap-4 rounded-control bg-accent px-4 py-3 text-on-accent transition-colors duration-150 hover:bg-accent-hover" {...hotkey("primary", `Seguir con ${batchNumber(b.number)}`)}>
+          {nextShelf && <ShelfMark code={nextShelf} size="md" onAccent />}
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg leading-tight font-bold lg:text-base">Seguir con {batchNumber(b.number)}</span>
+            <span className="block text-sm opacity-85">{plural(count, "pedido", "pedidos")}</span>
+          </span>
+          <Icon name="arrow" className="size-6" />
+        </Link>
+      ))}
       {current && (
         <div className="mb-4 flex items-stretch overflow-hidden rounded-control bg-accent text-on-accent">
           <Link href={`/picking/${current.p.id}`} className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 transition-colors duration-150 hover:bg-accent-hover">
@@ -146,7 +158,7 @@ export default async function Home() {
             <>
               <ul className="-my-2 divide-y divide-line">
                 {mine.slice(0, MY_ROWS).map((t, i) => (
-                  <TaskRow key={`${t.kind}-${t.id}`} t={t} first={i === 0 && !current} />
+                  <TaskRow key={`${t.kind}-${t.id}`} t={t} first={i === 0 && !current && myBatches.length === 0} />
                 ))}
               </ul>
               <Rest tasks={mine.slice(MY_ROWS)} />
@@ -158,7 +170,7 @@ export default async function Home() {
                 <>
                   <p className="mt-0.5 mb-2 text-sm text-muted">Próximo sin asignar</p>
                   <ul className="divide-y divide-line border-y border-line">
-                    <TaskRow t={next} first={!current} />
+                    <TaskRow t={next} first={!current && myBatches.length === 0} />
                   </ul>
                 </>
               ) : (
@@ -169,7 +181,7 @@ export default async function Home() {
         </Card>
 
         <Card title="Pedidos abiertos" count={stages.reduce((s, x) => s + x.n, 0)} link={{ href: "/picking", text: "Picking" }}>
-          <StageBar stages={stages.map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
+          <StageBar stages={stages.filter((s) => s.key !== "to_control" || s.n > 0 || company.controlMinUnits != null).map((s) => ({ ...s, href: s.key === "packed" ? (supervisor ? "/fierro" : "/empaque") : s.href }))} />
         </Card>
 
         <Card title="Últimos 7 días" count={days.reduce((s, d) => s + d.received + d.picked + d.shipped, 0)}>

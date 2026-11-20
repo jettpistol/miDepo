@@ -4,12 +4,17 @@ import { UserError } from "../errors";
 import { findProduct } from "../stock";
 import { validQuantity, type Ctx } from "./common";
 import { articleName } from "@/lib/article";
+import { blockedCheck, settingsOf } from "./control";
 
 async function orderToPack(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
   if (!p) throw new UserError("PACK-01", "No se encontró ese pedido.");
   if (p.status === "pending" || p.status === "in_picking") throw new UserError("PACK-02", "Este pedido todavía no terminó el picking.");
+  if (p.status === "to_control") throw new UserError("PACK-20", "Este pedido todavía no pasó por control.");
   if (p.status !== "picked") throw new UserError("PACK-03", "Este pedido ya está empacado.");
+  // When the order skipped Control, packing is the check.
+  const blocked = p.controlledBy == null ? blockedCheck(await settingsOf(c.db, c.companyId), p, c.userId, "empacar") : null;
+  if (blocked) throw new UserError("PACK-21", blocked);
   return p;
 }
 
@@ -75,7 +80,7 @@ export async function finishPacking(c: Ctx, orderId: number) {
   const ofOrder = await c.db.select().from(boxes).where(eq(boxes.orderId, orderId));
   if (ofOrder.some((k) => k.status === "open")) throw new UserError("PACK-11", "Cierra la caja abierta antes de terminar.");
   if (ofOrder.length === 0 && lines.some((l) => l.picked > 0)) throw new UserError("PACK-12", "Todavía no hay ninguna caja.");
-  await c.db.update(orders).set({ status: "packed" }).where(eq(orders.id, orderId));
+  await c.db.update(orders).set({ status: "packed", packedBy: c.userId }).where(eq(orders.id, orderId));
   return `Pedido ${order.number} empacado en ${ofOrder.length} caja${ofOrder.length === 1 ? "" : "s"}.`;
 }
 
