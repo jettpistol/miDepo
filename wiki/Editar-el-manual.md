@@ -6,7 +6,7 @@ Los administradores pueden cambiar cualquier página de este manual para que dig
 
 1. Abre la página en el manual.
 2. Toca **Editar**, arriba a la derecha del texto. Solo aparece si eres administrador.
-3. Escribe a la izquierda. A la derecha ves cómo va a quedar. En el teléfono, cambia entre **Escribir** y **Vista previa**.
+3. Escribe a la izquierda. A la derecha ves cómo quedará. En el teléfono, cambia entre **Escribir** y **Vista previa**.
 4. Toca **Guardar** (o `Ctrl+S`, o `F2`).
 
 **Cancelar** (o `F3`) vuelve a la página sin guardar. Si cierras la pestaña con cambios sin guardar, el navegador pregunta antes.
@@ -23,11 +23,11 @@ El texto se escribe en Markdown: unos pocos signos que se convierten en formato.
 | **H3** | `### Paso` | Un subtítulo |
 | **B** (`Ctrl+B`) | `**importante**` | **importante** |
 | **I** (`Ctrl+I`) | `*aclaración*` | *aclaración* |
-| Código | `` `A-01-1` `` | `A-01-1`, para estantes, códigos y botones |
+| Código | `` `A-01-1` `` | `A-01-1`, para ubicaciones, códigos y botones |
 | Enlace (`Ctrl+K`) | `[Picking](Picking)` | Un enlace a otra página del manual o a una web |
 | Lista | `- algo` | Una lista con viñetas |
 | Lista numerada | `1. primero` | Pasos numerados |
-| Nota | `> Ojo con…` | Un recuadro destacado |
+| Nota | `> Atención:…` | Un recuadro destacado |
 | Tabla | `\| A \| B \|` | Una tabla |
 
 Selecciona el texto y toca un botón para darle ese formato; tócalo otra vez para quitarlo.
@@ -46,4 +46,4 @@ Si el manual de miDepo cambia una página que tu empresa ya había editado, al e
 
 - Crear páginas nuevas ni cambiar el índice de la izquierda.
 - Usar HTML: se muestra tal cual, como texto.
-- Quien no ingresó a miDepo lee el manual original, sin los cambios de tu empresa.
+- Quien no inició sesión en miDepo lee el manual original, sin los cambios de tu empresa.

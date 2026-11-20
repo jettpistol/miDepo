@@ -2,7 +2,7 @@
 
 - [Inicio del manual](Home)
 - [Primeros pasos](Primeros-pasos)
-- [Ingresar](Ingresar)
+- [Iniciar sesión](Ingresar)
 - [Cómo escanear](Como-escanear)
 - [Atajos de teclado](Atajos-de-teclado)
 - [Instalar en el teléfono](Instalar-en-el-telefono)
