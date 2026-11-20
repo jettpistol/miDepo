@@ -27,8 +27,7 @@ export default async function ReturnDetail({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }}>
-        <Assignee session={session} kind="return" id={d.id} value={d.assignedTo} open={d.status === "in_progress"} />
+      <PageHeader title={`Devolución ${d.number}`} subtitle={customer} back={{ href: "/devoluciones", text: "Devoluciones" }} meta={<Assignee session={session} kind="return" id={d.id} value={d.assignedTo} open={d.status === "in_progress"} />}>
         {open && (
           <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar ${d.number}? Se borra con todo lo escaneado. No se puede deshacer.`}>
             Cancelar devolución

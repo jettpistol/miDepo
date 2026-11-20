@@ -2,15 +2,17 @@ import { and, eq } from "drizzle-orm";
 import { PageHeader, EmptyState, Notice } from "@/components/ui";
 import { orders } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { assignees } from "@/components/Assignee";
 import { BatchesTable, InProgressTable, loadOpenOrders, PendingTable, TakeAllButton } from "./Tables";
 
 export const metadata = { title: "Picking" };
 
 export default async function Picking({ searchParams }: { searchParams: Promise<{ soltado?: string }> }) {
   const released = Number((await searchParams).soltado);
-  const { db, company, user } = await requireSession();
+  const session = await requireSession();
+  const { db, company, user } = session;
   const [dropped] = Number.isInteger(released) && released > 0 ? await db.select({ number: orders.number }).from(orders).where(and(eq(orders.id, released), eq(orders.companyId, company.id), eq(orders.status, "pending"))) : [];
-  const { inProgress, pending, batches } = await loadOpenOrders(db, company.id);
+  const [{ inProgress, pending, batches }, a] = await Promise.all([loadOpenOrders(db, company.id), assignees(session)]);
 
   return (
     <>
@@ -46,7 +48,7 @@ export default async function Picking({ searchParams }: { searchParams: Promise<
           </h2>
           {pending.length > 0 && <TakeAllButton count={pending.length} />}
         </div>
-        {pending.length === 0 ? <EmptyState title="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</EmptyState> : <PendingTable rows={pending} />}
+        {pending.length === 0 ? <EmptyState title="No hay pedidos pendientes">Los pedidos nuevos aparecen cuando se sincroniza con Fierro.</EmptyState> : <PendingTable rows={pending} a={a} />}
       </section>
     </>
   );

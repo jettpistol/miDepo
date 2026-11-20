@@ -48,8 +48,7 @@ export default async function StockCount({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."}>
-        <Assignee session={session} kind="count" id={k.id} value={k.assignedTo} open={isOpen} />
+      <PageHeader title={k.name} back={{ href: "/conteos", text: "Conteos" }} subtitle={isOpen ? undefined : "Cerrado. Stock ajustado."} meta={<Assignee session={session} kind="count" id={k.id} value={k.assignedTo} open={isOpen} />}>
         {isOpen && can(user.role, "supervisor") && (
           <ActionButton action={cancel} hiddenFields={{ id }} className="btn-soft" showOk={false} confirm={`¿Cancelar el conteo "${k.name}"? Se borra lo contado; el stock no cambia. No se puede deshacer.`}>
             Cancelar conteo
