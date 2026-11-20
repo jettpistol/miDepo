@@ -75,7 +75,7 @@ export function Progress({ done, total, unit = "" }: { done: number; total: numb
       <div className="h-1.5 min-w-12 flex-1 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
         <div className={`h-full transition-[width] duration-200 ${pct === 100 ? "bg-ok" : "bg-accent-text"}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold whitespace-nowrap tabular-nums">
+      <span className="min-w-[9ch] text-right text-sm font-semibold whitespace-nowrap tabular-nums">
         {done} de {total}
         {unit && ` ${unit}`}
       </span>
