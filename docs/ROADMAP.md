@@ -14,7 +14,7 @@ Where the project stands beyond what the README's "What is not done" lists. Last
 
 ## Hardware plan (labels, printers, scanners)
 
-Researched in [hardware/README.md](hardware/README.md); each phase waits for the owner's go-ahead.
+Researched in [hardware/README.md](hardware/README.md), which numbers the owner's six original items as phases; below is the order of work. Each step waits for the owner's go-ahead.
 
 1. **Research.** Done (2026-11-20).
 2. **Labels prepared for one click, through the print dialog.** A label model in millimetres, every standard size, the label catalogue (item label at receiving, box label at packing, location and totem labels, return condition sticker, test label), a queue of prepared labels with reprint, a test label with a ruler, demo printers and scanners behind an admin test mode, the device panel, and the Spanish manual pages (supported models, setup, troubleshooting). Also the scan clean-up: keyboard-layout fixes, add-ons dropped, UPC-A and ISBN-10 accepted.

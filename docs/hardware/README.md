@@ -6,6 +6,16 @@ Research done 2026-11-20 to plan labels, direct printing, the device panel, demo
 
 Chrome can drive label printers and barcode scanners directly, but **the answer depends on the operating system. On Android it works. On Windows the installed printer driver blocks it.** On an Android phone, Chrome can send raw ZPL or TSPL to a USB label printer over an OTG cable (WebUSB), to a Bluetooth Classic printer (Web Serial over RFCOMM, Chrome 138+), and to Zebra's Bluetooth Low Energy printers (Web Bluetooth). On a Windows desktop, a USB label printer installed with its driver is owned by `usbprint.sys`, so WebUSB fails with "Access denied". The only fix is to replace the driver with WinUSB, which removes the printer from Windows, so the print dialog and ZebraDesigner stop working on that computer. For miDepo this means three things. Phase 2 (direct printing) mainly benefits phones and the minority of Windows setups that expose a serial port. The browser print dialog at the exact label size stays the main route on Windows. The optional Windows helper is the only route that gives one-click raw printing to a USB printer on Windows without touching drivers, not only to wifi printers. Two printer languages cover almost every label printer a small Argentine warehouse is likely to own: **ZPL II** (Zebra; emulated by TSC, Honeywell, Godex, SATO, Citizen and most Chinese 4-inch models) and **TSPL** (TSC and nearly every cheap Chinese clone). Brother QL, Dymo and Zebra's CPCL-only ZQ220 are the exceptions, and they print only through the dialog. Scanners need no API at all: keyboard-wedge input already works everywhere. The work there is normalising what arrives: keyboard-layout substitutions, add-ons, UPC-A and ISBN-10. **No printer or scanner model in this document has been tested with miDepo.** Every compatibility claim comes from vendor specs, vendor emulation claims or reseller listings, and many sources were read only as search-engine summaries.
 
+## What miDepo already prints (2026-11-20)
+
+The research was written against an older copy of the app. Since then `main` has gained the following, which the phases below build on rather than replace:
+
+- **Receiving item labels** (D53): *Etiquetas* on a receiving prints one Code 128 label per received unit on the A4 product sheet (`src/app/(print)/imprimir/productos`).
+- **A 100 × 150 mm thermal box label** (D54): one per box, with recipient, carrier, tracking barcode, remito and the box code `<order>-C<n>` that Despacho scans. It goes through the print dialog with `@page { size: 100mm 150mm; margin: 0 }` (`src/app/(label)/`). It is miDepo's own label, not a carrier-issued one; carrier label integrations stay deferred.
+- A4 shelf labels (3 × 8), A4 box labels and the packing list, as before.
+
+So the label work starts by moving these existing layouts onto the shared millimetre model, then adds the missing sizes and labels from the catalogue below.
+
 ## Executive summary: what is and is not possible in Chrome
 
 ### Platform matrix
@@ -337,7 +347,7 @@ The practical rule for phase 1: **labels tied to an event are prepared automatic
 | Condition sticker | Devoluciones | Returned item graded | 50 × 25 mm | VENDIBLE / SALDO / DAÑADO, return id, item code | Code 128 | **No source found**; common practice |
 | Command barcode sheet | Any scanning station | From settings | A4 | "CERRAR CAJA", "SALTAR", quantity steps… | Code 128 | ShipHero (adoption elsewhere is inference) |
 | Printer test label | Device panel | On demand | Loaded stock | 50 mm ruler, dpi, language test lines, printer name | Code 128 + EAN-13 sample | Inference |
-| Carrier shipping label | Empaque | **Deferred** | 100 × 150 mm | — | — | Out of scope |
+| Carrier shipping label | Despacho | **Deferred** (miDepo's own 100 × 150 mm box label with carrier and tracking exists since D54) | 100 × 150 mm | — | — | Out of scope |
 
 Count tags and quarantine tags had no sources. Counts are recorded by scanning, so a "contado" tag adds little value, and neither label is recommended for phase 1.
 
