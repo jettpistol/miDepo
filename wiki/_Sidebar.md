@@ -2,7 +2,7 @@
 
 - [Inicio del manual](Home)
 - [Primeros pasos](Primeros-pasos)
-- [Ingresar](Ingresar)
+- [Iniciar sesión](Ingresar)
 - [Cómo escanear](Como-escanear)
 - [Atajos de teclado](Atajos-de-teclado)
 - [Instalar en el teléfono](Instalar-en-el-telefono)
@@ -24,9 +24,10 @@
 - [Bajas y faltantes](Bajas-y-faltantes)
 - [Trabajar con Fierro](Trabajar-con-Fierro)
 - [Usuarios y roles](Usuarios-y-roles)
+- [Editar el manual](Editar-el-manual)
 
 ### Ayuda
 
-- [Mi cuenta y colores](Mi-cuenta-y-colores)
+- [Ajustes](Ajustes)
 - [Problemas frecuentes](Problemas-frecuentes)
 - [Glosario](Glosario)

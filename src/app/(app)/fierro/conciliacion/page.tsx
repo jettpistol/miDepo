@@ -28,7 +28,7 @@ export default async function Reconciliation() {
       {unsent > 0 && (
         <div className="mb-6">
           <Notice tone="warn">
-            Hay {unsent} {unsent === 1 ? "documento sin cargar" : "documentos sin cargar"} en Fierro. Parte de estas diferencias se van a ir cuando los cargues.{" "}
+            Hay {unsent} {unsent === 1 ? "documento sin cargar" : "documentos sin cargar"} en Fierro. Parte de estas diferencias desaparecerán cuando los cargues.{" "}
             <Link href="/fierro" className="font-semibold underline underline-offset-[3px]">
               Ver pendientes
             </Link>
@@ -40,13 +40,13 @@ export default async function Reconciliation() {
       ) : (
         <>
           <p className="mb-3 max-w-[70ch] text-sm text-muted">
-            {rows.length === 300 ? "Las 300 diferencias más grandes" : `${rows.length} títulos con diferencia`}
+            {rows.length === 300 ? "Las 300 diferencias más grandes" : `${rows.length} artículos con diferencia`}
           </p>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Título</th>
+                  <th>Artículo</th>
                   <th className="hidden sm:table-cell">Código</th>
                   <th className="hidden text-right sm:table-cell">Depósito</th>
                   <th className="hidden text-right sm:table-cell">Fierro</th>

@@ -56,7 +56,7 @@ export default async function Receivings() {
               <tr>
                 <th>Recepción</th>
                 <th>Origen</th>
-                <th className="hidden text-right sm:table-cell">Títulos</th>
+                <th className="hidden text-right sm:table-cell">Artículos</th>
                 <th className="hidden text-right sm:table-cell">Esperadas</th>
                 <th className="hidden md:table-cell">Fecha</th>
                 <th>Estado</th>
@@ -65,7 +65,7 @@ export default async function Receivings() {
             <tbody>
               {openList.length === 0 && (
                 <EmptyRow columns={6} title="No hay recepciones abiertas">
-                  Las que avisa Fierro aparecen solas. Si llegó algo sin aviso, toca Nueva.
+                  Las que avisa Fierro aparecen automáticamente. Si llegó algo sin aviso, toca Nueva.
                 </EmptyRow>
               )}
               {openList.map(({ r, supplier, titles, expected, received }, i) => (
@@ -79,7 +79,7 @@ export default async function Receivings() {
                     <span className="font-medium">{supplier}</span>
                     <span className="block text-muted md:hidden">
                       <span className="sm:hidden">
-                        {plural(titles, "título", "títulos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
+                        {plural(titles, "artículo", "artículos")} · {r.fierroId ? `${expected} unidades esperadas` : "sin aviso de Fierro"} ·{" "}
                       </span>
                       {shortDate(r.date)}
                     </span>

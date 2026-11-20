@@ -2,20 +2,20 @@
 
 ## Qué hace miDepo y qué no
 
-miDepo se ocupa de **lo físico**: en qué estante está cada libro, qué hay que ir a buscar para un pedido, qué llegó y qué volvió.
+miDepo se ocupa de **lo físico**: en qué ubicación está cada artículo, qué hay que ir a buscar para un pedido, qué llegó y qué volvió.
 
-Todo lo demás sigue en Fierro: el catálogo, los clientes, los pedidos, los remitos, las facturas y las consignaciones. Por eso en miDepo **no se cargan pedidos ni se crean títulos**: llegan solos desde Fierro.
+Todo lo demás sigue en Fierro: el catálogo, los clientes, los pedidos, los remitos, las facturas y las consignaciones. Por eso en miDepo **no se cargan pedidos ni se crean artículos**: llegan automáticamente desde Fierro.
 
 ## La pantalla de Inicio
 
-Al entrar ves una tarjeta por cada tipo de trabajo, con un número grande: cuánto hay pendiente. Toca una tarjeta para ir a ese trabajo.
+Al iniciar sesión ves una tarjeta por cada tipo de trabajo, con un número grande: cuánto hay pendiente. Toca una tarjeta para ir a ese trabajo.
 
 Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir con PED-…** para retomarlo.
 
-## El recorrido de un libro
+## El recorrido de un artículo
 
 1. **Llega** al depósito: se cuenta en [Recepción](Recepcion).
-2. **Se guarda** en un estante: [Reposición](Reposicion).
+2. **Se repone** en su ubicación: [Reposición](Reposicion).
 3. Un cliente lo pide: se busca en [Picking](Picking).
 4. **Se empaca** en una caja: [Empaque](Empaque).
 5. La oficina hace el remito en Fierro y la caja **sale**.
@@ -23,14 +23,14 @@ Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir
 
 ## Tres reglas que evitan casi todos los problemas
 
-1. **Siempre escanea.** No confirmes de memoria: el estante y el libro se leen con el lector o la cámara.
-2. **Si no está, dilo.** En picking, toca **No está en el estante**. No busques por tu cuenta en otro lado sin avisarle a miDepo.
-3. **No muevas libros sin registrarlo.** Si cambias algo de lugar, usa [Mover](Mover). Un libro movido "a mano" es un libro perdido.
+1. **Siempre escanea.** No confirmes de memoria: la ubicación y el artículo se leen con el lector o la cámara.
+2. **Si no está, dilo.** En picking, toca **No está en la ubicación**. No busques por tu cuenta en otra ubicación sin registrarlo en miDepo.
+3. **No muevas artículos sin registrarlo.** Si cambias algo de ubicación, usa [Mover](Mover). Un artículo movido sin registrarlo es un artículo perdido.
 
 ## Roles
 
 - **Operario:** hace todo el trabajo del día.
-- **Supervisor:** además arma conteos, maneja las ubicaciones y trabaja con Fierro.
-- **Administrador:** además maneja los usuarios.
+- **Supervisor:** además crea conteos, gestiona las ubicaciones y trabaja con Fierro.
+- **Administrador:** además gestiona los usuarios.
 
 Más detalle en [Usuarios y roles](Usuarios-y-roles).

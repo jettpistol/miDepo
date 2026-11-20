@@ -15,7 +15,7 @@ export function Cover({ productId, version, className = "h-20 w-14" }: { product
 
 /** Underlined tabs that switch every product list between cards and table, for this person. */
 export function ViewSwitch({ view }: { view: ListView }) {
-  const tab = (v: ListView, icon: "cards" | "rows", label: string) => (
+  const tab = (v: ListView, icon: "cards" | "bullets", label: string) => (
     <button
       name="view"
       value={v}
@@ -28,7 +28,7 @@ export function ViewSwitch({ view }: { view: ListView }) {
   return (
     <form action={setListView} aria-label="Vista" className="flex gap-4">
       {tab("cards", "cards", "Tarjetas")}
-      {tab("table", "rows", "Lista")}
+      {tab("table", "bullets", "Lista")}
     </form>
   );
 }

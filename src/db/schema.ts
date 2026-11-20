@@ -445,3 +445,25 @@ export const adjustmentLines = pgTable(
 );
 
 export const now = sql`now()`;
+
+// ───────────── Manual ─────────────
+
+/**
+ * A company's own version of a manual page (wiki/<page>.md), written by an administrator in
+ * /ayuda/editar. That company's users read this instead of the file; everyone else, and anyone
+ * not logged in, reads the file. Deleting the row puts the original back.
+ */
+export const wikiEdits = pgTable(
+  "wiki_edits",
+  {
+    companyId: integer("company_id").notNull().references(() => companies.id),
+    /** File name without .md, e.g. "Picking". */
+    page: text("page").notNull(),
+    markdown: text("markdown").notNull(),
+    /** Hash of the file this edit started from: when the file changes later, the editor says so. */
+    baseHash: text("base_hash").notNull(),
+    updatedBy: integer("updated_by").notNull().references(() => users.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.companyId, t.page] })],
+);

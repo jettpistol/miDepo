@@ -22,7 +22,7 @@ export function AddPasskey() {
       const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
       const r = await fetch("/api/passkeys/register-verify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reply, name: isPhone ? "Teléfono" : "Computadora" }) });
       if (!r.ok) throw new Error((await r.json()).error);
-      setStatus({ ok: "Listo. La próxima vez puedes entrar con huella, rostro o llave." });
+      setStatus({ ok: "Llave registrada. La próxima vez puedes iniciar sesión con huella, rostro o llave." });
       router.refresh();
     } catch (e) {
       const name = e instanceof Error ? e.name : "";

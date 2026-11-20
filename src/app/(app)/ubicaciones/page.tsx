@@ -26,7 +26,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Ubicaciones" subtitle={`${total.toLocaleString("es-AR")} estantes`}>
+      <PageHeader title="Ubicaciones" subtitle={`${total.toLocaleString("es-AR")} ubicaciones`}>
         <Link href={`/imprimir/ubicaciones?prefijo=${encodeURIComponent(prefix)}`} target="_blank" className="btn-soft">
           <Icon name="print" /> Imprimir etiquetas{prefix && ` de ${prefix}…`}
         </Link>
@@ -45,7 +45,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
             <thead>
               <tr>
                 <th>Ubicación</th>
-                <th className="text-right">Títulos</th>
+                <th className="text-right">Artículos</th>
                 <th className="text-right">Unidades</th>
                 <th>Estado</th>
               </tr>
@@ -60,14 +60,14 @@ export default async function Locations({ searchParams }: { searchParams: Promis
                   </td>
                   <td className={`text-right ${titles === 0 ? "text-muted" : ""}`}>{titles}</td>
                   <td className={`text-right ${units === 0 ? "text-muted" : "font-semibold"}`}>{units}</td>
-                  <td>{!u.active ? <Badge tone="warn">Dada de baja</Badge> : titles === 0 ? <span className="text-muted">Vacía</span> : null}</td>
+                  <td>{!u.active ? <Badge tone="warn">Desactivada</Badge> : titles === 0 ? <span className="text-muted">Vacía</span> : null}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay estantes. Créalos con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
+        <p className="max-w-3xl border-y border-line px-2 py-6 lg:py-5 text-sm text-muted lg:px-3">{total === 0 ? "Todavía no hay ubicaciones. Créalas con el generador de abajo." : `Ninguna ubicación empieza con "${prefix}".`}</p>
       )}
       {list.length === 120 && <p className="mt-3 text-sm text-muted">Se muestran las primeras 120.</p>}
 

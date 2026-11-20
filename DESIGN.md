@@ -148,7 +148,7 @@ The source of truth is `src/app/globals.css` (tokens and component classes) and 
 ## Typography
 
 - **Libre Franklin** for all interface text. One family; weight and size carry hierarchy. Desktop: page titles 24px semibold, section headings 14px semibold, body and tables 14px, table headers and field labels 12px. Phones: titles 22px bold, body 15px. Fixed rem sizes, no fluid type.
-- **Each user can switch the interface font** in Mi cuenta (14 choices in `src/lib/fonts.ts`, loaded in `src/app/fonts.ts`, applied through `--font-ui`). Libre Franklin is the default. Only the default is preloaded; other files download only for the people who pick them.
+- **Each user can switch the interface font** in Ajustes (14 choices in `src/lib/fonts.ts`, loaded in `src/app/fonts.ts`, applied through `--font-ui`). Libre Franklin is the default. Only the default is preloaded; other files download only for the people who pick them.
 - **Courier Prime bold**, as typed on a label, only for codes: shelf labels, ISBNs, internal codes and document numbers. Never for prose or headings.
 - Numerals are tabular everywhere.
 - Prose (the manual) is capped at 72ch.

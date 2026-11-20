@@ -56,7 +56,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
 
       <div className="mb-2 flex flex-wrap items-end justify-between gap-x-6">
         <h2 className="section-title mb-0 py-2 lg:py-1.5">
-          {q ? "Resultados" : "Todos los títulos"} <small>{fmt(total)}</small>
+          {q ? "Resultados" : "Todos los artículos"} <small>{fmt(total)}</small>
         </h2>
         <ViewSwitch view={user.listView} />
       </div>
@@ -65,8 +65,8 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
           items={found.map((p) => ({ product: p, quantity: totals.get(p.id) ?? 0, extra: p.type !== "book" && <Badge>{TYPE_LABEL[p.type]}</Badge> }))}
           empty={
             <>
-              <p className="font-semibold">{q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}</p>
-              <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{q ? "Prueba con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}</p>
+              <p className="font-semibold">{q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}</p>
+              <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}</p>
             </>
           }
         />
@@ -75,7 +75,7 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
           <table className="data-table">
             <thead>
               <tr>
-                <th>Título</th>
+                <th>Artículo</th>
                 <th className="hidden md:table-cell">Autor</th>
                 <th className="hidden sm:table-cell">Código</th>
                 <th className="text-right">Unidades</th>
@@ -83,8 +83,8 @@ export default async function Stock({ searchParams }: { searchParams: Promise<{ 
             </thead>
             <tbody>
               {found.length === 0 && (
-                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay títulos"}>
-                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los títulos llegan de Fierro al sincronizar."}
+                <EmptyRow columns={4} title={q ? `Nada coincide con "${q}"` : "Todavía no hay artículos"}>
+                  {q ? "Prueba con menos palabras o con el código de barras completo." : "Los artículos llegan de Fierro al sincronizar."}
                 </EmptyRow>
               )}
               {found.map((p) => (

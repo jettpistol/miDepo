@@ -21,22 +21,22 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <PageHeader title={isShelf ? <ShelfMark code={u.code} size="md" className="text-[22px] lg:text-2xl" /> : locationName(u)} back={supervisor && isShelf ? { href: "/ubicaciones", text: "Ubicaciones" } : { href: "/stock", text: "Stock" }} subtitle={`${contents.length} títulos · ${contents.reduce((s, c) => s + c.s.quantity, 0)} unidades`}>
+      <PageHeader title={isShelf ? <ShelfMark code={u.code} size="md" className="text-[22px] lg:text-2xl" /> : locationName(u)} back={supervisor && isShelf ? { href: "/ubicaciones", text: "Ubicaciones" } : { href: "/stock", text: "Stock" }} subtitle={`${contents.length} artículos · ${contents.reduce((s, c) => s + c.s.quantity, 0)} unidades`}>
         {!isShelf && <ShelfMark code={u.code} size="md" />}
-        {!u.active && <Badge tone="warn">Dada de baja</Badge>}
+        {!u.active && <Badge tone="warn">Desactivada</Badge>}
         {isShelf && (
           <Link href={`/imprimir/ubicaciones?prefijo=${encodeURIComponent(u.code)}&exacta=1`} target="_blank" className="btn-soft">
             <Icon name="print" /> Etiqueta
           </Link>
         )}
         {isShelf && supervisor && (
-          <ActionButton action={toggle} hiddenFields={{ id }} className="btn-soft" reason={u.active && contents.length > 0 ? "Para darla de baja, primero mueve los libros." : undefined}>
-            {u.active ? "Dar de baja" : "Reactivar"}
+          <ActionButton action={toggle} hiddenFields={{ id }} className="btn-soft" reason={u.active && contents.length > 0 ? "Para desactivarla, primero mueve los artículos." : undefined}>
+            {u.active ? "Desactivar" : "Reactivar"}
           </ActionButton>
         )}
       </PageHeader>
       {contents.length === 0 ? (
-        <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Este lugar está vacío.</p>
+        <p className="border-y border-line px-2 py-8 text-sm text-muted lg:px-3">Esta ubicación está vacía.</p>
       ) : (
         <>
           <div className="mb-2 flex justify-end">
@@ -49,7 +49,7 @@ export default async function LocationDetail({ params }: { params: Promise<{ id:
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Título</th>
+                    <th>Artículo</th>
                     <th className="hidden sm:table-cell">Código</th>
                     <th className="text-right">Unidades</th>
                   </tr>

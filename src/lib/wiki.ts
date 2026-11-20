@@ -1,10 +1,19 @@
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { Marked } from "marked";
+import { and, eq } from "drizzle-orm";
+import { getDb } from "@/db";
+import { users, wikiEdits } from "@/db/schema";
+import { UserError } from "./errors";
+import type { Ctx } from "./flows/common";
+import { renderMarkdown, titleOf } from "./markdown";
 
 /**
  * The manual lives in the /wiki folder in GitHub wiki format (Home.md, _Sidebar.md,
  * one page per file). It is read here to show it inside miDepo at /ayuda.
+ *
+ * An administrator can rewrite any page for their company: the edit is stored in `wiki_edits`
+ * and replaces the file for that company's users. Visitors who are not logged in read the files.
  */
 const FOLDER = path.join(process.cwd(), "wiki");
 
@@ -12,32 +21,79 @@ export function pages() {
   return readdirSync(FOLDER).filter((f) => f.endsWith(".md") && !f.startsWith("_")).map((f) => f.slice(0, -3));
 }
 
-const isInternal = (href: string) => !/^([a-z]+:|\/|#)/i.test(href);
+const exists = (name: string) => /^[\w-]+$/.test(name) && pages().includes(name);
+const fileText = (name: string) => readFileSync(path.join(FOLDER, `${name}.md`), "utf8");
+const hash = (md: string) => createHash("sha256").update(md).digest("hex").slice(0, 16);
+const fallbackTitle = (name: string) => name.replace(/-/g, " ");
 
-function render(md: string) {
-  const marked = new Marked({ gfm: true });
-  marked.use({
-    renderer: {
-      // Links between wiki pages ("Picking") become /ayuda/Picking.
-      link({ href, tokens }) {
-        const destination = isInternal(href) ? `/ayuda/${href}` : href;
-        const external = /^https?:/i.test(destination) ? ' target="_blank" rel="noreferrer"' : "";
-        return `<a href="${destination}"${external}>${this.parser.parseInline(tokens)}</a>`;
-      },
-    },
-  });
-  return marked.parse(md, { async: false });
+async function editsOf(companyId: number | undefined) {
+  if (!companyId) return new Map<string, string>();
+  const db = await getDb();
+  const rows = await db.select({ page: wikiEdits.page, markdown: wikiEdits.markdown }).from(wikiEdits).where(eq(wikiEdits.companyId, companyId));
+  return new Map(rows.map((r) => [r.page, r.markdown]));
 }
 
-export function readPage(name: string) {
-  if (!/^[\w-]+$/.test(name) || !pages().includes(name)) return null;
-  const md = readFileSync(path.join(FOLDER, `${name}.md`), "utf8");
-  const title = md.match(/^#\s+(.+)$/m)?.[1] ?? name.replace(/-/g, " ");
-  return { title, html: render(md) };
+/** A page as the given company reads it, with who last edited it, if anyone did. */
+export async function readPage(name: string, companyId?: number) {
+  if (!exists(name)) return null;
+  const original = fileText(name);
+  const db = companyId ? await getDb() : null;
+  const [edit] = db
+    ? await db
+        .select({ markdown: wikiEdits.markdown, baseHash: wikiEdits.baseHash, updatedAt: wikiEdits.updatedAt, by: users.name })
+        .from(wikiEdits)
+        .innerJoin(users, eq(users.id, wikiEdits.updatedBy))
+        .where(and(eq(wikiEdits.companyId, companyId!), eq(wikiEdits.page, name)))
+    : [];
+  const markdown = edit?.markdown ?? original;
+  return {
+    name,
+    title: titleOf(markdown) ?? fallbackTitle(name),
+    markdown,
+    original,
+    html: renderMarkdown(markdown),
+    /** Set when the company reads its own version. `outdated`: the file changed after the edit. */
+    edit: edit ? { at: edit.updatedAt, by: edit.by, outdated: edit.baseHash !== hash(original) } : null,
+  };
+}
+
+/** Every page with its title, for the editor's link picker. */
+export async function pageTitles(companyId?: number) {
+  const edits = await editsOf(companyId);
+  return pages().map((page) => ({ page, title: titleOf(edits.get(page) ?? fileText(page)) ?? fallbackTitle(page) }));
 }
 
 export function readIndex() {
-  return render(readFileSync(path.join(FOLDER, "_Sidebar.md"), "utf8"));
+  return renderMarkdown(fileText("_Sidebar"));
+}
+
+export function readFooter() {
+  return renderMarkdown(fileText("_Footer"));
+}
+
+// ───────────── Editing ─────────────
+
+export const MAX_PAGE_LENGTH = 100_000;
+
+/** Saves the company's version of a page. Saving the original text unchanged removes the edit. */
+export async function saveEdit(c: Ctx, name: string, markdown: string) {
+  if (!exists(name)) throw new UserError("WIKI-01", "Esa página del manual no existe.");
+  const md = markdown.replace(/\r\n/g, "\n").trimEnd() + "\n";
+  if (!titleOf(md)) throw new UserError("WIKI-02", "La página necesita un título: una línea que empiece con # y un espacio.");
+  if (md.length > MAX_PAGE_LENGTH) throw new UserError("WIKI-03", `La página es demasiado larga: el máximo es ${MAX_PAGE_LENGTH.toLocaleString("es-AR")} caracteres.`);
+  const original = fileText(name);
+  if (md === original.replace(/\r\n/g, "\n").trimEnd() + "\n") return restoreOriginal(c, name);
+  const values = { markdown: md, baseHash: hash(original), updatedBy: c.userId, updatedAt: new Date() };
+  await c.db
+    .insert(wikiEdits)
+    .values({ companyId: c.companyId, page: name, ...values })
+    .onConflictDoUpdate({ target: [wikiEdits.companyId, wikiEdits.page], set: values });
+}
+
+/** Drops the company's version: its users read the manual's original page again. */
+export async function restoreOriginal(c: Ctx, name: string) {
+  if (!exists(name)) throw new UserError("WIKI-04", "Esa página del manual no existe.");
+  await c.db.delete(wikiEdits).where(and(eq(wikiEdits.companyId, c.companyId), eq(wikiEdits.page, name)));
 }
 
 // ───────────── Search ─────────────
@@ -61,14 +117,15 @@ function textOnly(md: string) {
 
 export type SearchHit = { page: string; title: string; excerptHtml: string };
 
-/** Searches the whole manual. Every word has to appear on the page. */
-export function search(lookup: string): SearchHit[] {
+/** Searches the whole manual, as the given company reads it. Every word has to appear on the page. */
+export async function search(lookup: string, companyId?: number): Promise<SearchHit[]> {
   const words = plain(lookup).split(/\s+/).filter((p) => p.length > 1).slice(0, 6);
   if (words.length === 0) return [];
+  const edits = await editsOf(companyId);
   const results: (SearchHit & { points: number })[] = [];
   for (const page of pages()) {
-    const md = readFileSync(path.join(FOLDER, `${page}.md`), "utf8");
-    const title = md.match(/^#\s+(.+)$/m)?.[1] ?? page.replace(/-/g, " ");
+    const md = edits.get(page) ?? fileText(page);
+    const title = titleOf(md) ?? fallbackTitle(page);
     const text = textOnly(md);
     const [plainTitle, plainText] = [plain(title), plain(text)];
     if (!words.every((p) => plainTitle.includes(p) || plainText.includes(p))) continue;
@@ -90,8 +147,4 @@ export function search(lookup: string): SearchHit[] {
     results.push({ page, title, excerptHtml: html, points });
   }
   return results.sort((a, b) => b.points - a.points || a.title.localeCompare(b.title));
-}
-
-export function readFooter() {
-  return render(readFileSync(path.join(FOLDER, "_Footer.md"), "utf8"));
 }

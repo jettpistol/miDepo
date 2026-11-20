@@ -8,6 +8,8 @@ import { Dropdown } from "@/components/Dropdown";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
 import { Hotkeys } from "@/components/Hotkeys";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { saveTheme } from "./cuenta/actions";
 import { counts, orders, receivings, returns } from "@/db/schema";
 import { MENU } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
@@ -37,11 +39,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <form action="/stock" role="search" className="relative hidden max-w-xl flex-1 lg:block">
             <Icon name="stock" className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted" />
-            <input name="q" type="search" placeholder="Buscar título, autor, ISBN o ubicación" aria-label="Buscar en el stock" autoComplete="off" className="h-8 w-full rounded-control border border-line-strong bg-surface pr-3 pl-8 text-sm placeholder:text-muted hover:border-ink/60 focus:border-accent-text" />
+            <input name="q" type="search" placeholder="Buscar por nombre, autor, ISBN o ubicación" aria-label="Buscar en el stock" autoComplete="off" className="h-8 w-full rounded-control border border-line-strong bg-surface pr-3 pl-8 text-sm placeholder:text-muted hover:border-ink/60 focus:border-accent-text" />
           </form>
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted lg:hidden">{company.name}</span>
 
+          <div className="ml-auto flex items-center gap-1 lg:hidden">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
+          </div>
           <div className="ml-auto hidden items-center gap-1 lg:flex">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
             <Link href="/ayuda" title="Manual · F1: atajos de teclado" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
               <Icon name="help" className="size-5" />
             </Link>
@@ -53,7 +59,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   <span className="block text-xs text-muted">{ROLE_LABEL[user.role]}</span>
                 </span>
               </summary>
-              <div className="absolute top-full right-0 mt-1.5 w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
+              <div className="absolute top-full right-0 mt-1.5 w-max max-w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
                 <Accounts />
               </div>
             </Dropdown>

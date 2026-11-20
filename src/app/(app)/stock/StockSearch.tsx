@@ -15,7 +15,7 @@ export function StockSearch({ initial }: { initial: string }) {
         type="search"
         defaultValue={initial}
         className="field"
-        placeholder="Título, autor, ISBN, código o ubicación"
+        placeholder="Artículo, autor, ISBN, código o ubicación"
         aria-label="Buscar"
         autoFocus
         autoComplete="off"

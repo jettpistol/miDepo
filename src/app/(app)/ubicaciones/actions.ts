@@ -38,11 +38,11 @@ export const createStandalone = action("supervisor", async (c, f) => {
 
 export const toggle = action("supervisor", async (c, f) => {
   const [u] = await c.db.select().from(locations).where(and(eq(locations.id, num(f, "id")), eq(locations.companyId, c.companyId)));
-  if (!u || u.type !== "shelf") throw new UserError("LOC-04", "Esa ubicación no se puede dar de baja.");
+  if (!u || u.type !== "shelf") throw new UserError("LOC-04", "Esa ubicación no se puede desactivar.");
   if (u.active) {
     const [remains] = await c.db.select().from(stock).where(eq(stock.locationId, u.id)).limit(1);
-    if (remains) throw new UserError("LOC-05", "Todavía hay libros en esta ubicación. Muévelos antes de darla de baja.");
+    if (remains) throw new UserError("LOC-05", "Todavía hay artículos en esta ubicación. Muévelos antes de desactivarla.");
   }
   await c.db.update(locations).set({ active: !u.active }).where(eq(locations.id, u.id));
-  return u.active ? `${u.code} dada de baja.` : `${u.code} activa de nuevo.`;
+  return u.active ? `${u.code} desactivada.` : `${u.code} reactivada.`;
 });

@@ -13,7 +13,7 @@ function validatePassword(password: string) {
   if (password.length < 8) throw new UserError("USER-01", "La contraseña necesita al menos 8 caracteres.");
 }
 function validatePin(pin: string) {
-  if (!VALID_PIN.test(pin)) throw new UserError("USER-02", "El PIN son exactamente 6 números.");
+  if (!VALID_PIN.test(pin)) throw new UserError("USER-02", "El PIN debe tener exactamente 6 dígitos.");
 }
 const unique = (e: unknown, code: string, message: string) => {
   // Postgres code 23505: duplicate value in a unique column.
@@ -36,35 +36,35 @@ export const create = action("admin", async (c, f) => {
   const pin = txt(f, "pin").trim();
   if (!name || !/^\S+@\S+\.\S+$/.test(email)) throw new UserError("USER-04", "Completa el nombre y un email válido.");
   if (!ROLES.includes(role)) throw new UserError("USER-05", "Elige un rol.");
-  if (!password && !pin) throw new UserError("USER-06", "Dale una contraseña, un PIN o las dos cosas para que pueda entrar.");
+  if (!password && !pin) throw new UserError("USER-06", "Asigna una contraseña, un PIN o ambos para que pueda iniciar sesión.");
   if (password) validatePassword(password);
   if (pin) validatePin(pin);
   await createUser(c.db, c.companyId, { name, email, role, password: password || undefined, pin: pin || undefined }).catch((e) => unique(e, "USER-11", "Ese email o ese PIN ya lo usa otra persona."));
-  return `${name} ya puede entrar a miDepo.`;
+  return `${name} ya puede iniciar sesión en miDepo.`;
 });
 
 export const changeRole = action("admin", async (c, f) => {
   const u = await ofCompany(c, num(f, "id"));
   const role = txt(f, "role") as Role;
   if (!ROLES.includes(role)) throw new UserError("USER-07", "Elige un rol.");
-  if (u.id === c.userId) throw new UserError("USER-08", "No puedes cambiar tu propio rol. Pídeselo a otro administrador.");
+  if (u.id === c.userId) throw new UserError("USER-08", "No puedes cambiar tu propio rol. Debe hacerlo otro administrador.");
   await c.db.update(users).set({ role }).where(eq(users.id, u.id));
   return `${u.name} ahora es ${role}.`;
 });
 
 export const toggleActive = action("admin", async (c, f) => {
   const u = await ofCompany(c, num(f, "id"));
-  if (u.id === c.userId) throw new UserError("USER-09", "No puedes darte de baja a ti mismo.");
+  if (u.id === c.userId) throw new UserError("USER-09", "No puedes desactivar tu propio usuario.");
   await c.db.update(users).set({ active: !u.active }).where(eq(users.id, u.id));
   if (u.active) await c.db.delete(sessions).where(eq(sessions.userId, u.id));
-  return u.active ? `${u.name} ya no puede entrar.` : `${u.name} puede entrar de nuevo.`;
+  return u.active ? `Acceso de ${u.name} desactivado.` : `Acceso de ${u.name} reactivado.`;
 });
 
 export const setAccess = action("admin", async (c, f) => {
   const u = await ofCompany(c, num(f, "id"));
   const password = txt(f, "password");
   const pin = txt(f, "pin").trim();
-  if (!password && !pin) throw new UserError("USER-10", "Escribe una contraseña nueva, un PIN nuevo o las dos cosas.");
+  if (!password && !pin) throw new UserError("USER-10", "Escribe una contraseña nueva, un PIN nuevo o ambos.");
   if (password) validatePassword(password);
   if (pin) validatePin(pin);
   await c.db
