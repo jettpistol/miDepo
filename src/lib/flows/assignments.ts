@@ -48,10 +48,10 @@ async function target(c: Ctx, kind: AssignKind, id: number) {
  * not lock it: anyone can still work on it, as on the floor work moves between people.
  */
 export async function assign(c: Ctx, kind: string, id: number, userId: number | null) {
-  if (!ASSIGN_KINDS.includes(kind as AssignKind)) throw new UserError("ASG-01", "No se reconoce qué se quiere asignar.");
+  if (!ASSIGN_KINDS.includes(kind as AssignKind)) throw new UserError("ASG-01", "Tipo de tarea desconocido.");
   const t = Number.isInteger(id) ? await target(c, kind as AssignKind, id) : undefined;
-  if (!t) throw new UserError("ASG-02", "No se encontró eso para asignar.");
-  if (!t.open) throw new UserError("ASG-03", `${t.label} ya no tiene trabajo pendiente.`);
+  if (!t) throw new UserError("ASG-02", "No se encontró.");
+  if (!t.open) throw new UserError("ASG-03", `${t.label} sin trabajo pendiente.`);
   let name: string | null = null;
   if (userId != null) {
     const [u] = Number.isInteger(userId) ? await c.db.select({ name: users.name }).from(users).where(and(eq(users.id, userId), eq(users.companyId, c.companyId), eq(users.active, true))) : [];
@@ -59,5 +59,5 @@ export async function assign(c: Ctx, kind: string, id: number, userId: number | 
     name = u.name;
   }
   await t.save(userId);
-  return name ? `${t.label}: ahora es de ${name}.` : `${t.label}: sin asignar.`;
+  return name ? `Asignado a ${name}.` : "Sin asignar.";
 }

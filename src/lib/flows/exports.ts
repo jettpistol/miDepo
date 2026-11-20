@@ -121,7 +121,7 @@ export async function markSent(c: Ctx, company: Company, type: ExportType, id: n
     const doc: FierroDocument = { type: "receiving", reference: "", lines: [] };
     const now = new Date();
     if (type === "order") {
-      const flagged = await tx.update(orders).set({ status: "shipped", sentToFierro: now }).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId), eq(orders.status, "packed"))).returning();
+      const flagged = await tx.update(orders).set({ status: "shipped", sentToFierro: now, fierroChange: null }).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId), eq(orders.status, "packed"))).returning();
       if (flagged.length === 0) throw new UserError("EXP-05", "Ese pedido no está listo para cargar en Fierro.");
       const prep = await zone(tx, c.companyId, "staging");
       const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, id));

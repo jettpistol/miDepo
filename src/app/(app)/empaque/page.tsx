@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql, desc } from "drizzle-orm";
 import { PageHeader, Badge, plural, EmptyState } from "@/components/ui";
 import { customers, orderLines, orders } from "@/db/schema";
 import { requireSession } from "@/lib/session";
@@ -22,7 +22,7 @@ export default async function Packing() {
     .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
     .where(and(eq(orders.companyId, company.id), eq(orders.status, "picked")))
     .groupBy(orders.id, customers.name)
-    .orderBy(asc(orders.date));
+    .orderBy(desc(orders.urgent), asc(orders.date));
 
   return (
     <>
@@ -51,6 +51,12 @@ export default async function Packing() {
                   </td>
                   <td>
                     <span className="font-medium">{customer}</span>
+                    {p.urgent && (
+                      <>
+                        {" "}
+                        <Badge tone="danger">Urgente</Badge>
+                      </>
+                    )}
                     <span className="block text-muted sm:hidden">
                       {plural(picked, "unidad preparada", "unidades preparadas")}
                       {picked < order && ` · ${order - picked} faltantes`}

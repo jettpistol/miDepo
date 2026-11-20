@@ -53,7 +53,7 @@ export async function listCustomers(db: DB, companyId: number, q: string, page: 
   return { total, rows };
 }
 
-export const ORDER_STATUSES = ["pending", "in_picking", "picked", "packed", "shipped"] as const satisfies readonly OrderStatus[];
+export const ORDER_STATUSES = ["pending", "in_picking", "picked", "packed", "shipped", "cancelled"] as const satisfies readonly OrderStatus[];
 
 /** Orders of any state, newest first. `customerId` narrows to one customer's orders. */
 export async function listOrders(db: DB, companyId: number, f: { q?: string; status?: OrderStatus; customerId?: number }, page: Paging) {

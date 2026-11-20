@@ -8,6 +8,7 @@ import { getDb, runMigrations, type DB } from "@/db";
 import { adjustmentLines, adjustments, boxes, companies, fierroStock, movements, orderLines, orders, products, receivings, stock, pickTasks, locations, suppliers } from "@/db/schema";
 import { createCompany, createUser } from "@/db/seed";
 import { sync } from "@/lib/fierro";
+import { SimulatedFierro } from "@/lib/fierro/simulated";
 import { UserError } from "@/lib/errors";
 import { moveStock, zone } from "@/lib/stock";
 import { generateCodes, TEMPLATES, validateScheme } from "@/lib/locations";
@@ -21,6 +22,8 @@ import { cancelCount, closeCount, createCount, differences, scanCount, markLocat
 import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
+import { setUrgent } from "@/lib/flows/orders";
+import { loadOpenOrders } from "@/app/(app)/picking/Tables";
 import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
 
 let db: DB;
@@ -343,19 +346,19 @@ describe("assignments", () => {
   it("gives work to a person, shows it as theirs, and takes it back", async () => {
     const ana = await createUser(db, c.companyId, { name: "Ana Asignada", email: "ana@prueba.test", role: "operator", pin: "864213" });
     const [order] = await db.select().from(orders).where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"))).limit(1);
-    expect(await assign(c, "order", order.id, ana.id)).toMatch(/ahora es de Ana Asignada/);
+    expect(await assign(c, "order", order.id, ana.id)).toMatch(/Asignado a Ana Asignada/);
     let tasks = await openTasks(db, c.companyId);
     const task = tasks.find((t) => t.kind === "order" && t.id === order.id)!;
     expect(isMine(task, ana.id)).toBe(true);
     expect(isUnassigned(task)).toBe(false);
-    expect(await assign(c, "order", order.id, null)).toMatch(/sin asignar/);
+    expect(await assign(c, "order", order.id, null)).toMatch(/Sin asignar/);
     tasks = await openTasks(db, c.companyId);
     expect(isUnassigned(tasks.find((t) => t.kind === "order" && t.id === order.id)!)).toBe(true);
   });
 
   it("assigns the put-away of a zone, and the order a person is picking is theirs", async () => {
     const recepcion = await zone(db, c.companyId, "receiving");
-    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Reposición desde Recepción/);
+    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Asignado a/);
     // In a company of its own, so the pending orders later tests rely on stay pending.
     const { e, u } = await buildCompany("Toma SA", "toma", 15);
     const own: Ctx = { db, companyId: e.id, userId: u.id };
@@ -369,9 +372,9 @@ describe("assignments", () => {
   it("refuses what cannot be assigned", async () => {
     const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, c.companyId), eq(locations.type, "shelf"))).limit(1);
     await expect(assign(c, "putaway", shelf.id, null)).rejects.toThrow(/No se encontró/);
-    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/No se reconoce/);
+    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/Tipo de tarea desconocido/);
     const [closed] = await db.select().from(receivings).where(and(eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"))).limit(1);
-    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/ya no tiene trabajo pendiente/);
+    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/sin trabajo pendiente/);
     const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
     const { e, u } = await buildCompany("Lejana SA", "lejana", 13);
     await expect(assign(c, "order", order.id, u.id)).rejects.toThrow(/Elige una persona/);
@@ -546,5 +549,74 @@ describe("going back", () => {
     expect(await deleteSupplier(u, s.id)).toMatch(/borrado/);
     const [fromFierro] = await db.select().from(suppliers).where(and(eq(suppliers.companyId, u.companyId), sql`${suppliers.createdBy} is null`)).limit(1);
     await expect(deleteSupplier(u, fromFierro.id)).rejects.toThrow(/Fierro/);
+  });
+});
+
+describe("orders that Fierro changes", () => {
+  it("follows Fierro for orders nobody started, flags started ones, and never takes an incomplete order", async () => {
+    const { e, u: user } = await buildCompany("Cambios SA", "cambios", 31);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const real = new SimulatedFierro(db, e);
+    const original = await real.pendingOrders();
+    expect(original.length).toBe(3);
+    const books = await real.books();
+    const [a, b, gone] = original;
+    // Someone starts picking order a; give it stock first so the route has a stop.
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1")));
+    const productOf = new Map((await db.select().from(products).where(eq(products.companyId, e.id))).map((p) => [p.fierroId, p.id]));
+    for (const l of a.lines) await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: productOf.get(l.bookId)!, fromId: null, toId: shelf.id, quantity: l.quantity, reason: "initial" }));
+    const [orderA] = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.fierroId, a.id)));
+    await takeOrder(u, orderA.id);
+
+    // Fierro now: a and b edited, `gone` cancelled, and a new order naming an article not in its catalogue.
+    const edited = (o: typeof a) => ({ ...o, lines: [...o.lines, { bookId: books[50].id, quantity: 2 }] });
+    const fresh = { ...b, id: "NEW-1", number: "P-NEW-1", lines: [{ bookId: books[1].id, quantity: 1 }, { bookId: "NOT-IN-CATALOGUE", quantity: 1 }] };
+    const later = Object.assign(Object.create(real), { pendingOrders: async () => [edited(a), edited(b), fresh] });
+    const r = await sync(db, e, later);
+    expect(r).toMatchObject({ newOrders: 1, changedOrders: 1, cancelledOrders: 1, flaggedOrders: 1 });
+
+    const byId = async (f: string) => (await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.fierroId, f))))[0];
+    expect((await byId(a.id)).fierroChange).toBe("changed");
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, orderA.id))).length).toBe(a.lines.length);
+    const orderB = await byId(b.id);
+    expect(orderB.status).toBe("pending");
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, orderB.id))).some((l) => l.productId === productOf.get(books[50].id))).toBe(true);
+    const cancelled = await byId(gone.id);
+    expect(cancelled.status).toBe("cancelled");
+    await expect(takeOrder(u, cancelled.id)).rejects.toThrow(/PICK-19|ya no figura/);
+    const incomplete = await byId("NEW-1");
+    expect(incomplete.unknownLines).toBe(1);
+    await expect(takeOrder(u, incomplete.id)).rejects.toThrow(UserError);
+
+    // Released, the edited order is refused until a sync applies the change, then follows Fierro.
+    await releaseOrder(u, orderA.id);
+    await expect(takeOrder(u, orderA.id)).rejects.toThrow(UserError);
+    await sync(db, e, later);
+    expect((await byId(a.id)).fierroChange).toBeNull();
+    expect((await db.select().from(orderLines).where(eq(orderLines.orderId, orderA.id))).length).toBe(a.lines.length + 1);
+
+    // A cancelled order Fierro lists again comes back; an empty answer from Fierro cancels nothing.
+    await sync(db, e, Object.assign(Object.create(real), { pendingOrders: async () => [edited(a), edited(b), fresh, gone] }));
+    expect((await byId(gone.id)).status).toBe("pending");
+    await sync(db, e, Object.assign(Object.create(real), { pendingOrders: async () => [] }));
+    expect((await byId(gone.id)).status).toBe("pending");
+  });
+});
+
+describe("urgent orders", () => {
+  it("a supervisor marks an order urgent and it goes first in the queue; not once packed", async () => {
+    const { e, u: user } = await buildCompany("Urgente SA", "urgente", 41);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const pending = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.status, "pending"))).orderBy(asc(orders.date));
+    const last = pending[pending.length - 1];
+    await setUrgent(u, last.id, true);
+    const { pending: queue } = await loadOpenOrders(db, e.id);
+    expect(queue[0].p.id).toBe(last.id);
+    await setUrgent(u, last.id, false);
+    expect((await loadOpenOrders(db, e.id)).pending[0].p.id).toBe(pending[0].id);
+    await db.update(orders).set({ status: "packed" }).where(eq(orders.id, last.id));
+    await expect(setUrgent(u, last.id, true)).rejects.toThrow(/ORD-02|empacado/);
+    const other = await buildCompany("Ajena SA", "ajena-urg", 42);
+    await expect(setUrgent({ db, companyId: other.e.id, userId: other.u.id }, pending[0].id, true)).rejects.toThrow(UserError);
   });
 });

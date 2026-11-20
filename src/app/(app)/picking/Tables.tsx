@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { and, asc, eq, inArray, min, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, min, sql, desc } from "drizzle-orm";
 import { ActionButton } from "@/components/ScanForm";
 import { Progress, shortDate, Badge, ShelfMark } from "@/components/ui";
+import { fierroWarning } from "@/lib/orderState";
 import { customers, orderLines, orders, pickTasks, locations, users } from "@/db/schema";
 import type { requireSession } from "@/lib/session";
 import { take } from "./actions";
@@ -27,7 +28,7 @@ export async function loadOpenOrders(db: Db, companyId: number) {
     .leftJoin(orderLines, eq(orderLines.orderId, orders.id))
     .where(and(eq(orders.companyId, companyId), inArray(orders.status, ["pending", "in_picking"])))
     .groupBy(orders.id, customers.name, customers.city, users.name)
-    .orderBy(asc(orders.date))
+    .orderBy(desc(orders.urgent), asc(orders.date))
     .limit(200);
   const inProgress = rows.filter((f) => f.p.status === "in_picking");
   const pending = rows.filter((f) => f.p.status === "pending");
@@ -69,6 +70,12 @@ export function InProgressTable({ rows, userId }: { rows: OpenOrders["inProgress
                 <Link href={`/picking/${p.id}`} className="link doc-number" {...(p.id === rows.find((r) => r.p.takenBy === userId)?.p.id ? hotkey("primary", `Seguir con el pedido ${p.number}`) : {})}>
                   {p.number}
                 </Link>
+                {p.urgent && (
+                  <>
+                    {" "}
+                    <Badge tone="danger">Urgente</Badge>
+                  </>
+                )}
                 <span className="block max-w-40 truncate text-muted sm:max-w-64">{customer}</span>
                 <span className="block text-muted sm:hidden">
                   {picked} de {units} · {p.takenBy === userId ? "tú" : (takenBy ?? "otra persona")}
@@ -111,6 +118,12 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
               </td>
               <td>
                 <span className="font-medium">{customer}</span>
+                {p.urgent && (
+                  <>
+                    {" "}
+                    <Badge tone="danger">Urgente</Badge>
+                  </>
+                )}
                 {p.saleMode === "consignment" && (
                   <>
                     {" "}
@@ -127,7 +140,7 @@ export function PendingTable({ rows }: { rows: OpenOrders["pending"] }) {
               <td className="hidden text-right font-semibold sm:table-cell">{units}</td>
               <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(p.date)}</td>
               <td className="w-px text-right">
-                <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm" hotkey={i === 0 ? "primary" : undefined}>
+                <ActionButton action={take} hiddenFields={{ id: p.id }} showOk={false} className="btn-sm" hotkey={i === 0 ? "primary" : undefined} reason={fierroWarning(p) ?? undefined}>
                   Preparar
                 </ActionButton>
               </td>
