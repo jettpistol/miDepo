@@ -23,6 +23,7 @@ import { undoWriteOff, writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
 import { assign } from "@/lib/flows/assignments";
 import { setUrgent } from "@/lib/flows/orders";
+import { applyLoad, checkLoad, listLoads, undoLoad } from "@/lib/flows/stockLoad";
 import { loadOpenOrders } from "@/app/(app)/picking/Tables";
 import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
 
@@ -618,5 +619,38 @@ describe("urgent orders", () => {
     await expect(setUrgent(u, last.id, true)).rejects.toThrow(/ORD-02|empacado/);
     const other = await buildCompany("Ajena SA", "ajena-urg", 42);
     await expect(setUrgent({ db, companyId: other.e.id, userId: other.u.id }, pending[0].id, true)).rejects.toThrow(UserError);
+  });
+});
+
+describe("opening stock load", () => {
+  it("checks every row, loads only a clean file, and can be undone while nothing moved", async () => {
+    const { e, u: user } = await buildCompany("Inicial SA", "inicial", 51);
+    const u: Ctx = { db, companyId: e.id, userId: user.id };
+    const [p1, p2] = await db.select().from(products).where(eq(products.companyId, e.id)).orderBy(asc(products.id)).limit(2);
+    const bad = `Ubicación;Cantidad;Código\nA-01-1;5;${p1.barcode}\na-01-2;x;${p2.internalCode.toLowerCase()}\nZ-99;1;${p1.barcode}\nA-01-1;2;NOPE`;
+    const r = await checkLoad(db, e.id, bad);
+    expect(r.lines).toBe(4);
+    expect(r.rows.map((x) => !!x.error)).toEqual([false, true, true, true]);
+    await expect(applyLoad(u, bad, "malo.csv")).rejects.toThrow(/STK-18|errores/);
+
+    const good = `${p1.barcode},5,A-01-1\n${p2.internalCode},3,a-01-2\n${p1.isbn ?? p1.barcode},2,A-01-1`;
+    expect((await checkLoad(db, e.id, good)).errors).toBe(0);
+    await applyLoad(u, good, "bueno.csv");
+    expect(await atLocation(p1.id, (await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1"))))[0].id)).toBe(7);
+    expect(await total(p2.id)).toBe(3);
+    // Opening stock is not a document for Fierro.
+    expect((await pendingExports(db, e.id)).some((x) => x.type === "adjustment")).toBe(false);
+    const [load] = await listLoads(db, e.id);
+    expect(load.l).toMatchObject({ lines: 3, units: 10 });
+
+    // Once part of it moved, it can no longer be undone; put back, it can.
+    const a1 = (await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-01-1"))))[0];
+    const a2 = (await db.select().from(locations).where(and(eq(locations.companyId, e.id), eq(locations.code, "A-02-1"))))[0];
+    await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: p1.id, fromId: a1.id, toId: a2.id, quantity: 1, reason: "movement" }));
+    await expect(undoLoad(u, load.l.id)).rejects.toThrow(/STK-21|ya se movió/);
+    await db.transaction((tx) => moveStock(tx, { companyId: e.id, productId: p1.id, fromId: a2.id, toId: a1.id, quantity: 1, reason: "movement" }));
+    await undoLoad(u, load.l.id);
+    expect(await total(p1.id)).toBe(0);
+    await expect(undoLoad(u, load.l.id)).rejects.toThrow(/ya se deshizo/);
   });
 });
