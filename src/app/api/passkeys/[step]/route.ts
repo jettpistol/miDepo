@@ -51,7 +51,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
     const reply = await req.json();
     if (!challenge) return failed("PKEY-01", "El intento venció. Prueba de nuevo.");
     const [row] = await db.select({ passkey: passkeys, user: users }).from(passkeys).innerJoin(users, eq(users.id, passkeys.userId)).where(eq(passkeys.id, String(reply.id)));
-    if (!row || !row.user.active) return failed("PKEY-02", "Esta llave no está registrada en miDepo. Entra de otra forma y regístrala en Mi cuenta.");
+    if (!row || !row.user.active) return failed("PKEY-02", "Esta llave no está registrada en miDepo. Inicia sesión de otra forma y regístrala en Ajustes.");
     try {
       const v = await verifyAuthenticationResponse({
         response: reply,
@@ -70,7 +70,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ step: s
   }
 
   const s = await currentSession();
-  if (!s) return failed("PKEY-05", "Primero hay que ingresar.", 401);
+  if (!s) return failed("PKEY-05", "Primero inicia sesión.", 401);
 
   if (step === "register-options") {
     const existing = await db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, s.user.id));

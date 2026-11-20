@@ -12,7 +12,7 @@ import { distance, plain } from "@/lib/text";
  */
 export type Feature = {
   title: string;
-  /** Where it lives, shown under the title: ["Mi cuenta", "Apariencia"]. */
+  /** Where it lives, shown under the title: ["Ajustes", "Apariencia"]. */
   path: string[];
   href: string;
   icon: IconName;
@@ -39,6 +39,7 @@ const SCREEN_WORDS: Record<string, string> = {
   "/fierro": "sincronizar exportar csv enviar documentos integracion erp",
   "/usuarios": "personas empleados roles permisos pin altas operadores",
   "/ayuda": "manual guia ayuda documentacion",
+  "/cuenta": "mi cuenta perfil configuracion preferencias settings",
 };
 
 const screens: Feature[] = MENU.flatMap((g) =>
@@ -57,17 +58,16 @@ const more: Feature[] = [
   { title: "Traer novedades de Fierro", path: ["Fierro"], href: "/fierro#traer", icon: "fierro", words: "sincronizar actualizar catalogo pedidos", minRole: "supervisor" },
   { title: "Documentos para cargar en Fierro", path: ["Fierro"], href: "/fierro#cargar", icon: "download", words: "exportar csv enviar informar", minRole: "supervisor" },
   { title: "Conciliación con Fierro", path: ["Fierro", "Conciliación"], href: "/fierro/conciliacion", icon: "fierro", words: "diferencias comparar stock conciliar", minRole: "supervisor" },
-  { title: "Sumar a alguien", path: ["Usuarios"], href: "/usuarios#sumar", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
-  // Settings: "Mi cuenta" opens from the person's name, so it is only reachable from here and the menu.
-  { title: "Mi cuenta", path: ["Configuración"], href: "/cuenta", icon: "account", words: "perfil configuracion ajustes preferencias settings" },
-  { title: "Foto de perfil", path: ["Mi cuenta"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },
-  { title: "Color de acento", path: ["Mi cuenta", "Apariencia"], href: "/cuenta#apariencia", icon: "account", words: "colores tema personalizar" },
-  { title: "Letra", path: ["Mi cuenta", "Apariencia"], href: "/cuenta#apariencia", icon: "account", words: "fuente tipografia tamano texto font" },
-  { title: "Tema claro u oscuro", path: ["Mi cuenta", "Apariencia"], href: "/cuenta#apariencia", icon: "account", words: "modo oscuro noche dark light" },
-  { title: "Huella, rostro o llave", path: ["Mi cuenta"], href: "/cuenta#llaves", icon: "account", words: "passkey llave de acceso biometria touch id face id" },
-  { title: "Cambiar contraseña", path: ["Mi cuenta", "Contraseña"], href: "/cuenta#contrasena", icon: "account", words: "clave password" },
-  { title: "PIN del depósito", path: ["Mi cuenta", "PIN"], href: "/cuenta#pin", icon: "account", words: "codigo numerico clave" },
-  { title: "Cambiar de cuenta", path: ["Configuración"], href: "/mas", icon: "users", words: "otra cuenta usuario salir cerrar sesion logout" },
+  { title: "Nuevo usuario", path: ["Usuarios"], href: "/usuarios#nuevo", icon: "users", words: "crear usuario alta persona empleado", minRole: "admin" },
+  // Settings: sections of Ajustes.
+  { title: "Foto de perfil", path: ["Ajustes"], href: "/cuenta#foto", icon: "camera", words: "avatar imagen cara" },
+  { title: "Color de acento", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "colores tema personalizar" },
+  { title: "Tipografía", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "letra fuente tamano texto font" },
+  { title: "Tema claro u oscuro", path: ["Ajustes", "Apariencia"], href: "/cuenta#apariencia", icon: "settings", words: "modo oscuro noche dark light" },
+  { title: "Huella, rostro o llave", path: ["Ajustes"], href: "/cuenta#llaves", icon: "account", words: "passkey llave de acceso biometria touch id face id" },
+  { title: "Cambiar contraseña", path: ["Ajustes", "Contraseña"], href: "/cuenta#contrasena", icon: "account", words: "clave password" },
+  { title: "PIN del depósito", path: ["Ajustes", "PIN"], href: "/cuenta#pin", icon: "account", words: "codigo numerico clave" },
+  { title: "Cambiar de cuenta", path: ["Ajustes"], href: "/mas", icon: "users", words: "otra cuenta usuario salir cerrar sesion logout" },
   { title: "Atajos de teclado", path: ["Manual"], href: "/ayuda/Atajos-de-teclado", icon: "help", words: "teclas f1 shortcuts", keys: KEYS.help },
 ];
 

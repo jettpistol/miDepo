@@ -4,6 +4,7 @@ import { orderLines, orders, stock, pickTasks, locations } from "@/db/schema";
 import { UserError } from "../errors";
 import { findProduct, findLocation, moveStock, zone } from "../stock";
 import { validQuantity, type Ctx } from "./common";
+import { articleName } from "@/lib/article";
 
 async function orderOf(c: Ctx, id: number) {
   const [p] = await c.db.select().from(orders).where(and(eq(orders.id, id), eq(orders.companyId, c.companyId)));
@@ -97,11 +98,11 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
   const n = validQuantity(d.quantity);
   const { task, order } = await taskOf(c, d.taskId);
   const u = await findLocation(c.db, c.companyId, d.location);
-  if (u.id !== task.locationId) throw new UserError("PICK-05", `Estás en ${u.code}, pero esta parada es en otra ubicación. Fíjate el cartel.`);
+  if (u.id !== task.locationId) throw new UserError("PICK-05", `Estás en ${u.code}, pero esta parada es en otra ubicación. Revisa la etiqueta.`);
   const p = await findProduct(c.db, c.companyId, d.product);
-  if (p.id !== task.productId) throw new UserError("PICK-06", `Ese es "${p.title}". No es el título que pide esta parada.`);
+  if (p.id !== task.productId) throw new UserError("PICK-06", `Ese es "${articleName(p.title)}". No es el artículo que pide esta parada.`);
   const remaining = task.quantity - task.picked;
-  if (n > remaining) throw new UserError("PICK-07", `Esta parada pide ${remaining}. Si tomaste de más, devuelve ${n - remaining} al estante.`);
+  if (n > remaining) throw new UserError("PICK-07", `Esta parada pide ${remaining}. Si tomaste de más, devuelve ${n - remaining} a la ubicación.`);
 
   return c.db.transaction(async (tx) => {
     const prep = await zone(tx, c.companyId, "staging");
@@ -109,7 +110,7 @@ export async function confirmPick(c: Ctx, d: { taskId: number; location: string;
     await tx.update(pickTasks).set({ picked: task.picked + n, status: n === remaining ? "done" : "pending" }).where(eq(pickTasks.id, task.id));
     await tx.update(orderLines).set({ picked: sql`${orderLines.picked} + ${n}` }).where(eq(orderLines.id, task.lineId));
     const end = await checkEnd(tx, order.id);
-    return end ? `Pedido ${order.number} completo. Llévalo a empaque.` : `${n} × ${p.title} ✓`;
+    return end ? `Pedido ${order.number} completo. Llévalo a empaque.` : `${n} × ${articleName(p.title)} ✓`;
   });
 }
 
@@ -139,9 +140,9 @@ export async function markShort(c: Ctx, taskId: number) {
       await tx.insert(pickTasks).values(stops.map((s) => ({ orderId: order.id, lineId: task.lineId, productId: task.productId, locationId: s.locationId, quantity: s.quantity })));
     }
     await checkEnd(tx, order.id);
-    if (stops.length > 0 && uncovered === 0) return "Anotado. El título está en otra ubicación y se sumó al recorrido.";
-    if (stops.length > 0) return `Anotado. Hay una parte en otra ubicación; ${uncovered} quedan como faltante.`;
-    return `Anotado: ${missing} quedan como faltante. Conviene contar esa ubicación.`;
+    if (stops.length > 0 && uncovered === 0) return "Registrado. El artículo está en otra ubicación y se sumó al recorrido.";
+    if (stops.length > 0) return `Registrado. Hay una parte en otra ubicación; ${uncovered} quedan como faltante.`;
+    return `Registrado: ${missing} quedan como faltante. Conviene contar esa ubicación.`;
   });
 }
 

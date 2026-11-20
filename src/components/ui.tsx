@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import { hotkey } from "@/lib/hotkeys";
+import { InfoHint } from "./Hint";
 
 export function PageHeader({ title, subtitle, back, children }: { title: ReactNode; subtitle?: ReactNode; back?: { href: string; text: string }; children?: ReactNode }) {
   return (
@@ -40,8 +41,10 @@ export function Badge({ tone = "neutral", children }: { tone?: Tone; children: R
 export function EmptyState({ title, children }: { icon?: unknown; title: string; children?: ReactNode }) {
   return (
     <div className="border-y border-line px-2 py-8 lg:rounded-control lg:border lg:px-4 lg:py-6">
-      <p className="font-bold">{title}</p>
-      {children && <div className="mt-1 max-w-[60ch] text-sm text-muted">{children}</div>}
+      <p className="flex items-center gap-1.5 font-bold">
+        {title}
+        {children && <InfoHint text={children} />}
+      </p>
     </div>
   );
 }
@@ -51,8 +54,10 @@ export function EmptyRow({ columns, title, children }: { columns: number; title:
   return (
     <tr className="hover:bg-transparent!">
       <td colSpan={columns} className="px-3 py-8 text-center lg:py-6">
-        <p className="font-semibold">{title}</p>
-        {children && <p className="mx-auto mt-1 max-w-[60ch] text-sm text-muted">{children}</p>}
+        <p className="inline-flex items-center gap-1.5 font-semibold">
+          {title}
+          {children && <InfoHint text={children} />}
+        </p>
       </td>
     </tr>
   );

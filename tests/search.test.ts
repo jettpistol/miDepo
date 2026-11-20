@@ -59,12 +59,12 @@ describe("Funciones", () => {
 });
 
 describe("Guías", () => {
-  it("opens the manual at the section where the words are", () => {
-    const [hit] = searchSections("libro no esta");
+  it("opens the manual at the section where the words are", async () => {
+    const [hit] = await searchSections("articulo no esta");
     expect(hit.page).toBe("Picking");
-    expect(hit.href).toBe("/ayuda/Picking#si-el-libro-no-esta");
+    expect(hit.href).toBe("/ayuda/Picking#si-el-articulo-no-esta");
   });
-  it("needs every word in the same section", () => expect(searchSections("zzqx picking")).toEqual([]));
+  it("needs every word in the same section", async () => expect(await searchSections("zzqx picking")).toEqual([]));
 });
 
 describe("Inventario", () => {

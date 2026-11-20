@@ -11,11 +11,11 @@ export async function GET(request: Request) {
   const s = await currentSession();
   if (!s) return new Response(null, { status: 401 });
   const q = (new URL(request.url).searchParams.get("q") ?? "").trim().slice(0, 80);
-  const inventario = await searchInventory(await getDb(), s.company.id, q);
+  const [inventario, guias] = await Promise.all([searchInventory(await getDb(), s.company.id, q), searchSections(q, s.company.id)]);
   const body: SearchResults = {
     funciones: searchFeatures(q, s.user.role).map(({ words: _w, minRole: _r, ...f }) => f),
     inventario,
-    guias: searchSections(q),
+    guias,
   };
   return Response.json(body, { headers: { "cache-control": "no-store" } });
 }

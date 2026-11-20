@@ -20,8 +20,10 @@ These came from the owner directly; keep to them unless told otherwise.
 - **Say problems before the click.** Validate as the user types, suggest valid values, disable what cannot work with the reason beside it. The server still validates everything.
 - **The database is the source of truth.** Suppliers, customers, products, stock and locations are chosen from what exists, never typed as free text. Creating one is a separate, confirmed action that refuses near-duplicates (see `createSupplier`).
 - **No over-explaining.** No subtitles that say what a screen is for, no helper paragraphs for ordinary controls. Keep text that states a fact or a consequence the user could not guess.
+- **Notes go in hints, not on the screen.** Why a button is disabled (`reason` on `ActionButton`/`ActionForm`, or `DisabledReason`) and side notes (`InfoHint`, an ⓘ beside a heading or option) open on hover, focus or tap (`src/components/Hint.tsx`). Status notices (`Notice`) and facts the user needs to act stay visible.
 - **Dropdowns are the app's own `<Select>`** with a search box that stays open; never a system `<select>`.
 - **List screens show their table even when empty** (one `EmptyRow`), with a "+ Nueva" button (`NewButton`) for creating.
+- **Article names are shown in capitals** everywhere (lists, article page, scan feedback, messages, printouts) through `articleName()` in `src/lib/article.ts`. The stored name keeps its case, and the CSV files for Fierro use it as stored.
 - **Tú, never voseo**, in the app, its messages and the manual.
 - **The app never speaks as "I".** Messages are impersonal: "No se encontró ese pedido", "No se pudo leer esa imagen", not "No encuentro…", "No pude…". `tests/copy.test.ts` refuses it.
 - The owner prefers concise replies, with assumptions stated up front, and asks questions before large changes.
@@ -49,13 +51,17 @@ src/lib/action.ts         action(role, fn): wraps a flow as a server action (ses
                           error-to-message, revalidate). Each screen's actions.ts uses it.
 src/lib/fierro/           The Fierro boundary (FierroConnector) and the simulator. A real
                           connector implements the same interface; nothing else changes.
+src/lib/covers.ts         List-size cover thumbnails, made once at Fierro sync (never resized per request).
 src/lib/session.ts        Multi-account sessions per device; requireSession() for pages.
 src/lib/fonts.ts, color.ts  Per-user font and accent; applied in src/app/layout.tsx.
 src/app/(app)/<screen>/   One folder per screen: page.tsx (server), actions.ts, small client parts.
 src/app/(app)/layout.tsx  Shell: top bar, sidebar with queue counts, phone bottom bar.
 src/app/(print)/          A4 print layouts (labels, packing list).
-src/app/(manual)/         The manual site at /ayuda, rendered from wiki/.
-src/components/           ScanForm (scan fields + live check), Select, NewButton, ui.tsx
+src/app/(manual)/         The manual site at /ayuda, rendered from wiki/; admins edit pages at
+                          /ayuda/editar/<page> (stored per company in wiki_edits, see src/lib/wiki.ts).
+src/lib/markdown.ts       Manual Markdown → HTML, server and editor preview alike; escapes raw HTML.
+src/components/           ScanForm (scan fields + live check), Select, NewButton, Hint, ProductCards (cover cards +
+                          view switch), ui.tsx
                           (PageHeader, Badge, EmptyRow, ShelfMark, Progress…), Icon, Hotkeys.
 src/lib/search/           The top search (src/components/GlobalSearch.tsx, /api/search): functions.ts lists
                           screens, actions and settings with their synonyms; inventory.ts finds articles,

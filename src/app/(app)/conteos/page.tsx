@@ -44,7 +44,7 @@ export default async function Counts() {
       )}
       {rows.length === 0 ? (
         <EmptyState icon="count" title="No hay conteos">
-          {can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor arme un conteo, va a aparecer acá."}
+          {can(user.role, "supervisor") ? "Crea el primero arriba." : "Cuando tu supervisor cree un conteo, aparecerá aquí."}
         </EmptyState>
       ) : (
         <div className="table-wrap">
@@ -75,7 +75,7 @@ export default async function Counts() {
                     <Progress done={countedCount} total={total} />
                   </td>
                   <td className="hidden whitespace-nowrap text-muted md:table-cell">{shortDate(k.date)}</td>
-                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">Para revisar</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
+                  <td className="w-px">{k.status === "closed" ? <Badge tone="ok">Cerrado</Badge> : countedCount === total ? <Badge tone="warn">En revisión</Badge> : <Badge tone="accent">Abierto</Badge>}</td>
                 </tr>
               ))}
             </tbody>

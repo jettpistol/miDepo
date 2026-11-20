@@ -9,13 +9,13 @@ export function StockSearch({ initial }: { initial: string }) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   return (
-    <form className="mb-6 flex max-w-xl gap-2" role="search" action="/stock">
+    <form className="field-group mb-6 max-w-xl" role="search" action="/stock">
       <input
         name="q"
         type="search"
         defaultValue={initial}
         className="field"
-        placeholder="Título, autor, ISBN, código o ubicación"
+        placeholder="Nombre, autor, ISBN, código o ubicación"
         aria-label="Buscar"
         autoFocus
         autoComplete="off"

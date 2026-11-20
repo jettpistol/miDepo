@@ -43,9 +43,9 @@ async function warning(p, field, value) {
   const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png`, fullPage: false, caret: 'initial' });
 
   // Password login (supervisor)
-  await p.goto(BASE + '/'); await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'wrong'); await p.click('button:has-text("Entrar")');
+  await p.goto(BASE + '/'); await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'wrong'); await p.click('button:has-text("Iniciar sesión")');
   await p.waitForSelector('[role=status]'); step('wrong password → ' + (await p.textContent('[role=status]')).trim());
-  await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'midepo1234'); await p.click('button:has-text("Entrar")'); await p.waitForURL(BASE + '/');
+  await p.fill('#email', 'supervisor@ovnipress.test'); await p.fill('#password', 'midepo1234'); await p.click('button:has-text("Iniciar sesión")'); await p.waitForURL(BASE + '/');
 
   // Receiving
   await p.goto(BASE + '/recepcion'); await p.click('a[href^="/recepcion/"]'); await p.waitForSelector('#scan-product');
@@ -80,7 +80,7 @@ async function warning(p, field, value) {
   step('  missing location, before the click → ' + await warning(p, 'destination', 'ZZ-99'));
   await p.fill('#scan-product', ''); await p.fill('#scan-destination', '');
   for (const r of rows.slice(0, 4)) step('  put away → ' + await scan(p, { product: r.code, destination: 'A-01-1' }, r.expected));
-  await p.goto(BASE + '/reposicion'); step('put-away empty: ' + ((await p.textContent('main')).includes('No queda nada') ? 'ok' : fail('something left to put away')));
+  await p.goto(BASE + '/reposicion'); step('put-away empty: ' + ((await p.textContent('main')).includes('No hay nada por reponer') ? 'ok' : fail('something left to put away')));
 
   // Picking
   await p.goto(BASE + '/picking'); await shot('picking-list');
@@ -141,7 +141,7 @@ async function warning(p, field, value) {
   await p.goto(countUrl); await p.click('a:has-text("Contar")'); await p.waitForSelector('text=Este recuento lo tiene que hacer otra persona'); step('  first counter cannot recount: ok');
   const second = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const q = await second.newPage();
   q.on('dialog', (d) => d.accept()); q.on('pageerror', (e) => errors.push('recount pageerror: ' + e.message)); q.on('response', (r) => r.status() >= 500 && errors.push(`recount HTTP ${r.status()} ${r.url()}`));
-  await q.goto(BASE + '/'); await q.click('button:has-text("PIN del depósito")'); await q.fill('#company', 'ovnipress'); await q.fill('#pin', '100001'); await q.click('button:has-text("Entrar")'); await q.waitForURL(BASE + '/');
+  await q.goto(BASE + '/'); await q.click('button:has-text("PIN del depósito")'); await q.fill('#company', 'ovnipress'); await q.fill('#pin', '100001'); await q.click('button:has-text("Iniciar sesión")'); await q.waitForURL(BASE + '/');
   await q.goto(countUrl); await q.click('a:has-text("Contar")'); await q.waitForSelector('#scan-product');
   step('  recount → ' + await scan(q, { product: rows[0].code }, rows[0].expected - 1));
   await q.click('button:has-text("Terminar esta ubicación")'); await q.waitForURL(countUrl); await second.close();
@@ -167,11 +167,25 @@ async function warning(p, field, value) {
   await p.goto(BASE + '/fierro/conciliacion'); await shot('reconciliation'); step('reconciliation: ' + (await p.textContent('main')).replace(/\s+/g, ' ').slice(0, 90));
 
   // Stock, locations, labels, manual
-  await p.goto(BASE + '/stock?q=' + rows[0].code); await p.click('table a[href^="/stock/"]'); await p.waitForSelector('text=Últimos movimientos'); await shot('stock');
+  await p.goto(BASE + '/stock'); await p.waitForSelector('main table img[src^="/api/cover/"]'); await shot('stock-table');
+  step('stock covers: ' + await p.$$eval('main table img[src^="/api/cover/"]', (is) => Promise.all(is.slice(0, 6).map((i) => i.decode().then(() => i.naturalWidth)))).then((w) => w.join(',')));
+  await p.click('button:has-text("Tarjetas")'); await p.waitForSelector('main ul img[src^="/api/cover/"]'); await shot('stock-cards');
+  await p.goto(BASE + '/stock'); await p.waitForSelector('main ul img[src^="/api/cover/"]'); step('stock remembers Tarjetas: ok');
+  await p.click('button:has-text("Lista")'); await p.waitForSelector('main table img[src^="/api/cover/"]');
+  await p.goto(BASE + '/stock?q=' + rows[0].code); await p.click('main a[href^="/stock/"]'); await p.waitForSelector('text=Últimos movimientos'); await shot('stock');
   await p.goto(BASE + '/ubicaciones'); await p.waitForSelector('text=Generador de ubicaciones'); await p.screenshot({ path: `${OUT}/locations.png`, fullPage: true, caret: 'initial' });
   await p.goto(BASE + '/imprimir/ubicaciones?prefijo=A-01'); await shot('labels');
   await p.goto(BASE + '/ayuda'); await shot('manual'); await p.click('article a:has-text("Picking")'); await p.waitForSelector('h1:has-text("Picking")');
+  step('supervisor sees no Editar in the manual: ' + ((await p.$('a[href^="/ayuda/editar/"]')) ? fail('Editar visible') : 'ok'));
+  step('supervisor cannot open the editor: ' + ((await p.goto(BASE + '/ayuda/editar/Picking'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
   step('supervisor cannot open users: ' + ((await p.goto(BASE + '/usuarios'), p.url()) === BASE + '/' ? 'ok' : fail('reached ' + p.url())));
+
+  // Light/dark from the top bar, saved at once
+  await p.goto(BASE + '/'); await p.click('summary[aria-label^="Tema:"] >> visible=true'); const saved = p.waitForResponse((r) => r.request().method() === 'POST');
+  await p.click('details[open] button:has-text("Oscuro")'); await saved; await p.reload(); await shot('home-dark-switch');
+  step('theme after reload: ' + ((await p.getAttribute('html', 'data-theme')) === 'dark' ? 'dark' : fail('not saved')));
+  await p.click('summary[aria-label^="Tema:"] >> visible=true'); const back = p.waitForResponse((r) => r.request().method() === 'POST'); await p.click('details[open] button:has-text("Claro")'); await back;
+  step('sidebar has Ajustes: ' + ((await p.$('aside a[href="/cuenta"]')) ? 'ok' : fail('missing')));
 
   // Per-user colour
   // Top search: a function, a scanned barcode, a manual section
@@ -181,12 +195,12 @@ async function warning(p, field, value) {
   await p.keyboard.press('Control+k'); await p.keyboard.type(rows[0].code);
   await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Inventario")'); await p.waitForSelector('[role=option][aria-selected=true]:has-text("unidad")'); await shot('search-scan');
   await p.keyboard.press('Enter'); await p.waitForURL(/\/stock\/\d+$/); step('search scan → ' + p.url().replace(BASE, ''));
-  await p.keyboard.press('/'); await p.keyboard.type('libro no esta'); await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Guías")');
+  await p.keyboard.press('/'); await p.keyboard.type('articulo no esta'); await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Guías")');
   await p.keyboard.press('Tab'); await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Funciones")'); await p.keyboard.press('Shift+Tab');
-  await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Guías")'); await p.waitForSelector('[role=option]:has-text("Si el libro no está")'); await shot('search-guides');
+  await p.waitForSelector('[role=tab][aria-selected=true]:has-text("Guías")'); await p.waitForSelector('[role=option]:has-text("Si el artículo no está")'); await shot('search-guides');
   await p.keyboard.press('Escape');
-  await p.goto(BASE + '/cuenta'); await p.click('button[aria-label="Magenta"]'); await p.click('button:has-text("Oscuro")'); await shot('account-magenta-dark');
-  await p.click('button:has-text("Guardar apariencia")'); await p.waitForSelector('text=Guardado'); await p.goto(BASE + '/'); await shot('home-magenta');
+  await p.goto(BASE + '/cuenta'); await p.click('button[aria-label="Magenta"]'); await p.click('form button:has-text("Oscuro")'); await shot('account-magenta-dark');
+  await p.click('button:has-text("Guardar apariencia")'); await p.waitForSelector('text=Apariencia guardada'); await p.goto(BASE + '/'); await shot('home-magenta');
   step('saved accent: ' + await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
   await ctx.close();
 
@@ -194,7 +208,7 @@ async function warning(p, field, value) {
   const phone = await browser.newContext({ ...devices['Pixel 7'] }); const m = await phone.newPage();
   m.on('pageerror', (e) => errors.push('phone pageerror: ' + e.message)); m.on('response', (r) => r.status() >= 500 && errors.push(`phone HTTP ${r.status()} ${r.url()}`));
   await m.goto(BASE + '/'); await m.screenshot({ path: `${OUT}/m-login.png`, caret: 'initial' });
-  await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Entrar")'); await m.waitForURL(BASE + '/');
+  await m.click('button:has-text("PIN del depósito")'); await m.fill('#company', 'ovnipress'); await m.fill('#pin', '100003'); await m.click('button:has-text("Iniciar sesión")'); await m.waitForURL(BASE + '/');
   await m.screenshot({ path: `${OUT}/m-home.png`, caret: 'initial' });
   step('phone accent: ' + await m.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent')));
   await m.goto(BASE + '/picking'); await m.click('button:has-text("Preparar")'); await m.waitForSelector('text=Próxima parada'); await m.screenshot({ path: `${OUT}/m-picking.png`, fullPage: true, caret: 'initial' });
@@ -204,9 +218,31 @@ async function warning(p, field, value) {
 
   // Another company does not see Ovnipress orders
   const other = await browser.newContext(); const o = await other.newPage();
-  await o.goto(BASE + '/'); await o.fill('#email', 'admin@demo.test'); await o.fill('#password', 'midepo1234'); await o.click('button:has-text("Entrar")'); await o.waitForURL(BASE + '/');
+  await o.goto(BASE + '/'); await o.fill('#email', 'admin@demo.test'); await o.fill('#password', 'midepo1234'); await o.click('button:has-text("Iniciar sesión")'); await o.waitForURL(BASE + '/');
   const r = await o.goto(`${BASE}/picking/${orderId}`); step(`other company opens a foreign order → HTTP ${r.status()}`);
   await o.goto(BASE + '/ubicaciones'); await o.waitForSelector('text=Generador'); step('demo company scheme: ' + ((await o.textContent('main')).includes('Mostrando el esquema') ? 'shown' : 'none'));
+
+  // An admin edits a manual page for their company only
+  o.on('pageerror', (e) => errors.push('admin pageerror: ' + e.message)); o.on('response', (r) => r.status() >= 500 && errors.push(`admin HTTP ${r.status()} ${r.url()}`));
+  await o.setViewportSize({ width: 1440, height: 900 });
+  await o.goto(BASE + '/ayuda/Glosario'); await o.click('a[href="/ayuda/editar/Glosario"]'); await o.waitForSelector('textarea');
+  await o.click('textarea'); await o.keyboard.press('Control+End'); await o.keyboard.type('\n\n## Palabras de Demo\n\nUn ');
+  await o.keyboard.press('Control+b'); await o.keyboard.type('zorzal'); await o.keyboard.press('End'); await o.keyboard.type(' es un lector fiel. Ver [Picking](Pickin).');
+  await o.waitForSelector('[role=region] strong:has-text("zorzal")'); await o.waitForSelector('text=no lleva a ninguna página');
+  await o.screenshot({ path: `${OUT}/manual-editor.png`, caret: 'initial' });
+  await o.fill('textarea', (await o.inputValue('textarea')).replace('(Pickin)', '(Picking)')); await o.waitForSelector('text=no lleva a ninguna página', { state: 'detached' });
+  await o.click('button:has-text("Guardar")'); await o.waitForURL(BASE + '/ayuda/Glosario'); await o.waitForSelector('text=Versión de');
+  step('edited page shows: ' + ((await o.textContent('article')).includes('zorzal es un lector fiel') ? 'ok' : fail('edit missing')));
+  await m.goto(BASE + '/ayuda/Glosario'); step('other company still reads the original: ' + (!(await m.textContent('article')).includes('zorzal') ? 'ok' : fail('edit leaked')));
+  await m.goto(BASE + '/ayuda?q=zorzal'); step('other company search: ' + ((await m.textContent('main')).includes('No hay resultados') ? 'ok' : fail('found')));
+  await o.goto(BASE + '/ayuda?q=zorzal'); step('admin search finds it: ' + ((await o.$('a[href="/ayuda/Glosario"]:has-text("Glosario")')) ? 'ok' : fail('not found')));
+  await o.goto(BASE + '/ayuda/editar/Glosario'); o.once('dialog', (d) => d.accept()); await o.click('button:has-text("Volver al original")'); await o.waitForURL(BASE + '/ayuda/Glosario');
+  step('back to original: ' + (!(await o.textContent('article')).includes('zorzal') ? 'ok' : fail('still edited')));
+  await m.goto(BASE + '/ayuda'); await m.screenshot({ path: `${OUT}/m-manual.png`, caret: 'initial' });
+  const ma = await phone.newPage(); await ma.goto(BASE + '/ingresar?agregar=1'); await ma.click('button:has-text("Email y contraseña")'); await ma.fill('#email', 'admin@ovnipress.test'); await ma.fill('#password', 'midepo1234'); await ma.click('button:has-text("Iniciar sesión")'); await ma.waitForURL(BASE + '/');
+  await ma.goto(BASE + '/ayuda/editar/Picking'); await ma.waitForSelector('textarea'); await ma.screenshot({ path: `${OUT}/m-editor.png`, caret: 'initial' });
+  await ma.click('button:has-text("Vista previa")'); await ma.screenshot({ path: `${OUT}/m-editor-preview.png`, caret: 'initial' });
+  step('phone editor scrolls sideways: ' + ((await ma.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ? fail('yes') : 'no'));
   await browser.close();
   console.log(errors.length ? 'ERRORS:\n' + [...new Set(errors)].join('\n') : 'NO CONSOLE ERRORS OR 5xx');
   if (errors.length) process.exit(1);

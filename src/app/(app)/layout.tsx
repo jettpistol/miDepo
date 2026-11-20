@@ -10,6 +10,8 @@ import { Brand } from "@/components/Brand";
 import { Hotkeys } from "@/components/Hotkeys";
 import { GlobalSearch, type SearchRow } from "@/components/GlobalSearch";
 import { NAV } from "@/lib/hotkeys";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { saveTheme } from "./cuenta/actions";
 import { counts, orders, receivings, returns } from "@/db/schema";
 import { MENU } from "@/lib/menu";
 import { can, requireSession } from "@/lib/session";
@@ -43,7 +45,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <GlobalSearch starters={starters} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted lg:hidden">{company.name}</span>
 
+          <div className="ml-auto flex items-center gap-1 lg:hidden">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
+          </div>
           <div className="ml-auto hidden items-center gap-1 lg:flex">
+            <ThemeSwitch key={`theme-${user.id}`} action={saveTheme} theme={user.theme} />
             <Link href="/ayuda" title="Manual · F1: atajos de teclado" aria-label="Manual" className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink">
               <Icon name="help" className="size-5" />
             </Link>
@@ -55,7 +61,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   <span className="block text-xs text-muted">{ROLE_LABEL[user.role]}</span>
                 </span>
               </summary>
-              <div className="absolute top-full right-0 mt-1.5 w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
+              <div className="absolute top-full right-0 mt-1.5 w-max max-w-72 rounded-control border border-line bg-surface p-1.5 text-ink shadow-floating">
                 <Accounts />
               </div>
             </Dropdown>

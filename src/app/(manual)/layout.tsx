@@ -4,6 +4,8 @@ import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
 import { currentSession } from "@/lib/session";
 import { readIndex, readFooter } from "@/lib/wiki";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { saveTheme } from "@/app/(app)/cuenta/actions";
 import { ManualSearch } from "./ManualSearch";
 
 /**
@@ -24,10 +26,13 @@ export default async function Manual({ children }: { children: ReactNode }) {
           <div className="order-3 w-full sm:order-none sm:w-auto sm:max-w-xl sm:flex-1">
             <ManualSearch />
           </div>
-          <Link href={s ? "/" : "/ingresar"} className="btn-soft ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            {s && <ThemeSwitch key={s.user.id} action={saveTheme} theme={s.user.theme} />}
+            <Link href={s ? "/" : "/ingresar"} className="btn-soft">
             {s ? "Volver a miDepo" : "Ingresar"}
-            <Icon name="arrow" className="size-4" />
-          </Link>
+              <Icon name="arrow" className="size-4" />
+            </Link>
+          </div>
         </div>
       </header>
 
