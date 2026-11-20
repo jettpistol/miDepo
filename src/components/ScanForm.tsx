@@ -254,13 +254,13 @@ export function ScanForm({
             <label htmlFor={`scan-${c.name}`} className="field-label">
               {c.label}
             </label>
-            <div className="relative flex gap-2">
+            <div className={`field-group ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}>
               <input
                 id={`scan-${c.name}`}
                 name={c.name}
                 data-scan-field
                 defaultValue={c.value ?? ""}
-                className={`field font-mono font-bold placeholder-shown:font-sans placeholder-shown:font-normal ${note?.tone === "ok" ? "border-ok" : note?.tone === "danger" ? "border-danger" : ""}`}
+                className="field font-mono font-bold placeholder-shown:font-sans placeholder-shown:font-normal"
                 placeholder={c.help ?? "Escanea o escribe"}
                 autoCapitalize="characters"
                 autoCorrect="off"
@@ -297,7 +297,7 @@ export function ScanForm({
                   if (ev.currentTarget.value.trim()) advance(i);
                 }}
               />
-              <button type="button" className="btn-soft px-3" aria-label={`Leer ${c.label.toLowerCase()} con la cámara`} onClick={() => setCameraFor(c.name)}>
+              <button type="button" className="btn-soft" aria-label={`Leer ${c.label.toLowerCase()} con la cámara`} onClick={() => setCameraFor(c.name)}>
                 <Icon name="camera" />
               </button>
               {context && (
@@ -448,6 +448,7 @@ export function ActionForm({
   confirm,
   reason,
   buttonClassName = "btn",
+  attached = false,
 }: {
   action: Action;
   children: ReactNode;
@@ -463,12 +464,21 @@ export function ActionForm({
   /** If the form cannot be sent yet, why: the button is disabled and says so. */
   reason?: string;
   buttonClassName?: string;
+  /** One field and its button as a single control (field-group); the message goes below. */
+  attached?: boolean;
 }) {
   const [status, submit, submitting] = useActionState(action, {});
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (status.ok && resetOnOk) form.current?.reset();
   }, [status, resetOnOk]);
+  const submitButton = (
+    <DisabledReason reason={reason} className={/\bw-full\b/.test(buttonClassName) ? "flex w-full" : "inline-flex"}>
+      <button className={buttonClassName} disabled={submitting || Boolean(reason)} {...(key ? hotkey(key, button) : {})}>
+        {submitting ? "Un momento…" : button}
+      </button>
+    </DisabledReason>
+  );
   return (
     <form
       ref={form}
@@ -486,12 +496,17 @@ export function ActionForm({
         inputs[0]?.reportValidity();
       }}
     >
-      {children}
-      <DisabledReason reason={reason} className={/\bw-full\b/.test(buttonClassName) ? "flex w-full" : "inline-flex"}>
-        <button className={buttonClassName} disabled={submitting || Boolean(reason)} {...(key ? hotkey(key, button) : {})}>
-          {submitting ? "Un momento…" : button}
-        </button>
-      </DisabledReason>
+      {attached ? (
+        <div className="field-group">
+          {children}
+          {submitButton}
+        </div>
+      ) : (
+        <>
+          {children}
+          {submitButton}
+        </>
+      )}
       <Message status={status} />
     </form>
   );

@@ -18,7 +18,7 @@ export default async function ProductLabels({ searchParams }: { searchParams: Pr
     : [];
   return (
     <>
-      <form className="field-group no-print mb-4" role="search">
+      <form className="field-group search-box no-print mb-4" role="search">
         <input name="q" defaultValue={q} placeholder="Buscar por nombre (solo artículos sin ISBN)" aria-label="Buscar por nombre" className="field" />
         <button className="btn" aria-label="Buscar">
           <Icon name="stock" />

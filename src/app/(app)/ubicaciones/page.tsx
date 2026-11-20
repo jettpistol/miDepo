@@ -35,7 +35,7 @@ export default async function Locations({ searchParams }: { searchParams: Promis
         </Link>
       </PageHeader>
 
-      <form className="field-group mb-4" role="search">
+      <form className="field-group search-box mb-4" role="search">
         <input name="prefijo" defaultValue={prefix} className="field font-mono" placeholder="Ver las que empiezan con… (A-01)" aria-label="Filtrar por comienzo del código" autoCapitalize="characters" />
         <button className="btn" aria-label="Filtrar">
           <Icon name="stock" />
@@ -85,8 +85,8 @@ export default async function Locations({ searchParams }: { searchParams: Promis
 
       <section id="suelta" className="mt-10 lg:mt-8">
         <h2 className="section-title">Agregar una ubicación suelta</h2>
-        <ActionForm action={createStandalone} button="Agregar" className="flex flex-wrap items-start gap-3">
-          <input name="code" className="field max-w-56 font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />
+        <ActionForm action={createStandalone} button="Agregar" buttonClassName="btn-soft" attached className="max-w-xs space-y-2">
+          <input name="code" className="field font-mono" placeholder="MESA-1" aria-label="Código de la ubicación" autoCapitalize="characters" maxLength={20} pattern="[A-Za-z0-9][A-Za-z0-9._\/\-]{0,19}" title="Letras, números, guiones y puntos. Sin espacios ni Ñ." required />
         </ActionForm>
       </section>
     </>

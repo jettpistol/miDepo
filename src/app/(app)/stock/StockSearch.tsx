@@ -9,7 +9,7 @@ export function StockSearch({ initial }: { initial: string }) {
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   return (
-    <form className="field-group mb-6" role="search" action="/stock">
+    <form className="field-group search-box mb-6" role="search" action="/stock">
       <input
         name="q"
         type="search"
