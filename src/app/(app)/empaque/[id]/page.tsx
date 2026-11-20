@@ -6,13 +6,15 @@ import { Icon } from "@/components/Icon";
 import { Progress, Notice, PageHeader, Badge } from "@/components/ui";
 import { boxItems, boxes, customers, orderLines, orders, products } from "@/db/schema";
 import { requireSession } from "@/lib/session";
+import { Assignee } from "@/components/Assignee";
 import { close, scan, finish, empty } from "../actions";
 
 const kg = (g: number) => (g / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 });
 
 export default async function PackingOrder({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
-  const { db, company } = await requireSession();
+  const session = await requireSession();
+  const { db, company } = session;
   const [row] = await db.select({ p: orders, customer: customers.name }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.id, id), eq(orders.companyId, company.id)));
   if (!row) notFound();
   const { p, customer } = row;
@@ -30,6 +32,7 @@ export default async function PackingOrder({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHeader title={`Empaque ${p.number}`} subtitle={customer} back={{ href: "/empaque", text: "Empaque" }}>
+        <Assignee session={session} kind="order" id={p.id} value={p.assignedTo} open={p.status === "picked"} />
         {ofOrder.some((k) => k.status === "closed") && (
           <>
             <Link href={`/imprimir/cajas/${id}`} target="_blank" className="btn-soft">

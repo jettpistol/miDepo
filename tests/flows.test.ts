@@ -20,6 +20,8 @@ import { closeReturn, createReturn, scanReturn } from "@/lib/flows/returns";
 import { closeCount, createCount, differences, scanCount, markLocation, needsRecount, planCount, requestRecount } from "@/lib/flows/counts";
 import { writeOff } from "@/lib/flows/adjustments";
 import { fileFor, markSent, pendingExports, simulateNews } from "@/lib/flows/exports";
+import { assign } from "@/lib/flows/assignments";
+import { isMine, isUnassigned, openTasks, orderStages, weekActivity } from "@/lib/work";
 
 let db: DB;
 let c: Ctx;
@@ -326,6 +328,56 @@ describe("suppliers", () => {
     expect(foreign).toBeDefined();
     await expect(createUnannouncedReceiving(c, foreign.id)).rejects.toBeInstanceOf(UserError);
     expect(u.companyId).toBe(e.id);
+  });
+});
+
+describe("assignments", () => {
+  it("gives work to a person, shows it as theirs, and takes it back", async () => {
+    const ana = await createUser(db, c.companyId, { name: "Ana Asignada", email: "ana@prueba.test", role: "operator", pin: "135790" });
+    const [order] = await db.select().from(orders).where(and(eq(orders.companyId, c.companyId), eq(orders.status, "pending"))).limit(1);
+    expect(await assign(c, "order", order.id, ana.id)).toMatch(/ahora es de Ana Asignada/);
+    let tasks = await openTasks(db, c.companyId);
+    const task = tasks.find((t) => t.kind === "order" && t.id === order.id)!;
+    expect(isMine(task, ana.id)).toBe(true);
+    expect(isUnassigned(task)).toBe(false);
+    expect(await assign(c, "order", order.id, null)).toMatch(/sin asignar/);
+    tasks = await openTasks(db, c.companyId);
+    expect(isUnassigned(tasks.find((t) => t.kind === "order" && t.id === order.id)!)).toBe(true);
+  });
+
+  it("assigns the put-away of a zone, and the order a person is picking is theirs", async () => {
+    const recepcion = await zone(db, c.companyId, "receiving");
+    expect(await assign(c, "putaway", recepcion.id, c.userId)).toMatch(/Reposición desde Recepción/);
+    // In a company of its own, so the pending orders later tests rely on stay pending.
+    const { e, u } = await buildCompany("Toma SA", "toma", 15);
+    const own: Ctx = { db, companyId: e.id, userId: u.id };
+    const [order] = await db.select().from(orders).where(and(eq(orders.companyId, e.id), eq(orders.status, "pending"))).limit(1);
+    await takeOrder(own, order.id);
+    const t = (await openTasks(db, e.id)).find((x) => x.kind === "order" && x.id === order.id)!;
+    // Taken: theirs while being picked (or already picked, if the shelves had nothing for it).
+    expect(t.verb === "Empacar" || (t.takenBy === u.id && isMine(t, u.id))).toBe(true);
+  });
+
+  it("refuses what cannot be assigned", async () => {
+    const [shelf] = await db.select().from(locations).where(and(eq(locations.companyId, c.companyId), eq(locations.type, "shelf"))).limit(1);
+    await expect(assign(c, "putaway", shelf.id, null)).rejects.toThrow(/No se encontró/);
+    await expect(assign(c, "nonsense", 1, null)).rejects.toThrow(/No se reconoce/);
+    const [closed] = await db.select().from(receivings).where(and(eq(receivings.companyId, c.companyId), eq(receivings.status, "closed"))).limit(1);
+    if (closed) await expect(assign(c, "receiving", closed.id, c.userId)).rejects.toThrow(/ya no tiene trabajo pendiente/);
+    const [order] = await db.select().from(orders).where(eq(orders.companyId, c.companyId)).limit(1);
+    const { e, u } = await buildCompany("Lejana SA", "lejana", 13);
+    await expect(assign(c, "order", order.id, u.id)).rejects.toThrow(/Elige una persona/);
+    await expect(assign({ db, companyId: e.id, userId: u.id }, "order", order.id, null)).rejects.toThrow(/No se encontró/);
+  });
+
+  it("counts orders per stage and units per day for the home page", async () => {
+    const stages = await orderStages(db, c.companyId);
+    expect(stages.map((s) => s.key)).toEqual(["pending", "in_picking", "picked", "packed"]);
+    const days = await weekActivity(db, c.companyId);
+    expect(days).toHaveLength(7);
+    expect(days[6].label).toBe("Hoy");
+    // Earlier tests received and picked units today.
+    expect(days[6].received + days[6].picked).toBeGreaterThan(0);
   });
 });
 

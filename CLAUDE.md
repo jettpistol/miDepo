@@ -98,6 +98,7 @@ Design checks use the Impeccable skill in `.claude/skills/impeccable` (its hook 
 
 ## Open items
 
+- Assignment does not lock work (D26); the owner may want an assigned order to be off-limits to others. List screens (Picking, Recepción…) do not show the assignee yet, only detail screens and Inicio.
 - Who may create suppliers: today any operator (they work the dock). The owner may want supervisors only.
 - Stock has two search boxes (top bar, and the page's own live one); the owner was offered hiding the top-bar one there.
 - Not yet looked at after the Jira-density overhaul: desktop screens for packing, return detail and count detail (they pass the walkthrough).

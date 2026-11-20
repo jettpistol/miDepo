@@ -28,6 +28,7 @@ Every message miDepo shows when something fails has a code. This file lists all 
 | `RET` | Devoluciones |
 | `CNT` | Conteos |
 | `ADJ` | Bajas (`/bajas`): write-offs from Faltantes and Dañados |
+| `ASG` | Assigning work to a person (the "Asignado a" control, supervisors) |
 | `EXP` | Fierro documents (CSV files and marking them as sent) |
 | `CAM` | Phone camera used as a scanner |
 | `CFG` | Server configuration (environment variables) |
@@ -222,6 +223,15 @@ These come from shared helpers, so they can appear on any scan screen (Mover, Gu
 | `ADJ-03` | Ese título no está en el catálogo. | `src/lib/flows/adjustments.ts` · `writeOff` | The title does not exist or belongs to another company. Only reachable by editing the form. |
 
 Writing off more units than the zone holds is refused by `STK-03`.
+
+## ASG: assigning work
+
+| Code | Message | Where | When |
+|---|---|---|---|
+| `ASG-01` | No se reconoce qué se quiere asignar. | `src/lib/flows/assignments.ts` · `assign` | The kind sent is not an order, receiving, return, count or put-away zone. Only reachable by editing the form. |
+| `ASG-02` | No se encontró eso para asignar. | `src/lib/flows/assignments.ts` · `assign` | The document or zone does not exist, belongs to another company, or (put-away) the location is not RECEPCION or DEVOLUCIONES. |
+| `ASG-03` | {Pedido PED-00012} ya no tiene trabajo pendiente. | `src/lib/flows/assignments.ts` · `assign` | Assigning an order already packed or shipped, or a closed receiving, return or count (for example, someone closed it while the page was open). |
+| `ASG-04` | Elige una persona de la lista. | `src/lib/flows/assignments.ts` · `assign` | The person chosen does not exist, is deactivated, or belongs to another company. Only reachable by editing the form or a stale page. |
 
 ## EXP: Fierro documents
 

@@ -10,6 +10,7 @@ Esta página es para administradores.
 | Devoluciones, mover, consultar stock | Sí | Sí | Sí |
 | Contar ubicaciones | Sí | Sí | Sí |
 | Crear y aprobar conteos | — | Sí | Sí |
+| Asignar trabajo a una persona | — | Sí | Sí |
 | Ubicaciones y etiquetas | — | Sí | Sí |
 | Sincronizar y cargar en Fierro | — | Sí | Sí |
 | Alta y baja de usuarios | — | — | Sí |

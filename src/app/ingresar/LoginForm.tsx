@@ -51,7 +51,7 @@ export function LoginForm() {
       </div>
 
       {mode === "password" ? (
-        <form action={submitPassword} className="space-y-4">
+        <form key="password" action={submitPassword} className="space-y-4">
           <div>
             <label htmlFor="email" className="field-label">Email</label>
             <input id="email" name="email" type="email" autoComplete="username webauthn" className="field" required />
@@ -64,7 +64,7 @@ export function LoginForm() {
           <Message status={password} />
         </form>
       ) : (
-        <form action={submitPin} className="space-y-4" onSubmit={(e) => { try { localStorage.setItem("midepo-company", String(new FormData(e.currentTarget).get("company")).toLowerCase().trim()); } catch {} }}>
+        <form key="pin" action={submitPin} className="space-y-4" onSubmit={(e) => { try { localStorage.setItem("midepo-company", String(new FormData(e.currentTarget).get("company")).toLowerCase().trim()); } catch {} }}>
           <div>
             <label htmlFor="company" className="field-label">Código de empresa</label>
             <input id="company" name="company" value={company} onChange={(e) => setCompany(e.target.value)} autoCapitalize="none" autoCorrect="off" className="field" placeholder="Por ejemplo: ovnipress" required />
