@@ -1,4 +1,5 @@
-import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { unionAll } from "drizzle-orm/pg-core";
 import type { DB } from "@/db";
 import { adjustmentLines, adjustments, boxItems, boxes, customers, countLines, counts, returnLines, returns, companies, orderLines, orders, products, receivingLines, receivings, suppliers, locations, users } from "@/db/schema";
 import { UserError } from "../errors";
@@ -36,6 +37,27 @@ export async function pendingExports(db: DB, companyId: number): Promise<Pending
     ...ks.map((k) => ({ type: "count" as const, ...k, detail: "Ajustes de stock por ubicación" })),
     ...as.map((a) => ({ type: "adjustment" as const, ...a, detail: `Aprobado por ${a.detail}` })),
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
+export type Sent = Pending & { sent: Date };
+
+/** Everything already marked as loaded in Fierro, last loaded first, a page at a time. */
+export async function sentExports(db: DB, companyId: number, page: { limit: number; offset: number }): Promise<{ total: number; rows: Sent[] }> {
+  const t = (type: ExportType) => sql<ExportType>`${type}::text`.as("type");
+  const all = unionAll(
+    db.select({ type: t("order"), id: orders.id, number: orders.number, detail: customers.name, date: orders.date, sent: sql<Date>`${orders.sentToFierro}`.as("sent") }).from(orders).innerJoin(customers, eq(customers.id, orders.customerId)).where(and(eq(orders.companyId, companyId), isNotNull(orders.sentToFierro))),
+    db.select({ type: t("receiving"), id: receivings.id, number: receivings.number, detail: suppliers.name, date: receivings.date, sent: sql<Date>`${receivings.sentToFierro}`.as("sent") }).from(receivings).innerJoin(suppliers, eq(suppliers.id, receivings.supplierId)).where(and(eq(receivings.companyId, companyId), isNotNull(receivings.sentToFierro))),
+    db.select({ type: t("return"), id: returns.id, number: returns.number, detail: customers.name, date: returns.date, sent: sql<Date>`${returns.sentToFierro}`.as("sent") }).from(returns).innerJoin(customers, eq(customers.id, returns.customerId)).where(and(eq(returns.companyId, companyId), isNotNull(returns.sentToFierro))),
+    db.select({ type: t("count"), id: counts.id, number: counts.name, detail: sql<string>`'Ajustes de stock por ubicación'`.as("detail"), date: counts.date, sent: sql<Date>`${counts.sentToFierro}`.as("sent") }).from(counts).where(and(eq(counts.companyId, companyId), isNotNull(counts.sentToFierro))),
+    // A count's own adjustment travels with the count, so it is listed under the count.
+    db.select({ type: t("adjustment"), id: adjustments.id, number: adjustments.number, detail: sql<string>`'Aprobado por ' || ${users.name}`.as("detail"), date: adjustments.createdAt, sent: sql<Date>`${adjustments.sentToFierro}`.as("sent") }).from(adjustments).innerJoin(users, eq(users.id, adjustments.approvedBy)).where(and(eq(adjustments.companyId, companyId), isNull(adjustments.countId), isNotNull(adjustments.sentToFierro))),
+  ).as("sent_docs");
+  const [[{ n: total }], rows] = await Promise.all([
+    db.select({ n: count() }).from(all),
+    db.select().from(all).orderBy(desc(all.sent), desc(all.id)).limit(page.limit).offset(page.offset),
+  ]);
+  // Drivers differ on timestamps inside a subquery: some return strings.
+  return { total, rows: rows.map((r) => ({ ...r, date: new Date(r.date), sent: new Date(r.sent) })) };
 }
 
 /** Builds the CSV file of a document to be loaded into Fierro. */

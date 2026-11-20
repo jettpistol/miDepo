@@ -9,6 +9,8 @@ Esta página es para administradores.
 | Recepción, reposición, picking, empaque | Sí | Sí | Sí |
 | Devoluciones, mover, consultar stock | Sí | Sí | Sí |
 | Contar ubicaciones | Sí | Sí | Sí |
+| Ver pedidos, proveedores, clientes y movimientos | Sí | Sí | Sí |
+| Crear proveedores | — | Sí | Sí |
 | Crear y aprobar conteos | — | Sí | Sí |
 | Ubicaciones y etiquetas | — | Sí | Sí |
 | Sincronizar y cargar en Fierro | — | Sí | Sí |

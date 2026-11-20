@@ -32,4 +32,6 @@ Si cargaste mal una línea, toca **Quitar** y escanéala de nuevo con el estado 
 - Los **saldos** y los **dañados** ya quedan en su zona: lleva los artículos físicamente ahí.
 - La devolución aparece en la pantalla **Fierro** del supervisor, para cargarla en Fierro.
 
+Las devoluciones cerradas quedan en **Cerradas**, abajo en Devoluciones: todas, con buscador por número o cliente.
+
 > Una devolución cerrada no se puede corregir. Revisa los totales por estado, arriba de la lista, antes de cerrar.

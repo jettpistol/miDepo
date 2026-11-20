@@ -3,19 +3,23 @@
 import { Select, type Option } from "@/components/Select";
 import { addSupplier } from "./actions";
 
-/** Supplier dropdown: only listed suppliers, or one created on purpose from the search. */
-export function SupplierSelect({ options }: { options: Option[] }) {
+/**
+ * Supplier dropdown: only listed suppliers. Supervisors can also create one on purpose from the
+ * search; operators are told who can.
+ */
+export function SupplierSelect({ options, canCreate, id = "supplier", name = "supplierId", onChange, placeholder = "Elige el proveedor" }: { options: Option[]; canCreate: boolean; id?: string; name?: string; onChange?: (value: string) => void; placeholder?: string }) {
   return (
     <Select
-      name="supplierId"
-      id="supplier"
+      name={name}
+      id={id}
       options={options}
       required
-      requiredMessage="Elige un proveedor de la lista o crea uno."
-      placeholder="Elige el proveedor"
+      requiredMessage={canCreate ? "Elige un proveedor de la lista o crea uno." : "Elige un proveedor de la lista."}
+      placeholder={placeholder}
       searchPlaceholder="Buscar proveedor…"
-      empty="No hay proveedores con ese nombre."
-      create={{ noun: "proveedor", action: addSupplier }}
+      empty={canCreate ? "No hay proveedores con ese nombre." : "No hay proveedores con ese nombre. Solo un supervisor puede crear uno."}
+      create={canCreate ? { noun: "proveedor", action: addSupplier } : undefined}
+      onChange={onChange}
     />
   );
 }

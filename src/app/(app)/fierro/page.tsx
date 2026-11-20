@@ -18,6 +18,9 @@ export default async function Fierro() {
   return (
     <>
       <PageHeader title="Fierro">
+        <Link href="/fierro/cargados" className="btn-soft">
+          <Icon name="history" className="size-4" /> Cargados
+        </Link>
         <Link href="/fierro/conciliacion" className="btn-soft">
           Conciliar stock
         </Link>

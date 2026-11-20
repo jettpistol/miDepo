@@ -1,7 +1,7 @@
 /**
  * Full walkthrough in a real browser: receiving, put-away, picking, packing, return, count,
  * keyboard shortcuts (several steps below press F-keys instead of clicking),
- * Fierro, per-user colour, phone login with a PIN, and separation between companies.
+ * Fierro, the registers (orders, suppliers, customers, movements), per-user colour, phone login with a PIN, and separation between companies.
  * Needs Playwright and miDepo running on localhost:3000 with freshly loaded demo data:
  *   npm run db:reset && npm run dev        (in another terminal)
  *   node tests/walkthrough.e2e.js [folder-for-screenshots]
@@ -166,6 +166,30 @@ async function warning(p, field, value) {
   await p.click('button:has-text("Simular 10 pedidos nuevos")'); await p.waitForSelector('text=Entraron 10 pedidos');
   await p.goto(BASE + '/fierro/conciliacion'); await shot('reconciliation'); step('reconciliation: ' + (await p.textContent('main')).replace(/\s+/g, ' ').slice(0, 90));
 
+  // Registers: every order, supplier, customer and movement, and what was loaded in Fierro
+  await p.goto(BASE + '/fierro/cargados'); await p.waitForSelector('main tbody a:has-text("CSV")'); await shot('fierro-loaded');
+  step('loaded in Fierro: ' + (await p.textContent('main h2 small')));
+  await p.goto(BASE + '/pedidos'); await p.waitForSelector('nav[aria-label=Filtro]'); await shot('orders');
+  await p.click('nav[aria-label=Filtro] a:has-text("Despachado")'); await p.waitForURL(/estado=shipped/); await p.waitForSelector('main tbody tr');
+  const shippedStates = await p.$$eval('main tbody td:last-child', (ts) => ts.map((t) => t.textContent.trim()));
+  step(`shipped orders: ${shippedStates.length} ` + (shippedStates.length > 0 && shippedStates.every((t) => t === 'Despachado') ? 'ok' : fail(shippedStates.join(','))));
+  await p.goto(BASE + '/proveedores'); await shot('suppliers'); step('suppliers: ' + (await p.textContent('main h2 small')));
+  await p.click('button:has-text("Nuevo")'); await p.click('#new-supplier'); await p.waitForSelector('[role=combobox]:focus'); await p.keyboard.type('Proveedor de prueba walkthrough');
+  await p.click('[role=option]:has-text("Crear proveedor")'); await p.click('[role=listbox] button:text-is("Crear")');
+  await p.waitForURL(/\/proveedores\/\d+$/); await p.waitForSelector('h1:has-text("Proveedor de prueba walkthrough")'); await shot('supplier');
+  step('supervisor created a supplier: ' + (await p.textContent('main header p')).trim());
+  await p.goto(BASE + '/proveedores'); await p.click('button:has-text("Nuevo")'); await p.click('#new-supplier'); await p.waitForSelector('[role=combobox]:focus'); await p.keyboard.type('Proveedor de prueba walkthroug');
+  step('near-copy is found, not offered twice: ' + ((await p.locator('[role=option]:has-text("Proveedor de prueba walkthrough")').count()) === 1 ? 'ok' : fail('not listed')));
+  await p.keyboard.press('Escape');
+  await p.goto(BASE + '/clientes'); await shot('customers'); await p.click('main tbody a[href^="/clientes/"]'); await p.waitForSelector('h2:has-text("Devoluciones")'); await shot('customer');
+  await p.goto(BASE + '/movimientos'); await shot('movements'); step('movements: ' + (await p.textContent('main h2 small')));
+  await p.click('main button:has-text("Todos los motivos")'); await p.click('[role=option]:has-text("Recepción")'); await p.waitForURL(/motivo=receiving/); await p.waitForSelector('main tbody tr');
+  const reasons = await p.$$eval('main tbody td:nth-child(3)', (ts) => ts.map((t) => t.textContent.split('·')[0].trim()));
+  step('movements by reason: ' + (reasons.length > 0 && reasons.every((r) => r === 'Recepción') ? 'ok' : fail(reasons.join(','))));
+  await p.goto(BASE + '/recepcion'); step('closed receivings listed: ' + (await p.textContent('#cerradas h2 small')));
+  await p.fill('#cerradas input[type=search]', 'zzzz'); await p.waitForURL(/q=zzzz/); await p.waitForSelector('#cerradas >> text=Ninguna recepción cerrada coincide'); step('closed receivings search: ok');
+  await p.goto(BASE + '/devoluciones'); step('closed returns listed: ' + (await p.textContent('#cerradas h2 small')));
+
   // Stock, locations, labels, manual
   await p.goto(BASE + '/stock'); await p.waitForSelector('main table img[src^="/api/cover/"]'); await shot('stock-table');
   step('stock covers: ' + await p.$$eval('main table img[src^="/api/cover/"]', (is) => Promise.all(is.slice(0, 6).map((i) => i.decode().then(() => i.naturalWidth)))).then((w) => w.join(',')));
@@ -215,6 +239,12 @@ async function warning(p, field, value) {
   await m.goto(BASE + '/mas'); await m.screenshot({ path: `${OUT}/m-more.png`, caret: 'initial' });
   step('operator does not see Fierro: ' + (!(await m.textContent('main')).includes('Fierro') ? 'ok' : fail('Fierro visible')));
   await m.goto(BASE + '/fierro'); step('operator /fierro → ' + m.url());
+  const sideways = async (url, name) => { await m.goto(BASE + url); await m.screenshot({ path: `${OUT}/${name}.png`, caret: 'initial' }); step(`phone ${url} scrolls sideways: ` + ((await m.evaluate(() => document.documentElement.scrollWidth > innerWidth || [...document.querySelectorAll('.table-wrap')].some((t) => t.scrollWidth > t.clientWidth + 1))) ? fail('yes') : 'no')); };
+  for (const [url, name] of [['/pedidos', 'm-orders'], ['/proveedores', 'm-suppliers'], ['/clientes', 'm-customers'], ['/movimientos', 'm-movements']]) await sideways(url, name);
+  step('operator sees no Nuevo on Proveedores: ' + ((await m.goto(BASE + '/proveedores'), await m.$('main button:has-text("Nuevo")')) ? fail('visible') : 'ok'));
+  await m.goto(BASE + '/recepcion'); await m.click('button:has-text("Nueva")'); await m.click('#supplier'); await m.waitForSelector('[role=combobox]:focus'); await m.keyboard.type('Proveedor inexistente xyz');
+  step('operator cannot create a supplier: ' + ((await m.locator('text=Crear proveedor').count()) === 0 && (await m.locator('text=Solo un supervisor').count()) === 1 ? 'ok' : fail('create offered')));
+  await m.keyboard.press('Escape');
 
   // Another company does not see Ovnipress orders
   const other = await browser.newContext(); const o = await other.newPage();

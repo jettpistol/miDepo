@@ -18,6 +18,9 @@ miDepo es la herramienta del depósito. Dice dónde está cada artículo, guía 
 | Contar un tramo del depósito | **Conteos** | [Conteos](Conteos) |
 | Cambiar artículos de ubicación | **Mover** | [Mover](Mover) |
 | Saber dónde está un artículo | **Stock** | [Stock](Stock) |
+| Encontrar cualquier pedido, también los ya despachados | **Pedidos** | [Pedidos](Pedidos) |
+| Ver un proveedor o un cliente y sus documentos | **Proveedores**, **Clientes** | [Proveedores y clientes](Proveedores-y-clientes) |
+| Saber quién movió qué, cuándo y por qué | **Movimientos** | [Movimientos](Movimientos) |
 
 ## Para supervisores y administradores
 

@@ -1,6 +1,6 @@
 # Conteos
 
-Un conteo sirve para corregir el stock de un tramo del depósito sin detener el trabajo. Se cuenta por partes: un pasillo por semana es suficiente para tener todo al día.
+Un conteo sirve para corregir el stock de un tramo del depósito sin detener el trabajo. Se cuenta por partes: un pasillo por semana es suficiente para tener todo al día. La lista guarda todos los conteos, abiertos y cerrados; busca por nombre.
 
 ## Contar (operarios)
 
