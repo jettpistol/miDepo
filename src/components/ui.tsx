@@ -83,8 +83,8 @@ export function Progress({ done, total, unit = "" }: { done: number; total: numb
   );
 }
 
-const ZONES: Record<string, string> = { RECEPCION: "receiving", DEVOLUCIONES: "returns", DANADOS: "damaged", SALDOS: "clearance", PREPARACION: "staging" };
-const ZONE_NAME: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
+const ZONES: Record<string, string> = { RECEPCION: "receiving", DEVOLUCIONES: "returns", FALTANTES: "missing", DANADOS: "damaged", SALDOS: "clearance", PREPARACION: "staging" };
+const ZONE_NAME: Record<string, string> = { RECEPCION: "RECEPCIÓN", DEVOLUCIONES: "DEVOLUCIONES", FALTANTES: "FALTANTES", DANADOS: "DAÑADOS", SALDOS: "SALDOS", PREPARACION: "PREPARACIÓN" };
 
 /**
  * The shelf mark (tejuelo): a shelf's code written like the label on a book's spine, with each

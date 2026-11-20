@@ -14,7 +14,7 @@ Inicio muestra lo que tienes por hacer y cómo está el depósito.
 - **Asignado a ti**: los pedidos, recepciones, devoluciones, conteos y reposiciones que un supervisor te dio, más el pedido que estás preparando. Cada uno tiene su botón para seguir. Si no tienes nada asignado, aparece el pedido más viejo sin asignar.
 - **Pedidos abiertos**: una barra con cuántos pedidos hay en cada etapa, de "para preparar" a "empacados, sin cargar en Fierro".
 - **Actividad, últimos 7 días**: unidades recibidas, preparadas y despachadas por día. Pasa el mouse sobre un día para ver los números.
-- **Stock esperando en zonas**: lo que espera en Recepción y Devoluciones para reponer, en Faltantes y en Dañados.
+- **Stock en zonas**: unidades en Recepción y Devoluciones (para reponer), en Faltantes y en Dañados, con el enlace para resolverlas cuando hay algo.
 - **Equipo** (solo supervisores): qué tiene asignado cada persona, qué pedido está preparando y cuántas unidades movió hoy. La primera fila es lo que está sin asignar.
 
 Si dejaste un pedido a medio preparar, arriba de todo aparece un botón **Seguir con PED-…** para retomarlo.
